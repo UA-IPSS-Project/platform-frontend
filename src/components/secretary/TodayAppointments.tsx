@@ -63,7 +63,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
   const [subjectFilter, setSubjectFilter] = useState<'all' | string>('all');
 
   // Allowed subjects (source of truth in client dialog)
-  const ALLOWED_SUBJECTS = ['Pagar mensalidade', 'Entregar documentos', 'Reunião presencial'];
+  const ALLOWED_SUBJECTS = ['Pagar mensalidade', 'Entregar documentos', 'Reunião presencial', 'Outro'];
   // Only show allowed subjects (even if some aren't present today)
   const uniqueSubjects = ALLOWED_SUBJECTS;
 
