@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
+import { Input } from '../ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import { toast } from 'sonner@2.0.3';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
@@ -57,12 +60,25 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
   // Filter state (used when showFilter === true)
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status']>('all');
-  const uniqueSubjects = Array.from(new Set(appointments.map(apt => apt.subject)));
+  const [subjectFilter, setSubjectFilter] = useState<'all' | string>('all');
+
+  // Allowed subjects (source of truth in client dialog)
+  const ALLOWED_SUBJECTS = ['Pagar mensalidade', 'Entregar documentos', 'Reunião presencial'];
+  // Only show allowed subjects (even if some aren't present today)
+  const uniqueSubjects = ALLOWED_SUBJECTS;
 
   const filteredTodayAppointments = todayAppointments.filter(apt => {
     const statusMatch = statusFilter === 'all' || apt.status === statusFilter;
-    const subjectMatch = searchTerm === '' || apt.subject.toLowerCase().includes(searchTerm.toLowerCase()) || apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || apt.patientNIF.includes(searchTerm) || apt.time.includes(searchTerm);
-    return statusMatch && subjectMatch;
+    const subjectMatch = subjectFilter === 'all' || apt.subject === subjectFilter;
+    const searchLower = searchTerm.trim().toLowerCase();
+    const searchMatch =
+      searchLower === '' ||
+      apt.subject.toLowerCase().includes(searchLower) ||
+      apt.patientName.toLowerCase().includes(searchLower) ||
+      apt.patientNIF.includes(searchLower) ||
+      apt.time.includes(searchLower);
+
+    return statusMatch && subjectMatch && searchMatch;
   });
 
   return (
@@ -72,40 +88,56 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
         <h2 className={`text-base font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
         <div className="flex items-center gap-2">
           {showFilter && (
-            <div className="flex items-center gap-2">
-              {/* Simple inline filter controls as a popover-like block */}
-              <div className="hidden sm:flex items-center gap-2">
-                <input
-                  aria-label="Pesquisar"
-                  placeholder="Pesquisar..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-2 py-1 rounded-md border bg-white dark:bg-gray-800 text-sm w-36"
-                />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-2 py-1 rounded-md border bg-white dark:bg-gray-800 text-sm"
-                >
-                  <option value="all">Todos os estados</option>
-                  <option value="scheduled">Concluído</option>
-                  <option value="cancelled">Cancelado</option>
-                  <option value="warning">Não compareceu</option>
-                  <option value="in-progress">Em Curso</option>
-                </select>
-              </div>
-              <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
-                <HistoryIcon className="w-3.5 h-3.5" />
-                Histórico
-              </Button>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+                  Filtrar
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3">
+                <div className="flex flex-col gap-2">
+                  <Input
+                    placeholder="Pesquisar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="text-sm"
+                  />
+
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                    <SelectTrigger className="w-full text-sm">
+                      <SelectValue placeholder="Todos os estados" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os estados</SelectItem>
+                      <SelectItem value="scheduled">Concluído</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                      <SelectItem value="warning">Não compareceu</SelectItem>
+                      <SelectItem value="in-progress">Em Curso</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={subjectFilter} onValueChange={(v) => setSubjectFilter(v as any)}>
+                    <SelectTrigger className="w-full text-sm">
+                      <SelectValue placeholder="Todos os assuntos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os assuntos</SelectItem>
+                      {uniqueSubjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
-          {!showFilter && (
-            <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
-              <HistoryIcon className="w-3.5 h-3.5" />
-              Histórico
-            </Button>
-          )}
+
+          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
+            <HistoryIcon className="w-3.5 h-3.5" />
+            Histórico
+          </Button>
         </div>
       </div>
 
