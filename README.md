@@ -51,6 +51,3 @@ ou servir com qualquer servidor estático apontando para a pasta `build/`.
 
 - O projecto usa Vite como bundler/servidor de desenvolvimento (ver `package.json`).
 - O diretório `build/` está ignorado por `.gitignore` e deixará de ser versionado.
-
-Se quiseres, actualizo também o `package.json` para adicionar um script `preview` (`"preview": "vite preview"`).
-### Making a Progressive Web App
