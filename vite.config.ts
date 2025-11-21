@@ -17,8 +17,7 @@
         'next-themes@0.4.6': 'next-themes',
         'lucide-react@0.487.0': 'lucide-react',
         'input-otp@1.4.2': 'input-otp',
-        'figma:asset/93d545c9ebd8fe7d712e18770844772c8270bea8.png': path.resolve(__dirname, './src/assets/93d545c9ebd8fe7d712e18770844772c8270bea8.png'),
-        'figma:asset/7e4aa9e396b3bd4d2415cb1e684587e50e5e6ef4.png': path.resolve(__dirname, './src/assets/7e4aa9e396b3bd4d2415cb1e684587e50e5e6ef4.png'),
+        // removed figma:asset aliases to avoid Figma-specific imports
         'embla-carousel-react@8.6.0': 'embla-carousel-react',
         'cmdk@1.1.1': 'cmdk',
         'class-variance-authority@0.7.1': 'class-variance-authority',
