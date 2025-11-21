@@ -137,3 +137,18 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Local OS, editors and common build output
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.history/
+# Stop tracking the distribution/build output directory
+/build/
+
+# Optional: local env overrides
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
