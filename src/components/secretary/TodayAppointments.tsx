@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner@2.0.3';
@@ -9,9 +10,11 @@ interface TodayAppointmentsProps {
   onViewAppointment: (appointment: Appointment) => void;
   onShowHistory: () => void;
   isDarkMode: boolean;
+  /** show filter button and controls (secretary only) */
+  showFilter?: boolean;
 }
 
-export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, isDarkMode }: TodayAppointmentsProps) {
+export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, isDarkMode, showFilter = false }: TodayAppointmentsProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -51,15 +54,59 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
   const headerTextClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
 
+  // Filter state (used when showFilter === true)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status']>('all');
+  const uniqueSubjects = Array.from(new Set(appointments.map(apt => apt.subject)));
+
+  const filteredTodayAppointments = todayAppointments.filter(apt => {
+    const statusMatch = statusFilter === 'all' || apt.status === statusFilter;
+    const subjectMatch = searchTerm === '' || apt.subject.toLowerCase().includes(searchTerm.toLowerCase()) || apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || apt.patientNIF.includes(searchTerm) || apt.time.includes(searchTerm);
+    return statusMatch && subjectMatch;
+  });
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className={`text-base font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
-        <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
-          <HistoryIcon className="w-3.5 h-3.5" />
-          Histórico
-        </Button>
+        <div className="flex items-center gap-2">
+          {showFilter && (
+            <div className="flex items-center gap-2">
+              {/* Simple inline filter controls as a popover-like block */}
+              <div className="hidden sm:flex items-center gap-2">
+                <input
+                  aria-label="Pesquisar"
+                  placeholder="Pesquisar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-2 py-1 rounded-md border bg-white dark:bg-gray-800 text-sm w-36"
+                />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-2 py-1 rounded-md border bg-white dark:bg-gray-800 text-sm"
+                >
+                  <option value="all">Todos os estados</option>
+                  <option value="scheduled">Concluído</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="warning">Não compareceu</option>
+                  <option value="in-progress">Em Curso</option>
+                </select>
+              </div>
+              <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
+                <HistoryIcon className="w-3.5 h-3.5" />
+                Histórico
+              </Button>
+            </div>
+          )}
+          {!showFilter && (
+            <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
+              <HistoryIcon className="w-3.5 h-3.5" />
+              Histórico
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Appointments List */}

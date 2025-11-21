@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from './ui/button';
 import { Sidebar } from './Sidebar';
 import { WeeklySchedule } from './secretary/WeeklySchedule';
-import { MonthlyCalendar } from './secretary/MonthlyCalendar';
 import { TodayAppointments } from './secretary/TodayAppointments';
 import { HistoryPage } from './secretary/HistoryPage';
 import { ProfilePage } from './ProfilePage';
@@ -68,7 +67,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>(loadAppointments());
   const [currentView, setCurrentView] = useState<ViewType>('appointments');
-  const [scheduleView, setScheduleView] = useState<'weekly' | 'monthly'>('weekly');
+  // Monthly view removed - always use weekly schedule
+  const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showClientDialog, setShowClientDialog] = useState(false);
   const [editingSlot, setEditingSlot] = useState<{ date: Date; time: string } | null>(null);
@@ -266,25 +266,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             ) : currentView === 'appointments' ? (
               <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
                 <div className="space-y-6">
-                  {scheduleView === 'weekly' ? (
-                    <WeeklySchedule
-                      appointments={visibleAppointments}
-                      allAppointments={allAppointments}
-                      currentUserNif={user.nif}
-                      isClient
-                      onCreateAppointment={handleCreateAppointment}
-                      onViewAppointment={handleViewAppointment}
-                      onToggleView={() => setScheduleView('monthly')}
-                      isDarkMode={isDarkMode}
-                    />
-                  ) : (
-                    <MonthlyCalendar
-                      appointments={visibleAppointments}
-                      onDayClick={(date) => setShowDaySchedule(date)}
-                      onToggleView={() => setScheduleView('weekly')}
-                      isDarkMode={isDarkMode}
-                    />
-                  )}
+                  <WeeklySchedule
+                    appointments={visibleAppointments}
+                    allAppointments={allAppointments}
+                    currentUserNif={user.nif}
+                    isClient
+                    onCreateAppointment={handleCreateAppointment}
+                    onViewAppointment={handleViewAppointment}
+                    onToggleView={() => { /* no-op: monthly view removed */ }}
+                    isDarkMode={isDarkMode}
+                  />
                 </div>
 
                 <div>

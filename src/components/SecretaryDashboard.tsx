@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { WeeklySchedule } from './secretary/WeeklySchedule';
-import { MonthlyCalendar } from './secretary/MonthlyCalendar';
 import { TodayAppointments } from './secretary/TodayAppointments';
 import { HistoryPage } from './secretary/HistoryPage';
 import { AppointmentDialog } from './secretary/AppointmentDialog';
@@ -179,7 +178,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('appointments');
-  const [scheduleView, setScheduleView] = useState<'weekly' | 'monthly'>('weekly');
+  // Monthly view removed - always use weekly schedule
+  const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleCreateAppointment = (date: Date, time: string) => {
@@ -407,22 +407,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
                 {/* Left Column - Schedules */}
                 <div className="space-y-6">
-                  {scheduleView === 'weekly' ? (
-                    <WeeklySchedule
-                      appointments={appointments}
-                      onCreateAppointment={handleCreateAppointment}
-                      onViewAppointment={handleViewAppointment}
-                      onToggleView={() => setScheduleView('monthly')}
-                      isDarkMode={isDarkMode}
-                    />
-                  ) : (
-                    <MonthlyCalendar
-                      appointments={appointments}
-                      onDayClick={(date) => setShowDaySchedule(date)}
-                      onToggleView={() => setScheduleView('weekly')}
-                      isDarkMode={isDarkMode}
-                    />
-                  )}
+                  <WeeklySchedule
+                    appointments={appointments}
+                    onCreateAppointment={handleCreateAppointment}
+                    onViewAppointment={handleViewAppointment}
+                    onToggleView={() => { /* no-op: monthly view removed */ }}
+                    isDarkMode={isDarkMode}
+                  />
                 </div>
 
                 {/* Right Column - Today's Appointments */}
@@ -431,6 +422,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     appointments={appointments}
                     onViewAppointment={handleViewAppointment}
                     onShowHistory={() => setCurrentView('history')}
+                    showFilter={true}
                     isDarkMode={isDarkMode}
                   />
                 </div>
