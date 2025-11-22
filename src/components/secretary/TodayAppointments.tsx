@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
@@ -59,8 +59,23 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
   // Filter state (used when showFilter === true)
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status']>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status'] | 'not-scheduled'>('all');
   const [subjectFilter, setSubjectFilter] = useState<'all' | string>('all');
+
+  // Popover open state and temporary controls so filters are applied only after confirmation
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [tempSearch, setTempSearch] = useState('');
+  const [tempStatus, setTempStatus] = useState<'all' | Appointment['status'] | 'not-scheduled'>('all');
+  const [tempSubject, setTempSubject] = useState<'all' | string>('all');
+
+  useEffect(() => {
+    if (popoverOpen) {
+      // initialize temporary controls from active filters when opening
+      setTempSearch(searchTerm);
+      setTempStatus(statusFilter);
+      setTempSubject(subjectFilter);
+    }
+  }, [popoverOpen]);
 
   // Allowed subjects (source of truth in client dialog)
   const ALLOWED_SUBJECTS = ['Pagar mensalidade', 'Entregar documentos', 'Reunião presencial', 'Outro'];
@@ -88,7 +103,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
         <h2 className={`text-base font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
         <div className="flex items-center gap-2">
           {showFilter && (
-            <Popover>
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
                   Filtrar
@@ -98,25 +113,24 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                 <div className="flex flex-col gap-2">
                   <Input
                     placeholder="Pesquisar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={tempSearch}
+                    onChange={(e) => setTempSearch(e.target.value)}
                     className="text-sm"
                   />
 
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                  <Select value={tempStatus} onValueChange={(v) => setTempStatus(v as any)}>
                     <SelectTrigger className="w-full text-sm">
                       <SelectValue placeholder="Todos os estados" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos os estados</SelectItem>
-                      <SelectItem value="scheduled">Concluído</SelectItem>
-                      <SelectItem value="cancelled">Cancelado</SelectItem>
-                      <SelectItem value="warning">Não compareceu</SelectItem>
                       <SelectItem value="in-progress">Em Curso</SelectItem>
+                      <SelectItem value="scheduled">Agendado</SelectItem>
+                      <SelectItem value="not-scheduled">!Agendado</SelectItem>
                     </SelectContent>
                   </Select>
 
-                  <Select value={subjectFilter} onValueChange={(v) => setSubjectFilter(v as any)}>
+                  <Select value={tempSubject} onValueChange={(v) => setTempSubject(v as any)}>
                     <SelectTrigger className="w-full text-sm">
                       <SelectValue placeholder="Todos os assuntos" />
                     </SelectTrigger>
@@ -129,6 +143,36 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                       ))}
                     </SelectContent>
                   </Select>
+
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => {
+                        // apply temporary filters to active filters
+                        setSearchTerm(tempSearch);
+                        setStatusFilter(tempStatus);
+                        setSubjectFilter(tempSubject);
+                        setPopoverOpen(false);
+                      }}
+                    >
+                      Aplicar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        // clear both temporary and active filters
+                        setTempSearch('');
+                        setTempStatus('all');
+                        setTempSubject('all');
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                        setSubjectFilter('all');
+                      }}
+                    >
+                      Limpar
+                    </Button>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -143,13 +187,13 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
       {/* Appointments List */}
       <div className="space-y-3">
-        {todayAppointments.length === 0 ? (
+        {filteredTodayAppointments.length === 0 ? (
           <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-sm p-8 text-center">
             <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
             <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
           </div>
         ) : (
-          todayAppointments.map((apt) => (
+          filteredTodayAppointments.map((apt) => (
             <div
               key={apt.id}
               className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4"
@@ -171,7 +215,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       </div>
 
       {/* Export Button */}
-      {todayAppointments.length > 0 && (
+      {filteredTodayAppointments.length > 0 && (
         <Button variant="outline" className="w-full gap-2 h-9 text-sm" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
           Exportar Lista Diária

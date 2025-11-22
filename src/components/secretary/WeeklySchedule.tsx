@@ -184,29 +184,31 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     <div>
       {/* Header - Outside Card */}
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <button 
-          onClick={onToggleView}
-          className="text-gray-700 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 cursor-pointer mb-1 text-lg font-semibold w-fit"
-        >
-          <span>Agenda Semanal</span>
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          Clique no título para alternar visualização
+        <div className="mb-1">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
+        </div>
+        <p className="text-base text-gray-700 dark:text-gray-300">
+          Clique numa célula vazia para iniciar uma marcação
         </p>
       </div>
 
       {/* Navigation - Outside Card */}
       <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigateWeek('prev')} className="h-8 w-8 text-gray-700 dark:text-gray-300">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigateWeek('prev')}
+          className={`h-8 w-8 rounded transition-colors ${isDarkMode ? 'bg-gray-800/10 text-gray-400 hover:bg-gray-800/60 hover:text-gray-200' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+        >
           <ChevronLeftIcon className="w-4 h-4" />
         </Button>
         
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
-            <Button variant="ghost" className="gap-2 h-8 px-3 text-sm text-gray-700 dark:text-gray-300">
+            <Button
+              variant="ghost"
+              className={`gap-2 h-8 px-3 text-sm rounded transition-opacity ${isDarkMode ? 'bg-gray-800/40 text-gray-200 hover:bg-gray-800/70' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+            >
               <CalendarIcon className="w-4 h-4" />
               {getWeekLabel()}
             </Button>
@@ -221,7 +223,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           </PopoverContent>
         </Popover>
 
-        <Button variant="ghost" size="icon" onClick={() => navigateWeek('next')} className="h-8 w-8 text-gray-700 dark:text-gray-300">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigateWeek('next')}
+          className={`h-8 w-8 rounded transition-colors ${isDarkMode ? 'bg-gray-800/10 text-gray-400 hover:bg-gray-800/60 hover:text-gray-200' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+        >
           <ChevronRightIcon className="w-4 h-4" />
         </Button>
         {!isClient && (
