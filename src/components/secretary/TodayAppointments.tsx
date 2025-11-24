@@ -5,7 +5,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import SUBJECTS from '../../lib/subjects';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 
@@ -39,7 +39,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       case 'in-progress':
         return <Badge className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-2 py-0.5 text-xs">Em Curso</Badge>;
       case 'scheduled':
-        return <Badge className="bg-gray-700 hover:bg-gray-800 text-white rounded-full px-2 py-0.5 text-xs dark:bg-gray-600">Agendado</Badge>;
+        return <Badge className="bg-pink-600 hover:bg-pink-700 text-white rounded-full px-2 py-0.5 text-xs">Agendado</Badge>;
       case 'warning':
         return (
           <Badge className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-full px-2 py-0.5 text-xs flex items-center gap-1">
@@ -129,7 +129,12 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                       <SelectItem value="all">Todos os estados</SelectItem>
                       <SelectItem value="in-progress">Em Curso</SelectItem>
                       <SelectItem value="scheduled">Agendado</SelectItem>
-                      <SelectItem value="warning">⚠️ Agendado</SelectItem>
+                      <SelectItem value="warning">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangleIcon className="w-3 h-3 text-yellow-500" />
+                          <span>Agendado</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
 
