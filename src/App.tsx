@@ -21,6 +21,7 @@ interface User {
 
 function App() {
   const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('login');
+  const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -46,40 +47,47 @@ function App() {
       u.email === identifier
     );
 
-    if (user && localStorage.getItem(`password_${user.nif}`) === password) {
-      // Determine user type based on login identifier
-      let userType: UserType = 'user';
-      
-      // If identifier is 9 digits (NIF or contact), it's a user
-      if (/^\d{9}$/.test(identifier)) {
-        userType = 'user';
-      } 
-      // If identifier ends with @florinhas.pt, it's secretary
-      else if (identifier.endsWith('@florinhas.pt')) {
-        userType = 'secretary';
-      }
-      // If logging in with regular email but user has @florinhas.pt email
-      else if (user.email.endsWith('@florinhas.pt')) {
-        userType = 'secretary';
-      }
+    if (user) {
+      const pwKey = user.nif && user.nif.trim() ? user.nif : user.email;
+      if (localStorage.getItem(`password_${pwKey}`) === password) {
+        // Determine user type based on login identifier
+        let userType: UserType = 'user';
+        
+        // If identifier is 9 digits (NIF or contact), it's a user
+        if (/^\d{9}$/.test(identifier)) {
+          userType = 'user';
+        } 
+        // If identifier ends with @florinhas.pt, it's secretary
+        else if (identifier.endsWith('@florinhas.pt')) {
+          userType = 'secretary';
+        }
+        // If logging in with regular email but user has @florinhas.pt email
+        else if (user.email.endsWith('@florinhas.pt')) {
+          userType = 'secretary';
+        }
 
-      const loggedUser = { ...user, type: userType };
-      setCurrentUser(loggedUser);
-      setCurrentView('dashboard');
-      return true;
+        const loggedUser = { ...user, type: userType };
+        setCurrentUser(loggedUser);
+        setCurrentView('dashboard');
+        return true;
+      }
     }
+    
     return false;
   };
 
-  const handleRegister = (userData: Omit<User, 'type'>, password: string) => {
+  const handleRegister = (userData: Omit<User, 'type'> & { accountType?: 'user' | 'employee' }, password: string) => {
     // Get existing users
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     
-    // Add new user
-    const newUser: User = { ...userData, type: 'user' };
+    // Determine type: employees become 'secretary' so they see staff dashboard
+    const type: UserType = userData.accountType === 'employee' ? 'secretary' : 'user';
+    const newUser: User = { ...userData, type };
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem(`password_${userData.nif}`, password);
+    // store password keyed by nif when available, otherwise by email
+    const pwKey = userData.nif && userData.nif.trim() ? userData.nif : userData.email;
+    localStorage.setItem(`password_${pwKey}`, password);
     
     setCurrentView('login');
     return true;
@@ -149,16 +157,20 @@ function App() {
           <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
             {currentView === 'login' && (
               <LoginForm 
-                onLogin={handleLogin}
-                onNavigateToRegister={() => setCurrentView('register')}
-              />
+                  onLogin={handleLogin}
+                  onNavigateToRegister={(type) => {
+                    setRegisterInitialType(type ?? 'user');
+                    setCurrentView('register');
+                  }}
+                />
             )}
-            {currentView === 'register' && (
-              <RegisterForm 
-                onRegister={handleRegister}
-                onNavigateToLogin={() => setCurrentView('login')}
-              />
-            )}
+              {currentView === 'register' && (
+                <RegisterForm 
+                  onRegister={handleRegister}
+                  onNavigateToLogin={() => setCurrentView('login')}
+                  initialAccountType={registerInitialType}
+                />
+              )}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { ArrowLeft, Check, X, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner@2.0.3';
 
 interface RegisterFormProps {
@@ -14,8 +15,11 @@ interface RegisterFormProps {
     contact: string;
     email: string;
     birthDate: string;
+    role?: string;
+    accountType?: 'user' | 'employee';
   }, password: string) => boolean;
   onNavigateToLogin: () => void;
+  initialAccountType?: 'user' | 'employee';
 }
 
 interface PasswordValidation {
@@ -24,7 +28,7 @@ interface PasswordValidation {
   hasNumber: boolean;
 }
 
-export function RegisterForm({ onRegister, onNavigateToLogin }: RegisterFormProps) {
+export function RegisterForm({ onRegister, onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     nif: '',
@@ -39,6 +43,10 @@ export function RegisterForm({ onRegister, onNavigateToLogin }: RegisterFormProp
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
   const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
   const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+
+  const [accountType, setAccountType] = useState<'user' | 'employee'>(initialAccountType ?? 'user');
+  const [employeeRole, setEmployeeRole] = useState('');
 
   const validatePassword = (password: string): PasswordValidation => {
     return {
@@ -103,10 +111,12 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       newErrors.name = 'Nome é obrigatório';
     }
 
-    if (!formData.nif) {
-      newErrors.nif = 'NIF é obrigatório';
-    } else if (!validateNIF(formData.nif)) {
-      newErrors.nif = 'NIF deve ter 9 dígitos';
+    if (accountType === 'user') {
+      if (!formData.nif) {
+        newErrors.nif = 'NIF é obrigatório';
+      } else if (!validateNIF(formData.nif)) {
+        newErrors.nif = 'NIF deve ter 9 dígitos';
+      }
     }
 
     if (!formData.contact) {
@@ -119,6 +129,19 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       newErrors.email = 'Email é obrigatório';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Email inválido';
+    }
+
+    if (accountType === 'employee') {
+      // require institutional email
+      if (!formData.email.endsWith('@florinhas.pt')) {
+        newErrors.email = 'Use um email institucional (@florinhas.pt)';
+      }
+    }
+
+    if (accountType === 'employee') {
+      if (!employeeRole) {
+        newErrors.employeeRole = 'Role é obrigatória para funcionários';
+      }
     }
 
   if (!formData.birthDate) {
@@ -144,7 +167,7 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
 
     // Check if NIF or email already exists
     const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.some((u: any) => u.nif === formData.nif)) {
+    if (accountType === 'user' && users.some((u: any) => u.nif === formData.nif)) {
       newErrors.nif = 'NIF já registado';
     }
     if (users.some((u: any) => u.email === formData.email)) {
@@ -172,6 +195,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       contact: formData.contact,
       email: formData.email,
       birthDate: formData.birthDate,
+      role: employeeRole,
+      accountType: accountType,
     }, formData.password);
 
     if (success) {
@@ -190,6 +215,17 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
     }
   };
 
+  const handleAccountTypeChange = (type: 'user' | 'employee') => {
+    setAccountType(type);
+    // reset role and nif when switching
+    if (type === 'employee') {
+      setEmployeeRole('');
+    } else {
+      setFormData({ ...formData, nif: '' });
+    }
+    setErrors({});
+  };
+
   return (
     <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
       <button
@@ -206,6 +242,22 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => handleAccountTypeChange('user')}
+            className={`px-3 py-1 rounded ${accountType === 'user' ? 'text-purple-700 underline font-semibold' : 'text-gray-600'}`}
+          >
+            Utilizador
+          </button>
+          <button
+            type="button"
+            onClick={() => handleAccountTypeChange('employee')}
+            className={`px-3 py-1 rounded ${accountType === 'employee' ? 'text-purple-700 underline font-semibold' : 'text-gray-600'}`}
+          >
+            Funcionário
+          </button>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
             Nome Completo *
@@ -227,7 +279,13 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           <Label className="text-gray-700 dark:text-gray-300">
             Data de Nascimento *
           </Label>
-          <Popover open={birthDatePickerOpen} onOpenChange={setBirthDatePickerOpen}>
+          <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
+            setBirthDatePickerOpen(open);
+            if (open) {
+              // when opening, focus calendar to existing birthDate or today
+              setCalendarMonth(birthDateValue ?? new Date());
+            }
+          }}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
@@ -240,10 +298,43 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                 <CalendarIcon className="w-4 h-4 opacity-70" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0" align="start">
+            <PopoverContent className="p-3" align="start">
+              <div className="flex gap-2 items-center mb-2">
+                <select
+                  aria-label="Ano"
+                  value={calendarMonth.getFullYear()}
+                  onChange={(e) => {
+                    const y = Number(e.target.value);
+                    const m = calendarMonth.getMonth();
+                    const newDate = new Date(y, m, 1);
+                    setCalendarMonth(newDate);
+                  }}
+                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
+                >
+                  {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => 1900 + i).reverse().map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+                <select
+                  aria-label="Mês"
+                  value={calendarMonth.getMonth()}
+                  onChange={(e) => {
+                    const m = Number(e.target.value);
+                    const y = calendarMonth.getFullYear();
+                    setCalendarMonth(new Date(y, m, 1));
+                  }}
+                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
+                >
+                  {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((mn, idx) => (
+                    <option key={mn} value={idx}>{mn}</option>
+                  ))}
+                </select>
+              </div>
               <Calendar
                 mode="single"
                 selected={birthDateValue}
+                month={calendarMonth}
+                onMonthChange={(d) => setCalendarMonth(d)}
                 initialFocus
                 onSelect={(date) => {
                   if (date) {
@@ -258,25 +349,45 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           {errors.birthDate && <p className="text-red-500 text-sm">{errors.birthDate}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
-              NIF *
-            </Label>
-            <Input
-              id="nif"
-              type="text"
-              placeholder="123456789"
-              maxLength={9}
-              value={formData.nif}
-              onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                errors.nif ? 'border-red-500' : ''
-              }`}
-            />
-            {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
-          </div>
+        {accountType === 'user' ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
+                NIF *
+              </Label>
+              <Input
+                id="nif"
+                type="text"
+                placeholder="123456789"
+                maxLength={9}
+                value={formData.nif}
+                onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+                  errors.nif ? 'border-red-500' : ''
+                }`}
+              />
+              {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
+            </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
+                Contacto *
+              </Label>
+              <Input
+                id="contact"
+                type="text"
+                placeholder="912345678"
+                maxLength={9}
+                value={formData.contact}
+                onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+                  errors.contact ? 'border-red-500' : ''
+                }`}
+              />
+              {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
+            </div>
+          </div>
+        ) : (
           <div className="space-y-2">
             <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
               Contacto *
@@ -294,16 +405,16 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
             />
             {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
-            Email *
+            {accountType === 'employee' ? 'Email institucional *' : 'Email *'}
           </Label>
           <Input
             id="email"
             type="email"
-            placeholder="email@exemplo.pt"
+            placeholder={accountType === 'employee' ? 'nome@florinhas.pt' : 'email@exemplo.pt'}
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
@@ -312,6 +423,26 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           />
           {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
         </div>
+
+        {accountType === 'employee' && (
+          <div className="space-y-2">
+            <Label className="text-gray-700 dark:text-gray-300">Função *</Label>
+            <div className="flex items-center gap-2">
+              <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
+                <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="Selecione a função" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Secretaria">Secretaria</SelectItem>
+                  <SelectItem value="Balneário Social">Balneário Social</SelectItem>
+                  <SelectItem value="Escola">Escola</SelectItem>
+                  <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {errors.employeeRole && <p className="text-red-500 text-sm">{errors.employeeRole}</p>}
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">

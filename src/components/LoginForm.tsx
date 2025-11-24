@@ -6,7 +6,7 @@ import { toast } from 'sonner@2.0.3';
 
 interface LoginFormProps {
   onLogin: (identifier: string, password: string) => boolean;
-  onNavigateToRegister: () => void;
+  onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
 }
 
 export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
@@ -151,7 +151,7 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
         <p className="text-gray-600 dark:text-gray-400">
           Não tem conta?{' '}
           <button
-            onClick={onNavigateToRegister}
+            onClick={() => onNavigateToRegister(loginType)}
             className="text-purple-600 dark:text-purple-400 hover:underline"
           >
             Criar Conta
