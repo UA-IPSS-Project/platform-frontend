@@ -13,12 +13,17 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
+  const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
 
   const validateForm = () => {
     const newErrors: { identifier?: string; password?: string } = {};
 
     if (!identifier.trim()) {
       newErrors.identifier = 'Campo obrigatório';
+    } else if (loginType === 'user' && !/^\d{9}$/.test(identifier.trim())) {
+      newErrors.identifier = 'NIF deve ter 9 dígitos';
+    } else if (loginType === 'employee' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier.trim())) {
+      newErrors.identifier = 'Email institucional inválido';
     }
 
     if (!password) {
@@ -51,18 +56,44 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
     <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
       <div className="text-center mb-8">
         <h1 className="text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
-        <p className="text-gray-600 dark:text-gray-400">Sistema de Gestão de Secretaria</p>
+        <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          <Button
+            variant={loginType === 'user' ? 'default' : 'ghost'}
+            onClick={() => {
+              setLoginType('user');
+              setIdentifier('');
+              setPassword('');
+              setErrors({});
+            }}
+            className="px-4"
+          >
+            Utilizador
+          </Button>
+          <Button
+            variant={loginType === 'employee' ? 'default' : 'ghost'}
+            onClick={() => {
+              setLoginType('employee');
+              setIdentifier('');
+              setPassword('');
+              setErrors({});
+            }}
+            className="px-4"
+          >
+            Funcionário
+          </Button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="identifier" className="text-gray-700 dark:text-gray-300">
-            NIF ou Email institucional
+            {loginType === 'user' ? 'NIF' : 'Email institucional'}
           </Label>
           <Input
             id="identifier"
             type="text"
-            placeholder="123456789 ou email@exemplo.pt"
+            placeholder={loginType === 'user' ? '123456789' : 'email@instituicao.pt'}
             value={identifier}
             onChange={(e) => {
               setIdentifier(e.target.value);
