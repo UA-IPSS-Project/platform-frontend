@@ -246,14 +246,22 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           <button
             type="button"
             onClick={() => handleAccountTypeChange('user')}
-            className={`px-3 py-1 rounded ${accountType === 'user' ? 'text-purple-700 underline font-semibold' : 'text-gray-600'}`}
+            className={
+              accountType === 'user'
+                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
+                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
+            }
           >
             Utilizador
           </button>
           <button
             type="button"
             onClick={() => handleAccountTypeChange('employee')}
-            className={`px-3 py-1 rounded ${accountType === 'employee' ? 'text-purple-700 underline font-semibold' : 'text-gray-600'}`}
+            className={
+              accountType === 'employee'
+                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
+                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
+            }
           >
             Funcionário
           </button>

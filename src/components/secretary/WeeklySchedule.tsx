@@ -185,9 +185,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       {/* Header - Outside Card */}
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="mb-1">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
         </div>
-        <p className="text-base text-gray-700 dark:text-gray-300">
+        <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300">
           Clique numa célula vazia para iniciar uma marcação
         </p>
       </div>
