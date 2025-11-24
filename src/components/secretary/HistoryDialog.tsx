@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog@1.1.6';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';

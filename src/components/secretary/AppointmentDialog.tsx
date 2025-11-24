@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog@1.1.6';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,7 +7,7 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Upload, X } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import type { Appointment } from '../SecretaryDashboard';
 
 interface AppointmentDialogProps {

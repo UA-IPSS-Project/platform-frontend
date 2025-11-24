@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import * as DialogPrimitive from '@radix-ui/react-dialog@1.1.6';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { XIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, FileTextIcon, AlertTriangleIcon, PlayIcon, BellIcon, CheckCircleIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 

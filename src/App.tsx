@@ -4,7 +4,7 @@ import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
 import { UserDashboard } from './components/UserDashboard';
 import { SecretaryDashboard } from './components/SecretaryDashboard';
-import { Toaster } from 'sonner@2.0.3';
+import { Toaster } from 'sonner';
 import bgLight from './assets/7e4aa9e396b3bd4d2415cb1e684587e50e5e6ef4.png';
 import bgDark from './assets/93d545c9ebd8fe7d712e18770844772c8270bea8.png';
 

@@ -121,7 +121,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                     className="text-sm"
                   />
 
-                  <Select value={tempStatus} onValueChange={(v) => setTempStatus(v as any)}>
+                  <Select value={tempStatus} onValueChange={(v: Appointment['status'] | 'all') => setTempStatus(v)}>
                     <SelectTrigger className="w-full text-sm">
                       <SelectValue placeholder="Todos os estados" />
                     </SelectTrigger>
@@ -138,7 +138,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                     </SelectContent>
                   </Select>
 
-                  <Select value={tempSubject} onValueChange={(v) => setTempSubject(v as any)}>
+                  <Select value={tempSubject} onValueChange={(v: string | 'all') => setTempSubject(v)}>
                     <SelectTrigger className="w-full text-sm">
                       <SelectValue placeholder="Todos os assuntos" />
                     </SelectTrigger>

@@ -8,7 +8,7 @@ import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 // O componente Input não é usado para o ano
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 
