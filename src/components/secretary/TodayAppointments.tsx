@@ -4,6 +4,7 @@ import { Badge } from '../ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+import SUBJECTS from '../../lib/subjects';
 import { toast } from 'sonner@2.0.3';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
@@ -59,13 +60,13 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
   // Filter state (used when showFilter === true)
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status'] | 'not-scheduled'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | Appointment['status']>('all');
   const [subjectFilter, setSubjectFilter] = useState<'all' | string>('all');
 
   // Popover open state and temporary controls so filters are applied only after confirmation
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [tempSearch, setTempSearch] = useState('');
-  const [tempStatus, setTempStatus] = useState<'all' | Appointment['status'] | 'not-scheduled'>('all');
+  const [tempStatus, setTempStatus] = useState<'all' | Appointment['status']>('all');
   const [tempSubject, setTempSubject] = useState<'all' | string>('all');
 
   useEffect(() => {
@@ -77,13 +78,15 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     }
   }, [popoverOpen]);
 
-  // Allowed subjects (source of truth in client dialog)
-  const ALLOWED_SUBJECTS = ['Pagar mensalidade', 'Entregar documentos', 'Reunião presencial', 'Outro'];
-  // Only show allowed subjects (even if some aren't present today)
-  const uniqueSubjects = ALLOWED_SUBJECTS;
+  // Use shared SUBJECTS list (source of truth)
+  const uniqueSubjects = SUBJECTS;
 
   const filteredTodayAppointments = todayAppointments.filter(apt => {
-    const statusMatch = statusFilter === 'all' || apt.status === statusFilter;
+    // Map the special filter value for the warning state correctly
+    const statusMatch =
+      statusFilter === 'all' ||
+      (statusFilter === 'warning' && apt.status === 'warning') ||
+      apt.status === statusFilter;
     const subjectMatch = subjectFilter === 'all' || apt.subject === subjectFilter;
     const searchLower = searchTerm.trim().toLowerCase();
     const searchMatch =
@@ -126,7 +129,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                       <SelectItem value="all">Todos os estados</SelectItem>
                       <SelectItem value="in-progress">Em Curso</SelectItem>
                       <SelectItem value="scheduled">Agendado</SelectItem>
-                      <SelectItem value="not-scheduled">!Agendado</SelectItem>
+                      <SelectItem value="warning">⚠️ Agendado</SelectItem>
                     </SelectContent>
                   </Select>
 

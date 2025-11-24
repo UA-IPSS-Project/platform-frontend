@@ -4,6 +4,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner@2.0.3';
+import SUBJECTS from '../../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 
@@ -69,8 +70,8 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     return (bHour * 60 + bMin) - (aHour * 60 + aMin);
   });
 
-  // Get unique subjects for filter
-  const uniqueSubjects = Array.from(new Set(appointments.map(apt => apt.subject)));
+  // Use the predefined SUBJECTS list for filters
+  const uniqueSubjects = SUBJECTS;
 
   // Filter appointments
   const filteredAppointments = sortedAppointments.filter(apt => {

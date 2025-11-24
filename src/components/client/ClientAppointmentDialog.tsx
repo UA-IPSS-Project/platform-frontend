@@ -16,12 +16,7 @@ interface ClientAppointmentDialogProps {
   time: string;
 }
 
-const SUBJECTS = [
-  'Pagar mensalidade',
-  'Entregar documentos',
-  'Reunião presencial',
-  'Outro',
-];
+import SUBJECTS from '../../lib/subjects';
 
 export function ClientAppointmentDialog({ open, onClose, onSave, date, time }: ClientAppointmentDialogProps) {
   const [subject, setSubject] = useState('');
