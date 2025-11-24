@@ -55,33 +55,42 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
   return (
     <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
       <div className="text-center mb-8">
-        <h1 className="text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
         <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <Button
-            variant={loginType === 'user' ? 'default' : 'ghost'}
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button
+            type="button"
             onClick={() => {
               setLoginType('user');
               setIdentifier('');
               setPassword('');
               setErrors({});
             }}
-            className="px-4"
+            className={
+              loginType === 'user'
+                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
+                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
+            }
           >
             Utilizador
-          </Button>
-          <Button
-            variant={loginType === 'employee' ? 'default' : 'ghost'}
+          </button>
+
+          <button
+            type="button"
             onClick={() => {
               setLoginType('employee');
               setIdentifier('');
               setPassword('');
               setErrors({});
             }}
-            className="px-4"
+            className={
+              loginType === 'employee'
+                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
+                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
+            }
           >
             Funcionário
-          </Button>
+          </button>
         </div>
       </div>
 
