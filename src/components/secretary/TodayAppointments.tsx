@@ -103,7 +103,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className={`text-base font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
+        <h2 className={`text-lg font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
         <div className="flex items-center gap-2">
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
