@@ -21,9 +21,7 @@ interface AppointmentDialogProps {
 const SUBJECTS = [
   'Pagar mensalidade',
   'Entregar documentos',
-  'Reunião com educadora / assistente social',
-  'Pedido de inscrição',
-  'Pedido de apoio/informação',
+  'Reunião presencial',
   'Outro',
 ];
 
