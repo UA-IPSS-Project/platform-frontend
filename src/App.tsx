@@ -5,8 +5,7 @@ import { RegisterForm } from './components/RegisterForm';
 import { UserDashboard } from './components/UserDashboard';
 import { SecretaryDashboard } from './components/SecretaryDashboard';
 import { Toaster } from 'sonner';
-import bgLight from './assets/7e4aa9e396b3bd4d2415cb1e684587e50e5e6ef4.png';
-import bgDark from './assets/93d545c9ebd8fe7d712e18770844772c8270bea8.png';
+import AbstractBackground from './components/ui/AbstractBackground';
 
 type UserType = 'user' | 'secretary' | null;
 
@@ -101,23 +100,8 @@ function App() {
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen relative overflow-hidden transition-colors duration-300">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${isDarkMode ? bgDark : bgLight})`,
-            opacity: currentView === 'dashboard' ? 0.85 : 1,
-            filter: isDarkMode ? 'none' : 'brightness(1.1)',
-          }}
-        />
-        {currentView === 'dashboard' && (
-          <div className="absolute inset-0">
-            <div className="absolute inset-0 opacity-40">
-              <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-400 dark:bg-purple-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-              <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-400 dark:bg-pink-600 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-              <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-300 dark:bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-            </div>
-          </div>
-        )}
+        {/* Animated background */}
+        <AbstractBackground isDarkMode={isDarkMode} />
 
         {/* Theme Toggle - Only show on login/register */}
         {currentView !== 'dashboard' && (

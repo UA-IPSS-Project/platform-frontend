@@ -1,4 +1,29 @@
-import { CalendarIcon, HistoryIcon, DatabaseIcon, SlidersIcon, UserIcon, LogOutIcon, XIcon, BellIcon } from './CustomIcons';
+import { useState } from 'react';
+import { 
+  CalendarIcon, 
+  HistoryIcon, 
+  DatabaseIcon, 
+  SlidersIcon, 
+  UserIcon, 
+  LogOutIcon, 
+  XIcon, 
+  BellIcon, 
+  ChevronDownIcon, 
+  ChevronRightIcon,
+  HomeIcon,
+  ClipboardListIcon,
+  BuildingIcon,
+  PackageIcon,
+  WrenchIcon,
+  TruckIcon,
+  AlertCircleIcon,
+  SchoolIcon,
+  BabyIcon,
+  UsersIcon,
+  HeartIcon,
+  ShieldCheckIcon,
+  FileTextIcon
+} from './CustomIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +37,13 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria' }: SidebarProps) {
   const isClient = mode === 'client';
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+
+  const toggleMenu = (id: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
 
   const clientSections = [
     { heading: 'Secretaria', items: [
@@ -34,25 +66,93 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     { id: 'settings', label: 'Definições', icon: SlidersIcon },
   ];
 
-  const menuItems = [
-    { id: 'appointments', label: 'Marcações', icon: CalendarIcon },
-    { id: 'history', label: 'Histórico de marcações', icon: HistoryIcon },
+  // Main menu structure with subitems for Secretary
+  const secretaryMenuItems = [
+    { 
+      id: 'home', 
+      label: 'Início', 
+      icon: HomeIcon 
+    },
+    { 
+      id: 'appointments', 
+      label: 'Marcações',
+      icon: CalendarIcon
+    },
+    { 
+      id: 'valencias', 
+      label: 'Valências',
+      icon: BuildingIcon,
+      subitems: [
+        { id: 'balneario', label: 'Balneário', icon: UsersIcon },
+        { id: 'escola', label: 'Escola', icon: SchoolIcon },
+      ]
+    },
+    { 
+      id: 'requisitions', 
+      label: 'Requisições',
+      icon: ClipboardListIcon,
+      subitems: [
+        { id: 'material', label: 'Material', icon: PackageIcon },
+        { id: 'manutencao', label: 'Manutenção', icon: WrenchIcon },
+        { id: 'transportes', label: 'Transporte', icon: TruckIcon },
+        { id: 'urgente', label: 'Prioridade Alta', icon: AlertCircleIcon },
+      ]
+    },
+    { 
+      id: 'candidaturas', 
+      label: 'Candidaturas',
+      icon: FileTextIcon,
+      subitems: [
+        { id: 'creche', label: 'Creche', icon: BabyIcon },
+        { id: 'catl', label: 'CATL', icon: UsersIcon },
+        { id: 'erpi', label: 'ERPI', icon: HeartIcon },
+      ]
+    },
+    { 
+      id: 'reports', 
+      label: 'Relatórios',
+      icon: HistoryIcon
+    },
+    { 
+      id: 'management', 
+      label: 'Gestão',
+      icon: DatabaseIcon
+    },
   ];
 
-  const sections = [
-    { id: 'balneario', label: 'Balneário', parent: 'sections' },
-    { id: 'escola', label: 'Escola', parent: 'sections' },
+  // Main menu structure for Client (User Dashboard)
+  const clientMenuItems = [
+    { 
+      id: 'home', 
+      label: 'Início', 
+      icon: HomeIcon 
+    },
+    { 
+      id: 'appointments', 
+      label: 'Secretaria',
+      icon: CalendarIcon
+    },
+    { 
+      id: 'candidaturas', 
+      label: 'Candidaturas',
+      icon: FileTextIcon,
+      subitems: [
+        { id: 'creche', label: 'Creche', icon: BabyIcon },
+        { id: 'catl', label: 'CATL', icon: UsersIcon },
+        { id: 'erpi', label: 'ERPI', icon: HeartIcon },
+      ]
+    },
   ];
 
-  const requisitions = [
-    { id: 'transportes', label: 'Transportes', parent: 'requisitions' },
-    { id: 'material', label: 'Material', parent: 'requisitions' },
-    { id: 'manutencao', label: 'Manutenção', parent: 'requisitions' },
-    { id: 'urgente', label: 'Prioridade Elevada', parent: 'requisitions' },
+  const generalItems = [
+    { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
+    { id: 'profile', label: 'Perfil', icon: UserIcon },
+    { id: 'settings', label: 'Definições', icon: SlidersIcon },
   ];
 
-  const bottomItems = [
-    { id: 'management', label: 'Gestão', icon: DatabaseIcon },
+  const secretaryGeneralItems = [
+    { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
+    { id: 'administrative', label: 'Área Administrativa', icon: ShieldCheckIcon },
     { id: 'profile', label: 'Perfil', icon: UserIcon },
     { id: 'settings', label: 'Definições', icon: SlidersIcon },
   ];
@@ -78,146 +178,103 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {isClient ? (
-              <div className="space-y-6">
-                {clientSections.map((section) => (
-                  <div key={section.heading}>
-                    <div className="px-4 text-xs text-gray-500 dark:text-gray-500 uppercase mb-2">{section.heading}</div>
-                    <div className="space-y-1">
-                      {section.items.map((item) => {
-                        const isActive = currentView === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => {
+            <>
+              <div className="space-y-1 mb-6">
+                {(isClient ? clientMenuItems : secretaryMenuItems).map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentView === item.id;
+                    const isExpanded = expandedMenus.includes(item.id);
+                    const hasSubitems = item.subitems && item.subitems.length > 0;
+
+                    return (
+                      <div key={item.id}>
+                        <button
+                          onClick={() => {
+                            if (hasSubitems) {
+                              toggleMenu(item.id);
+                            } else {
                               onNavigate(item.id);
                               onClose();
-                            }}
-                            className={`w-full text-left px-6 py-3 rounded-lg transition-colors ${
-                              isActive
-                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+                            }
+                          }}
+                          className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            isActive
+                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {Icon && <Icon className="w-5 h-5" />}
+                            <span>{item.label}</span>
+                          </div>
+                          {hasSubitems && (
+                            isExpanded ? (
+                              <ChevronDownIcon className="w-4 h-4" />
+                            ) : (
+                              <ChevronRightIcon className="w-4 h-4" />
+                            )
+                          )}
+                        </button>
 
-                <div className="space-y-1">
-                  {clientBottom.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentView === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onNavigate(item.id);
-                          onClose();
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-1 mb-6">
-                  {menuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentView === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onNavigate(item.id);
-                          onClose();
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
-                      </button>
+                        {/* Subitems */}
+                        {hasSubitems && isExpanded && (
+                          <div className="ml-8 mt-1 space-y-1">
+                            {item.subitems!.map((subitem) => {
+                              const SubIcon = subitem.icon;
+                              const isSubActive = currentView === subitem.id;
+                              return (
+                                <button
+                                  key={subitem.id}
+                                  onClick={() => {
+                                    onNavigate(subitem.id);
+                                    onClose();
+                                  }}
+                                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
+                                    isSubActive
+                                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                  }`}
+                                >
+                                  {SubIcon && <SubIcon className="w-4 h-4" />}
+                                  <span>{subitem.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
 
+                {/* GERAL section */}
                 <div className="mb-6">
-                  <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Secções</h3>
+                  <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Geral</h3>
                   <div className="space-y-1">
-                    {sections.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onNavigate(item.id);
-                          onClose();
-                        }}
-                        className="w-full text-left px-8 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
+                    {(isClient ? generalItems : secretaryGeneralItems).map((item) => {
+                      const Icon = item.icon;
+                      const isActive = currentView === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            onNavigate(item.id);
+                            onClose();
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                            isActive
+                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Requisições</h3>
-                  <div className="space-y-1">
-                    {requisitions.map((item) => (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onNavigate(item.id);
-                          onClose();
-                        }}
-                        className="w-full text-left px-8 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-1 mb-6">
-                  {bottomItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentView === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          onNavigate(item.id);
-                          onClose();
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
-                      </button>
-                    );
-                  })}
                 </div>
               </>
-            )}
           </div>
 
           <div className="p-4 border-t dark:border-gray-800">

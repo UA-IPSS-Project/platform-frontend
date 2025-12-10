@@ -247,7 +247,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         )}
       </div>
 
-      <Card className={`p-4 ${isDarkMode ? 'bg-gray-900/50 border-gray-800' : 'bg-white'}`}>
+      <Card 
+        className={`p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
+        style={{ backgroundColor: isDarkMode ? '#111827dc' : '#ffffffc5' }}
+      >
 
       {/* Schedule Grid */}
       <div className="w-full">
@@ -257,7 +260,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <div
             className={`grid grid-cols-6 gap-2 mb-4 sticky top-0 z-10 ${
               isDarkMode
-                ? 'bg-gray-900/80 backdrop-blur border-b border-gray-800'
+                ? '!bg-gray-800 backdrop-blur border-b border-gray-700'
                 : 'bg-white backdrop-blur border-b border-gray-200'
             }`}
             style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}

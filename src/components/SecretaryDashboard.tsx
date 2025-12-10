@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from './ui/button';
+import { NavDropdown } from './ui/NavDropdown';
+import { NotificationsPanel } from './ui/NotificationsPanel';
+import { NotificationsPage } from './NotificationsPage';
 import { WeeklySchedule } from './secretary/WeeklySchedule';
 import { TodayAppointments } from './secretary/TodayAppointments';
 import { HistoryPage } from './secretary/HistoryPage';
+import SecretaryHome from './secretary/SecretaryHome';
 import { AppointmentDialog } from './secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { Sidebar } from './Sidebar';
 import { ProfilePage } from './ProfilePage';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
-import bgLight from '../assets/7e4aa9e396b3bd4d2415cb1e684587e50e5e6ef4.png';
-import bgDark from '../assets/93d545c9ebd8fe7d712e18770844772c8270bea8.png';
 import { toast } from 'sonner';
 
 interface SecretaryDashboardProps {
@@ -144,7 +146,7 @@ export const normalizeMockAppointments = (appointments: Appointment[]): Appointm
   });
 };
 
-type ViewType = 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | string;
+type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | string;
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const loadAppointments = () => {
@@ -177,10 +179,61 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>('appointments');
+  const [currentView, setCurrentView] = useState<ViewType>('home');
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Sample notifications for secretary
+  const [notifications, setNotifications] = useState([
+    {
+      id: '1',
+      title: 'Relatório Mensal Disponível',
+      message: 'O relatório mensal de dezembro já está disponível para consulta.',
+      timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+      isRead: false,
+      icon: 'document' as const,
+    },
+    {
+      id: '2',
+      title: 'Nova marcação agendada',
+      message: 'João Santos agendou uma marcação para amanhã às 10:00.',
+      timestamp: new Date(Date.now() - 60 * 60000).toISOString(),
+      isRead: false,
+      icon: 'calendar' as const,
+    },
+    {
+      id: '3',
+      title: 'Candidatura aprovada',
+      message: 'A candidatura de Maria Silva para CATL foi aprovada.',
+      timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
+      isRead: true,
+      icon: 'document' as const,
+    },
+  ]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleCreateAppointment = (date: Date, time: string) => {
     setEditingAppointment({ date, time });
@@ -298,7 +351,20 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {view === 'management' && 'Gestão'}
           {view === 'settings' && 'Definições'}
           {view === 'more' && 'Mais'}
-          {!['requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+          {view === 'administrative' && 'Área Administrativa'}
+          {view === 'material' && 'Requisições - Material'}
+          {view === 'manutencao' && 'Requisições - Manutenção'}
+          {view === 'transportes' && 'Requisições - Transporte'}
+          {view === 'urgente' && 'Requisições - Prioridade Alta'}
+          {view === 'balneario' && 'Valências - Balneário'}
+          {view === 'escola' && 'Valências - Escola'}
+          {view === 'valencias' && 'Valências'}
+          {view === 'candidaturas' && 'Candidaturas'}
+          {view === 'creche' && 'Candidaturas - Creche'}
+          {view === 'catl' && 'Candidaturas - CATL'}
+          {view === 'erpi' && 'Candidaturas - ERPI'}
+          {view === 'reports' && 'Relatórios'}
+          {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
         <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
       </div>
@@ -308,19 +374,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen relative">
-        {/* Background Image */}
-        <div 
-          className="fixed inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url(${isDarkMode ? bgDark : bgLight})`,
-            opacity: isDarkMode ? 1 : 0.85,
-          }}
-        />
-
         {/* Content */}
-        <div className="relative z-10">
+        <div className="relative">
           {/* Header - Full Width */}
-          <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+          <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 relative z-10">
             <div className="px-6 py-3 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="text-gray-700 dark:text-gray-200">
@@ -330,48 +387,93 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               </div>
 
               <nav className="hidden md:flex items-center gap-1">
-                <Button 
-                  variant={currentView === 'requisitions' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('requisitions')}
-                  className={currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}
-                >
-                  Requisições
-                </Button>
-                <Button 
-                  variant={currentView === 'sections' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('sections')}
-                  className={currentView === 'sections' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}
-                >
-                  Secções
-                </Button>
-                <Button 
+                <NavDropdown
+                  label="Requisições"
+                  items={[
+                    { id: 'material', label: 'Material' },
+                    { id: 'manutencao', label: 'Manutenção' },
+                    { id: 'transportes', label: 'Transporte' },
+                    { id: 'urgente', label: 'Prioridade Alta' },
+                  ]}
+                  isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
+                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  isDarkMode={isDarkMode}
+                />
+
+                <NavDropdown
+                  label="Valências"
+                  items={[
+                    { id: 'balneario', label: 'Balneário' },
+                    { id: 'escola', label: 'Escola' },
+                  ]}
+                  isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
+                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  isDarkMode={isDarkMode}
+                />
+
+                <Button
                   variant={currentView === 'appointments' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('appointments')}
-                  className={currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}
+                  className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Marcações
                 </Button>
-                <Button 
+
+                <NavDropdown
+                  label="Candidaturas"
+                  items={[
+                    { id: 'creche', label: 'Creche' },
+                    { id: 'catl', label: 'CATL' },
+                    { id: 'erpi', label: 'ERPI' },
+                  ]}
+                  isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
+                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  isDarkMode={isDarkMode}
+                />
+
+                <Button
+                  variant={currentView === 'reports' ? 'default' : 'ghost'}
+                  onClick={() => setCurrentView('reports')}
+                  className={`text-sm ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                >
+                  Relatórios
+                </Button>
+
+                <Button
                   variant={currentView === 'management' ? 'default' : 'ghost'}
                   onClick={() => setCurrentView('management')}
-                  className={currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}
+                  className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Gestão
-                </Button>
-                <Button 
-                  variant={currentView === 'more' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('more')}
-                  className={currentView === 'more' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}
-                >
-                  Mais
                 </Button>
               </nav>
 
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="relative text-gray-700 dark:text-gray-200">
-                  <BellIcon className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                </Button>
+                <div className="relative z-[10000]" ref={notificationsRef}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                  >
+                    <BellIcon className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                  {showNotifications && (
+                    <NotificationsPanel
+                      notifications={notifications}
+                      onMarkAsRead={handleMarkAsRead}
+                      onMarkAllAsRead={handleMarkAllAsRead}
+                      onClose={() => setShowNotifications(false)}
+                      onNavigateToPage={() => setCurrentView('notificacoes')}
+                      isDarkMode={isDarkMode}
+                    />
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -389,17 +491,30 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
           {/* Main Content */}
           <main className="w-full px-6 py-6">
-            {currentView === 'profile' ? (
+            {currentView === 'home' ? (
+              <SecretaryHome
+                isDarkMode={isDarkMode}
+                onNavigate={setCurrentView}
+              />
+            ) : currentView === 'notificacoes' ? (
+              <NotificationsPage
+                notifications={notifications}
+                onBack={() => setCurrentView('home')}
+                onMarkAsRead={handleMarkAsRead}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                isDarkMode={isDarkMode}
+              />
+            ) : currentView === 'profile' ? (
               <ProfilePage
                 user={userData}
-                onBack={() => setCurrentView('appointments')}
+                onBack={() => setCurrentView('home')}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
               />
             ) : currentView === 'history' ? (
               <HistoryPage
                 appointments={appointments}
-                onBack={() => setCurrentView('appointments')}
+                onBack={() => setCurrentView('home')}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
               />

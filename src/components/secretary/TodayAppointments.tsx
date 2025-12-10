@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
+import { Card } from '../ui/card';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
@@ -100,9 +101,9 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
   });
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h2 className={`text-lg font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
         <div className="flex items-center gap-2">
           {showFilter && (
@@ -193,38 +194,54 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
         </div>
       </div>
 
-      {/* Appointments List */}
-      <div className="space-y-3">
-        {filteredTodayAppointments.length === 0 ? (
-          <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-sm p-8 text-center">
-            <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
-            <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
-          </div>
-        ) : (
-          filteredTodayAppointments.map((apt) => (
-            <div
-              key={apt.id}
-              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4"
-              onClick={() => onViewAppointment(apt)}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
-                  <ClockIcon className="w-3.5 h-3.5" />
-                  <span>{apt.time}</span>
-                </div>
-                {getStatusBadge(apt.status)}
+      {/* Card transparente com altura fixa para 5 marcações */}
+      <Card 
+        className="p-4 border-transparent bg-transparent shadow-none"
+        style={{ height: '650px' }}
+      >
+        {/* Appointments List - Container com scroll */}
+        <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-gray-200 dark:scrollbar-thumb-purple-600 dark:scrollbar-track-gray-800">
+          <div className="space-y-3">
+            {filteredTodayAppointments.length === 0 ? (
+              <div className={`rounded-lg shadow-sm p-8 text-center ${
+                isDarkMode
+                  ? 'bg-gray-800 backdrop-blur border border-gray-700'
+                  : 'bg-white/95 backdrop-blur border border-gray-200'
+              }`}>
+                <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
+                <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
               </div>
-              
-              <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
-              <p className="text-xs text-gray-600 dark:text-gray-400">{apt.subject}</p>
-            </div>
-          ))
-        )}
-      </div>
+            ) : (
+              filteredTodayAppointments.map((apt) => (
+                <div
+                  key={apt.id}
+                  className={`rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4 ${
+                    isDarkMode
+                      ? 'bg-gray-800 backdrop-blur border border-gray-700 hover:border-purple-600'
+                      : 'bg-white/95 backdrop-blur border border-gray-200 hover:border-purple-600'
+                  }`}
+                  onClick={() => onViewAppointment(apt)}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                      <ClockIcon className="w-3.5 h-3.5" />
+                      <span>{apt.time}</span>
+                    </div>
+                    {getStatusBadge(apt.status)}
+                  </div>
+                  
+                  <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{apt.subject}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </Card>
 
       {/* Export Button */}
       {filteredTodayAppointments.length > 0 && (
-        <Button variant="outline" className="w-full gap-2 h-9 text-sm" onClick={handleExport}>
+        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
           Exportar Lista Diária
         </Button>

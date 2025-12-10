@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, FileTextIcon, AlertTriangleIcon, PlayIcon, BellIcon, CheckCircleIcon } from '../CustomIcons';
+import { XIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, FileTextIcon, AlertTriangleIcon, PlayIcon, BellIcon, CheckCircleIcon, CalendarIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 
 interface AppointmentDetailsDialogProps {
@@ -16,6 +18,7 @@ interface AppointmentDetailsDialogProps {
   appointment: Appointment;
   onUpdate: (id: string, updates: Partial<Appointment>) => void;
   onCancel: (id: string, reason: string) => void;
+  isClient?: boolean;
 }
 
 const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -26,35 +29,78 @@ export function AppointmentDetailsDialog({
   appointment,
   onUpdate,
   onCancel,
+  isClient = false,
 }: AppointmentDetailsDialogProps) {
   const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
-  const [invalidReason, setInvalidReason] = useState('');
+  const [invalidReasons, setInvalidReasons] = useState<{ [key: number]: string }>({});
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showAddDocDialog, setShowAddDocDialog] = useState(false);
+  const [showUpdateDocDialog, setShowUpdateDocDialog] = useState(false);
+  const [updateDocIndex, setUpdateDocIndex] = useState<number | null>(null);
+  const [newDocName, setNewDocName] = useState('');
+  const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  
+  // Estados para reagendamento
+  const today = new Date();
+  const [rescheduleYear, setRescheduleYear] = useState(today.getFullYear());
+  const [rescheduleMonth, setRescheduleMonth] = useState(today.getMonth());
+  const [rescheduleDay, setRescheduleDay] = useState(today.getDate());
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const rescheduleYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
 
   useEffect(() => {
     if (!open) {
       setCancelReason('');
       setShowCancelDialog(false);
+      setSelectedDocs([]);
+      setInvalidReasons({});
     }
   }, [open]);
 
   const handleDocToggle = (index: number) => {
-    setSelectedDocs(prev =>
-      prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]
-    );
+    setSelectedDocs(prev => {
+      const newSelected = prev.includes(index) 
+        ? prev.filter(i => i !== index) 
+        : [...prev, index];
+      
+      // Remove a razão se desmarcar
+      if (!newSelected.includes(index)) {
+        setInvalidReasons(prevReasons => {
+          const newReasons = { ...prevReasons };
+          delete newReasons[index];
+          return newReasons;
+        });
+      }
+      
+      return newSelected;
+    });
+  };
+
+  const handleReasonChange = (index: number, reason: string) => {
+    setInvalidReasons(prev => ({
+      ...prev,
+      [index]: reason
+    }));
   };
 
   const handleNotifyInvalid = () => {
-    if (selectedDocs.length === 0 || !invalidReason.trim()) {
-      toast.error('Selecione documentos e adicione uma justificativa');
+    if (selectedDocs.length === 0) {
+      toast.error('Selecione pelo menos um documento');
+      return;
+    }
+
+    // Verifica se todos os documentos selecionados têm justificativa
+    const missingReasons = selectedDocs.some(index => !invalidReasons[index]?.trim());
+    if (missingReasons) {
+      toast.error('Adicione uma justificativa para cada documento selecionado');
       return;
     }
 
     const updatedDocuments = appointment.documents?.map((doc, index) => ({
       ...doc,
       invalid: selectedDocs.includes(index) ? true : doc.invalid,
-      reason: selectedDocs.includes(index) ? invalidReason : doc.reason,
+      reason: selectedDocs.includes(index) ? invalidReasons[index] : doc.reason,
     }));
 
     onUpdate(appointment.id, {
@@ -64,7 +110,7 @@ export function AppointmentDetailsDialog({
 
     toast.success('Utente notificado sobre documentos inválidos');
     setSelectedDocs([]);
-    setInvalidReason('');
+    setInvalidReasons({});
   };
 
   const handleCancelAppointment = () => {
@@ -95,6 +141,73 @@ export function AppointmentDetailsDialog({
   const handleStartAppointment = () => {
     onUpdate(appointment.id, { status: 'in-progress' });
     toast.success('Atendimento iniciado');
+  };
+
+  const handleAddDocument = () => {
+    if (!newDocName.trim()) {
+      toast.error('Digite o nome do documento');
+      return;
+    }
+
+    const updatedDocuments = [
+      ...(appointment.documents || []),
+      { name: newDocName.trim() }
+    ];
+
+    onUpdate(appointment.id, { documents: updatedDocuments });
+    toast.success('Documento adicionado com sucesso');
+    setNewDocName('');
+    setShowAddDocDialog(false);
+  };
+
+  const handleUpdateDocument = () => {
+    if (updateDocIndex === null) return;
+    if (!newDocName.trim()) {
+      toast.error('Digite o novo nome do documento');
+      return;
+    }
+
+    const updatedDocuments = appointment.documents?.map((doc, index) =>
+      index === updateDocIndex ? { ...doc, name: newDocName.trim() } : doc
+    );
+
+    onUpdate(appointment.id, { documents: updatedDocuments });
+    toast.success('Documento atualizado com sucesso');
+    setNewDocName('');
+    setUpdateDocIndex(null);
+    setShowUpdateDocDialog(false);
+  };
+
+  const handleReschedule = () => {
+    if (!rescheduleTime) {
+      toast.error('Selecione um horário');
+      return;
+    }
+
+    const newDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    
+    onUpdate(appointment.id, {
+      date: newDate,
+      time: rescheduleTime,
+    });
+
+    toast.success('Marcação reagendada com sucesso');
+    setShowRescheduleDialog(false);
+  };
+
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour < 17; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
+        if (hour === 16 && minute > 45) break;
+        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+      }
+    }
+    return slots;
+  };
+
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
   };
 
   const getStatusBadge = (status: string) => {
@@ -248,40 +361,59 @@ export function AppointmentDetailsDialog({
                 <FileTextIcon className="w-4 h-4" />
                 Documentos Extra
               </Label>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {appointment.documents.map((doc, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                  >
-                    <Checkbox
-                      checked={selectedDocs.includes(index)}
-                      onCheckedChange={() => handleDocToggle(index)}
-                      className="border-purple-300 data-[state=checked]:bg-purple-600"
-                    />
-                    <FileTextIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{doc.name}</span>
+                  <div key={index}>
+                    <div
+                      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                    >
+                      {!isClient && (
+                        <Checkbox
+                          checked={selectedDocs.includes(index)}
+                          onCheckedChange={() => handleDocToggle(index)}
+                          className="border-purple-300 data-[state=checked]:bg-purple-600"
+                        />
+                      )}
+                      <FileTextIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{doc.name}</span>
+                      {isClient && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            setUpdateDocIndex(index);
+                            setNewDocName(doc.name);
+                            setShowUpdateDocDialog(true);
+                          }}
+                        >
+                          Atualizar
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Caixa de texto aparece imediatamente abaixo do documento selecionado */}
+                    {!isClient && selectedDocs.includes(index) && (
+                      <div className="mt-2 ml-9">
+                        <Textarea
+                          placeholder="Razão pela qual este documento é inválido..."
+                          value={invalidReasons[index] || ''}
+                          onChange={(e) => handleReasonChange(index, e.target.value)}
+                          rows={2}
+                          className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-
-              {selectedDocs.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  <Textarea
-                    placeholder="Razão pela qual o documento é inválido..."
-                    value={invalidReason}
-                    onChange={(e) => setInvalidReason(e.target.value)}
-                    rows={3}
-                    className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-              )}
             </div>
           )}
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-2 pt-4 pb-2">
-            {appointment.status === 'scheduled' && (
+            {/* Botões para Secretaria */}
+            {!isClient && appointment.status === 'scheduled' && (
               <Button
                 onClick={handleStartAppointment}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
@@ -291,7 +423,7 @@ export function AppointmentDetailsDialog({
               </Button>
             )}
 
-            {appointment.status === 'in-progress' && (
+            {!isClient && appointment.status === 'in-progress' && (
               <Button
                 onClick={handleCompleteAppointment}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
@@ -301,7 +433,7 @@ export function AppointmentDetailsDialog({
               </Button>
             )}
 
-            {selectedDocs.length > 0 && (
+            {!isClient && selectedDocs.length > 0 && (
               <Button
                 onClick={handleNotifyInvalid}
                 variant="outline"
@@ -312,16 +444,66 @@ export function AppointmentDetailsDialog({
               </Button>
             )}
 
-            {appointment.status === 'warning' && (
+            {!isClient && appointment.status === 'warning' && (
               <Button
-                onClick={handleConfirmAppointment}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleStartAppointment}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
               >
-                Confirmar Marcação
+                <PlayIcon className="w-4 h-4" />
+                Iniciar atendimento
               </Button>
             )}
 
-            {appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && (
+            {/* Botões para Cliente */}
+            {isClient && (appointment.status === 'scheduled' || appointment.status === 'warning') && (
+              <>
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                  onClick={() => setShowAddDocDialog(true)}
+                >
+                  <FileTextIcon className="w-4 h-4" />
+                  Adicionar Documentos
+                </Button>
+                <Button
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
+                  onClick={() => {
+                    const aptDate = new Date(appointment.date);
+                    setRescheduleYear(aptDate.getFullYear());
+                    setRescheduleMonth(aptDate.getMonth());
+                    setRescheduleDay(aptDate.getDate());
+                    setRescheduleTime(appointment.time);
+                    setShowRescheduleDialog(true);
+                  }}
+                >
+                  <ClockIcon className="w-4 h-4" />
+                  Reagendar
+                </Button>
+              </>
+            )}
+
+            {isClient && appointment.status === 'in-progress' && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowCancelDialog(true)}
+                className="w-full gap-2"
+              >
+                <AlertTriangleIcon className="w-4 h-4" />
+                Não posso comparecer
+              </Button>
+            )}
+
+            {/* Botão Cancelar (comum mas condicionado) */}
+            {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && (
+              <Button
+                variant="destructive"
+                onClick={() => setShowCancelDialog(true)}
+                className="w-full"
+              >
+                Cancelar
+              </Button>
+            )}
+
+            {isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && (
               <Button
                 variant="destructive"
                 onClick={() => setShowCancelDialog(true)}
@@ -341,21 +523,27 @@ export function AppointmentDetailsDialog({
     }}>
       <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
         <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Cancelar marcação
+          {isClient ? 'Cancelar marcação' : 'Cancelar marcação'}
         </DialogTitle>
         <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-          Explique brevemente ao utente porque esta marcação será cancelada.
+          {isClient 
+            ? 'Por favor, explique brevemente o motivo do cancelamento.'
+            : 'Explique brevemente ao utente porque esta marcação será cancelada.'}
         </DialogPrimitive.Description>
 
         <Textarea
-          placeholder="Ex.: Utente não enviou os documentos necessários..."
+          placeholder={isClient 
+            ? "Ex.: Não posso comparecer devido a compromisso urgente..."
+            : "Ex.: Utente não enviou os documentos necessários..."}
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
           rows={4}
           className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
         />
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          O motivo será enviado ao utente juntamente com a notificação de cancelamento.
+          {isClient
+            ? 'O motivo será enviado à secretaria juntamente com a notificação de cancelamento.'
+            : 'O motivo será enviado ao utente juntamente com a notificação de cancelamento.'}
         </p>
 
         <div className="flex justify-end gap-3 mt-4">
@@ -371,6 +559,171 @@ export function AppointmentDetailsDialog({
             disabled={!cancelReason.trim()}
           >
             Confirmar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Diálogo Adicionar Documento */}
+    <Dialog open={showAddDocDialog} onOpenChange={setShowAddDocDialog}>
+      <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Adicionar Documento
+        </DialogTitle>
+        <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+          Digite o nome do documento que deseja adicionar.
+        </DialogPrimitive.Description>
+
+        <Input
+          placeholder="Ex.: Comprovativo de morada..."
+          value={newDocName}
+          onChange={(e) => setNewDocName(e.target.value)}
+          className="mt-4"
+        />
+
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="outline" onClick={() => {
+            setNewDocName('');
+            setShowAddDocDialog(false);
+          }}>
+            Cancelar
+          </Button>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={handleAddDocument}
+            disabled={!newDocName.trim()}
+          >
+            Adicionar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Diálogo Atualizar Documento */}
+    <Dialog open={showUpdateDocDialog} onOpenChange={setShowUpdateDocDialog}>
+      <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Atualizar Documento
+        </DialogTitle>
+        <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+          Digite o novo nome para o documento.
+        </DialogPrimitive.Description>
+
+        <Input
+          placeholder="Novo nome do documento..."
+          value={newDocName}
+          onChange={(e) => setNewDocName(e.target.value)}
+          className="mt-4"
+        />
+
+        <div className="flex justify-end gap-3 mt-4">
+          <Button variant="outline" onClick={() => {
+            setNewDocName('');
+            setUpdateDocIndex(null);
+            setShowUpdateDocDialog(false);
+          }}>
+            Cancelar
+          </Button>
+          <Button
+            className="bg-purple-600 hover:bg-purple-700"
+            onClick={handleUpdateDocument}
+            disabled={!newDocName.trim()}
+          >
+            Atualizar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Diálogo Reagendar */}
+    <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+      <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            Reagendar Marcação
+          </DialogTitle>
+          <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+            Escolha a nova data e horário para a sua marcação.
+          </DialogPrimitive.Description>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-4">
+          <div className="flex items-end gap-4 flex-wrap">
+            {/* Ano */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ano</Label>
+              <Select value={String(rescheduleYear)} onValueChange={(value) => setRescheduleYear(Number(value))}>
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {rescheduleYearOptions.map((year) => (
+                    <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Mês */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Mês</Label>
+              <Select value={String(rescheduleMonth)} onValueChange={(value) => setRescheduleMonth(Number(value))}>
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
+                  {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((month, idx) => (
+                    <SelectItem key={idx} value={String(idx)}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Dia */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[100px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
+              <Select 
+                value={String(rescheduleDay)} 
+                onValueChange={(value) => setRescheduleDay(Math.min(Number(value), getDaysInMonth(rescheduleYear, rescheduleMonth)))}
+              >
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
+                  {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => (
+                    <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Horário */}
+            <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
+              <Select value={rescheduleTime} onValueChange={setRescheduleTime}>
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
+                  {generateTimeSlots().map((slot) => (
+                    <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
+            Cancelar
+          </Button>
+          <Button
+            className="bg-yellow-500 hover:bg-yellow-600"
+            onClick={handleReschedule}
+            disabled={!rescheduleTime}
+          >
+            Confirmar Reagendamento
           </Button>
         </div>
       </DialogContent>
