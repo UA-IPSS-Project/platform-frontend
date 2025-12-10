@@ -210,6 +210,9 @@ export function AppointmentDetailsDialog({
       onUpdate(appointment.id, { status: 'scheduled' });
       toast.success('Marcação confirmada com sucesso!');
       
+      // Fechar o diálogo após confirmar
+      onClose();
+      
     } catch (error: any) {
       console.error('Erro ao confirmar marcação:', error);
       const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível confirmar a marcação';
@@ -243,6 +246,9 @@ export function AppointmentDetailsDialog({
       onUpdate(appointment.id, { status: 'in-progress' });
       
       toast.success('Atendimento iniciado com sucesso!');
+      
+      // Fechar o diálogo após atualizar o estado
+      onClose();
       
     } catch (error: any) {
       console.error('Erro ao iniciar atendimento:', error);
