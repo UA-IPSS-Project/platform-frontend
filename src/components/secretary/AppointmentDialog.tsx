@@ -8,28 +8,30 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Appointment } from '../SecretaryDashboard';
 
 interface AppointmentDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (appointment: Omit<Appointment, 'id' | 'status'>) => void;
+  onSuccess: () => void;
   date: Date;
   time: string;
+  funcionarioId: number;
 }
 
 import SUBJECTS from '../../lib/subjects';
 
-export function AppointmentDialog({ open, onClose, onSave, date, time }: AppointmentDialogProps) {
+export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
   const [formData, setFormData] = useState({
     nif: '',
     name: '',
+    email: '',
     contact: '',
     subject: '',
     description: '',
   });
   const [documents, setDocuments] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -39,6 +41,11 @@ export function AppointmentDialog({ open, onClose, onSave, date, time }: Appoint
     }
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Email inválido';
     }
     if (!formData.contact || !/^\d{9}$/.test(formData.contact)) {
       newErrors.contact = 'Contacto deve ter 9 dígitos';
@@ -51,7 +58,7 @@ export function AppointmentDialog({ open, onClose, onSave, date, time }: Appoint
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -59,22 +66,46 @@ export function AppointmentDialog({ open, onClose, onSave, date, time }: Appoint
       return;
     }
 
-    const appointment: Omit<Appointment, 'id' | 'status'> = {
-      date,
-      time,
-      duration: 15,
-      patientNIF: formData.nif,
-      patientName: formData.name,
-      patientContact: formData.contact,
-      subject: formData.subject,
-      description: formData.description,
-      documents: documents.map(name => ({ name })),
-    };
+    setIsLoading(true);
 
     try {
-      onSave(appointment);
-    } catch {
-      toast.error('Houve um erro, tente novamente');
+      const dataHora = new Date(date);
+      const [hours, minutes] = time.split(':');
+      dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      const payload = {
+        funcionarioId,
+        data: dataHora.toISOString(),
+        assunto: formData.subject,
+        descricao: formData.description,
+        utenteNif: formData.nif,
+        utenteNome: formData.name,
+        utenteEmail: formData.email,
+        utenteTelefone: formData.contact,
+      };
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/marcacoes/presencial', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao criar marcação');
+      }
+
+      toast.success('Marcação criada com sucesso!');
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao criar marcação:', error);
+      toast.error('Erro ao criar marcação');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -128,6 +159,19 @@ export function AppointmentDialog({ open, onClose, onSave, date, time }: Appoint
               className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
             />
             {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email *</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="exemplo@email.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
+            />
+            {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -205,11 +249,11 @@ export function AppointmentDialog({ open, onClose, onSave, date, time }: Appoint
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-gray-300 dark:border-gray-700">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
-              Marcar
+            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+              {isLoading ? 'A marcar...' : 'Marcar'}
             </Button>
           </div>
         </form>

@@ -3,17 +3,18 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormProps {
-  onLogin: (identifier: string, password: string) => boolean;
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
 }
 
-export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
+export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
+  const { login } = useAuth();
 
   const validateForm = () => {
     const newErrors: { identifier?: string; password?: string } = {};
@@ -34,7 +35,7 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -42,12 +43,12 @@ export function LoginForm({ onLogin, onNavigateToRegister }: LoginFormProps) {
       return;
     }
 
-    const success = onLogin(identifier, password);
-    
-    if (success) {
+    try {
+      const tipoLogin = loginType === 'user' ? 'utente' : 'funcionario';
+      await login(identifier, password, tipoLogin);
       toast.success('Login realizado com sucesso!');
-    } else {
-      toast.error('Credenciais inválidas');
+    } catch (error: any) {
+      toast.error(error.message || 'Credenciais inválidas');
       setErrors({ identifier: 'Credenciais inválidas', password: 'Credenciais inválidas' });
     }
   };

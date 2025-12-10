@@ -7,17 +7,9 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterFormProps {
-  onRegister: (userData: {
-    name: string;
-    nif: string;
-    contact: string;
-    email: string;
-    birthDate: string;
-    role?: string;
-    accountType?: 'user' | 'employee';
-  }, password: string) => boolean;
   onNavigateToLogin: () => void;
   initialAccountType?: 'user' | 'employee';
 }
@@ -28,7 +20,7 @@ interface PasswordValidation {
   hasNumber: boolean;
 }
 
-export function RegisterForm({ onRegister, onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
+export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
   const [formData, setFormData] = useState({
     name: '',
     nif: '',
@@ -47,6 +39,7 @@ export function RegisterForm({ onRegister, onNavigateToLogin, initialAccountType
 
   const [accountType, setAccountType] = useState<'user' | 'employee'>(initialAccountType ?? 'user');
   const [employeeRole, setEmployeeRole] = useState('');
+  const { registerUtente, registerFuncionario } = useAuth();
 
   const validatePassword = (password: string): PasswordValidation => {
     return {
@@ -111,12 +104,10 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       newErrors.name = 'Nome é obrigatório';
     }
 
-    if (accountType === 'user') {
-      if (!formData.nif) {
-        newErrors.nif = 'NIF é obrigatório';
-      } else if (!validateNIF(formData.nif)) {
-        newErrors.nif = 'NIF deve ter 9 dígitos';
-      }
+    if (!formData.nif) {
+      newErrors.nif = 'NIF é obrigatório';
+    } else if (!validateNIF(formData.nif)) {
+      newErrors.nif = 'NIF deve ter 9 dígitos';
     }
 
     if (!formData.contact) {
@@ -165,23 +156,11 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       newErrors.confirmPassword = 'As palavras-passe não coincidem';
     }
 
-    // Check if NIF or email already exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (accountType === 'user' && users.some((u: any) => u.nif === formData.nif)) {
-      newErrors.nif = 'NIF já registado';
-    }
-    if (users.some((u: any) => u.email === formData.email)) {
-      newErrors.email = 'Email já registado';
-    }
-    if (users.some((u: any) => u.contact === formData.contact)) {
-      newErrors.contact = 'Contacto já registado';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -189,20 +168,36 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       return;
     }
 
-    const success = onRegister({
-      name: formData.name,
-      nif: formData.nif,
-      contact: formData.contact,
-      email: formData.email,
-      birthDate: formData.birthDate,
-      role: employeeRole,
-      accountType: accountType,
-    }, formData.password);
+    try {
+      // Converter data de dd/mm/yyyy para yyyy-mm-dd
+      const [day, month, year] = formData.birthDate.split('/');
+      const isoDate = `${year}-${month}-${day}`;
 
-    if (success) {
+      if (accountType === 'user') {
+        await registerUtente({
+          nome: formData.name,
+          nif: formData.nif,
+          telefone: formData.contact,
+          email: formData.email,
+          dataNasc: isoDate,
+          password: formData.password,
+        });
+      } else {
+        await registerFuncionario({
+          nome: formData.name,
+          nif: formData.nif,
+          contacto: formData.contact,
+          email: formData.email,
+          dataNasc: isoDate,
+          funcao: employeeRole,
+          password: formData.password,
+        });
+      }
+
       toast.success('Conta criada com sucesso!');
-    } else {
-      toast.error('Erro ao criar conta');
+      onNavigateToLogin();
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar conta');
     }
   };
 
@@ -396,22 +391,42 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
-            <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-              Contacto *
-            </Label>
-            <Input
-              id="contact"
-              type="text"
-              placeholder="912345678"
-              maxLength={9}
-              value={formData.contact}
-              onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                errors.contact ? 'border-red-500' : ''
-              }`}
-            />
-            {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
+                NIF *
+              </Label>
+              <Input
+                id="nif"
+                type="text"
+                placeholder="123456789"
+                maxLength={9}
+                value={formData.nif}
+                onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+                  errors.nif ? 'border-red-500' : ''
+                }`}
+              />
+              {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
+                Contacto *
+              </Label>
+              <Input
+                id="contact"
+                type="text"
+                placeholder="912345678"
+                maxLength={9}
+                value={formData.contact}
+                onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
+                  errors.contact ? 'border-red-500' : ''
+                }`}
+              />
+              {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
+            </div>
           </div>
         )}
 

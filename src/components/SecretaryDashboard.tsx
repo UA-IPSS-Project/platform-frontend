@@ -14,6 +14,8 @@ import { Sidebar } from './Sidebar';
 import { ProfilePage } from './ProfilePage';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { marcacoesApi } from '../services/api';
 
 interface SecretaryDashboardProps {
   user: {
@@ -35,144 +37,20 @@ export interface Appointment {
   patientNIF: string;
   patientName: string;
   patientContact: string;
+  patientEmail: string;
   subject: string;
   description: string;
-  status: 'scheduled' | 'in-progress' | 'warning' | 'cancelled';
+  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled';
   cancellationReason?: string;
   documents?: { name: string; invalid?: boolean; reason?: string }[];
 }
 
-const MARIA_OLD_NIF = '123456789';
-const MARIA_NEW_NIF = '123450001';
-const SEED_PATIENTS = new Set(['Maria Silva', 'João Santos', 'Ana Costa', 'Pedro Oliveira', 'Carlos Mendes']);
-const SEED_IDS = new Set(['1', '2', '3', '4', '5']);
-const APPOINTMENTS_KEY = 'appointments';
-
-const ensureWeekday = (date: Date) => {
-  const adjusted = new Date(date.getTime());
-  while (adjusted.getDay() === 0 || adjusted.getDay() === 6) {
-    adjusted.setDate(adjusted.getDate() + 1);
-  }
-  return adjusted;
-};
-
-export const generateMockAppointments = (): Appointment[] => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return [
-    {
-      id: '1',
-      date: new Date(today.getTime()),
-      time: '09:00',
-      duration: 15,
-      patientNIF: MARIA_NEW_NIF,
-      patientName: 'Maria Silva',
-      patientContact: '912345678',
-      subject: 'Pagar mensalidade',
-      description: 'Pagamento mensal',
-      status: 'scheduled',
-      documents: [{ name: 'Comprovativo.pdf' }],
-    },
-    {
-      id: '2',
-      date: new Date(today.getTime()),
-      time: '10:30',
-      duration: 15,
-      patientNIF: '987654321',
-      patientName: 'João Santos',
-      patientContact: '923456789',
-      subject: 'Renovação de Documentos',
-      description: 'Renovação anual',
-      status: 'scheduled',
-    },
-    {
-      id: '3',
-      date: new Date(today.getTime()),
-      time: '14:00',
-      duration: 15,
-      patientNIF: '456789123',
-      patientName: 'Ana Costa',
-      patientContact: '934567890',
-      subject: 'Informações Gerais',
-      description: 'Pedido de informações',
-      status: 'in-progress',
-    },
-    {
-      id: '4',
-      date: new Date(today.getTime()),
-      time: '15:30',
-      duration: 15,
-      patientNIF: '789123456',
-      patientName: 'Pedro Oliveira',
-      patientContact: '945678901',
-      subject: 'Agendamento de Exame',
-      description: 'Marcação de exame',
-      status: 'warning',
-      documents: [
-        { name: 'Requisicao.pdf', invalid: true, reason: 'Documento ilegível' },
-        { name: 'Documento2.pdf' },
-      ],
-    },
-    {
-      id: '5',
-      date: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000),
-      time: '10:00',
-      duration: 15,
-      patientNIF: '111222333',
-      patientName: 'Carlos Mendes',
-      patientContact: '911222333',
-      subject: 'Reunião com educadora / assistente social',
-      description: 'Reunião trimestral',
-      status: 'scheduled',
-    },
-  ];
-};
-
-// Re-anchors the demo appointments to today so they don't stay stuck in past dates after syncing
-export const normalizeMockAppointments = (appointments: Appointment[]): Appointment[] => {
-  const today = ensureWeekday(new Date(new Date().setHours(0, 0, 0, 0)));
-
-  return appointments.map((apt) => {
-    const isSeed = SEED_IDS.has(apt.id) && SEED_PATIENTS.has(apt.patientName);
-    if (!isSeed) return apt;
-
-    const normalizedDate = new Date(today.getTime());
-    if (apt.id === '5') {
-      normalizedDate.setDate(normalizedDate.getDate() + 2);
-    }
-
-    return { ...apt, date: ensureWeekday(normalizedDate) };
-  });
-};
-
 type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | string;
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
-  const loadAppointments = () => {
-    try {
-      const raw = localStorage.getItem(APPOINTMENTS_KEY);
-      if (raw) {
-        const parsed: Appointment[] = JSON.parse(raw).map((apt: any) => ({
-          ...apt,
-          date: new Date(apt.date),
-          patientNIF: apt.patientName === 'Maria Silva' && apt.patientNIF === MARIA_OLD_NIF ? MARIA_NEW_NIF : apt.patientNIF,
-        }));
-        return normalizeMockAppointments(parsed);
-      }
-    } catch {
-      /* ignore */
-    }
-    const seed = normalizeMockAppointments(generateMockAppointments());
-    try {
-      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(seed));
-    } catch {
-      /* ignore */
-    }
-    return seed;
-  };
-
-  const [appointments, setAppointments] = useState<Appointment[]>(loadAppointments());
+  const { user: authUser } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [userData, setUserData] = useState(user);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
@@ -185,6 +63,97 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  const carregarMarcacoes = async () => {
+    if (!authUser?.id) return;
+    try {
+      const data = await marcacoesApi.obterTodas();
+      const convertidas = data.map((m: any) => {
+        const dateTime = new Date(m.data);
+        const utente = m.marcacaoSecretaria?.utente;
+        
+        // Mapear estado da API para o formato esperado
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        if (m.estado) {
+          const estadoUpper = m.estado.toUpperCase();
+          if (estadoUpper === 'AGENDADO') status = 'scheduled';
+          else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
+          else if (estadoUpper === 'AVISO') status = 'warning';
+          else if (estadoUpper === 'CONCLUIDO') status = 'completed';
+          else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+        }
+        
+        return {
+          id: m.id.toString(),
+          date: dateTime,
+          time: dateTime.toTimeString().slice(0, 5),
+          duration: 15,
+          patientNIF: utente?.nif || 'N/A',
+          patientName: utente?.nome || 'Nome não disponível',
+          patientContact: utente?.telefone || 'N/A',
+          patientEmail: utente?.email || 'Email não disponível',
+          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
+          description: m.marcacaoSecretaria?.descricao || '',
+          status: status,
+        };
+      });
+      setAppointments(convertidas);
+      console.log('Total de marcações carregadas:', convertidas.length);
+    } catch (error) {
+      console.error('Erro ao carregar marcações:', error);
+      toast.error('Erro ao carregar marcações');
+    }
+  };
+
+  const carregarHistorico = async () => {
+    try {
+      const data = await marcacoesApi.obterPassadas();
+      const convertidas = data.map((m: any) => {
+        const dateTime = new Date(m.data);
+        const utente = m.marcacaoSecretaria?.utente;
+        
+        // Mapear estado da API para o formato esperado
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        if (m.estado) {
+          const estadoUpper = m.estado.toUpperCase();
+          if (estadoUpper === 'AGENDADO') status = 'scheduled';
+          else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
+          else if (estadoUpper === 'AVISO') status = 'warning';
+          else if (estadoUpper === 'CONCLUIDO') status = 'completed';
+          else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+        }
+        
+        return {
+          id: m.id.toString(),
+          date: dateTime,
+          time: dateTime.toTimeString().slice(0, 5),
+          duration: 15,
+          patientNIF: utente?.nif || 'N/A',
+          patientName: utente?.nome || 'Nome não disponível',
+          patientContact: utente?.telefone || 'N/A',
+          patientEmail: utente?.email || 'Email não disponível',
+          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
+          description: m.marcacaoSecretaria?.descricao || '',
+          status: status,
+        };
+      });
+      setHistoryAppointments(convertidas);
+      console.log('Total de marcações no histórico:', convertidas.length);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast.error('Erro ao carregar histórico');
+    }
+  };
+
+  useEffect(() => {
+    carregarMarcacoes();
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    if (currentView === 'history') {
+      carregarHistorico();
+    }
+  }, [currentView]);
 
   // Sample notifications for secretary
   const [notifications, setNotifications] = useState([
@@ -240,28 +209,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     setShowAppointmentDialog(true);
   };
 
-  const handleSaveAppointment = (appointmentData: Omit<Appointment, 'id' | 'status'>) => {
-    if (!editingAppointment) {
-      toast.error('Houve um erro, tente novamente');
-      return;
-    }
-
-    try {
-      const newAppointment: Appointment = {
-        ...appointmentData,
-        id: Date.now().toString(),
-        status: 'scheduled',
-      };
-
-      setAppointments([...appointments, newAppointment]);
-      toast.success('Marcação feita com sucesso!');
-      setShowAppointmentDialog(false);
-      setEditingAppointment(null);
-    } catch {
-      toast.error('Houve um erro, tente novamente');
-    }
-  };
-
   const handleViewAppointment = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowDetailsDialog(true);
@@ -272,14 +219,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       apt.id === id ? { ...apt, ...updates } : apt
     ));
   };
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(appointments));
-    } catch {
-      /* ignore */
-    }
-  }, [appointments]);
 
   const handleCancelAppointment = (id: string, reason: string) => {
     handleUpdateAppointment(id, { status: 'cancelled', cancellationReason: reason });
@@ -513,7 +452,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               />
             ) : currentView === 'history' ? (
               <HistoryPage
-                appointments={appointments}
+                appointments={historyAppointments}
                 onBack={() => setCurrentView('home')}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
@@ -569,16 +508,17 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         />
 
         {/* Dialogs */}
-        {showAppointmentDialog && editingAppointment && (
+        {showAppointmentDialog && editingAppointment && authUser?.id && (
           <AppointmentDialog
             open={showAppointmentDialog}
             onClose={() => {
               setShowAppointmentDialog(false);
               setEditingAppointment(null);
             }}
-            onSave={handleSaveAppointment}
+            onSuccess={carregarMarcacoes}
             date={editingAppointment.date}
             time={editingAppointment.time}
+            funcionarioId={authUser.id}
           />
         )}
 

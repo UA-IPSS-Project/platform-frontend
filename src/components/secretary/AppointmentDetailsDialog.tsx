@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { XIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, FileTextIcon, AlertTriangleIcon, PlayIcon, BellIcon, CheckCircleIcon, CalendarIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
+import { marcacoesApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AppointmentDetailsDialogProps {
   open: boolean;
@@ -31,6 +33,7 @@ export function AppointmentDetailsDialog({
   onCancel,
   isClient = false,
 }: AppointmentDetailsDialogProps) {
+  const { user: authUser } = useAuth();
   const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
   const [invalidReasons, setInvalidReasons] = useState<{ [key: number]: string }>({});
   const [cancelReason, setCancelReason] = useState('');
@@ -113,34 +116,139 @@ export function AppointmentDetailsDialog({
     setInvalidReasons({});
   };
 
-  const handleCancelAppointment = () => {
+  const handleCancelAppointment = async () => {
     const trimmedReason = cancelReason.trim();
     if (!trimmedReason) {
       toast.error('Descreva o motivo do cancelamento');
       return;
     }
 
-    onCancel(appointment.id, trimmedReason);
-    toast.success('Marcação cancelada e utente notificado');
-    setCancelReason('');
-    setShowCancelDialog(false);
-    onClose();
+    if (!authUser?.id) {
+      toast.error('Erro de autenticação: Utilizador não identificado');
+      return;
+    }
+
+    try {
+      console.log('Cancelando marcação:', {
+        marcacaoId: parseInt(appointment.id),
+        novoEstado: 'CANCELADO',
+        funcionarioId: authUser.id
+      });
+
+      // Usar a mesma API de mudar estado
+      await marcacoesApi.atualizarEstado(
+        parseInt(appointment.id),
+        'CANCELADO',
+        authUser.id
+      );
+
+      // Atualizar estado local
+      onCancel(appointment.id, trimmedReason);
+      onUpdate(appointment.id, { status: 'cancelled', cancellationReason: trimmedReason });
+      
+      toast.success('Marcação cancelada e utente notificado');
+      setCancelReason('');
+      setShowCancelDialog(false);
+      onClose();
+      
+    } catch (error: any) {
+      console.error('Erro ao cancelar marcação:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível cancelar a marcação';
+      toast.error(mensagemErro);
+    }
   };
 
-  const handleCompleteAppointment = () => {
-    onUpdate(appointment.id, { status: 'scheduled' });
-    toast.success('Atendimento concluído');
-    onClose();
+  const handleCompleteAppointment = async () => {
+    if (!authUser?.id) {
+      toast.error('Erro de autenticação: Utilizador não identificado');
+      return;
+    }
+    
+    try {
+      console.log('Concluindo atendimento:', {
+        marcacaoId: parseInt(appointment.id),
+        novoEstado: 'CONCLUIDO',
+        funcionarioId: authUser.id
+      });
+
+      await marcacoesApi.atualizarEstado(
+        parseInt(appointment.id),
+        'CONCLUIDO',
+        authUser.id
+      );
+
+      onUpdate(appointment.id, { status: 'completed' });
+      toast.success('Atendimento concluído com sucesso!');
+      onClose();
+      
+    } catch (error: any) {
+      console.error('Erro ao concluir atendimento:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível concluir o atendimento';
+      toast.error(mensagemErro);
+    }
   };
 
-  const handleConfirmAppointment = () => {
-    onUpdate(appointment.id, { status: 'scheduled' });
-    toast.success('Marcação confirmada');
+  const handleConfirmAppointment = async () => {
+    if (!authUser?.id) {
+      toast.error('Erro de autenticação: Utilizador não identificado');
+      return;
+    }
+    
+    try {
+      console.log('Confirmando marcação:', {
+        marcacaoId: parseInt(appointment.id),
+        novoEstado: 'AGENDADO',
+        funcionarioId: authUser.id
+      });
+
+      await marcacoesApi.atualizarEstado(
+        parseInt(appointment.id),
+        'AGENDADO',
+        authUser.id
+      );
+
+      onUpdate(appointment.id, { status: 'scheduled' });
+      toast.success('Marcação confirmada com sucesso!');
+      
+    } catch (error: any) {
+      console.error('Erro ao confirmar marcação:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível confirmar a marcação';
+      toast.error(mensagemErro);
+    }
   };
 
-  const handleStartAppointment = () => {
-    onUpdate(appointment.id, { status: 'in-progress' });
-    toast.success('Atendimento iniciado');
+  const handleStartAppointment = async () => {
+    if (!authUser?.id) {
+      toast.error('Erro de autenticação: Utilizador não identificado');
+      return;
+    }
+    
+    try {
+      console.log('Iniciando atendimento:', {
+        marcacaoId: parseInt(appointment.id),
+        novoEstado: 'EM_PROGRESSO',
+        funcionarioId: authUser.id
+      });
+
+      // Chamada à API com os parâmetros corretos
+      const response = await marcacoesApi.atualizarEstado(
+        parseInt(appointment.id),
+        'EM_PROGRESSO',
+        authUser.id
+      );
+
+      console.log('Resposta da API:', response);
+
+      // Atualizar estado local do React para UI mudar instantaneamente
+      onUpdate(appointment.id, { status: 'in-progress' });
+      
+      toast.success('Atendimento iniciado com sucesso!');
+      
+    } catch (error: any) {
+      console.error('Erro ao iniciar atendimento:', error);
+      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível iniciar o atendimento';
+      toast.error(mensagemErro);
+    }
   };
 
   const handleAddDocument = () => {
@@ -223,6 +331,11 @@ export function AppointmentDetailsDialog({
             Agendado
           </Badge>
         );
+      case 'completed':
+        return <Badge className="bg-green-600 text-white rounded-full px-3 flex items-center gap-1">
+          <CheckCircleIcon className="w-3 h-3" />
+          Concluído
+        </Badge>;
       case 'cancelled':
         return <Badge variant="destructive" className="rounded-full px-3">Cancelado</Badge>;
       default:
@@ -324,7 +437,7 @@ export function AppointmentDetailsDialog({
                 <MailIcon className="w-4 h-4" />
                 Email
               </Label>
-              <p className="text-gray-900 dark:text-gray-100">pedro.oliveira@email.pt</p>
+              <p className="text-gray-900 dark:text-gray-100">{appointment.patientEmail}</p>
             </div>
           </div>
 
@@ -413,7 +526,7 @@ export function AppointmentDetailsDialog({
           {/* Action Buttons */}
           <div className="flex flex-col gap-2 pt-4 pb-2">
             {/* Botões para Secretaria */}
-            {!isClient && appointment.status === 'scheduled' && (
+            {!isClient && (appointment.status === 'scheduled' || appointment.status === 'warning') && (
               <Button
                 onClick={handleStartAppointment}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
@@ -493,7 +606,7 @@ export function AppointmentDetailsDialog({
             )}
 
             {/* Botão Cancelar (comum mas condicionado) */}
-            {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && (
+            {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
               <Button
                 variant="destructive"
                 onClick={() => setShowCancelDialog(true)}

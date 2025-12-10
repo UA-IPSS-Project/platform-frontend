@@ -71,6 +71,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const weekDays = getWeekDays(currentDate);
   const timeSlots = generateTimeSlots();
+  // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
 
   const isSlotBooked = (date: Date, time: string) => {
@@ -117,9 +118,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const handleSlotClick = (date: Date, time: string) => {
     const appointment = getAppointmentForSlot(date, time);
-    const isOwn = appointment && currentUserNif && appointment.patientNIF === currentUserNif;
+    // Verificar se é marcação própria
+    const isOwn = appointment && (
+      (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
+      appointments.some(a => a.id === appointment.id)
+    );
 
     if (appointment) {
+      // Clientes só podem ver detalhes das suas próprias marcações
       if (isClient && !isOwn) return;
       onViewAppointment(appointment);
       return;
@@ -290,31 +296,53 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 {weekDays.map((day, idx) => {
                   const booked = isSlotBooked(day, time);
                   const appointment = getAppointmentForSlot(day, time);
-                  const isOwn = appointment && currentUserNif && appointment.patientNIF === currentUserNif;
+                  // Verificar se é marcação própria: tem NIF preenchido E corresponde ao utente
+                  // OU está no array appointments (que contém apenas marcações do utente)
+                  const isOwn = appointment && (
+                    (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
+                    appointments.some(a => a.id === appointment.id)
+                  );
+                  // Clientes só podem clicar nas suas próprias marcações
                   const blocked = booked && isClient && !isOwn;
+                  
                   const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs cursor-pointer`;
                   const available = isDarkMode
                     ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600'
                     : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600';
-                  const appointmentStyles =
-                    appointment?.status === 'in-progress'
+                  
+                  // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
+                  const appointmentStyles = blocked
+                    ? (isDarkMode
+                      ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                      : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed')
+                    : isClient && isOwn
+                    ? (appointment?.status === 'completed'
+                      ? 'bg-green-600 text-white border-green-700 hover:bg-green-700'
+                      : appointment?.status === 'cancelled'
+                      ? 'bg-red-600 text-white border-red-700 hover:bg-red-700'
+                      : appointment?.status === 'in-progress'
+                      ? 'bg-purple-600 text-white border-purple-700 hover:bg-purple-700'
+                      : appointment?.status === 'warning'
+                      ? 'bg-yellow-600 text-white border-yellow-700 hover:bg-yellow-700'
+                      : 'bg-pink-600 text-white border-pink-700 hover:bg-pink-700')
+                      : (appointment?.status === 'completed'
+                      ? 'bg-green-600 text-white border-green-700'
+                      : appointment?.status === 'cancelled'
+                      ? 'bg-red-600 text-white border-red-700'
+                      : appointment?.status === 'in-progress'
                       ? 'bg-purple-600 text-white border-purple-700'
                       : appointment?.status === 'warning'
                       ? 'bg-yellow-600 text-white border-yellow-700'
-                      : 'bg-pink-600 text-white border-pink-700';
+                      : 'bg-pink-600 text-white border-pink-700');
 
                   return (
                     <button
                       key={idx}
                       onClick={() => handleSlotClick(day, time)}
                       disabled={blocked}
-                      title={blocked ? 'Horário indisponível' : undefined}
+                      title={blocked ? 'Horário ocupado' : isClient && isOwn ? 'Sua marcação - clique para ver detalhes' : undefined}
                       className={`${base} ${
-                        blocked
-                          ? isDarkMode
-                            ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                            : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed'
-                          : booked
+                        booked
                           ? appointmentStyles
                           : available
                       }`}
@@ -322,7 +350,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       {appointment && !blocked && (
                         <div className="flex items-center gap-1 text-left truncate font-semibold text-sm leading-tight">
                           <UserIcon className="w-3.5 h-3.5 text-white" />
-                          <span className="truncate">{appointment.patientName}</span>
+                          <span className="truncate">{isClient && isOwn ? 'Sua marcação' : appointment.patientName}</span>
                         </div>
                       )}
                     </button>

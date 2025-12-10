@@ -41,12 +41,10 @@ export function HistoryDialog({ open, onClose, appointments, onViewAppointment }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'in-progress':
-        return <Badge className="bg-purple-500 text-white">Em Curso</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-gray-700 text-white">Agendado</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-600 text-white">Concluído</Badge>;
       case 'warning':
-        return <Badge className="bg-yellow-500 text-gray-900">! Agendado</Badge>;
+        return <Badge className="bg-yellow-500 text-gray-900">Não compareceu</Badge>;
       case 'cancelled':
         return <Badge variant="destructive">Cancelado</Badge>;
       default:

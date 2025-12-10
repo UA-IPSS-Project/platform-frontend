@@ -24,9 +24,7 @@ const parseAppointmentDate = (value: Appointment['date']) => {
 
 const getStatusLabel = (status: Appointment['status']) => {
   switch (status) {
-    case 'in-progress':
-      return 'Em Curso';
-    case 'scheduled':
+    case 'completed':
       return 'Concluído';
     case 'warning':
       return 'Não compareceu';
@@ -39,9 +37,7 @@ const getStatusLabel = (status: Appointment['status']) => {
 
 const getStatusBadge = (status: Appointment['status']) => {
   switch (status) {
-    case 'in-progress':
-      return <Badge className="bg-purple-500 text-white">Em Curso</Badge>;
-    case 'scheduled':
+    case 'completed':
       return <Badge className="bg-green-600 text-white">Concluído</Badge>;
     case 'warning':
       return <Badge className="bg-yellow-500 text-gray-900">Não compareceu</Badge>;
@@ -153,10 +149,9 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os estados</SelectItem>
-              <SelectItem value="scheduled">Concluído</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
+              <SelectItem value="completed">Concluído</SelectItem>
               <SelectItem value="warning">Não compareceu</SelectItem>
-              <SelectItem value="in-progress">Em Curso</SelectItem>
+              <SelectItem value="cancelled">Cancelado</SelectItem>
             </SelectContent>
           </Select>
 

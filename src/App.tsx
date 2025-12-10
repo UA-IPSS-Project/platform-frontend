@@ -6,23 +6,13 @@ import { UserDashboard } from './components/UserDashboard';
 import { SecretaryDashboard } from './components/SecretaryDashboard';
 import { Toaster } from 'sonner';
 import AbstractBackground from './components/ui/AbstractBackground';
-
-type UserType = 'user' | 'secretary' | null;
-
-interface User {
-  name: string;
-  nif: string;
-  contact: string;
-  email: string;
-  birthDate?: string;
-  type: UserType;
-}
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
   const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('login');
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -35,65 +25,16 @@ function App() {
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
 
-  const handleLogin = (identifier: string, password: string) => {
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Find user by identifier (can be NIF, contact, or email)
-    const user = users.find((u: User) => 
-      u.nif === identifier || 
-      u.contact === identifier || 
-      u.email === identifier
-    );
-
-    if (user) {
-      const pwKey = user.nif && user.nif.trim() ? user.nif : user.email;
-      if (localStorage.getItem(`password_${pwKey}`) === password) {
-        // Determine user type based on login identifier
-        let userType: UserType = 'user';
-        
-        // If identifier is 9 digits (NIF or contact), it's a user
-        if (/^\d{9}$/.test(identifier)) {
-          userType = 'user';
-        } 
-        // If identifier ends with @florinhas.pt, it's secretary
-        else if (identifier.endsWith('@florinhas.pt')) {
-          userType = 'secretary';
-        }
-        // If logging in with regular email but user has @florinhas.pt email
-        else if (user.email.endsWith('@florinhas.pt')) {
-          userType = 'secretary';
-        }
-
-        const loggedUser = { ...user, type: userType };
-        setCurrentUser(loggedUser);
-        setCurrentView('dashboard');
-        return true;
-      }
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setCurrentView('dashboard');
+    } else {
+      setCurrentView('login');
     }
-    
-    return false;
-  };
-
-  const handleRegister = (userData: Omit<User, 'type'> & { accountType?: 'user' | 'employee' }, password: string) => {
-    // Get existing users
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    
-    // Determine type: employees become 'secretary' so they see staff dashboard
-    const type: UserType = userData.accountType === 'employee' ? 'secretary' : 'user';
-    const newUser: User = { ...userData, type };
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    // store password keyed by nif when available, otherwise by email
-    const pwKey = userData.nif && userData.nif.trim() ? userData.nif : userData.email;
-    localStorage.setItem(`password_${pwKey}`, password);
-    
-    setCurrentView('login');
-    return true;
-  };
+  }, [isAuthenticated, user]);
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    logout();
     setCurrentView('login');
   };
 
@@ -119,18 +60,28 @@ function App() {
         )}
 
         {/* Content */}
-        {currentView === 'dashboard' && currentUser ? (
+        {currentView === 'dashboard' && isAuthenticated && user ? (
           <div className="relative z-10 min-h-screen w-full">
-            {currentUser.type === 'secretary' ? (
+            {user.role === 'FUNCIONARIO' ? (
               <SecretaryDashboard 
-                user={currentUser} 
+                user={{
+                  name: user.nome || '',
+                  nif: user.nif || '',
+                  contact: user.telefone || '',
+                  email: user.email || ''
+                }}
                 onLogout={handleLogout}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
               />
             ) : (
               <UserDashboard
-                user={currentUser}
+                user={{
+                  name: user.nome || '',
+                  nif: user.nif || '',
+                  contact: user.telefone || '',
+                  email: user.email || ''
+                }}
                 onLogout={handleLogout}
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
@@ -141,7 +92,6 @@ function App() {
           <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
             {currentView === 'login' && (
               <LoginForm 
-                  onLogin={handleLogin}
                   onNavigateToRegister={(type) => {
                     setRegisterInitialType(type ?? 'user');
                     setCurrentView('register');
@@ -150,7 +100,6 @@ function App() {
             )}
               {currentView === 'register' && (
                 <RegisterForm 
-                  onRegister={handleRegister}
                   onNavigateToLogin={() => setCurrentView('login')}
                   initialAccountType={registerInitialType}
                 />

@@ -11,18 +11,20 @@ import { toast } from 'sonner';
 interface ClientAppointmentDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (data: { subject: string; description: string; documents: string[] }) => void;
   date: Date;
   time: string;
+  utenteId: number;
+  onSuccess?: () => void;
 }
 
 import SUBJECTS from '../../lib/subjects';
 
-export function ClientAppointmentDialog({ open, onClose, onSave, date, time }: ClientAppointmentDialogProps) {
+export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [documents, setDocuments] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -31,16 +33,48 @@ export function ClientAppointmentDialog({ open, onClose, onSave, date, time }: C
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
       toast.error('Preencha o assunto da marcação');
       return;
     }
+
+    setIsLoading(true);
     try {
-      onSave({ subject, description, documents });
-    } catch {
-      toast.error('Houve um erro, tente novamente');
+      // Combinar data e hora
+      const [hours, minutes] = time.split(':');
+      const dateTime = new Date(date);
+      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const localDateTime = dateTime.toISOString().slice(0, 19);
+
+      const response = await fetch('http://localhost:8080/api/marcacoes/remota', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          data: localDateTime,
+          assunto: subject,
+          utenteId: utenteId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Erro ao criar marcação');
+      }
+
+      toast.success('Marcação criada com sucesso!');
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao criar marcação:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar marcação');
+    } finally {
+      setIsLoading(false);
     }
   };
 

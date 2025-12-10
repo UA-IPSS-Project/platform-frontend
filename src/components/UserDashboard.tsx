@@ -13,8 +13,9 @@ import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
 import type { Appointment } from './SecretaryDashboard';
-import { generateMockAppointments, normalizeMockAppointments } from './SecretaryDashboard';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
+import { marcacoesApi } from '../services/api';
 
 interface UserDashboardProps {
   user: {
@@ -55,33 +56,10 @@ type ViewType =
   | 'home';
 
 export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
-  const APPOINTMENTS_KEY = 'appointments';
-  const userSeededRef = useRef(false);
-
-  const loadAppointments = () => {
-    try {
-      const raw = localStorage.getItem(APPOINTMENTS_KEY);
-      if (raw) {
-        const parsed: Appointment[] = JSON.parse(raw).map((apt: any) => ({
-          ...apt,
-          date: new Date(apt.date),
-          patientNIF: apt.patientName === 'Maria Silva' && apt.patientNIF === '123456789' ? '123450001' : apt.patientNIF,
-        }));
-        return normalizeMockAppointments(parsed);
-      }
-    } catch {
-      /* ignore */
-    }
-    const seed = normalizeMockAppointments(generateMockAppointments());
-    try {
-      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(seed));
-    } catch {
-      /* ignore */
-    }
-    return seed;
-  };
-
-  const [allAppointments, setAllAppointments] = useState<Appointment[]>(loadAppointments());
+  const { user: authUser } = useAuth();
+  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
+  const [blockedAppointments, setBlockedAppointments] = useState<Appointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const [currentView, setCurrentView] = useState<ViewType>('appointments');
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
@@ -93,6 +71,81 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Carregar marcações da API
+  const carregarMarcacoes = async () => {
+    if (!authUser?.id) return;
+    
+    setIsLoadingAppointments(true);
+    try {
+      // Carregar marcações próprias
+      const marcacoes = await marcacoesApi.obterPorUtente(authUser.id);
+      
+      // Converter formato da API para o formato do componente
+      const appointmentsFromAPI: Appointment[] = marcacoes.map((m) => {
+        const dataHora = new Date(m.data);
+        
+        // Mapear estado da API para o formato esperado
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        if (m.estado) {
+          const estadoUpper = m.estado.toUpperCase();
+          if (estadoUpper === 'AGENDADO') status = 'scheduled';
+          else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
+          else if (estadoUpper === 'AVISO') status = 'warning';
+          else if (estadoUpper === 'CONCLUIDO') status = 'completed';
+          else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+        }
+        
+        return {
+          id: m.id.toString(),
+          date: dataHora,
+          time: `${dataHora.getHours().toString().padStart(2, '0')}:${dataHora.getMinutes().toString().padStart(2, '0')}`,
+          duration: 15,
+          patientNIF: authUser?.nif || '',
+          patientName: authUser?.nome || '',
+          patientContact: authUser?.telefone || '',
+          patientEmail: authUser?.email || '',
+          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
+          description: m.marcacaoSecretaria?.descricao || '',
+          status: status,
+        };
+      });
+      
+      setAllAppointments(appointmentsFromAPI);
+      
+      // Carregar marcações bloqueadas (de outros utentes)
+      const bloqueadas = await marcacoesApi.obterMarcacoesBloqueadas(authUser.id);
+      const blockedFromAPI: Appointment[] = bloqueadas.map((b) => {
+        const dataHora = new Date(b.data);
+        return {
+          id: b.id.toString(),
+          date: dataHora,
+          time: `${dataHora.getHours().toString().padStart(2, '0')}:${dataHora.getMinutes().toString().padStart(2, '0')}`,
+          duration: 15,
+          patientNIF: '',
+          patientName: '',
+          patientContact: '',
+          patientEmail: '',
+          subject: '',
+          description: '',
+          status: 'scheduled' as const,
+        };
+      });
+      
+      setBlockedAppointments(blockedFromAPI);
+      console.log(`${appointmentsFromAPI.length} marcações próprias e ${blockedFromAPI.length} bloqueadas carregadas`);
+    } catch (error) {
+      console.error('Erro ao carregar marcações:', error);
+      toast.error('Erro ao carregar marcações');
+    } finally {
+      setIsLoadingAppointments(false);
+    }
+  };
+
+  // Carregar marcações ao montar o componente
+  useEffect(() => {
+    carregarMarcacoes();
+  }, [authUser?.id]);
 
   // Sample notifications for user
   const [notifications, setNotifications] = useState([
@@ -145,36 +198,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     setShowClientDialog(true);
   };
 
-  const handleSaveClientAppointment = (payload: { subject: string; description: string; documents: string[] }) => {
-    if (!editingSlot) {
-      toast.error('Houve um erro, tente novamente');
-      return;
-    }
-
-    try {
-      const newAppointment: Appointment = {
-        id: Date.now().toString(),
-        date: editingSlot.date,
-        time: editingSlot.time,
-        duration: 15,
-        patientNIF: user.nif,
-        patientName: user.name,
-        patientContact: user.contact,
-        subject: payload.subject,
-        description: payload.description,
-        status: 'scheduled',
-        documents: payload.documents.map((name) => ({ name })),
-      };
-
-      setAllAppointments([...allAppointments, newAppointment]);
-      toast.success('Marcação feita com sucesso!');
-      setShowClientDialog(false);
-      setEditingSlot(null);
-    } catch {
-      toast.error('Houve um erro, tente novamente');
-    }
-  };
-
   const handleViewAppointment = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setShowDetailsDialog(true);
@@ -202,40 +225,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       </div>
     </div>
   );
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(allAppointments));
-    } catch {
-      /* ignore */
-    }
-  }, [allAppointments]);
-
-  useEffect(() => {
-    if (userSeededRef.current) return;
-    const hasUserAppointment = allAppointments.some((apt) => apt.patientNIF === user.nif);
-    if (!hasUserAppointment) {
-      const baseDate = new Date();
-      baseDate.setDate(baseDate.getDate() + 1);
-      baseDate.setHours(15, 0, 0, 0);
-      const newAppointment: Appointment = {
-        id: `user-${Date.now()}`,
-        date: baseDate,
-        time: '15:00',
-        duration: 15,
-        patientNIF: user.nif,
-        patientName: user.name,
-        patientContact: user.contact,
-        subject: 'Agendamento pessoal',
-        description: 'Marcação criada para o seu utilizador',
-        status: 'scheduled',
-      };
-      setAllAppointments((prev) => [...prev, newAppointment]);
-      userSeededRef.current = true;
-    } else {
-      userSeededRef.current = true;
-    }
-  }, [allAppointments, user.contact, user.name, user.nif]);
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
@@ -346,7 +335,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 <div className="space-y-6">
                   <WeeklySchedule
                     appointments={visibleAppointments}
-                    allAppointments={allAppointments}
+                    allAppointments={[...allAppointments, ...blockedAppointments]}
                     currentUserNif={user.nif}
                     isClient
                     onCreateAppointment={handleCreateAppointment}
@@ -400,7 +389,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           mode="client"
         />
 
-        {showClientDialog && editingSlot && (
+        {showClientDialog && editingSlot && authUser && (
           <ClientAppointmentDialog
             open={showClientDialog}
             onClose={() => {
@@ -409,7 +398,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             }}
             date={editingSlot.date}
             time={editingSlot.time}
-            onSave={handleSaveClientAppointment}
+            utenteId={authUser.id}
+            onSuccess={carregarMarcacoes}
           />
         )}
 
