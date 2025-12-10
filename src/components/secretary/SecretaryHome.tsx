@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GlassCard } from '../ui/glass-card';
 import {
   Calendar,
@@ -10,18 +10,12 @@ import {
   ArrowRight,
   UserPlus,
 } from 'lucide-react';
+import { marcacoesApi, utilizadoresApi } from '../../services/api';
 
 interface SecretaryHomeProps {
   isDarkMode: boolean;
   onNavigate: (view: string) => void;
 }
-
-const stats = [
-  { icon: Calendar, label: 'Marcações Hoje', value: '8', color: 'bg-purple-500', view: 'appointments' },
-  { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'bg-pink-500', view: 'candidaturas' },
-  { icon: ClipboardList, label: 'Requisições', value: '5', color: 'bg-blue-500', view: 'requisitions' },
-  { icon: Users, label: 'Utentes Ativos', value: '156', color: 'bg-green-500', view: 'management' },
-];
 
 const recentActivity = [
   { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min' },
@@ -31,6 +25,43 @@ const recentActivity = [
 ];
 
 export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
+  const [marcacoesHoje, setMarcacoesHoje] = useState<number>(0);
+  const [utentesAtivos, setUtentesAtivos] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        console.log('Carregando estatísticas...');
+        const [marcacoes, utentes] = await Promise.all([
+          marcacoesApi.contarHoje(),
+          utilizadoresApi.contarUtentesAtivos(),
+        ]);
+        console.log('Marcações hoje:', marcacoes);
+        console.log('Utentes ativos:', utentes);
+        setMarcacoesHoje(marcacoes);
+        setUtentesAtivos(utentes);
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+        // Mostrar valores como 0 em caso de erro
+        setMarcacoesHoje(0);
+        setUtentesAtivos(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const stats = [
+    { icon: Calendar, label: 'Marcações Hoje', value: loading ? '...' : marcacoesHoje.toString(), color: 'bg-purple-500', view: 'appointments' },
+    { icon: Users, label: 'Utentes Ativos', value: loading ? '...' : utentesAtivos.toString(), color: 'bg-green-500', view: 'management' },
+    { icon: FileText, label: 'Candidaturas Pendentes', value: 'x', color: 'bg-pink-500', view: 'candidaturas' },
+    { icon: ClipboardList, label: 'Requisições', value: 'x', color: 'bg-blue-500', view: 'requisitions' },
+  ];
+
   const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
   const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
   const hoverBgClass = isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-purple-50';

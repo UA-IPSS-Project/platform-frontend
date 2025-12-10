@@ -432,6 +432,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           <main className="w-full px-6 py-6">
             {currentView === 'home' ? (
               <SecretaryHome
+                key={currentView}
                 isDarkMode={isDarkMode}
                 onNavigate={setCurrentView}
               />

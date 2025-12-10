@@ -268,6 +268,30 @@ export const marcacoesApi = {
         funcionarioId,
       }),
     }),
+
+  // Contar marcações de hoje
+  contarHoje: () =>
+    apiRequest<number>('/api/marcacoes/count/hoje', {
+      method: 'GET',
+    }),
+};
+
+// ===================
+// Utilizadores API
+// ===================
+
+export const utilizadoresApi = {
+  // Contar utentes ativos
+  contarUtentesAtivos: () =>
+    apiRequest<number>('/api/utilizadores/utentes/count', {
+      method: 'GET',
+    }),
+
+  // Contar funcionários
+  contarFuncionarios: () =>
+    apiRequest<number>('/api/utilizadores/funcionarios/count', {
+      method: 'GET',
+    }),
 };
 
 // Export API base URL for other uses
