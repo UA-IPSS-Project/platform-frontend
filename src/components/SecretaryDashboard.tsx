@@ -44,6 +44,7 @@ export interface Appointment {
   status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved';
   cancellationReason?: string;
   documents?: { name: string; invalid?: boolean; reason?: string }[];
+  attendantName?: string;
 }
 
 type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | string;
@@ -72,11 +73,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       const convertidas = data.map((m: any) => {
         const dateTime = new Date(m.data);
         const utente = m.marcacaoSecretaria?.utente;
-        
+
         // Mapear estado da API para o formato esperado
         let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
         const estadoUpper = m.estado?.toUpperCase();
-        
+
         if (m.estado) {
           if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
           else if (estadoUpper === 'AGENDADO') status = 'scheduled';
@@ -85,7 +86,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
         }
-        
+
         return {
           id: m.id.toString(),
           version: m.version,
@@ -99,6 +100,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
           description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
           status: status,
+          attendantName: m.atendenteNome, // Mapear nome do atendente
         };
       });
       setAppointments(convertidas);
@@ -115,7 +117,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       const convertidas = data.map((m: any) => {
         const dateTime = new Date(m.data);
         const utente = m.marcacaoSecretaria?.utente;
-        
+
         // Mapear estado da API para o formato esperado
         let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
         if (m.estado) {
@@ -127,7 +129,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
         }
-        
+
         return {
           id: m.id.toString(),
           version: m.version,
@@ -141,6 +143,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
           description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
           status: status,
+          attendantName: m.atendenteNome,
         };
       });
       setHistoryAppointments(convertidas);
@@ -237,16 +240,62 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     setShowAppointmentDialog(true);
   };
 
-  const handleViewAppointment = (appointment: Appointment) => {
+  const handleViewAppointment = async (appointment: Appointment) => {
     if (appointment.status === 'reserved') {
       return; // Não abrir detalhes para slots reserveds
     }
-    setSelectedAppointment(appointment);
-    setShowDetailsDialog(true);
+
+    try {
+      // Fetch fresh data
+      const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
+
+      // Map response to Appointment type
+      const dateTime = new Date(latestData.data);
+      const utente = latestData.marcacaoSecretaria?.utente;
+
+      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+      const estadoUpper = latestData.estado?.toUpperCase();
+
+      if (latestData.estado) {
+        if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
+        else if (estadoUpper === 'AGENDADO') status = 'scheduled';
+        else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
+        else if (estadoUpper === 'AVISO') status = 'warning';
+        else if (estadoUpper === 'CONCLUIDO') status = 'completed';
+        else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+      }
+
+      const freshAppointment: Appointment = {
+        id: latestData.id.toString(),
+        version: latestData.version,
+        date: dateTime,
+        time: dateTime.toTimeString().slice(0, 5),
+        duration: 15,
+        patientNIF: status === 'reserved' ? '' : (utente?.nif || 'N/A'),
+        patientName: status === 'reserved' ? 'reserved' : (utente?.nome || 'Nome não disponível'),
+        patientContact: status === 'reserved' ? '' : (utente?.telefone || 'N/A'),
+        patientEmail: status === 'reserved' ? '' : (utente?.email || 'Email não disponível'),
+        subject: status === 'reserved' ? 'reserved' : (latestData.marcacaoSecretaria?.assunto || 'Sem assunto'),
+        description: status === 'reserved' ? '' : (latestData.marcacaoSecretaria?.descricao || ''),
+        status: status,
+      };
+
+      // Update in list if changed
+      setAppointments(prev => prev.map(apt => apt.id === freshAppointment.id ? freshAppointment : apt));
+
+      setSelectedAppointment(freshAppointment);
+      setShowDetailsDialog(true);
+    } catch (error) {
+      console.error('Erro ao atualizar marcação:', error);
+      toast.error('Não foi possível carregar os dados mais recentes da marcação.');
+      // Fallback: open with existing data if fetch fails? Or just returning is safer?
+      // Better to refresh list and stop if it likely doesn't exist.
+      carregarMarcacoes();
+    }
   };
 
   const handleUpdateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments(appointments.map(apt => 
+    setAppointments(appointments.map(apt =>
       apt.id === id ? { ...apt, ...updates } : apt
     ));
   };
@@ -420,9 +469,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
               <div className="flex items-center gap-2">
                 <div className="relative z-[10000]" ref={notificationsRef}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => setShowNotifications(!showNotifications)}
                   >

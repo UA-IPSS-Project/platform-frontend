@@ -60,7 +60,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     const dateB = parseAppointmentDate(b.date);
     const dateCompare = (dateB?.getTime() ?? 0) - (dateA?.getTime() ?? 0);
     if (dateCompare !== 0) return dateCompare;
-    
+
     const [aHour, aMin] = a.time.split(':').map(Number);
     const [bHour, bMin] = b.time.split(':').map(Number);
     return (bHour * 60 + bMin) - (aHour * 60 + aMin);
@@ -73,7 +73,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   const filteredAppointments = sortedAppointments.filter(apt => {
     const statusText = getStatusLabel(apt.status);
     const appointmentDate = parseAppointmentDate(apt.date);
-    const matchesSearch = 
+    const matchesSearch =
       searchTerm === '' ||
       apt.time.includes(searchTerm) ||
       appointmentDate?.toLocaleDateString('pt-PT')?.includes(searchTerm) ||
@@ -81,7 +81,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       apt.patientNIF.includes(searchTerm) ||
       apt.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       statusText.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
     const matchesSubject = subjectFilter === 'all' || apt.subject === subjectFilter;
 
@@ -114,9 +114,9 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl text-gray-900 dark:text-gray-100">Histórico de Marcações</h1>
-          <Button 
-            variant="outline" 
-            onClick={handleExport} 
+          <Button
+            variant="outline"
+            onClick={handleExport}
             className="gap-2"
           >
             <DownloadIcon className="w-4 h-4" />
@@ -136,7 +136,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             }}
             className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
           />
-          
+
           <Select
             value={statusFilter}
             onValueChange={(value) => {
@@ -201,17 +201,16 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                   <tr
                     key={apt.id}
                     onClick={() => onViewAppointment(apt)}
-                    className={`border-b cursor-pointer transition-colors ${
-                      isDarkMode 
-                        ? 'border-gray-800 hover:bg-gray-800/50' 
+                    className={`border-b cursor-pointer transition-colors ${isDarkMode
+                        ? 'border-gray-800 hover:bg-gray-800/50'
                         : 'border-gray-100 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.time}</td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">
                       {parseAppointmentDate(apt.date)?.toLocaleDateString('pt-PT') ?? String(apt.date)}
                     </td>
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">Ana Silva</td>
+                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.subject}</td>
                     <td className="py-4 px-4">{getStatusBadge(apt.status)}</td>

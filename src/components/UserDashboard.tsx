@@ -75,18 +75,18 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   // Carregar marcações da API
   const carregarMarcacoes = async () => {
     if (!authUser?.id) return;
-    
+
     console.log('authUser no UserDashboard:', authUser);
-    
+
     setIsLoadingAppointments(true);
     try {
       // Carregar marcações próprias
       const marcacoes = await marcacoesApi.obterPorUtente(authUser.id);
-      
+
       // Converter formato da API para o formato do componente
       const appointmentsFromAPI: Appointment[] = marcacoes.map((m) => {
         const dataHora = new Date(m.data);
-        
+
         // Mapear estado da API para o formato esperado
         let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
         if (m.estado) {
@@ -97,7 +97,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
         }
-        
+
         return {
           id: m.id.toString(),
           date: dataHora,
@@ -112,28 +112,29 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           status: status,
         };
       });
-      
+
       setAllAppointments(appointmentsFromAPI);
-      
-      // Carregar marcações bloqueadas (de outros utentes)
+
       const bloqueadas = await marcacoesApi.obterMarcacoesBloqueadas(authUser.id);
-      const blockedFromAPI: Appointment[] = bloqueadas.map((b) => {
+      const blockedFromAPI: Appointment[] = bloqueadas.map((b: any) => {
         const dataHora = new Date(b.data);
+        const isReserved = b.estado === 'EM_PREENCHIMENTO';
+
         return {
           id: b.id.toString(),
           date: dataHora,
           time: `${dataHora.getHours().toString().padStart(2, '0')}:${dataHora.getMinutes().toString().padStart(2, '0')}`,
           duration: 15,
           patientNIF: '',
-          patientName: '',
+          patientName: isReserved ? 'Reservado' : 'Ocupado',
           patientContact: '',
           patientEmail: '',
-          subject: '',
+          subject: isReserved ? 'Horário Indisponível' : 'Ocupado',
           description: '',
-          status: 'scheduled' as const,
+          status: isReserved ? 'reserved' : 'scheduled', // 'reserved' fica "reserved", 'scheduled' (de outro) fica bloqueado normal
         };
       });
-      
+
       setBlockedAppointments(blockedFromAPI);
       console.log(`${appointmentsFromAPI.length} marcações próprias e ${blockedFromAPI.length} bloqueadas carregadas`);
     } catch (error) {
@@ -220,9 +221,60 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     setShowClientDialog(true);
   };
 
-  const handleViewAppointment = (appointment: Appointment) => {
-    setSelectedAppointment(appointment);
-    setShowDetailsDialog(true);
+  const handleViewAppointment = async (appointment: Appointment) => {
+    try {
+      // Fetch fresh data
+      const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
+
+      const dateTime = new Date(latestData.data);
+      const utente = latestData.marcacaoSecretaria?.utente;
+
+      // Determine if this is own appointment or blocked slot (other user)
+      const isOwnAppointment = utente?.nif === user.nif || appointment.patientNIF === user.nif;
+
+      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+      const estadoUpper = latestData.estado?.toUpperCase();
+
+      if (latestData.estado) {
+        if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
+        else if (estadoUpper === 'AGENDADO') status = 'scheduled';
+        else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
+        else if (estadoUpper === 'AVISO') status = 'warning';
+        else if (estadoUpper === 'CONCLUIDO') status = 'completed';
+        else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+      }
+
+      const freshAppointment: Appointment = {
+        id: latestData.id.toString(),
+        version: latestData.version,
+        date: dateTime,
+        time: dateTime.toTimeString().slice(0, 5),
+        duration: 15,
+        // For own appointments show full info, for others show restricted info
+        patientNIF: isOwnAppointment ? (utente?.nif || 'N/A') : '',
+        patientName: isOwnAppointment ? (utente?.nome || 'Nome não disponível') : '',
+        patientContact: isOwnAppointment ? (utente?.telefone || 'N/A') : '',
+        patientEmail: isOwnAppointment ? (utente?.email || 'Email não disponível') : '',
+        subject: isOwnAppointment ? (latestData.marcacaoSecretaria?.assunto || 'Sem assunto') : '',
+        description: isOwnAppointment ? (latestData.marcacaoSecretaria?.descricao || '') : '',
+        status: status,
+      };
+
+      // Update in appropriate list
+      if (isOwnAppointment) {
+        setAllAppointments(prev => prev.map(apt => apt.id === freshAppointment.id ? freshAppointment : apt));
+      } else {
+        // If it's a blocked appointment (other user), update blocked list if needed
+        // Assuming blocked list structure is simpler, but keeping consistency
+      }
+
+      setSelectedAppointment(freshAppointment);
+      setShowDetailsDialog(true);
+    } catch (error) {
+      console.error('Erro ao atualizar marcação:', error);
+      toast.error('Não foi possível carregar os dados mais recentes da marcação.');
+      carregarMarcacoes();
+    }
   };
 
   const handleUpdateAppointment = (id: string, updates: Partial<Appointment>) => {
@@ -290,9 +342,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
               <div className="flex items-center gap-2">
                 <div className="relative z-[10000]" ref={notificationsRef}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => setShowNotifications(!showNotifications)}
                   >
@@ -348,12 +400,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   email: authUser?.email || user.email,
                 }}
                 onBack={() => setCurrentView('appointments')}
-                onUpdateUser={() => {}}
+                onUpdateUser={() => { }}
                 isDarkMode={isDarkMode}
               />
             ) : currentView === 'history' ? (
               <HistoryPage
-                appointments={visibleAppointments}
+                appointments={visibleAppointments.filter(apt =>
+                  apt.status !== 'scheduled' &&
+                  apt.status !== 'in-progress' &&
+                  apt.status !== 'reserved'
+                )}
                 onBack={() => setCurrentView('appointments')}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}

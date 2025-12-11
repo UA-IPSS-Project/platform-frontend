@@ -1,5 +1,5 @@
 // API Base URL
-export const API_BASE_URL = 'http://localhost:8081';
+export const API_BASE_URL = 'http://localhost:8080';
 
 // Helper function to get token from localStorage
 const getToken = (): string | null => {
@@ -29,7 +29,7 @@ async function apiRequest<T>(
   requiresAuth: boolean = true
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const config: RequestInit = {
     ...options,
     headers: {
@@ -44,21 +44,49 @@ async function apiRequest<T>(
 
     // Check if response is ok
     if (!response.ok) {
-      // Try to parse error message
-      let errorMessage = `HTTP error! status: ${response.status}`;
+      let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
+
       try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorMessage;
+        const text = await response.text();
+
+        try {
+          // Try to parse as JSON
+          const errorData = JSON.parse(text);
+
+          if (errorData.message) {
+            errorMessage = errorData.message;
+
+            // Handle validation errors specifically
+            if (errorData.errors && typeof errorData.errors === 'object') {
+              const details = Object.values(errorData.errors).join('; ');
+              if (details) {
+                errorMessage += `: ${details}`;
+              }
+            }
+          }
+          else if (errorData.error) {
+            // Legacy/Fallback error field
+            errorMessage = errorData.error;
+          }
+        } catch {
+          // If not JSON, try to use text content if it's short
+          if (text && text.length < 200) {
+            errorMessage = text;
+          } else {
+            errorMessage = `Erro ${response.status}: Não foi possível processar a resposta do servidor.`;
+          }
+        }
       } catch {
-        // If can't parse JSON, use default message
+        errorMessage = `Erro de conexão (${response.status})`;
       }
+
       console.error(`API Error: ${config.method || 'GET'} ${url} - ${errorMessage}`);
       throw new Error(errorMessage);
     }
 
     // Get response text first to check if it's empty or invalid
     const text = await response.text();
-    
+
     // If response is empty, return empty object
     if (!text || text.trim().length === 0) {
       return {} as T;
@@ -173,6 +201,7 @@ export interface MarcacaoResponse {
   version: number;
   data: string;
   estado: string;
+  atendenteNome?: string;
   marcacaoSecretaria?: {
     assunto: string;
     descricao?: string;
