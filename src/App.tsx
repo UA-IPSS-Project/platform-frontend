@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
+import NewPasswordForm from './components/NewPasswordForm';
 import { UserDashboard } from './components/UserDashboard';
 import { SecretaryDashboard } from './components/SecretaryDashboard';
 import { Toaster } from 'sonner';
@@ -9,7 +10,7 @@ import AbstractBackground from './components/ui/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
-  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard'>('login');
+  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard' | 'set-new-password'>('login');
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
@@ -98,12 +99,15 @@ function App() {
                   }}
                 />
             )}
-              {currentView === 'register' && (
+                  {currentView === 'register' && (
                 <RegisterForm 
                   onNavigateToLogin={() => setCurrentView('login')}
                   initialAccountType={registerInitialType}
                 />
               )}
+                  {currentView === 'set-new-password' && (
+                    <NewPasswordForm onSuccess={() => setCurrentView('login')} />
+                  )}
           </div>
         )}
       </div>
