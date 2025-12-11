@@ -76,6 +76,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const carregarMarcacoes = async () => {
     if (!authUser?.id) return;
     
+    console.log('authUser no UserDashboard:', authUser);
+    
     setIsLoadingAppointments(true);
     try {
       // Carregar marcações próprias
@@ -147,6 +149,24 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     carregarMarcacoes();
   }, [authUser?.id]);
 
+  // Recarregar marcações quando volta ao separador de appointments
+  useEffect(() => {
+    if (currentView === 'appointments') {
+      carregarMarcacoes();
+    }
+  }, [currentView]);
+
+  // Atualização automática a cada 60 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentView === 'appointments') {
+        carregarMarcacoes();
+      }
+    }, 60000); // 60 segundos
+
+    return () => clearInterval(interval);
+  }, [currentView]);
+
   // Sample notifications for user
   const [notifications, setNotifications] = useState([
     {
@@ -193,7 +213,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     [allAppointments, user.nif]
   );
 
-  const handleCreateAppointment = (date: Date, time: string) => {
+  const handleCreateAppointment = async (date: Date, time: string) => {
+    // Recarregar marcações antes de abrir o dialog
+    await carregarMarcacoes();
     setEditingSlot({ date, time });
     setShowClientDialog(true);
   };
@@ -342,6 +364,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     onViewAppointment={handleViewAppointment}
                     onToggleView={() => { /* no-op: monthly view removed */ }}
                     isDarkMode={isDarkMode}
+                    onRefresh={carregarMarcacoes}
                   />
                 </div>
 
@@ -409,6 +432,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             onClose={() => {
               setShowDetailsDialog(false);
               setSelectedAppointment(null);
+              carregarMarcacoes();
             }}
             appointment={selectedAppointment}
             onUpdate={handleUpdateSelectedAppointment}

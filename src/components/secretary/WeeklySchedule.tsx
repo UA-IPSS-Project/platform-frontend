@@ -21,6 +21,7 @@ interface WeeklyScheduleProps {
   onViewAppointment: (appointment: Appointment) => void;
   onToggleView: () => void;
   isDarkMode: boolean;
+  onRefresh?: () => Promise<void>;
 }
 
 const generateTimeSlots = () => {
@@ -36,7 +37,7 @@ const generateTimeSlots = () => {
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode }: WeeklyScheduleProps) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh }: WeeklyScheduleProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
@@ -116,7 +117,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
   };
 
-  const handleSlotClick = (date: Date, time: string) => {
+  const handleSlotClick = async (date: Date, time: string) => {
     const appointment = getAppointmentForSlot(date, time);
     // Verificar se é marcação própria
     const isOwn = appointment && (
@@ -125,8 +126,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     );
 
     if (appointment) {
-      // Clientes só podem ver detalhes das suas próprias marcações
-      if (isClient && !isOwn) return;
+      // Se for slot reservado ou bloqueado, recarregar marcações
+      if (appointment.status === 'reserved' || (isClient && !isOwn)) {
+        if (onRefresh) {
+          toast.info('A atualizar marcações...');
+          await onRefresh();
+          toast.success('Marcações atualizadas!');
+        }
+        return;
+      }
       onViewAppointment(appointment);
       return;
     }
@@ -311,7 +319,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600';
                   
                   // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
-                  const appointmentStyles = blocked
+                  const appointmentStyles = appointment?.status === 'reserved'
+                    ? (isDarkMode
+                      ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
+                      : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed')
+                    : blocked
                     ? (isDarkMode
                       ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
                       : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed')
@@ -339,20 +351,32 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     <button
                       key={idx}
                       onClick={() => handleSlotClick(day, time)}
-                      disabled={blocked}
-                      title={blocked ? 'Horário ocupado' : isClient && isOwn ? 'Sua marcação - clique para ver detalhes' : undefined}
+                      disabled={false}
+                      title={
+                        appointment?.status === 'reserved'
+                          ? 'Slot reservado - clique para atualizar'
+                          : blocked
+                          ? 'Horário ocupado - clique para atualizar'
+                          : isClient && isOwn
+                          ? 'Sua marcação - clique para ver detalhes'
+                          : undefined
+                      }
                       className={`${base} ${
                         booked
                           ? appointmentStyles
                           : available
                       }`}
                     >
-                      {appointment && !blocked && (
+                      {appointment && appointment.status === 'reserved' ? (
+                        <div className="flex items-center justify-center text-center font-medium text-xs">
+                          reserved
+                        </div>
+                      ) : appointment && !blocked ? (
                         <div className="flex items-center gap-1 text-left truncate font-semibold text-sm leading-tight">
                           <UserIcon className="w-3.5 h-3.5 text-white" />
                           <span className="truncate">{isClient && isOwn ? 'Sua marcação' : appointment.patientName}</span>
                         </div>
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}

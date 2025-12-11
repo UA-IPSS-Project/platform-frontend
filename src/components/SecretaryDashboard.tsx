@@ -31,6 +31,7 @@ interface SecretaryDashboardProps {
 
 export interface Appointment {
   id: string;
+  version?: number;
   date: Date;
   time: string;
   duration: number;
@@ -40,7 +41,7 @@ export interface Appointment {
   patientEmail: string;
   subject: string;
   description: string;
-  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved';
   cancellationReason?: string;
   documents?: { name: string; invalid?: boolean; reason?: string }[];
 }
@@ -73,10 +74,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         const utente = m.marcacaoSecretaria?.utente;
         
         // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+        const estadoUpper = m.estado?.toUpperCase();
+        
         if (m.estado) {
-          const estadoUpper = m.estado.toUpperCase();
-          if (estadoUpper === 'AGENDADO') status = 'scheduled';
+          if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
+          else if (estadoUpper === 'AGENDADO') status = 'scheduled';
           else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
           else if (estadoUpper === 'AVISO') status = 'warning';
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
@@ -85,15 +88,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         
         return {
           id: m.id.toString(),
+          version: m.version,
           date: dateTime,
           time: dateTime.toTimeString().slice(0, 5),
           duration: 15,
-          patientNIF: utente?.nif || 'N/A',
-          patientName: utente?.nome || 'Nome não disponível',
-          patientContact: utente?.telefone || 'N/A',
-          patientEmail: utente?.email || 'Email não disponível',
-          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
-          description: m.marcacaoSecretaria?.descricao || '',
+          patientNIF: status === 'reserved' ? '' : (utente?.nif || 'N/A'),
+          patientName: status === 'reserved' ? 'reserved' : (utente?.nome || 'Nome não disponível'),
+          patientContact: status === 'reserved' ? '' : (utente?.telefone || 'N/A'),
+          patientEmail: status === 'reserved' ? '' : (utente?.email || 'Email não disponível'),
+          subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
+          description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
           status: status,
         };
       });
@@ -113,10 +117,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         const utente = m.marcacaoSecretaria?.utente;
         
         // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
         if (m.estado) {
           const estadoUpper = m.estado.toUpperCase();
-          if (estadoUpper === 'AGENDADO') status = 'scheduled';
+          if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
+          else if (estadoUpper === 'AGENDADO') status = 'scheduled';
           else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
           else if (estadoUpper === 'AVISO') status = 'warning';
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
@@ -125,15 +130,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         
         return {
           id: m.id.toString(),
+          version: m.version,
           date: dateTime,
           time: dateTime.toTimeString().slice(0, 5),
           duration: 15,
-          patientNIF: utente?.nif || 'N/A',
-          patientName: utente?.nome || 'Nome não disponível',
-          patientContact: utente?.telefone || 'N/A',
-          patientEmail: utente?.email || 'Email não disponível',
-          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
-          description: m.marcacaoSecretaria?.descricao || '',
+          patientNIF: status === 'reserved' ? '' : (utente?.nif || 'N/A'),
+          patientName: status === 'reserved' ? 'reserved' : (utente?.nome || 'Nome não disponível'),
+          patientContact: status === 'reserved' ? '' : (utente?.telefone || 'N/A'),
+          patientEmail: status === 'reserved' ? '' : (utente?.email || 'Email não disponível'),
+          subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
+          description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
           status: status,
         };
       });
@@ -149,10 +155,30 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     carregarMarcacoes();
   }, [authUser?.id]);
 
+  // Recarregar marcações quando volta ao separador de appointments
+  useEffect(() => {
+    if (currentView === 'appointments') {
+      carregarMarcacoes();
+    }
+  }, [currentView]);
+
   useEffect(() => {
     if (currentView === 'history') {
       carregarHistorico();
     }
+  }, [currentView]);
+
+  // Atualização automática a cada 60 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentView === 'appointments') {
+        carregarMarcacoes();
+      } else if (currentView === 'history') {
+        carregarHistorico();
+      }
+    }, 60000); // 60 segundos
+
+    return () => clearInterval(interval);
   }, [currentView]);
 
   // Sample notifications for secretary
@@ -204,12 +230,17 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const handleCreateAppointment = (date: Date, time: string) => {
+  const handleCreateAppointment = async (date: Date, time: string) => {
+    // Recarregar marcações antes de abrir o dialog
+    await carregarMarcacoes();
     setEditingAppointment({ date, time });
     setShowAppointmentDialog(true);
   };
 
   const handleViewAppointment = (appointment: Appointment) => {
+    if (appointment.status === 'reserved') {
+      return; // Não abrir detalhes para slots reserveds
+    }
     setSelectedAppointment(appointment);
     setShowDetailsDialog(true);
   };
@@ -468,6 +499,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     onViewAppointment={handleViewAppointment}
                     onToggleView={() => { /* no-op: monthly view removed */ }}
                     isDarkMode={isDarkMode}
+                    onRefresh={carregarMarcacoes}
                   />
                 </div>
 
@@ -529,6 +561,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             onClose={() => {
               setShowDetailsDialog(false);
               setSelectedAppointment(null);
+              carregarMarcacoes();
             }}
             appointment={selectedAppointment}
             onUpdate={handleUpdateAppointment}

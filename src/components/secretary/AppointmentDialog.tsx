@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -32,6 +32,80 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [documents, setDocuments] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+
+  // Reservar slot ao abrir o dialog
+  useEffect(() => {
+    if (open) {
+      reservarSlot();
+    }
+    
+    // Cleanup: liberar reserva ao fechar ou desmontar
+    return () => {
+      if (tempReservaId) {
+        liberarSlot();
+      }
+    };
+  }, [open]);
+
+  const reservarSlot = async () => {
+    try {
+      const [hours, minutes] = time.split(':');
+      const dateTime = new Date(date);
+      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      const localDateTime = dateTime.toISOString().slice(0, 19);
+
+      const response = await fetch('http://localhost:8080/api/marcacoes/reservar-slot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          data: localDateTime,
+          criadoPorId: funcionarioId,
+          // utenteId não enviado - secretaria ainda não sabe o utente
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTempReservaId(data.tempId);
+        console.log('Slot reservado temporariamente:', data.tempId);
+      } else {
+        const error = await response.text();
+        toast.error('Este horário já está ocupado');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Erro ao reservar slot:', error);
+      toast.error('Erro ao verificar disponibilidade');
+      onClose();
+    }
+  };
+
+  const liberarSlot = async () => {
+    if (!tempReservaId) return;
+    
+    try {
+      await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      console.log('Slot liberado:', tempReservaId);
+      setTempReservaId(null);
+    } catch (error) {
+      console.error('Erro ao liberar slot:', error);
+    }
+  };
+
+  const handleClose = async () => {
+    // Liberar slot antes de fechar
+    await liberarSlot();
+    onClose();
+  };
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -69,6 +143,19 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     setIsLoading(true);
 
     try {
+      // 1. PRIMEIRO: Liberar slot temporário
+      if (tempReservaId) {
+        await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        console.log('Slot temporário liberado antes de criar marcação real');
+        setTempReservaId(null);
+      }
+
+      // 2. DEPOIS: Criar marcação real
       const dataHora = new Date(date);
       const [hours, minutes] = time.split(':');
       dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -121,7 +208,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100">Novo Agendamento</DialogTitle>
@@ -249,7 +336,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
               Cancelar
             </Button>
             <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>

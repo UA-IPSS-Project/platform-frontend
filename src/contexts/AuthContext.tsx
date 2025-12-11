@@ -125,6 +125,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: responseData.email,
         nome: responseData.nome,
         role: responseData.role,
+        nif: responseData.nif,
+        telefone: responseData.telefone,
       };
 
       setToken(responseData.token);
@@ -160,6 +162,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: responseData.email,
         nome: responseData.nome,
         role: responseData.role,
+        nif: responseData.nif,
+        telefone: responseData.telefone,
       };
 
       setToken(responseData.token);

@@ -168,6 +168,7 @@ export interface MarcacaoRemotaRequest {
 
 export interface MarcacaoResponse {
   id: number;
+  version: number;
   data: string;
   estado: string;
   marcacaoSecretaria?: {
@@ -260,12 +261,13 @@ export const marcacoesApi = {
     }),
 
   // Atualizar estado da marcação
-  atualizarEstado: (marcacaoId: number, novoEstado: string, funcionarioId: number) =>
+  atualizarEstado: (marcacaoId: number, novoEstado: string, funcionarioId: number, version?: number) =>
     apiRequest<MarcacaoResponse>(`/api/marcacoes/${marcacaoId}/estado`, {
       method: 'PUT',
       body: JSON.stringify({
         novoEstado,
         funcionarioId,
+        version,
       }),
     }),
 

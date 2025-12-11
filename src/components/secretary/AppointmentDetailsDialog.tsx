@@ -139,7 +139,8 @@ export function AppointmentDetailsDialog({
       await marcacoesApi.atualizarEstado(
         parseInt(appointment.id),
         'CANCELADO',
-        authUser.id
+        authUser.id,
+        appointment.version
       );
 
       // Atualizar estado local
@@ -174,7 +175,8 @@ export function AppointmentDetailsDialog({
       await marcacoesApi.atualizarEstado(
         parseInt(appointment.id),
         'CONCLUIDO',
-        authUser.id
+        authUser.id,
+        appointment.version
       );
 
       onUpdate(appointment.id, { status: 'completed' });
@@ -204,7 +206,8 @@ export function AppointmentDetailsDialog({
       await marcacoesApi.atualizarEstado(
         parseInt(appointment.id),
         'AGENDADO',
-        authUser.id
+        authUser.id,
+        appointment.version
       );
 
       onUpdate(appointment.id, { status: 'scheduled' });
@@ -237,7 +240,8 @@ export function AppointmentDetailsDialog({
       const response = await marcacoesApi.atualizarEstado(
         parseInt(appointment.id),
         'EM_PROGRESSO',
-        authUser.id
+        authUser.id,
+        appointment.version
       );
 
       console.log('Resposta da API:', response);
@@ -602,7 +606,7 @@ export function AppointmentDetailsDialog({
               </Button>
             )}
 
-            {isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && (
+            {isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
               <Button
                 variant="destructive"
                 onClick={() => setShowCancelDialog(true)}
