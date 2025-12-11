@@ -27,7 +27,9 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     .filter(apt => {
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
-      return aptDate.getTime() === today.getTime() && apt.status !== 'cancelled';
+      // Apenas marcações de hoje que estão: Agendado, Em Curso ou Aviso
+      return aptDate.getTime() === today.getTime() && 
+             (apt.status === 'scheduled' || apt.status === 'in-progress' || apt.status === 'warning');
     })
     .sort((a, b) => {
       const [aHour, aMin] = a.time.split(':').map(Number);

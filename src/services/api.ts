@@ -282,6 +282,22 @@ export const marcacoesApi = {
 // Utilizadores API
 // ===================
 
+export interface UtilizadorInfo {
+  id: number;
+  nome: string;
+  nif: string;
+  telefone: string;
+  email: string;
+  dataNascimento?: string;
+  activo: boolean;
+}
+
+export interface AtualizarUtilizadorRequest {
+  nome?: string;
+  telefone?: string;
+  email?: string;
+}
+
 export const utilizadoresApi = {
   // Contar utentes ativos
   contarUtentesAtivos: () =>
@@ -293,6 +309,19 @@ export const utilizadoresApi = {
   contarFuncionarios: () =>
     apiRequest<number>('/api/utilizadores/funcionarios/count', {
       method: 'GET',
+    }),
+
+  // Obter utilizador por ID
+  obterPorId: (id: number) =>
+    apiRequest<UtilizadorInfo>(`/api/utilizadores/${id}`, {
+      method: 'GET',
+    }),
+
+  // Atualizar utilizador
+  atualizar: (id: number, data: AtualizarUtilizadorRequest) =>
+    apiRequest<UtilizadorInfo>(`/api/utilizadores/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 };
 

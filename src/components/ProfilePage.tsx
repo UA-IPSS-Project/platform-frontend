@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { ArrowLeftIcon, UserIcon } from './CustomIcons';
+import { utilizadoresApi } from '../services/api';
 
 interface ProfilePageProps {
   user: {
+    id: number;
     name: string;
     nif: string;
     contact: string;
@@ -20,6 +22,7 @@ interface ProfilePageProps {
 
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     fullName: user.name,
     address: 'Rua das Flores, 123',
@@ -35,15 +38,61 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
     workPhone: '217654321',
   });
 
-  const handleSave = () => {
-    onUpdateUser({
-      name: formData.fullName,
-      nif: formData.nif,
-      contact: formData.phonePersonal,
-      email: formData.email,
-    });
-    setIsEditing(false);
-    toast.success('Perfil atualizado com sucesso');
+  // Carregar dados do utilizador da API
+  useEffect(() => {
+    const carregarDados = async () => {
+      try {
+        setLoading(true);
+        const data = await utilizadoresApi.obterPorId(user.id);
+        setFormData({
+          fullName: data.nome,
+          address: 'Rua das Flores, 123',
+          postalCode: '1000-001',
+          dateOfBirth: data.dataNascimento || '15/01/1990',
+          parish: 'São Pedro',
+          phonePersonal: data.telefone,
+          nif: data.nif,
+          email: data.email,
+          profession: 'Engenheiro',
+          workLocation: 'Tech Company',
+          workAddress: 'Av. Principal, 456',
+          workPhone: '217654321',
+        });
+      } catch (error) {
+        console.error('Erro ao carregar dados do utilizador:', error);
+        toast.error('Erro ao carregar dados do perfil');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarDados();
+  }, [user.id]);
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      await utilizadoresApi.atualizar(user.id, {
+        nome: formData.fullName,
+        telefone: formData.phonePersonal,
+        email: formData.email,
+      });
+
+      onUpdateUser({
+        name: formData.fullName,
+        nif: formData.nif,
+        contact: formData.phonePersonal,
+        email: formData.email,
+      });
+      
+      setIsEditing(false);
+      toast.success('Perfil atualizado com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error);
+      toast.error('Erro ao atualizar perfil');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -81,6 +130,14 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
+        <div className="text-gray-600 dark:text-gray-400">A carregar...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
       <div className="w-full max-w-2xl">
@@ -110,6 +167,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
               <Button
                 onClick={() => setIsEditing(true)}
                 className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={loading}
               >
                 Editar
               </Button>
@@ -119,14 +177,16 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
                   onClick={handleCancel}
                   variant="outline"
                   className="border-gray-300 dark:border-gray-700"
+                  disabled={loading}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleSave}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={loading}
                 >
-                  Guardar
+                  {loading ? 'A guardar...' : 'Guardar'}
                 </Button>
               </div>
             )}

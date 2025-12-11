@@ -340,7 +340,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               />
             ) : currentView === 'profile' ? (
               <ProfilePage
-                user={user}
+                user={{
+                  id: authUser?.id || 0,
+                  name: authUser?.nome || user.name,
+                  nif: authUser?.nif || user.nif,
+                  contact: authUser?.telefone || user.contact,
+                  email: authUser?.email || user.email,
+                }}
                 onBack={() => setCurrentView('appointments')}
                 onUpdateUser={() => {}}
                 isDarkMode={isDarkMode}

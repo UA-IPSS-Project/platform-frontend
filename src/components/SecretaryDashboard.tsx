@@ -477,7 +477,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               />
             ) : currentView === 'profile' ? (
               <ProfilePage
-                user={userData}
+                user={{
+                  id: authUser?.id || 0,
+                  name: authUser?.nome || userData.name,
+                  nif: authUser?.nif || userData.nif,
+                  contact: authUser?.telefone || userData.contact,
+                  email: authUser?.email || userData.email,
+                }}
                 onBack={() => setCurrentView('home')}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
