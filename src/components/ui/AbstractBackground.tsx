@@ -14,19 +14,16 @@ export default function AbstractBackground({ isDarkMode = false }: AbstractBackg
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden transition-colors duration-500">
       {/* Fundo Base - Dark mode com roxo médio/escuro em vez de preto */}
-      <div 
-        className={`absolute inset-0 transition-colors duration-500 ${
-          isDarkMode 
-            ? 'bg-gradient-to-br from-purple-900 via-violet-900 to-fuchsia-900' 
-            : 'bg-gradient-to-br from-pink-100 via-purple-50 to-white'
-        }`} 
+      <div
+        className="absolute inset-0 transition-colors duration-500"
+        // Force explicit backgrounds for both modes to avoid CSS variable or cascade conflicts
+        style={isDarkMode ? { background: 'rgb(31, 35, 62)' } : { background: 'rgb(250, 246, 255)' }}
       />
       
       {/* Animated SVG waves */}
       <svg
-        // MUDANÇA 2: Reduzi a opacidade geral no dark mode de 50 para 40 para misturar mais
         className={`absolute w-full h-full transition-opacity duration-500 ${
-          isDarkMode ? 'opacity-40' : 'opacity-60'
+          isDarkMode ? 'opacity-40' : 'opacity-90'
         }`}
         viewBox="0 0 1440 900"
         preserveAspectRatio="xMidYMid slice"
@@ -58,21 +55,21 @@ export default function AbstractBackground({ isDarkMode = false }: AbstractBackg
             <>
               {/* Onda 1: Azul/Roxo Profundo (Base para combinar com o fundo) */}
               <linearGradient id="wave1-dark" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#312e81" stopOpacity="0.3" /> {/* Indigo-900 */}
+                <stop offset="0%" stopColor="#100f3eff" stopOpacity="0.3" /> {/* Indigo-900 */}
                 <stop offset="50%" stopColor="#4c1d95" stopOpacity="0.3" /> {/* Violet-900 */}
                 <stop offset="100%" stopColor="#5b21b6" stopOpacity="0.3" /> {/* Violet-800 */}
               </linearGradient>
 
               {/* Onda 2: O Toque de ROSA (Magenta Escuro) */}
               <linearGradient id="wave2-dark" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#831843" stopOpacity="0.3" /> {/* Pink-900 */}
+                <stop offset="0%" stopColor="#001affff" stopOpacity="0.3" /> {/* Pink-900 */}
                 <stop offset="50%" stopColor="#be185d" stopOpacity="0.25" /> {/* Pink-700 */}
                 <stop offset="100%" stopColor="#9d174d" stopOpacity="0.3" /> {/* Pink-800 */}
               </linearGradient>
 
               {/* Onda 3: Roxo intermédio para ligar os dois */}
               <linearGradient id="wave3-dark" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#6d28d9" stopOpacity="0.25" /> {/* Violet-700 */}
+                <stop offset="0%" stopColor="#ff00ddff" stopOpacity="0.25" /> {/* Violet-700 */}
                 <stop offset="100%" stopColor="#701a75" stopOpacity="0.25" /> {/* Fuchsia-900 */}
               </linearGradient>
             </>
