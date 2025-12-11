@@ -116,7 +116,19 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
     setIsLoading(true);
     try {
-      // Combinar data e hora
+      // 1. PRIMEIRO: Liberar slot temporário
+      if (tempReservaId) {
+        await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        console.log('Slot temporário liberado antes de criar marcação real');
+        setTempReservaId(null);
+      }
+
+      // 2. DEPOIS: Criar marcação real
       const [hours, minutes] = time.split(':');
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -142,8 +154,6 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       }
 
       toast.success('Marcação criada com sucesso!');
-      // Limpar reserva temporária (não precisa liberar pois foi confirmada)
-      setTempReservaId(null);
       onSuccess?.();
       onClose();
     } catch (error) {
