@@ -45,6 +45,17 @@ function App() {
         {/* Animated background */}
         <AbstractBackground isDarkMode={isDarkMode} />
 
+        {/* Logo - Only show on login/register */}
+        {currentView !== 'dashboard' && (
+          <div className="absolute top-6 left-6 z-50 transition-all duration-200">
+            <img 
+              src="/src/assets/LogoSemTextoUltimo.png" 
+              alt="Logo Florinhas" 
+              className="w-14 h-12"
+            />
+          </div>  
+        )}
+
         {/* Theme Toggle - Only show on login/register */}
         {currentView !== 'dashboard' && (
           <button

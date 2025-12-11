@@ -57,5 +57,10 @@
     server: {
       port: 3000,
       open: true,
+      hmr: {
+        host: 'localhost',
+        port: 5174,
+        protocol: 'ws'
+      }
     },
   });
