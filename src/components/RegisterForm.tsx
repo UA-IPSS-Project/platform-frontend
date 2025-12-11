@@ -94,6 +94,18 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
   if (date > today) {
     return { valid: false, error: 'Data não pode ser no futuro' };
   }
+
+  // Validar idade mínima de 18 anos
+  const age = today.getFullYear() - date.getFullYear();
+  const monthDiff = today.getMonth() - date.getMonth();
+  const dayDiff = today.getDate() - date.getDate();
+  
+  const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+  
+  if (actualAge < 18) {
+    return { valid: false, error: 'Deve ter pelo menos 18 anos para se registar' };
+  }
+
   return { valid: true };
 };
 
