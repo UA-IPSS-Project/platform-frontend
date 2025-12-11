@@ -292,12 +292,26 @@ export interface UtilizadorInfo {
   email: string;
   dataNascimento?: string;
   activo: boolean;
+  morada?: string;
+  codigoPostal?: string;
+  freguesia?: string;
+  profissao?: string;
+  localEmprego?: string;
+  moradaEmprego?: string;
+  telefoneEmprego?: string;
 }
 
 export interface AtualizarUtilizadorRequest {
   nome?: string;
   telefone?: string;
   email?: string;
+  morada?: string;
+  codigoPostal?: string;
+  freguesia?: string;
+  profissao?: string;
+  localEmprego?: string;
+  moradaEmprego?: string;
+  telefoneEmprego?: string;
 }
 
 export const utilizadoresApi = {

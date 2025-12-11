@@ -88,8 +88,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
   };
 
+  const isSlotInPast = (date: Date, time: string) => {
+    const [hours, minutes] = time.split(':');
+    const slotDateTime = new Date(date);
+    slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    return slotDateTime <= new Date();
+  };
+
   const getAvailableSlotsForDate = (date: Date) =>
-    timeSlots.filter((slot) => !isSlotBooked(date, slot));
+    timeSlots.filter((slot) => !isSlotBooked(date, slot) && !isSlotInPast(date, slot));
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -119,13 +126,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const handleSlotClick = async (date: Date, time: string) => {
     const appointment = getAppointmentForSlot(date, time);
-    // Verificar se é marcação própria
-    const isOwn = appointment && (
-      (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
-      appointments.some(a => a.id === appointment.id)
-    );
-
+    
+    // Se já existe marcação, permitir visualizar (mesmo no passado)
     if (appointment) {
+      // Verificar se é marcação própria
+      const isOwn = appointment && (
+        (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
+        appointments.some(a => a.id === appointment.id)
+      );
+
       // Se for slot reservado ou bloqueado, recarregar marcações
       if (appointment.status === 'reserved' || (isClient && !isOwn)) {
         if (onRefresh) {
@@ -136,6 +145,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         return;
       }
       onViewAppointment(appointment);
+      return;
+    }
+
+    // Validar se o horário não é no passado APENAS para criar nova marcação
+    if (isSlotInPast(date, time)) {
+      toast.error('Não é possível marcar para uma data/hora no passado');
       return;
     }
 
@@ -303,6 +318,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 </div>
                 {weekDays.map((day, idx) => {
                   const booked = isSlotBooked(day, time);
+                  const inPast = isSlotInPast(day, time);
                   const appointment = getAppointmentForSlot(day, time);
                   // Verificar se é marcação própria: tem NIF preenchido E corresponde ao utente
                   // OU está no array appointments (que contém apenas marcações do utente)
@@ -313,10 +329,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   // Clientes só podem clicar nas suas próprias marcações
                   const blocked = booked && isClient && !isOwn;
                   
-                  const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs cursor-pointer`;
+                  const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                   const available = isDarkMode
-                    ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600'
-                    : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600';
+                    ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600 cursor-pointer'
+                    : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600 cursor-pointer';
+                  const pastSlot = isDarkMode
+                    ? 'border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed'
+                    : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
                   
                   // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
                   const appointmentStyles = appointment?.status === 'reserved'
@@ -351,18 +370,26 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     <button
                       key={idx}
                       onClick={() => handleSlotClick(day, time)}
-                      disabled={false}
+                      disabled={inPast && !appointment}
                       title={
-                        appointment?.status === 'reserved'
-                          ? 'Slot reservado - clique para atualizar'
-                          : blocked
-                          ? 'Horário ocupado - clique para atualizar'
-                          : isClient && isOwn
-                          ? 'Sua marcação - clique para ver detalhes'
-                          : undefined
+                        appointment
+                          ? (appointment.status === 'reserved'
+                            ? 'Slot reservado - clique para atualizar'
+                            : blocked
+                            ? 'Horário ocupado - clique para atualizar'
+                            : isClient && isOwn
+                            ? 'Sua marcação - clique para ver detalhes'
+                            : inPast
+                            ? 'Marcação histórica - clique para ver detalhes'
+                            : 'Clique para ver detalhes')
+                          : inPast
+                          ? 'Horário no passado'
+                          : 'Clique para marcar'
                       }
                       className={`${base} ${
-                        booked
+                        inPast && !appointment
+                          ? pastSlot
+                          : booked
                           ? appointmentStyles
                           : available
                       }`}

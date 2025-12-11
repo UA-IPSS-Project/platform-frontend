@@ -20,6 +20,17 @@ interface ProfilePageProps {
   isDarkMode: boolean;
 }
 
+// Função para formatar data no formato português
+const formatDateToPT = (dateString: string | undefined): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return dateString;
+  }
+};
+
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,17 +57,17 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
         const data = await utilizadoresApi.obterPorId(user.id);
         setFormData({
           fullName: data.nome,
-          address: 'Rua das Flores, 123',
-          postalCode: '1000-001',
-          dateOfBirth: data.dataNascimento || '15/01/1990',
-          parish: 'São Pedro',
-          phonePersonal: data.telefone,
+          address: data.morada || '',
+          postalCode: data.codigoPostal || '',
+          dateOfBirth: formatDateToPT(data.dataNascimento),
+          parish: data.freguesia || '',
+          phonePersonal: data.telefone || '',
           nif: data.nif,
           email: data.email,
-          profession: 'Engenheiro',
-          workLocation: 'Tech Company',
-          workAddress: 'Av. Principal, 456',
-          workPhone: '217654321',
+          profession: data.profissao || '',
+          workLocation: data.localEmprego || '',
+          workAddress: data.moradaEmprego || '',
+          workPhone: data.telefoneEmprego || '',
         });
       } catch (error) {
         console.error('Erro ao carregar dados do utilizador:', error);
@@ -72,17 +83,40 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
   const handleSave = async () => {
     try {
       setLoading(true);
+      // Apenas enviar campos editáveis (não enviar nome, email, nif, dataNascimento)
       await utilizadoresApi.atualizar(user.id, {
-        nome: formData.fullName,
         telefone: formData.phonePersonal,
-        email: formData.email,
+        morada: formData.address,
+        codigoPostal: formData.postalCode,
+        freguesia: formData.parish,
+        profissao: formData.profession,
+        localEmprego: formData.workLocation,
+        moradaEmprego: formData.workAddress,
+        telefoneEmprego: formData.workPhone,
+      });
+
+      // Recarregar dados da API após salvar
+      const dadosAtualizados = await utilizadoresApi.obterPorId(user.id);
+      setFormData({
+        fullName: dadosAtualizados.nome,
+        address: dadosAtualizados.morada || '',
+        postalCode: dadosAtualizados.codigoPostal || '',
+        dateOfBirth: formatDateToPT(dadosAtualizados.dataNascimento),
+        parish: dadosAtualizados.freguesia || '',
+        phonePersonal: dadosAtualizados.telefone || '',
+        nif: dadosAtualizados.nif,
+        email: dadosAtualizados.email,
+        profession: dadosAtualizados.profissao || '',
+        workLocation: dadosAtualizados.localEmprego || '',
+        workAddress: dadosAtualizados.moradaEmprego || '',
+        workPhone: dadosAtualizados.telefoneEmprego || '',
       });
 
       onUpdateUser({
-        name: formData.fullName,
-        nif: formData.nif,
-        contact: formData.phonePersonal,
-        email: formData.email,
+        name: dadosAtualizados.nome,
+        nif: dadosAtualizados.nif,
+        contact: dadosAtualizados.telefone,
+        email: dadosAtualizados.email,
       });
       
       setIsEditing(false);
@@ -123,7 +157,11 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
           className="bg-gray-100 dark:bg-gray-800 border-0 text-gray-900 dark:text-gray-100"
         />
       ) : (
-        <div className="bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded text-gray-600 dark:text-gray-400">
+        <div className={`px-3 py-2 rounded ${
+          !editable || !isEditing
+            ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+        }`}>
           {value}
         </div>
       )}
@@ -196,8 +234,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
           <div className="mb-8">
             <h2 className="text-gray-900 dark:text-gray-100 mb-4">Informação Pessoal</h2>
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              {renderField('Nome Completo', formData.fullName, 'fullName')}
-              {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth')}
+              {renderField('Nome Completo', formData.fullName, 'fullName', false)}
+              {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
               {renderField('Morada', formData.address, 'address')}
               {renderField('Freguesia', formData.parish, 'parish')}
               {renderField('Código Postal', formData.postalCode, 'postalCode')}

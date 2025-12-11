@@ -46,6 +46,15 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const [hours, minutes] = time.split(':');
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      // Validar se a data/hora não é no passado
+      const now = new Date();
+      if (dateTime <= now) {
+        toast.error('Não é possível marcar para uma data/hora no passado');
+        onClose();
+        return;
+      }
+      
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
       const response = await fetch('http://localhost:8080/api/marcacoes/reservar-slot', {
