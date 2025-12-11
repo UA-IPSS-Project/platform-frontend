@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -25,6 +25,80 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   const [documents, setDocuments] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+
+  // Reservar slot ao abrir o dialog
+  useEffect(() => {
+    if (open) {
+      reservarSlot();
+    }
+    
+    // Cleanup: liberar reserva ao fechar ou desmontar
+    return () => {
+      if (tempReservaId) {
+        liberarSlot();
+      }
+    };
+  }, [open]);
+
+  const reservarSlot = async () => {
+    try {
+      const [hours, minutes] = time.split(':');
+      const dateTime = new Date(date);
+      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      const localDateTime = dateTime.toISOString().slice(0, 19);
+
+      const response = await fetch('http://localhost:8080/api/marcacoes/reservar-slot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          data: localDateTime,
+          utenteId: utenteId,
+          criadoPorId: utenteId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTempReservaId(data.tempId);
+        console.log('Slot reservado temporariamente:', data.tempId);
+      } else {
+        const error = await response.text();
+        toast.error('Este horário já está ocupado');
+        onClose();
+      }
+    } catch (error) {
+      console.error('Erro ao reservar slot:', error);
+      toast.error('Erro ao verificar disponibilidade');
+      onClose();
+    }
+  };
+
+  const liberarSlot = async () => {
+    if (!tempReservaId) return;
+    
+    try {
+      await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      console.log('Slot liberado:', tempReservaId);
+      setTempReservaId(null);
+    } catch (error) {
+      console.error('Erro ao liberar slot:', error);
+    }
+  };
+
+  const handleClose = async () => {
+    // Liberar slot antes de fechar
+    await liberarSlot();
+    onClose();
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -68,6 +142,8 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       }
 
       toast.success('Marcação criada com sucesso!');
+      // Limpar reserva temporária (não precisa liberar pois foi confirmada)
+      setTempReservaId(null);
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -89,7 +165,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100">Novo Agendamento</DialogTitle>
@@ -160,11 +236,11 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+            <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
-              Marcar
+            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+              {isLoading ? 'A processar...' : 'Marcar'}
             </Button>
           </div>
         </form>
