@@ -404,19 +404,19 @@ export function AppointmentDetailsDialog({
             </div>
           )}
 
-          {/* Appointment Info Grid */}
+          {/* Appointment Info Grid: NIF and Contact side-by-side (Horário removed) */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
-                <ClockIcon className="w-4 h-4" />
-                Horário
-              </Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.time}</p>
-            </div>
-
             <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
               <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2"># NIF</Label>
               <p className="text-gray-900 dark:text-gray-100">{appointment.patientNIF}</p>
+            </div>
+
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+                <PhoneIcon className="w-4 h-4" />
+                Contacto
+              </Label>
+              <p className="text-gray-900 dark:text-gray-100">{appointment.patientContact}</p>
             </div>
           </div>
 
@@ -429,22 +429,13 @@ export function AppointmentDetailsDialog({
             <p className="text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
           </div>
 
-          {/* Contact & Email */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
-                <PhoneIcon className="w-4 h-4" />
-                Contacto
-              </Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.patientContact}</p>
-            </div>
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
-                <MailIcon className="w-4 h-4" />
-                Email
-              </Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.patientEmail}</p>
-            </div>
+          {/* Email (separate block, similar style to Nome) */}
+          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
+            <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+              <MailIcon className="w-4 h-4" />
+              Email
+            </Label>
+            <p className="text-gray-900 dark:text-gray-100">{appointment.patientEmail}</p>
           </div>
 
           {/* Cancellation info */}
