@@ -39,6 +39,7 @@ async function apiRequest<T>(
   };
 
   try {
+    console.log(`API Request: ${config.method || 'GET'} ${url}`);
     const response = await fetch(url, config);
 
     // Check if response is ok
@@ -51,6 +52,7 @@ async function apiRequest<T>(
       } catch {
         // If can't parse JSON, use default message
       }
+      console.error(`API Error: ${config.method || 'GET'} ${url} - ${errorMessage}`);
       throw new Error(errorMessage);
     }
 
