@@ -150,18 +150,20 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
   const renderField = (label: string, value: string, field: string, editable: boolean = true) => (
     <div>
       <Label className="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{label}</Label>
-      {isEditing && editable ? (
-        <Input
-          value={value}
-          onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-          className="bg-gray-100 dark:bg-gray-800 border-0 text-gray-900 dark:text-gray-100"
-        />
+      {isEditing ? (
+        editable ? (
+          <Input
+            value={value}
+            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+          />
+        ) : (
+          <div className="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500 border border-gray-300 dark:border-gray-600">
+            {value}
+          </div>
+        )
       ) : (
-        <div className={`px-3 py-2 rounded ${
-          !editable || !isEditing
-            ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-        }`}>
+        <div className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
           {value}
         </div>
       )}

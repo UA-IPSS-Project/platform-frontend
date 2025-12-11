@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
+import { calendarioApi, BloqueioAgenda } from '../../services/api';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -51,6 +52,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickDate, setQuickDate] = useState<Date>(today);
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
+  const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
   
   // Opções de ano (dropdown)
   const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
@@ -95,8 +97,31 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     return slotDateTime <= new Date();
   };
 
+  const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+
+  // Verificar se um slot está bloqueado (fim de semana, feriado, etc)
+  const isSlotBlocked = async (date: Date, time: string): Promise<boolean> => {
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const key = `${dateStr}_${time}`;
+    
+    try {
+      const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+      return isBlocked;
+    } catch (error) {
+      console.error('Erro ao verificar bloqueio:', error);
+      return false;
+    }
+  };
+
   const getAvailableSlotsForDate = (date: Date) =>
-    timeSlots.filter((slot) => !isSlotBooked(date, slot) && !isSlotInPast(date, slot));
+    timeSlots.filter((slot) => {
+      const dateStr = date.toISOString().split('T')[0];
+      const key = `${dateStr}_${slot}`;
+      // Verificar tanto os bloqueios da semana quanto do mês do quick dialog
+      const isBlockedInWeek = blockedSlots.has(key);
+      const isBlockedInQuick = quickMonthBlocks.has(key);
+      return !isSlotBooked(date, slot) && !isSlotInPast(date, slot) && !isBlockedInWeek && !isBlockedInQuick;
+    });
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -154,6 +179,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       return;
     }
 
+    // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
+    const blocked = await isSlotBlocked(date, time);
+    if (blocked) {
+      toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+      return;
+    }
+
     onCreateAppointment(date, time);
   };
 
@@ -167,8 +199,54 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     toast.success('Agenda semanal exportada com sucesso');
   };
 
-  const handleQuickDialogToggle = (open: boolean) => {
+  const handleQuickDialogToggle = async (open: boolean) => {
     setQuickDialogOpen(open);
+    
+    if (open) {
+      // Quando abrir o dialog, encontrar a primeira data disponível (não bloqueada)
+      await findFirstAvailableDate();
+    }
+  };
+
+  // Encontrar a primeira data disponível (não bloqueada, não fim de semana)
+  const findFirstAvailableDate = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Procurar até 30 dias à frente
+    for (let i = 0; i < 30; i++) {
+      const testDate = new Date(today);
+      testDate.setDate(today.getDate() + i);
+      
+      // Ignorar fins de semana
+      const dayOfWeek = testDate.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+      
+      // Verificar se há algum horário disponível nesse dia
+      const dateStr = testDate.toISOString().split('T')[0];
+      let hasAvailable = false;
+      
+      for (const slot of timeSlots) {
+        const blocked = await isSlotBlocked(testDate, slot);
+        const booked = isSlotBooked(testDate, slot);
+        const past = isSlotInPast(testDate, slot);
+        
+        if (!blocked && !booked && !past) {
+          hasAvailable = true;
+          break;
+        }
+      }
+      
+      if (hasAvailable) {
+        setQuickYear(testDate.getFullYear());
+        setQuickMonth(testDate.getMonth());
+        setQuickDay(testDate.getDate());
+        return;
+      }
+    }
+    
+    // Se não encontrou nenhuma data disponível, manter a data atual
+    toast.warning('Não foram encontrados horários disponíveis nos próximos 30 dias');
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -186,6 +264,85 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     setQuickDate(newDate);
   }, [quickDay, quickMonth, quickYear]);
 
+  // Carregar bloqueios do mês atual
+  useEffect(() => {
+    const loadBlockedSlots = async () => {
+      try {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1; // JavaScript usa 0-11, API usa 1-12
+        
+        const bloqueios = await calendarioApi.listarBloqueios(year, month);
+        const newBlockedSlots = new Set<string>();
+        
+        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
+          const date = new Date(bloqueio.data);
+          const dateStr = date.toISOString().split('T')[0];
+          
+          if (bloqueio.diaTodo) {
+            // Se é dia todo, bloquear todos os horários
+            timeSlots.forEach(slot => {
+              newBlockedSlots.add(`${dateStr}_${slot}`);
+            });
+          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
+            // Bloquear apenas os horários específicos
+            const startTime = bloqueio.horaInicio;
+            const endTime = bloqueio.horaFim;
+            
+            timeSlots.forEach(slot => {
+              if (slot >= startTime && slot < endTime) {
+                newBlockedSlots.add(`${dateStr}_${slot}`);
+              }
+            });
+          }
+        });
+        
+        setBlockedSlots(newBlockedSlots);
+      } catch (error) {
+        console.error('Erro ao carregar bloqueios:', error);
+      }
+    };
+    
+    loadBlockedSlots();
+  }, [currentDate]);
+
+  // Carregar bloqueios do mês selecionado no quick dialog
+  useEffect(() => {
+    const loadQuickMonthBlocks = async () => {
+      try {
+        const bloqueios = await calendarioApi.listarBloqueios(quickYear, quickMonth + 1);
+        const newBlocks = new Set<string>();
+        
+        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
+          const date = new Date(bloqueio.data);
+          const dateStr = date.toISOString().split('T')[0];
+          
+          if (bloqueio.diaTodo) {
+            timeSlots.forEach(slot => {
+              newBlocks.add(`${dateStr}_${slot}`);
+            });
+          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
+            const startTime = bloqueio.horaInicio;
+            const endTime = bloqueio.horaFim;
+            
+            timeSlots.forEach(slot => {
+              if (slot >= startTime && slot < endTime) {
+                newBlocks.add(`${dateStr}_${slot}`);
+              }
+            });
+          }
+        });
+        
+        setQuickMonthBlocks(newBlocks);
+      } catch (error) {
+        console.error('Erro ao carregar bloqueios do mês:', error);
+      }
+    };
+    
+    if (quickDialogOpen) {
+      loadQuickMonthBlocks();
+    }
+  }, [quickYear, quickMonth, quickDialogOpen]);
+
   useEffect(() => {
     const slots = getAvailableSlotsForDate(quickDate);
     setQuickSlots(slots);
@@ -198,7 +355,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       }
       return slots[0];
     });
-  }, [quickDate, appointments]);
+  }, [quickDate, appointments, blockedSlots, quickMonthBlocks]);
 
   const handleConfirmQuickAppointment = () => {
     if (!quickTime) {
@@ -478,7 +635,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 </Select>
               </div>
 
-              {/* Campo Dia (Com Scrollbar) */}
+              {/* Campo Dia (Com Scrollbar) - Apenas dias de semana */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
                 <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
                 <Select
@@ -488,10 +645,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   <SelectTrigger className="min-w-[120px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
                     <SelectValue />
                   </SelectTrigger>
-                  {/* CORREÇÃO 2: Scrollbar para os dias */}
+                  {/* CORREÇÃO 2: Scrollbar para os dias - APENAS DIAS DE SEMANA */}
                   <SelectContent className={selectMenuClassName} style={selectMenuStyle}>
                     {Array.from({ length: getDaysInMonth(quickYear, quickMonth) }).map((_, index) => {
                       const day = index + 1;
+                      const testDate = new Date(quickYear, quickMonth, day);
+                      const dayOfWeek = testDate.getDay();
+                      
+                      // Filtrar apenas dias de semana (1=segunda, 5=sexta)
+                      if (dayOfWeek === 0 || dayOfWeek === 6) return null;
+                      
                       return (
                         <SelectItem key={day} value={String(day)}>
                           {day.toString().padStart(2, '0')}

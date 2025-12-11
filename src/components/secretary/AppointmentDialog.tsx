@@ -19,6 +19,7 @@ interface AppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
+import { calendarioApi } from '../../services/api';
 
 export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
   const [formData, setFormData] = useState({
@@ -58,6 +59,15 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const now = new Date();
       if (dateTime <= now) {
         toast.error('Não é possível marcar para uma data/hora no passado');
+        onClose();
+        return;
+      }
+
+      // Verificar se o slot está bloqueado
+      const dateStr = date.toISOString().split('T')[0];
+      const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+      if (isBlocked) {
+        toast.error('Este horário está bloqueado (fim de semana ou feriado)');
         onClose();
         return;
       }

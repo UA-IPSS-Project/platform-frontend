@@ -341,5 +341,32 @@ export const utilizadoresApi = {
     }),
 };
 
+// ===================
+// Calendário API
+// ===================
+
+export interface BloqueioAgenda {
+  id: number;
+  data: string;
+  horaInicio?: string;
+  horaFim?: string;
+  motivo: string;
+  diaTodo: boolean;
+}
+
+export const calendarioApi = {
+  // Verificar se um slot específico está bloqueado
+  verificarSlot: (data: string, hora: string) =>
+    apiRequest<boolean>(`/api/calendario/verificar-slot?data=${data}&hora=${hora}`, {
+      method: 'GET',
+    }),
+
+  // Listar bloqueios de um mês
+  listarBloqueios: (ano: number, mes: number) =>
+    apiRequest<BloqueioAgenda[]>(`/api/calendario/bloqueios?ano=${ano}&mes=${mes}`, {
+      method: 'GET',
+    }),
+};
+
 // Export API base URL for other uses
 export { API_BASE_URL };

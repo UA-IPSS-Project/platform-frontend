@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { ChevronRight } from 'lucide-react';
 import type { Appointment } from '../SecretaryDashboard';
+import { calendarioApi } from '../../services/api';
+import { toast } from 'sonner';
 
 interface DayScheduleDialogProps {
   open: boolean;
@@ -104,10 +106,27 @@ export function DayScheduleDialog({
                     </div>
                     <div
                       className="min-h-[50px] relative cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
-                      onClick={() => {
+                      onClick={async () => {
                         if (appointment) {
                           onViewAppointment(appointment);
                         } else {
+                          // Validar se o slot está bloqueado
+                          const dateStr = date.toISOString().split('T')[0];
+                          const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+                          if (isBlocked) {
+                            toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+                            return;
+                          }
+
+                          // Validar se não é no passado
+                          const [hours, minutes] = time.split(':');
+                          const slotDateTime = new Date(date);
+                          slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                          if (slotDateTime <= new Date()) {
+                            toast.error('Não é possível marcar para uma data/hora no passado');
+                            return;
+                          }
+
                           onCreateAppointment(date, time);
                         }
                       }}
