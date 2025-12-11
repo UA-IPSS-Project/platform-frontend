@@ -600,17 +600,6 @@ export function AppointmentDetailsDialog({
               </>
             )}
 
-            {isClient && appointment.status === 'in-progress' && (
-              <Button
-                variant="destructive"
-                onClick={() => setShowCancelDialog(true)}
-                className="w-full gap-2"
-              >
-                <AlertTriangleIcon className="w-4 h-4" />
-                Não posso comparecer
-              </Button>
-            )}
-
             {/* Botão Cancelar (comum mas condicionado) */}
             {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
               <Button
