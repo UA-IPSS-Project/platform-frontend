@@ -19,7 +19,7 @@ interface AppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi } from '../../services/api';
+import { calendarioApi, API_BASE_URL } from '../../services/api';
 
 export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
   const [formData, setFormData] = useState({
@@ -74,7 +74,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch('http://localhost:8080/api/marcacoes/reservar-slot', {
+      const response = await fetch(`${API_BASE_URL}/api/marcacoes/reservar-slot`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!tempReservaId) return;
     
     try {
-      await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+      await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -164,7 +164,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     try {
       // 1. PRIMEIRO: Liberar slot temporário
       if (tempReservaId) {
-        await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+        await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -191,7 +191,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       };
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/marcacoes/presencial', {
+      const response = await fetch(`${API_BASE_URL}/api/marcacoes/presencial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

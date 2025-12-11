@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { API_BASE_URL } from '../services/api';
 
 interface User {
   id: number;
@@ -61,8 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
     try {
       const endpoint = type === 'funcionario' 
-        ? 'http://localhost:8080/api/auth/login/funcionario'
-        : 'http://localhost:8080/api/auth/login/utente';
+        ? `${API_BASE_URL}/api/auth/login/funcionario`
+        : `${API_BASE_URL}/api/auth/login/utente`;
 
       const body = type === 'funcionario'
         ? { email: identifier, password }
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const registerUtente = async (data: UtenteRegisterData) => {
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/utente', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/utente`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const registerFuncionario = async (data: FuncionarioRegisterData) => {
     try {
-      const response = await fetch('http://localhost:8080/api/auth/register/funcionario', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register/funcionario`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -18,7 +18,7 @@ interface ClientAppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi } from '../../services/api';
+import { calendarioApi, API_BASE_URL } from '../../services/api';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
   const [subject, setSubject] = useState('');
@@ -67,7 +67,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch('http://localhost:8080/api/marcacoes/reservar-slot', {
+      const response = await fetch(`${API_BASE_URL}/api/marcacoes/reservar-slot`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     if (!tempReservaId) return;
     
     try {
-      await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+      await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -137,7 +137,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     try {
       // 1. PRIMEIRO: Liberar slot temporário
       if (tempReservaId) {
-        await fetch(`http://localhost:8080/api/marcacoes/libertar-slot/${tempReservaId}`, {
+        await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -154,7 +154,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch('http://localhost:8080/api/marcacoes/remota', {
+      const response = await fetch(`${API_BASE_URL}/api/marcacoes/remota`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

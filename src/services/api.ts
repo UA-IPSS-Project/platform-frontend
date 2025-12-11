@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = 'http://localhost:8081';
 
 // Helper function to get token from localStorage
 const getToken = (): string | null => {
@@ -367,6 +367,3 @@ export const calendarioApi = {
       method: 'GET',
     }),
 };
-
-// Export API base URL for other uses
-export { API_BASE_URL };
