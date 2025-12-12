@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { 
-  CalendarIcon, 
-  HistoryIcon, 
-  DatabaseIcon, 
-  SlidersIcon, 
-  UserIcon, 
-  LogOutIcon, 
-  XIcon, 
-  BellIcon, 
-  ChevronDownIcon, 
+import {
+  CalendarIcon,
+  HistoryIcon,
+  DatabaseIcon,
+  SlidersIcon,
+  UserIcon,
+  LogOutIcon,
+  XIcon,
+  BellIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
   HomeIcon,
   ClipboardListIcon,
@@ -40,24 +40,30 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
   const toggleMenu = (id: string) => {
-    setExpandedMenus(prev => 
+    setExpandedMenus(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
 
   const clientSections = [
-    { heading: 'Secretaria', items: [
-      { id: 'appointments', label: 'Marcações' },
-      { id: 'history', label: 'Histórico' },
-    ]},
-    { heading: 'Balneário', items: [
-      { id: 'balneario', label: 'Marcações' },
-      { id: 'balneario-sobre', label: 'Sobre' },
-    ]},
-    { heading: 'Voluntariado', items: [
-      { id: 'voluntariado', label: 'Inscrição' },
-      { id: 'voluntariado-sobre', label: 'Sobre' },
-    ]},
+    {
+      heading: 'Secretaria', items: [
+        { id: 'appointments', label: 'Marcações' },
+        { id: 'history', label: 'Histórico' },
+      ]
+    },
+    {
+      heading: 'Balneário', items: [
+        { id: 'balneario', label: 'Marcações' },
+        { id: 'balneario-sobre', label: 'Sobre' },
+      ]
+    },
+    {
+      heading: 'Voluntariado', items: [
+        { id: 'voluntariado', label: 'Inscrição' },
+        { id: 'voluntariado-sobre', label: 'Sobre' },
+      ]
+    },
   ];
 
   const clientBottom = [
@@ -68,18 +74,18 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
 
   // Main menu structure with subitems for Secretary
   const secretaryMenuItems = [
-    { 
-      id: 'home', 
-      label: 'Início', 
-      icon: HomeIcon 
+    {
+      id: 'home',
+      label: 'Início',
+      icon: HomeIcon
     },
-    { 
-      id: 'appointments', 
+    {
+      id: 'appointments',
       label: 'Marcações',
       icon: CalendarIcon
     },
-    { 
-      id: 'valencias', 
+    {
+      id: 'valencias',
       label: 'Valências',
       icon: BuildingIcon,
       subitems: [
@@ -87,8 +93,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
         { id: 'escola', label: 'Escola', icon: SchoolIcon },
       ]
     },
-    { 
-      id: 'requisitions', 
+    {
+      id: 'requisitions',
       label: 'Requisições',
       icon: ClipboardListIcon,
       subitems: [
@@ -98,8 +104,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
         { id: 'urgente', label: 'Prioridade Alta', icon: AlertCircleIcon },
       ]
     },
-    { 
-      id: 'candidaturas', 
+    {
+      id: 'candidaturas',
       label: 'Candidaturas',
       icon: FileTextIcon,
       subitems: [
@@ -108,13 +114,13 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
         { id: 'erpi', label: 'ERPI', icon: HeartIcon },
       ]
     },
-    { 
-      id: 'reports', 
+    {
+      id: 'reports',
       label: 'Relatórios',
       icon: HistoryIcon
     },
-    { 
-      id: 'management', 
+    {
+      id: 'management',
       label: 'Gestão',
       icon: DatabaseIcon
     },
@@ -122,18 +128,18 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
 
   // Main menu structure for Client (User Dashboard)
   const clientMenuItems = [
-    { 
-      id: 'home', 
-      label: 'Início', 
-      icon: HomeIcon 
+    {
+      id: 'home',
+      label: 'Início',
+      icon: HomeIcon
     },
-    { 
-      id: 'appointments', 
+    {
+      id: 'appointments',
       label: 'Secretaria',
       icon: CalendarIcon
     },
-    { 
-      id: 'candidaturas', 
+    {
+      id: 'candidaturas',
       label: 'Candidaturas',
       icon: FileTextIcon,
       subitems: [
@@ -162,13 +168,22 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />}
 
       <div
-        className={`fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed top-0 left-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4 border-b dark:border-gray-800">
-            <h2 className="text-lg text-gray-900 dark:text-gray-100">Menu</h2>
+          <div className="flex items-center justify-between px-1 py-3 border-b dark:border-gray-800">
+            <div className="flex items-center gap-5">
+              <img
+                src="/src/assets/LogoSemTextoUltimo.png"
+                alt="Logo Florinhas"
+                className="h-12 w-auto object-contain -ml-10"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">Florinhas do Vouga</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Menu</span>
+              </div>
+            </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -181,100 +196,97 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
             <>
               <div className="space-y-1 mb-6">
                 {(isClient ? clientMenuItems : secretaryMenuItems).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  const isExpanded = expandedMenus.includes(item.id);
+                  const hasSubitems = item.subitems && item.subitems.length > 0;
+
+                  return (
+                    <div key={item.id}>
+                      <button
+                        onClick={() => {
+                          if (hasSubitems) {
+                            toggleMenu(item.id);
+                          } else {
+                            onNavigate(item.id);
+                            onClose();
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {Icon && <Icon className="w-5 h-5" />}
+                          <span>{item.label}</span>
+                        </div>
+                        {hasSubitems && (
+                          isExpanded ? (
+                            <ChevronDownIcon className="w-4 h-4" />
+                          ) : (
+                            <ChevronRightIcon className="w-4 h-4" />
+                          )
+                        )}
+                      </button>
+
+                      {/* Subitems */}
+                      {hasSubitems && isExpanded && (
+                        <div className="ml-8 mt-1 space-y-1">
+                          {item.subitems!.map((subitem) => {
+                            const SubIcon = subitem.icon;
+                            const isSubActive = currentView === subitem.id;
+                            return (
+                              <button
+                                key={subitem.id}
+                                onClick={() => {
+                                  onNavigate(subitem.id);
+                                  onClose();
+                                }}
+                                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${isSubActive
+                                  ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                  }`}
+                              >
+                                {SubIcon && <SubIcon className="w-4 h-4" />}
+                                <span>{subitem.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* GERAL section */}
+              <div className="mb-6">
+                <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Geral</h3>
+                <div className="space-y-1">
+                  {(isClient ? generalItems : secretaryGeneralItems).map((item) => {
                     const Icon = item.icon;
                     const isActive = currentView === item.id;
-                    const isExpanded = expandedMenus.includes(item.id);
-                    const hasSubitems = item.subitems && item.subitems.length > 0;
-
                     return (
-                      <div key={item.id}>
-                        <button
-                          onClick={() => {
-                            if (hasSubitems) {
-                              toggleMenu(item.id);
-                            } else {
-                              onNavigate(item.id);
-                              onClose();
-                            }
-                          }}
-                          className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg transition-colors ${
-                            isActive
-                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          onNavigate(item.id);
+                          onClose();
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
                           }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            {Icon && <Icon className="w-5 h-5" />}
-                            <span>{item.label}</span>
-                          </div>
-                          {hasSubitems && (
-                            isExpanded ? (
-                              <ChevronDownIcon className="w-4 h-4" />
-                            ) : (
-                              <ChevronRightIcon className="w-4 h-4" />
-                            )
-                          )}
-                        </button>
-
-                        {/* Subitems */}
-                        {hasSubitems && isExpanded && (
-                          <div className="ml-8 mt-1 space-y-1">
-                            {item.subitems!.map((subitem) => {
-                              const SubIcon = subitem.icon;
-                              const isSubActive = currentView === subitem.id;
-                              return (
-                                <button
-                                  key={subitem.id}
-                                  onClick={() => {
-                                    onNavigate(subitem.id);
-                                    onClose();
-                                  }}
-                                  className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${
-                                    isSubActive
-                                      ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
-                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                                  }`}
-                                >
-                                  {SubIcon && <SubIcon className="w-4 h-4" />}
-                                  <span>{subitem.label}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span>{item.label}</span>
+                      </button>
                     );
                   })}
                 </div>
-
-                {/* GERAL section */}
-                <div className="mb-6">
-                  <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Geral</h3>
-                  <div className="space-y-1">
-                    {(isClient ? generalItems : secretaryGeneralItems).map((item) => {
-                      const Icon = item.icon;
-                      const isActive = currentView === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            onNavigate(item.id);
-                            onClose();
-                          }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                            isActive
-                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <Icon className="w-5 h-5" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
+              </div>
+            </>
           </div>
 
           <div className="p-4 border-t dark:border-gray-800">

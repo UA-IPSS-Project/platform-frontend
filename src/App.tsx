@@ -47,13 +47,13 @@ function App() {
 
         {/* Logo - Only show on login/register */}
         {currentView !== 'dashboard' && (
-          <div className="absolute top-6 left-6 z-50 transition-all duration-200">
-            <img 
-              src="/src/assets/LogoSemTextoUltimo.png" 
-              alt="Logo Florinhas" 
-              className="w-14 h-12"
+          <div className="absolute top-6 left-20 z-50 transition-all duration-200">
+            <img
+              src="/src/assets/LogoSemTextoUltimo.png"
+              alt="Logo Florinhas"
+              className="w-auto h-16 md:h-20 object-contain hover:scale-105 transition-transform duration-200"
             />
-          </div>  
+          </div>
         )}
 
         {/* Theme Toggle - Only show on login/register */}
@@ -75,7 +75,7 @@ function App() {
         {currentView === 'dashboard' && isAuthenticated && user ? (
           <div className="relative z-10 min-h-screen w-full">
             {user.role === 'FUNCIONARIO' ? (
-              <SecretaryDashboard 
+              <SecretaryDashboard
                 user={{
                   name: user.nome || '',
                   nif: user.nif || '',
@@ -103,22 +103,22 @@ function App() {
         ) : (
           <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
             {currentView === 'login' && (
-              <LoginForm 
-                  onNavigateToRegister={(type) => {
-                    setRegisterInitialType(type ?? 'user');
-                    setCurrentView('register');
-                  }}
-                />
+              <LoginForm
+                onNavigateToRegister={(type) => {
+                  setRegisterInitialType(type ?? 'user');
+                  setCurrentView('register');
+                }}
+              />
             )}
-                  {currentView === 'register' && (
-                <RegisterForm 
-                  onNavigateToLogin={() => setCurrentView('login')}
-                  initialAccountType={registerInitialType}
-                />
-              )}
-                  {currentView === 'set-new-password' && (
-                    <NewPasswordForm onSuccess={() => setCurrentView('login')} />
-                  )}
+            {currentView === 'register' && (
+              <RegisterForm
+                onNavigateToLogin={() => setCurrentView('login')}
+                initialAccountType={registerInitialType}
+              />
+            )}
+            {currentView === 'set-new-password' && (
+              <NewPasswordForm onSuccess={() => setCurrentView('login')} />
+            )}
           </div>
         )}
       </div>
