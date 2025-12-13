@@ -9,9 +9,9 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, FileTextIcon, AlertTriangleIcon, PlayIcon, BellIcon, CheckCircleIcon, CalendarIcon, AlertCircleIcon } from '../CustomIcons';
+import { TrashIcon, XIcon, FileTextIcon, AlertCircleIcon, CalendarIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
-import { marcacoesApi } from '../../services/api';
+import { marcacoesApi, calendarioApi, BloqueioAgenda } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface AppointmentDetailsDialogProps {
@@ -21,6 +21,7 @@ interface AppointmentDetailsDialogProps {
   onUpdate: (id: string, updates: Partial<Appointment>) => void;
   onCancel: (id: string, reason: string) => void;
   isClient?: boolean;
+  existingAppointments?: Appointment[];
 }
 
 const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -32,6 +33,7 @@ export function AppointmentDetailsDialog({
   onUpdate,
   onCancel,
   isClient = false,
+  existingAppointments = []
 }: AppointmentDetailsDialogProps) {
   const { user: authUser } = useAuth();
   const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
@@ -327,22 +329,10 @@ export function AppointmentDetailsDialog({
     setShowUpdateDocDialog(false);
   };
 
-  const handleReschedule = () => {
-    if (!rescheduleTime) {
-      toast.error('Selecione um horário');
-      return;
-    }
 
-    const newDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
-
-    onUpdate(appointment.id, {
-      date: newDate,
-      time: rescheduleTime,
-    });
-
-    toast.success('Marcação reagendada com sucesso');
-    setShowRescheduleDialog(false);
-  };
+  // Availability Logic for Rescheduling
+  const [availableRescheduleSlots, setAvailableRescheduleSlots] = useState<string[]>([]);
+  const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
 
   const generateTimeSlots = () => {
     const slots = [];
@@ -353,6 +343,130 @@ export function AppointmentDetailsDialog({
       }
     }
     return slots;
+  };
+
+  const isSlotBooked = (date: Date, time: string) => {
+    return existingAppointments.some(apt => {
+      const aptDate = new Date(apt.date);
+      aptDate.setHours(0, 0, 0, 0);
+      const slotDate = new Date(date);
+      slotDate.setHours(0, 0, 0, 0);
+
+      // Don't block the CURRENT appointment (we are rescheduling it)
+      if (apt.id === appointment.id) return false;
+
+      return aptDate.getTime() === slotDate.getTime() &&
+        apt.time === time &&
+        apt.status !== 'cancelled';
+    });
+  };
+
+  // Load blocks when Year/Month changes in Reschedule Dialog
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+
+    const loadBlocks = async () => {
+      try {
+        const bloqueios = await calendarioApi.listarBloqueios(rescheduleYear, rescheduleMonth + 1);
+        const newBlocks = new Set<string>();
+        const timeSlots = generateTimeSlots();
+
+        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
+          const date = new Date(bloqueio.data);
+          const dateStr = date.toISOString().split('T')[0];
+
+          if (bloqueio.diaTodo) {
+            timeSlots.forEach(slot => {
+              newBlocks.add(`${dateStr}_${slot}`);
+            });
+          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
+            const startTime = bloqueio.horaInicio;
+            const endTime = bloqueio.horaFim;
+
+            timeSlots.forEach(slot => {
+              if (slot >= startTime && slot < endTime) {
+                newBlocks.add(`${dateStr}_${slot}`);
+              }
+            });
+          }
+        });
+        setQuickMonthBlocks(newBlocks);
+      } catch (error) {
+        console.error('Erro ao carregar bloqueios para reagendamento:', error);
+      }
+    };
+
+    loadBlocks();
+  }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
+
+  // Update available slots when blocks, booked slots or date changes
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+
+    const selectedDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    const timeSlots = generateTimeSlots();
+    const dayOfWeek = selectedDate.getDay();
+
+    // Block weekends immediately
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      setAvailableRescheduleSlots([]);
+      setRescheduleTime('');
+      return;
+    }
+
+    const available = timeSlots.filter(slot => {
+      const key = `${dateStr}_${slot}`;
+
+      // Check Past
+      const [h, m] = slot.split(':');
+      const slotDateTime = new Date(selectedDate);
+      slotDateTime.setHours(parseInt(h), parseInt(m));
+      const isPast = slotDateTime <= new Date();
+
+      // Check Blocks from API
+      const isBlocked = quickMonthBlocks.has(key);
+
+      // Check Existing Appointments
+      const isBooked = isSlotBooked(selectedDate, slot);
+
+      return !isPast && !isBlocked && !isBooked;
+    });
+
+    setAvailableRescheduleSlots(available);
+
+    // Clear selection if not available, or keep if valid
+    setRescheduleTime(prev => {
+      if (available.includes(prev)) return prev;
+      return '';
+    });
+
+  }, [rescheduleYear, rescheduleMonth, rescheduleDay, quickMonthBlocks, existingAppointments, showRescheduleDialog]);
+
+  const handleReschedule = async () => {
+    if (!rescheduleTime) return;
+
+    // Combinar data e hora
+    const [hours, minutes] = rescheduleTime.split(':');
+    const newDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    try {
+      // API call to backend
+      await marcacoesApi.reagendar(Number(appointment.id), newDate.toISOString());
+
+      onUpdate(appointment.id, {
+        date: newDate,
+        time: rescheduleTime,
+        status: 'scheduled' // Optionally reset status if backend does it
+      });
+
+      toast.success('Marcação reagendada com sucesso');
+      setShowRescheduleDialog(false);
+    } catch (error) {
+      console.error("Erro ao reagendar:", error);
+      toast.error("Falha ao guardar o reagendamento.");
+    }
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -843,9 +957,13 @@ export function AppointmentDetailsDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => (
-                      <SelectItem key={day} value={String(day)}>{day}</SelectItem>
-                    ))}
+                    {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => {
+                      const testDate = new Date(rescheduleYear, rescheduleMonth, day);
+                      const dayOfWeek = testDate.getDay();
+                      if (dayOfWeek === 0 || dayOfWeek === 6) return null;
+
+                      return <SelectItem key={day} value={String(day)}>{day}</SelectItem>;
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -853,12 +971,12 @@ export function AppointmentDetailsDialog({
               {/* Horário */}
               <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
                 <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
-                <Select value={rescheduleTime} onValueChange={setRescheduleTime}>
+                <Select value={rescheduleTime} onValueChange={setRescheduleTime} disabled={!availableRescheduleSlots.length}>
                   <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue placeholder="Selecione" />
+                    <SelectValue placeholder={availableRescheduleSlots.length ? "Selecione" : "Indisponível"} />
                   </SelectTrigger>
                   <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {generateTimeSlots().map((slot) => (
+                    {availableRescheduleSlots.map((slot) => (
                       <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                     ))}
                   </SelectContent>

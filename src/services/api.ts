@@ -307,6 +307,13 @@ export const marcacoesApi = {
     apiRequest<number>('/api/marcacoes/count/hoje', {
       method: 'GET',
     }),
+
+  // Reagendar marcação (alterar data)
+  reagendar: (id: number, novaDataHora: string) =>
+    apiRequest<MarcacaoResponse>(`/api/marcacoes/${id}/reagendar`, {
+      method: 'PUT',
+      body: JSON.stringify({ novaDataHora }),
+    }),
 };
 
 // ===================

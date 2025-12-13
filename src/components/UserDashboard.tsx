@@ -533,6 +533,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             onUpdate={handleUpdateSelectedAppointment}
             onCancel={(id, reason) => handleCancelAppointment(id, reason)}
             isClient={true}
+            existingAppointments={[...allAppointments, ...blockedAppointments]}
           />
         )}
 

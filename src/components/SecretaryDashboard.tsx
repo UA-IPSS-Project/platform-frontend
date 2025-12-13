@@ -650,6 +650,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             appointment={selectedAppointment}
             onUpdate={handleUpdateAppointment}
             onCancel={handleCancelAppointment}
+            existingAppointments={appointments}
           />
         )}
 
