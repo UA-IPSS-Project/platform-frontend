@@ -59,9 +59,26 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>(() => {
-    return (localStorage.getItem('secretaryDashboardView') as ViewType) || 'home';
+  // Navigation History Stack
+  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
+    // Restore history if needed, or start with just home
+    const saved = localStorage.getItem('secretaryDashboardView');
+    return saved ? [saved as ViewType] : ['home'];
   });
+
+  // Current view is the last item in history
+  const currentView = viewHistory[viewHistory.length - 1] || 'home';
+
+  const navigateTo = (view: ViewType) => {
+    setViewHistory(prev => [...prev, view]);
+  };
+
+  const navigateBack = () => {
+    setViewHistory(prev => {
+      if (prev.length <= 1) return prev; // Don't pop last item
+      return prev.slice(0, -1);
+    });
+  };
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -173,7 +190,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
   }, [currentView]);
 
-  // Persist view changes
+  // Persist view changes (save only current view for refresh, but component logic uses history)
   useEffect(() => {
     localStorage.setItem('secretaryDashboardView', currentView);
   }, [currentView]);
@@ -313,7 +330,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   };
 
   const handleNavigate = (view: ViewType) => {
-    setCurrentView(view);
+    navigateTo(view);
   };
 
   const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
@@ -433,13 +450,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     { id: 'escola', label: 'Escola' },
                   ]}
                   isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
-                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  onSelect={(id) => navigateTo(id as ViewType)}
                   isDarkMode={isDarkMode}
                 />
 
                 <Button
                   variant={currentView === 'appointments' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('appointments')}
+                  onClick={() => navigateTo('appointments')}
                   className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Marcações
@@ -453,13 +470,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     { id: 'erpi', label: 'ERPI' },
                   ]}
                   isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  onSelect={(id) => navigateTo(id as ViewType)}
                   isDarkMode={isDarkMode}
                 />
 
                 <Button
                   variant={currentView === 'reports' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('reports')}
+                  onClick={() => navigateTo('reports')}
                   className={`text-sm ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Relatórios
@@ -467,7 +484,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
                 <Button
                   variant={currentView === 'management' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('management')}
+                  onClick={() => navigateTo('management')}
                   className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Gestão
@@ -495,7 +512,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onMarkAsRead={handleMarkAsRead}
                       onMarkAllAsRead={handleMarkAllAsRead}
                       onClose={() => setShowNotifications(false)}
-                      onNavigateToPage={() => setCurrentView('notificacoes')}
+                      onNavigateToPage={() => navigateTo('notificacoes')}
                       isDarkMode={isDarkMode}
                     />
                   )}
@@ -521,12 +538,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               <SecretaryHome
                 key={currentView}
                 isDarkMode={isDarkMode}
-                onNavigate={setCurrentView}
+                onNavigate={navigateTo}
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
                 notifications={notifications}
-                onBack={() => setCurrentView('home')}
+                onBack={() => navigateBack()}
                 onMarkAsRead={handleMarkAsRead}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 isDarkMode={isDarkMode}
@@ -540,14 +557,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   contact: authUser?.telefone || userData.contact,
                   email: authUser?.email || userData.email,
                 }}
-                onBack={() => setCurrentView('home')}
+                onBack={() => navigateBack()}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
               />
             ) : currentView === 'history' ? (
               <HistoryPage
                 appointments={historyAppointments}
-                onBack={() => setCurrentView('home')}
+                onBack={() => navigateBack()}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
               />
@@ -570,7 +587,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   <TodayAppointments
                     appointments={appointments}
                     onViewAppointment={handleViewAppointment}
-                    onShowHistory={() => setCurrentView('history')}
+                    onShowHistory={() => navigateTo('history')}
                     showFilter={true}
                     isDarkMode={isDarkMode}
                   />

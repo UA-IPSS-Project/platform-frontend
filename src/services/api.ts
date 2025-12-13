@@ -368,6 +368,12 @@ export const utilizadoresApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+
+  // Buscar utilizador por NIF
+  buscarPorNif: (nif: string) =>
+    apiRequest<UtilizadorInfo>(`/api/utilizadores/nif/${nif}`, {
+      method: 'GET',
+    }),
 };
 
 // ===================

@@ -19,7 +19,8 @@ interface AppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, API_BASE_URL } from '../../services/api';
+import { calendarioApi, utilizadoresApi, API_BASE_URL, UtilizadorInfo } from '../../services/api';
+import { AlertCircleIcon } from '../CustomIcons';
 
 export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
   const [formData, setFormData] = useState({
@@ -27,6 +28,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     name: '',
     email: '',
     contact: '',
+    dateOfBirth: '',
     subject: '',
     description: '',
   });
@@ -34,13 +36,16 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+  const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingCreation, setPendingCreation] = useState<boolean>(false);
 
   // Reservar slot ao abrir o dialog
   useEffect(() => {
     if (open) {
       reservarSlot();
     }
-    
+
     // Cleanup: liberar reserva ao fechar ou desmontar
     return () => {
       if (tempReservaId) {
@@ -54,7 +59,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const [hours, minutes] = time.split(':');
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
+
       // Validar se a data/hora não é no passado
       const now = new Date();
       if (dateTime <= now) {
@@ -71,7 +76,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         onClose();
         return;
       }
-      
+
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
       const response = await fetch(`${API_BASE_URL}/api/marcacoes/reservar-slot`, {
@@ -105,7 +110,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const liberarSlot = async () => {
     if (!tempReservaId) return;
-    
+
     try {
       await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
@@ -119,6 +124,45 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       console.error('Erro ao liberar slot:', error);
     }
   };
+
+  // NIF Auto-fill Effect
+  useEffect(() => {
+    console.log('NIF changed:', formData.nif, 'Length:', formData.nif.length);
+    const checkNif = async () => {
+      if (formData.nif.length === 9) {
+        console.log('NIF reached 9 digits. Triggering search for:', formData.nif);
+        try {
+          const user = await utilizadoresApi.buscarPorNif(formData.nif);
+          console.log('User found by NIF:', user);
+          if (user) {
+            setFormData(prev => ({
+              ...prev,
+              name: user.nome,
+              email: user.email,
+              contact: user.telefone,
+              dateOfBirth: user.dataNascimento ? user.dataNascimento.split('T')[0] : ''
+            }));
+            setOriginalUser(user);
+            toast.success('Dados do utente carregados');
+          } else {
+            // Should not happen if API throws 404, but coverage
+            toast.info('Utente não encontrado com este NIF.');
+            setOriginalUser(null);
+          }
+        } catch (e) {
+          console.error('Error fetching user by NIF:', e);
+          toast.info('Utente não encontrado na base de dados (ou erro de rede).');
+          setOriginalUser(null);
+        }
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      checkNif();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.nif]);
 
   const handleClose = async () => {
     // Liberar slot antes de fechar
@@ -143,6 +187,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!formData.contact || !/^\d{9}$/.test(formData.contact)) {
       newErrors.contact = 'Contacto deve ter 9 dígitos';
     }
+    // Validation for date of birth if entered? Assuming optional or mandatory?
+    // User requested "Data de nascimento" field. Let's make it optional for now or consistent with others.
+    // If auto-fill brings it, good.
     if (!formData.subject) {
       newErrors.subject = 'Selecione um assunto';
     }
@@ -151,27 +198,41 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error('Por favor, corrija os erros no formulário');
-      return;
-    }
-
-    setIsLoading(true);
-
+  const processCreation = async () => {
     try {
+      // Refresh token logic
+      const token = localStorage.getItem('token');
+
       // 1. PRIMEIRO: Liberar slot temporário
       if (tempReservaId) {
         await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
-        console.log('Slot temporário liberado antes de criar marcação real');
         setTempReservaId(null);
+      }
+
+      // If updating user
+      if (originalUser && showConfirmation) {
+        try {
+          await utilizadoresApi.atualizar(originalUser.id, {
+            nome: formData.name,
+            email: formData.email,
+            telefone: formData.contact,
+            dataNasc: formData.dateOfBirth || undefined,
+          });
+          toast.success('Dados do utilizador atualizados');
+
+          // Wait 1 second to ensure persistence/propagation and provide visual feedback
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (e) {
+          console.error('Failed to update user', e);
+          toast.error('Erro ao atualizar dados do utilizador');
+          throw e; // Stop here if update fails
+        }
       }
 
       // 2. DEPOIS: Criar marcação real
@@ -181,7 +242,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
       const payload = {
         funcionarioId,
-        data: dataHora.toISOString(),
+        criadoPorId: funcionarioId, // Added for consistency
+        data: dataHora.toISOString().slice(0, 19),
         assunto: formData.subject,
         descricao: formData.description,
         utenteNif: formData.nif,
@@ -190,7 +252,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         utenteTelefone: formData.contact,
       };
 
-      const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/marcacoes/presencial`, {
         method: 'POST',
         headers: {
@@ -201,18 +262,57 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao criar marcação');
+        // Try to parse error message
+        const errorText = await response.text();
+        let errorMessage = 'Erro desconhecido ao criar marcação';
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorJson.error || errorText;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       toast.success('Marcação criada com sucesso!');
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar marcação:', error);
-      toast.error('Erro ao criar marcação');
+      toast.error(`Erro: ${error.message || 'Falha na criação'}`);
     } finally {
       setIsLoading(false);
+      setShowConfirmation(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Por favor, corrija os erros no formulário');
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Check for user updates
+    if (originalUser) {
+      const userDob = originalUser.dataNascimento ? originalUser.dataNascimento.split('T')[0] : '';
+      const hasChanges =
+        formData.name !== originalUser.nome ||
+        formData.email !== originalUser.email ||
+        formData.contact !== originalUser.telefone ||
+        (formData.dateOfBirth && formData.dateOfBirth !== userDob);
+
+      if (hasChanges) {
+        setShowConfirmation(true);
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    await processCreation();
   };
 
   const handleFileSelect = () => {
@@ -239,130 +339,172 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           Preencha os dados do utente para criar uma nova marcação
         </DialogPrimitive.Description>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="nif" className="text-gray-900 dark:text-gray-100">NIF *</Label>
-            <Input
-              id="nif"
-              type="text"
-              placeholder="123456789"
-              maxLength={9}
-              value={formData.nif}
-              onChange={(e) => setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') })}
-              className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
-            />
-            {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">Nome *</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Nome completo"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
-            />
-            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="exemplo@email.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
-            />
-            {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">Contacto *</Label>
-            <Input
-              id="contact"
-              type="text"
-              placeholder="912345678"
-              maxLength={9}
-              value={formData.contact}
-              onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
-              className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.contact ? 'border-red-500' : ''}`}
-            />
-            {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
-          </div>
-
-
-          <div className="space-y-2">
-            <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
-            <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
-              <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Selecione o assunto" />
-              </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                {SUBJECTS.map((subject) => (
-                  <SelectItem key={subject} value={subject} className="text-gray-900 dark:text-gray-100">
-                    {subject}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Descrição curta</Label>
-            <Textarea
-              id="description"
-              placeholder="Descreva brevemente o motivo da marcação..."
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-gray-900 dark:text-gray-100">Anexar documentos</Label>
-            <div
-              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-              onClick={handleFileSelect}
-            >
-              <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Clique para selecionar ficheiros</p>
-            </div>
-            
-            {documents.length > 0 && (
-              <div className="space-y-2 mt-2">
-                {documents.map((doc, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                    <span className="text-sm text-gray-900 dark:text-gray-100">{doc}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeDocument(index)}
-                      className="text-gray-600 dark:text-gray-400"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+        {showConfirmation ? (
+          <div className="space-y-4 mt-4">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 flex gap-3">
+              <AlertCircleIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300">Alterações detetadas</h4>
+                <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                  Os dados do utente foram alterados. Deseja atualizar a ficha do utente com as novas informações antes de criar a marcação?
+                </p>
+                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                  <ul className="list-disc pl-4">
+                    {formData.name !== originalUser?.nome && <li>Nome alterado</li>}
+                    {formData.email !== originalUser?.email && <li>Email alterado</li>}
+                    {formData.contact !== originalUser?.telefone && <li>Contacto alterado</li>}
+                    {formData.dateOfBirth !== (originalUser?.dataNascimento?.split('T')[0] || '') && <li>Data de nasc. alterada</li>}
+                  </ul>
+                </div>
               </div>
-            )}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => setShowConfirmation(false)} className="flex-1">
+                Voltar / Corrigir
+              </Button>
+              <Button onClick={() => { setIsLoading(true); processCreation(); }} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
+                Confirmar e Marcar
+              </Button>
+            </div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nif" className="text-gray-900 dark:text-gray-100">NIF *</Label>
+                <Input
+                  id="nif"
+                  type="text"
+                  placeholder="123456789"
+                  maxLength={9}
+                  value={formData.nif}
+                  onChange={(e) => setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') })}
+                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
+                />
+                {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
-              {isLoading ? 'A marcar...' : 'Marcar'}
-            </Button>
-          </div>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">Nome *</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Nome completo"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
+              />
+              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="exemplo@email.com"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
+              />
+              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">Contacto *</Label>
+              <Input
+                id="contact"
+                type="text"
+                placeholder="912345678"
+                maxLength={9}
+                value={formData.contact}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
+                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.contact ? 'border-red-500' : ''}`}
+              />
+              {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
+            </div>
+
+
+            <div className="space-y-2">
+              <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
+              <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
+                <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="Selecione o assunto" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  {SUBJECTS.map((subject) => (
+                    <SelectItem key={subject} value={subject} className="text-gray-900 dark:text-gray-100">
+                      {subject}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Descrição curta</Label>
+              <Textarea
+                id="description"
+                placeholder="Descreva brevemente o motivo da marcação..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-gray-900 dark:text-gray-100">Anexar documentos</Label>
+              <div
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={handleFileSelect}
+              >
+                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para selecionar ficheiros</p>
+              </div>
+
+              {documents.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {documents.map((doc, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                      <span className="text-sm text-gray-900 dark:text-gray-100">{doc}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeDocument(index)}
+                        className="text-gray-600 dark:text-gray-400"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={handleClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+                {isLoading ? 'A marcar...' : 'Marcar'}
+              </Button>
+            </div>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

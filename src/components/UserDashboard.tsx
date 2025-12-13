@@ -11,7 +11,7 @@ import { ProfilePage } from './ProfilePage';
 import { ClientAppointmentDialog } from './client/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
-import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
+import { ArrowLeftIcon, BellIcon, CalendarIcon, FileTextIcon as FolderIcon, HistoryIcon, HomeIcon, LogOutIcon, MenuIcon, UserIcon, ClockIcon, SunIcon, MoonIcon, ClipboardListIcon as ClipboardIcon } from './CustomIcons';
 import type { Appointment } from './SecretaryDashboard';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -60,9 +60,24 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [blockedAppointments, setBlockedAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
-  const [currentView, setCurrentView] = useState<ViewType>(() => {
-    return (localStorage.getItem('userDashboardView') as ViewType) || 'appointments';
+  // Navigation History Stack
+  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
+    const saved = localStorage.getItem('userDashboardView');
+    return saved ? [saved as ViewType] : ['appointments'];
   });
+
+  const currentView = viewHistory[viewHistory.length - 1] || 'appointments';
+
+  const navigateTo = (view: ViewType) => {
+    setViewHistory(prev => [...prev, view]);
+  };
+
+  const navigateBack = () => {
+    setViewHistory(prev => {
+      if (prev.length <= 1) return prev;
+      return prev.slice(0, -1);
+    });
+  };
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -322,13 +337,20 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 >
                   <MenuIcon className="w-5 h-5" />
                 </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => navigateTo('profile')}
+                >
+                  <UserIcon className="w-5 h-5" />
+                  <span>Perfil</span>
+                </Button>
                 <span className="text-gray-700 dark:text-gray-200">Utilizador</span>
               </div>
 
               <nav className="hidden md:flex items-center gap-1">
                 <Button
                   variant={currentView === 'appointments' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('appointments')}
+                  onClick={() => navigateTo('appointments')}
                   className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Secretaria
@@ -342,7 +364,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     { id: 'erpi', label: 'ERPI' },
                   ]}
                   isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  onSelect={(id) => navigateTo(id as ViewType)}
                   isDarkMode={isDarkMode}
                 />
               </nav>
@@ -368,7 +390,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       onMarkAsRead={handleMarkAsRead}
                       onMarkAllAsRead={handleMarkAllAsRead}
                       onClose={() => setShowNotifications(false)}
-                      onNavigateToPage={() => setCurrentView('notificacoes')}
+                      onNavigateToPage={() => navigateTo('notificacoes')}
                       isDarkMode={isDarkMode}
                     />
                   )}
@@ -392,7 +414,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             {currentView === 'notificacoes' ? (
               <NotificationsPage
                 notifications={notifications}
-                onBack={() => setCurrentView('appointments')}
+                onBack={() => navigateBack()}
                 onMarkAsRead={handleMarkAsRead}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 isDarkMode={isDarkMode}
@@ -406,7 +428,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   contact: authUser?.telefone || user.contact,
                   email: authUser?.email || user.email,
                 }}
-                onBack={() => setCurrentView('appointments')}
+                onBack={() => navigateBack()}
                 onUpdateUser={() => { }}
                 isDarkMode={isDarkMode}
               />
@@ -417,7 +439,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   apt.status !== 'in-progress' &&
                   apt.status !== 'reserved'
                 )}
-                onBack={() => setCurrentView('appointments')}
+                onBack={() => navigateBack()}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
               />
@@ -441,7 +463,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   <TodayAppointments
                     appointments={visibleAppointments}
                     onViewAppointment={handleViewAppointment}
-                    onShowHistory={() => setCurrentView('history')}
+                    onShowHistory={() => navigateTo('history')}
                     isDarkMode={isDarkMode}
                   />
                 </div>
@@ -475,7 +497,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           currentView={currentView}
-          onNavigate={(view) => setCurrentView(view as ViewType)}
+          onNavigate={(view) => navigateTo(view as ViewType)}
           onLogout={onLogout}
           isDarkMode={isDarkMode}
           mode="client"
