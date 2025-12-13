@@ -27,6 +27,8 @@ const getStatusLabel = (status: Appointment['status']) => {
     case 'completed':
       return 'Concluído';
     case 'warning':
+      return 'Aviso';
+    case 'no-show':
       return 'Não compareceu';
     case 'cancelled':
       return 'Cancelado';
@@ -40,7 +42,9 @@ const getStatusBadge = (status: Appointment['status']) => {
     case 'completed':
       return <Badge className="bg-green-600 text-white">Concluído</Badge>;
     case 'warning':
-      return <Badge className="bg-yellow-500 text-gray-900">Não compareceu</Badge>;
+      return <Badge className="bg-yellow-500 text-gray-900">Aviso</Badge>;
+    case 'no-show':
+      return <Badge style={{ backgroundColor: '#f97316', color: 'white' }}>Não compareceu</Badge>;
     case 'cancelled':
       return <Badge variant="destructive">Cancelado</Badge>;
     default:
@@ -150,7 +154,9 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             <SelectContent>
               <SelectItem value="all">Todos os estados</SelectItem>
               <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="warning">Não compareceu</SelectItem>
+              <SelectItem value="completed">Concluído</SelectItem>
+              <SelectItem value="warning">Aviso</SelectItem>
+              <SelectItem value="no-show">Não compareceu</SelectItem>
               <SelectItem value="cancelled">Cancelado</SelectItem>
             </SelectContent>
           </Select>
@@ -202,8 +208,8 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                     key={apt.id}
                     onClick={() => onViewAppointment(apt)}
                     className={`border-b cursor-pointer transition-colors ${isDarkMode
-                        ? 'border-gray-800 hover:bg-gray-800/50'
-                        : 'border-gray-100 hover:bg-gray-50'
+                      ? 'border-gray-800 hover:bg-gray-800/50'
+                      : 'border-gray-100 hover:bg-gray-50'
                       }`}
                   >
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.time}</td>

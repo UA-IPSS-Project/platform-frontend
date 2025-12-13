@@ -41,7 +41,7 @@ export interface Appointment {
   patientEmail: string;
   subject: string;
   description: string;
-  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved';
+  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show';
   cancellationReason?: string;
   documents?: { name: string; invalid?: boolean; reason?: string }[];
   attendantName?: string;
@@ -94,7 +94,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         const utente = m.marcacaoSecretaria?.utente;
 
         // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
         const estadoUpper = m.estado?.toUpperCase();
 
         if (m.estado) {
@@ -104,6 +104,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           else if (estadoUpper === 'AVISO') status = 'warning';
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+          else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
         }
 
         return {
@@ -119,7 +120,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
           description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
           status: status,
-          attendantName: m.atendenteNome, // Mapear nome do atendente
+          cancellationReason: status === 'cancelled' ? (m.marcacaoSecretaria?.motivoCancelamento || 'Motivo não especificado') : undefined,
+          attendantName: m.atendenteNome,
         };
       });
       setAppointments(convertidas);
@@ -138,7 +140,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         const utente = m.marcacaoSecretaria?.utente;
 
         // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
         if (m.estado) {
           const estadoUpper = m.estado.toUpperCase();
           if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
@@ -147,6 +149,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           else if (estadoUpper === 'AVISO') status = 'warning';
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+          else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
         }
 
         return {
@@ -277,7 +280,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
 
-      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
       const estadoUpper = latestData.estado?.toUpperCase();
 
       if (latestData.estado) {
@@ -287,6 +290,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         else if (estadoUpper === 'AVISO') status = 'warning';
         else if (estadoUpper === 'CONCLUIDO') status = 'completed';
         else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+        else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
       }
 
       const freshAppointment: Appointment = {
@@ -302,6 +306,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         subject: status === 'reserved' ? 'reserved' : (latestData.marcacaoSecretaria?.assunto || 'Sem assunto'),
         description: status === 'reserved' ? '' : (latestData.marcacaoSecretaria?.descricao || ''),
         status: status,
+        attendantName: latestData.atendenteNome,
       };
 
       // Update in list if changed
@@ -439,7 +444,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     { id: 'urgente', label: 'Prioridade Alta' },
                   ]}
                   isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
-                  onSelect={(id) => setCurrentView(id as ViewType)}
+                  onSelect={(id) => navigateTo(id as ViewType)}
                   isDarkMode={isDarkMode}
                 />
 

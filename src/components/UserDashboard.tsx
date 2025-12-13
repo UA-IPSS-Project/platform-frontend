@@ -105,7 +105,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         const dataHora = new Date(m.data);
 
         // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' = 'scheduled';
+        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'no-show' = 'scheduled';
         if (m.estado) {
           const estadoUpper = m.estado.toUpperCase();
           if (estadoUpper === 'AGENDADO') status = 'scheduled';
@@ -113,6 +113,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           else if (estadoUpper === 'AVISO') status = 'warning';
           else if (estadoUpper === 'CONCLUIDO') status = 'completed';
           else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+          else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
         }
 
         return {
@@ -127,6 +128,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
           description: m.marcacaoSecretaria?.descricao || '',
           status: status,
+          attendantName: m.atendenteNome,
         };
       });
 
@@ -254,7 +256,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       // Determine if this is own appointment or blocked slot (other user)
       const isOwnAppointment = utente?.nif === user.nif || appointment.patientNIF === user.nif;
 
-      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' = 'scheduled';
+      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
       const estadoUpper = latestData.estado?.toUpperCase();
 
       if (latestData.estado) {
@@ -264,6 +266,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         else if (estadoUpper === 'AVISO') status = 'warning';
         else if (estadoUpper === 'CONCLUIDO') status = 'completed';
         else if (estadoUpper === 'CANCELADO') status = 'cancelled';
+        else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
       }
 
       const freshAppointment: Appointment = {
@@ -280,6 +283,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         subject: isOwnAppointment ? (latestData.marcacaoSecretaria?.assunto || 'Sem assunto') : '',
         description: isOwnAppointment ? (latestData.marcacaoSecretaria?.descricao || '') : '',
         status: status,
+        attendantName: latestData.atendenteNome,
       };
 
       // Update in appropriate list
