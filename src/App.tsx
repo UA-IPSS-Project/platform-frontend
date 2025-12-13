@@ -28,7 +28,11 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setCurrentView('dashboard');
+      if (!user.active) {
+        setCurrentView('set-new-password');
+      } else {
+        setCurrentView('dashboard');
+      }
     } else {
       setCurrentView('login');
     }
@@ -125,7 +129,7 @@ function App() {
               />
             )}
             {currentView === 'set-new-password' && (
-              <NewPasswordForm onSuccess={() => setCurrentView('login')} />
+              <NewPasswordForm onSuccess={() => setCurrentView('dashboard')} />
             )}
           </div>
         )}

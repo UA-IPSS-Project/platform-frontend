@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -22,6 +23,8 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
     return Object.keys(e).length === 0;
   };
 
+  const { updatePassword } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
@@ -29,11 +32,13 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
       return;
     }
 
-    // TODO: ligar ao backend para definir a nova palavra-passe (OTP flow)
-    // Exemplo: await api.post('/auth/set-password', { token, password })
-
-    toast.success('Palavra-passe definida com sucesso (simulação)');
-    onSuccess?.();
+    try {
+      await updatePassword(password);
+      toast.success('Palavra-passe definida com sucesso');
+      onSuccess?.();
+    } catch (error) {
+      toast.error('Erro ao definir palavra-passe');
+    }
   };
 
   return (

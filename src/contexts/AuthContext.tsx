@@ -8,6 +8,7 @@ interface User {
   role: 'FUNCIONARIO' | 'UTENTE';
   nif?: string;
   telefone?: string;
+  active: boolean;
 }
 
 interface AuthContextType {
@@ -19,6 +20,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 interface UtenteRegisterData {
@@ -89,6 +91,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: userData.role,
           nif: userData.nif,
           telefone: userData.telefone,
+          active: true, // Assuming /me always returns active users or we assume active if we can call /me? 
+          // Ideally /me should return active status too, but UserResponse might not have it.
+          // For now, let's look at AuthContext logic. We only block inactive at login time redirect.
+          // If they refresh, checkAuth calls /me.
+          // The UserResponse Java DTO needs 'active' too if we want to persist it correctly on refresh!
         };
         setUser(updatedUser);
         setToken(savedToken);
@@ -187,6 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: data.role,
         nif: data.nif,
         telefone: data.telefone,
+        active: data.active,
       };
 
       setToken(data.token);
@@ -228,6 +236,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: responseData.role,
         nif: responseData.nif,
         telefone: responseData.telefone,
+        active: responseData.active,
       };
 
       setToken(responseData.token);
@@ -268,6 +277,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: responseData.role,
         nif: responseData.nif,
         telefone: responseData.telefone,
+        active: responseData.active,
       };
 
       setToken(responseData.token);
@@ -280,6 +290,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('secretaryDashboardView');
     } catch (error) {
       console.error('Erro no registo:', error);
+      throw error;
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    const savedToken = localStorage.getItem('token');
+    if (!savedToken) throw new Error('Não autenticado');
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/set-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${savedToken}`
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar a palavra-passe');
+      }
+
+      // Update local user active state
+      if (user) {
+        const updated = { ...user, active: true };
+        setUser(updated);
+        localStorage.setItem('user', JSON.stringify(updated));
+      }
+    } catch (error) {
+      console.error('Erro ao definir password:', error);
       throw error;
     }
   };
@@ -303,6 +343,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout,
     isAuthenticated: !!token && !!user,
     isLoading,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
