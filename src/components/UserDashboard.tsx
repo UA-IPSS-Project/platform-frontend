@@ -60,7 +60,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
   const [blockedAppointments, setBlockedAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
-  const [currentView, setCurrentView] = useState<ViewType>('appointments');
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    return (localStorage.getItem('userDashboardView') as ViewType) || 'appointments';
+  });
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -155,6 +157,11 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (currentView === 'appointments') {
       carregarMarcacoes();
     }
+  }, [currentView]);
+
+  // Persist view changes
+  useEffect(() => {
+    localStorage.setItem('userDashboardView', currentView);
   }, [currentView]);
 
   // Atualização automática a cada 60 segundos

@@ -13,7 +13,7 @@ function App() {
   const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard' | 'set-new-password'>('login');
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, isLoading } = useAuth();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -38,6 +38,14 @@ function App() {
     logout();
     setCurrentView('login');
   };
+
+  if (isLoading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>

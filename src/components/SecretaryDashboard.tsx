@@ -59,7 +59,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-  const [currentView, setCurrentView] = useState<ViewType>('home');
+  const [currentView, setCurrentView] = useState<ViewType>(() => {
+    return (localStorage.getItem('secretaryDashboardView') as ViewType) || 'home';
+  });
   // Monthly view removed - always use weekly schedule
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -169,6 +171,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     if (currentView === 'history') {
       carregarHistorico();
     }
+  }, [currentView]);
+
+  // Persist view changes
+  useEffect(() => {
+    localStorage.setItem('secretaryDashboardView', currentView);
   }, [currentView]);
 
   // Atualização automática a cada 60 segundos

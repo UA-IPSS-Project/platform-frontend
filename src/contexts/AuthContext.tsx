@@ -47,21 +47,117 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Recuperar token e user do localStorage ao carregar
+  const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+  // const INACTIVITY_TIMEOUT = 60000;         // 1 minute
+
+  const checkAuth = async () => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+    const savedLastActivity = localStorage.getItem('lastActivity');
+
+    if (!savedToken || !savedUser) {
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    // Check inactivity
+    if (savedLastActivity) {
+      const lastActivityTime = parseInt(savedLastActivity);
+      const now = Date.now();
+      if (now - lastActivityTime > INACTIVITY_TIMEOUT) {
+        logout();
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    try {
+      // Verify token with backend
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${savedToken}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        // Update user data from server source of truth
+        const updatedUser: User = {
+          id: userData.id,
+          email: userData.email,
+          nome: userData.nome,
+          role: userData.role,
+          nif: userData.nif,
+          telefone: userData.telefone,
+        };
+        setUser(updatedUser);
+        setToken(savedToken);
+        // Refresh activity timestamp on successful check
+        updateActivity();
+      } else {
+        // Token invalid or expired
+        logout();
+      }
+    } catch (error) {
+      console.error('Auth verification failed:', error);
+      // On network error, maybe keep local state? Or safer to logout?
+      // For security, if we can't verify, we might want to be cautious.
+      // But for resilience, if it's just a network blip, we shouldn't log out.
+      // Let's assume if fetch fails completely (network), we keep session if not expired locally.
+      // But if response is 401/403 (handled in else), we logout.
+      // For now, let's keep local state if verify fails due to network, 
+      // but rely on next check.
+      // However, to follow the requirement strictly "verify if state is on", let's be strict.
+      // Actually, if me endpoint fails, it likely means token is bad.
+      logout();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateActivity = () => {
+    const now = Date.now().toString();
+    localStorage.setItem('lastActivity', now);
+  };
+
+  useEffect(() => {
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    // Activity listeners
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    const handleActivity = () => {
+      if (token) { // Using token as proxy for isAuthenticated
+        updateActivity();
+      }
+    };
+
+    events.forEach(event => window.addEventListener(event, handleActivity));
+
+    // Periodic check for inactivity interval
+    const intervalId = setInterval(() => {
+      if (token) {
+        const savedLastActivity = localStorage.getItem('lastActivity');
+        if (savedLastActivity) {
+          const lastActivityTime = parseInt(savedLastActivity);
+          const now = Date.now();
+          if (now - lastActivityTime > INACTIVITY_TIMEOUT) {
+            logout();
+          }
+        }
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      events.forEach(event => window.removeEventListener(event, handleActivity));
+      clearInterval(intervalId);
+    };
+  }, [token]); // Depend on token
 
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
     try {
-      const endpoint = type === 'funcionario' 
+      const endpoint = type === 'funcionario'
         ? `${API_BASE_URL}/api/auth/login/funcionario`
         : `${API_BASE_URL}/api/auth/login/utente`;
 
@@ -83,7 +179,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await response.json();
-      
+
       const userData: User = {
         id: data.id,
         email: data.email,
@@ -95,9 +191,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setToken(data.token);
       setUser(userData);
-      
+
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('lastActivity', Date.now().toString());
+      // Clear previous dashboard states on fresh login to ensure default view
+      localStorage.removeItem('userDashboardView');
+      localStorage.removeItem('secretaryDashboardView');
     } catch (error) {
       console.error('Erro no login:', error);
       throw error;
@@ -120,7 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const responseData = await response.json();
-      
+
       const userData: User = {
         id: responseData.id,
         email: responseData.email,
@@ -132,9 +232,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setToken(responseData.token);
       setUser(userData);
-      
+
       localStorage.setItem('token', responseData.token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('lastActivity', Date.now().toString());
+      localStorage.removeItem('userDashboardView');
+      localStorage.removeItem('secretaryDashboardView');
     } catch (error) {
       console.error('Erro no registo:', error);
       throw error;
@@ -157,7 +260,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const responseData = await response.json();
-      
+
       const userData: User = {
         id: responseData.id,
         email: responseData.email,
@@ -169,9 +272,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setToken(responseData.token);
       setUser(userData);
-      
+
       localStorage.setItem('token', responseData.token);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('lastActivity', Date.now().toString());
+      localStorage.removeItem('userDashboardView');
+      localStorage.removeItem('secretaryDashboardView');
     } catch (error) {
       console.error('Erro no registo:', error);
       throw error;
@@ -183,6 +289,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('lastActivity');
+    localStorage.removeItem('userDashboardView');
+    localStorage.removeItem('secretaryDashboardView');
   };
 
   const value: AuthContextType = {
