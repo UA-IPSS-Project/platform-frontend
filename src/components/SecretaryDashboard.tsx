@@ -11,6 +11,7 @@ import { AppointmentDialog } from './secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { Sidebar } from './Sidebar';
+import { UserManagement } from './secretary/UserManagement';
 import { ProfilePage } from './ProfilePage';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
 import { toast } from 'sonner';
@@ -573,6 +574,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
               />
+            ) : currentView === 'management' ? (
+              <UserManagement isDarkMode={isDarkMode} />
             ) : currentView === 'appointments' ? (
               <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
                 {/* Left Column - Schedules */}
