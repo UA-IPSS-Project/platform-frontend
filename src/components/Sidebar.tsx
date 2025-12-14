@@ -175,7 +175,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           <div className="flex items-center justify-between px-1 py-3 border-b dark:border-gray-800">
             <div className="flex items-center gap-5">
               <img
-                src="/assets/LogoSemTextoUltimo.png"
+                src={isDarkMode ? '/assets/LogoModoEscuro1.png' : '/assets/LogoSemTextoUltimo.png'}
                 alt="Logo Florinhas"
                 className="h-12 w-auto object-contain -ml-10"
               />
