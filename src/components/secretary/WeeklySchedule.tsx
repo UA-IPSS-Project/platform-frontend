@@ -103,49 +103,36 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
   const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
 
+  // Helper para minutos
+  const timeToMinutes = (time: string) => {
+    if (!time) return 0;
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
+
   // Carregar bloqueios
   const fetchBlocks = async () => {
     try {
       setIsLoadingBlocks(true);
+      // Buscar todos os bloqueios para evitar problemas entre meses
       const blocks = await bloqueiosApi.listar();
+
       const newBlockedSlots = new Set<string>();
 
       blocks.forEach(block => {
-        // Fallback para data se dataInicio/Fim não existirem (compatibilidade)
-        const startD = new Date(block.dataInicio || block.data);
-        const endD = new Date(block.dataFim || block.data);
+        const date = new Date(block.data);
+        const dateStr = date.toISOString().split('T')[0];
 
-        // Iterar por cada dia do intervalo
-        for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toISOString().split('T')[0];
+        // Usar lógica de minutos para comparar
+        const startMins = timeToMinutes(block.horaInicio);
+        const endMins = timeToMinutes(block.horaFim);
 
-          // Gerar slots para este dia
-          // Se for dia intermédio (não inicio nem fim), bloqueia tudo
-          const isStartDay = d.getTime() === startD.getTime();
-          const isEndDay = d.getTime() === endD.getTime();
-
-          // Se for dia completo, bloqueia todos os slots
-          // Caso contrário, depende das horas
-          // Simplificação: Assumir que bloqueio define horaInicio e horaFim que se aplicam a cada dia do intervalo?
-          // OU que o bloqueio é contínuo (ex: dia 1 14h até dia 3 10h).
-          // A lógica do backend "bloquearIntervalo" trata dia a dia.
-          // Assumimos aqui que horaInicio/Fim se aplicam ao intervalo especifico desse dia.
-
-          // Para simplificar a visualização rápida, vamos assumir lógica diária:
-          // Se o bloqueio for multi-dia, a lógica de "horas" pode ser complexa.
-          // MAS, a API retorna lista de bloqueios. 
-          // Se o backend dividir em dias individuais, melhor.
-          // Se retornar um bloco grande, temos de processar.
-
-          const sTime = isStartDay ? block.horaInicio : "00:00";
-          const eTime = isEndDay ? block.horaFim : "23:59";
-
-          timeSlots.forEach(slot => {
-            if (slot >= sTime && slot <= eTime) {
-              newBlockedSlots.add(`${dateStr}_${slot}`);
-            }
-          });
-        }
+        timeSlots.forEach(slot => {
+          const slotMins = timeToMinutes(slot);
+          if (slotMins >= startMins && slotMins < endMins) {
+            newBlockedSlots.add(`${dateStr}_${slot}`);
+          }
+        });
       });
       setBlockedSlots(newBlockedSlots);
     } catch (error) {
@@ -247,7 +234,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
     const blocked = await isSlotBlocked(date, time);
     if (blocked) {
-      toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+      toast.error('Horário indisponível');
       return;
     }
 
@@ -660,46 +647,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     setQuickDate(newDate);
   }, [quickDay, quickMonth, quickYear]);
 
-  // Carregar bloqueios do mês atual
-  useEffect(() => {
-    const loadBlockedSlots = async () => {
-      try {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1; // JavaScript usa 0-11, API usa 1-12
 
-        const bloqueios = await calendarioApi.listarBloqueios(year, month);
-        const newBlockedSlots = new Set<string>();
-
-        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
-          const date = new Date(bloqueio.data);
-          const dateStr = date.toISOString().split('T')[0];
-
-          if (bloqueio.diaTodo) {
-            // Se é dia todo, bloquear todos os horários
-            timeSlots.forEach(slot => {
-              newBlockedSlots.add(`${dateStr}_${slot}`);
-            });
-          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
-            // Bloquear apenas os horários específicos
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
-
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlockedSlots.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
-        });
-
-        setBlockedSlots(newBlockedSlots);
-      } catch (error) {
-        console.error('Erro ao carregar bloqueios:', error);
-      }
-    };
-
-    loadBlockedSlots();
-  }, [currentDate]);
 
   // Carregar bloqueios do mês selecionado no quick dialog
   useEffect(() => {
@@ -712,20 +660,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           const date = new Date(bloqueio.data);
           const dateStr = date.toISOString().split('T')[0];
 
-          if (bloqueio.diaTodo) {
-            timeSlots.forEach(slot => {
-              newBlocks.add(`${dateStr}_${slot}`);
-            });
-          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
+          const startMins = timeToMinutes(bloqueio.horaInicio);
+          const endMins = timeToMinutes(bloqueio.horaFim);
 
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlocks.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
+          timeSlots.forEach(slot => {
+            const slotMins = timeToMinutes(slot);
+            if (slotMins >= startMins && slotMins < endMins) {
+              newBlocks.add(`${dateStr}_${slot}`);
+            }
+          });
         });
 
         setQuickMonthBlocks(newBlocks);
@@ -981,7 +924,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           // Render blocked status (Administrative)
                           if (isBlockedAdmin) {
                             return (
-                              <div className="flex items-center justify-center text-center font-medium text-xs text-gray-500 dark:text-gray-400">
+                              <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
+                                <ClockIcon className="w-3 h-3 mr-1" />
                                 Indisponível
                               </div>
                             );

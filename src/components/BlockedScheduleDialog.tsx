@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from './ui/utils';
 import { Appointment } from '../types';
+import { Bloqueio } from '../services/api';
 
 interface BlockedScheduleDialogProps {
     open: boolean;
@@ -26,15 +27,15 @@ const generateTimeSlots = () => {
     for (let hour = 9; hour < 17; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
             if (hour === 16 && minute > 45) break;
-            slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} `);
+            slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
         }
     }
     return slots;
 };
 
-export function BlockedScheduleDialog({ open, onOpenChange, appointments }: BlockedScheduleDialogProps) {
+export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess }: BlockedScheduleDialogProps) {
     const { user } = useAuth();
-    const [bloqueios, setBloqueios] = useState<any[]>([]);
+    const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Form State
@@ -58,7 +59,20 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
     const fetchBloqueios = async () => {
         try {
             const data = await bloqueiosApi.listar();
-            const sorted = data.sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime());
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const filtered = data.filter(b => {
+                const blockDate = new Date(b.data);
+                blockDate.setHours(0, 0, 0, 0);
+                return blockDate.getTime() >= today.getTime();
+            });
+
+            const sorted = filtered.sort((a, b) => {
+                const dateA = new Date(a.data);
+                const dateB = new Date(b.data);
+                return dateA.getTime() - dateB.getTime();
+            });
             setBloqueios(sorted);
         } catch (error) {
             console.error('Erro ao carregar bloqueios:', error);
@@ -70,24 +84,25 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
         if (!date) return [];
         return allSlots.filter(slot => {
             // Check if any appointment exists at this time on this date
-            // Note: Appointment logic needs to match exactly or overlap. 
-            // Simple approach: check for exact match of start time, relying on 15min grid.
             const hasAppointment = appointments.some(appt => {
                 if (appt.status === 'cancelled') return false;
                 const apptDate = new Date(appt.date);
-                return apptDate.getDate() === date.getDate() &&
+
+                // Compare dates strictly
+                const isSameDate =
+                    apptDate.getDate() === date.getDate() &&
                     apptDate.getMonth() === date.getMonth() &&
-                    apptDate.getFullYear() === date.getFullYear() &&
-                    appt.time === slot;
+                    apptDate.getFullYear() === date.getFullYear();
+
+                return isSameDate && appt.time === slot;
             });
             return !hasAppointment;
         });
     };
 
     const startSlots = getAvailableSlots(startDate);
-    // For end slots, we ideally want slots AFTER start time if on same day, but let's just show available ones for now 
-    // or just all available ones to allow flexibility, validation handles order.
-    const endSlots = getAvailableSlots(endDate);
+    // Include 17:00 as a valid end time
+    const endSlots = [...getAvailableSlots(endDate), "17:00"];
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,13 +111,30 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
             return;
         }
 
+        if (startDate > endDate) {
+            toast.error('A data de fim deve ser posterior ou igual à data de início');
+            return;
+        }
+
         try {
             setLoading(true);
+            let finalEndTime = endTime;
+
+            // Se hora inicio == hora fim, significa que o user quer bloquear apenas aquele slot (15 min)
+            if (startTime === endTime) {
+                const idx = allSlots.indexOf(startTime);
+                if (idx !== -1 && idx < allSlots.length - 1) {
+                    finalEndTime = allSlots[idx + 1];
+                } else if (idx === allSlots.length - 1) {
+                    finalEndTime = "17:00";
+                }
+            }
+
             await bloqueiosApi.criar({
                 dataInicio: format(startDate, 'yyyy-MM-dd'),
                 dataFim: format(endDate, 'yyyy-MM-dd'),
                 horaInicio: startTime,
-                horaFim: endTime
+                horaFim: finalEndTime
             }, user?.id || 0);
 
             toast.success('Bloqueio criado com sucesso');
@@ -164,14 +196,21 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
                                                 selected={startDate}
                                                 onSelect={(date) => {
                                                     setStartDate(date);
-                                                    if (date) setEndDate(date);
+                                                    if (date) {
+                                                        setEndDate(date);
+                                                        // Reset times if needed, or keeping defaults is fine
+                                                    }
                                                 }}
                                                 initialFocus
                                             />
                                         </PopoverContent>
                                     </Popover>
 
-                                    <Select value={startTime} onValueChange={setStartTime}>
+                                    <Select value={startTime} onValueChange={(val) => {
+                                        setStartTime(val);
+                                        // Default end time is same as start time (single cell block)
+                                        setEndTime(val);
+                                    }}>
                                         <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                                             <SelectValue />
                                         </SelectTrigger>
@@ -208,6 +247,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
                                                 mode="single"
                                                 selected={endDate}
                                                 onSelect={setEndDate}
+                                                disabled={(date) => startDate ? date < startDate : false}
                                                 initialFocus
                                             />
                                         </PopoverContent>
@@ -218,10 +258,31 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments }: Bloc
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {endSlots.length > 0 ? (
-                                                endSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
+                                            {endSlots
+                                                .filter(slot => {
+                                                    // Se for no mesmo dia, hora fim >= hora inicio
+                                                    if (startDate && endDate &&
+                                                        startDate.getDate() === endDate.getDate() &&
+                                                        startDate.getMonth() === endDate.getMonth() &&
+                                                        startDate.getFullYear() === endDate.getFullYear()) {
+                                                        return slot >= startTime;
+                                                    }
+                                                    return true;
+                                                })
+                                                .length > 0 ? (
+                                                endSlots
+                                                    .filter(slot => {
+                                                        if (startDate && endDate &&
+                                                            startDate.getDate() === endDate.getDate() &&
+                                                            startDate.getMonth() === endDate.getMonth() &&
+                                                            startDate.getFullYear() === endDate.getFullYear()) {
+                                                            return slot >= startTime;
+                                                        }
+                                                        return true;
+                                                    })
+                                                    .map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
                                             ) : (
-                                                <SelectItem value="none" disabled>Ocupado</SelectItem>
+                                                <SelectItem value="none" disabled>Indisp.</SelectItem>
                                             )}
                                         </SelectContent>
                                     </Select>

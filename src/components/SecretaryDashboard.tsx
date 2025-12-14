@@ -571,6 +571,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     isDarkMode={isDarkMode}
                     onRefresh={carregarMarcacoes}
                     onBlockSchedule={() => setShowBlockedDialog(true)}
+                    refreshTrigger={refreshKey}
                   />
                 </div>
 
