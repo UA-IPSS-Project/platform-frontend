@@ -282,13 +282,13 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <td className="py-3 text-gray-600 dark:text-gray-400">{user.nif}</td>
                                             <td className="py-3 text-gray-600 dark:text-gray-400">
                                                 {user.funcao ? (
-                                                    {
+                                                    ({
                                                         'SECRETARIA': 'Secretaria',
                                                         'BALNEARIO': 'Balneário Social',
                                                         'ESCOLA': 'Escola',
                                                         'INTERNOS': 'Serviços Internos',
                                                         'OUTRO': 'Outro'
-                                                    }[user.funcao] || user.funcao
+                                                    } as Record<string, string>)[user.funcao] || user.funcao
                                                 ) : '-'}
                                             </td>
                                             <td className="py-3 text-left">
