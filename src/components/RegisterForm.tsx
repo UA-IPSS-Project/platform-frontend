@@ -73,20 +73,24 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
 
     const words = normalized.split(' ');
+    const errors: string[] = [];
     if (words.length < 2) {
-      return { valid: false, error: 'Indique pelo menos 2 palavras' };
+      errors.push('Indique pelo menos 2 palavras.');
     }
 
-    // Palavra: >=2 letras, pode conter segmentos separados por hífen, cada segmento >=2 letras
-    // Usa propriedades Unicode para abranger acentos
-    const wordPattern = /^[\p{L}]{2,}(?:-[\p{L}]{2,})*$/u;
+    // Validação do nome
+    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u; 
+    const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
     for (const w of words) {
       if (!wordPattern.test(w)) {
-        return {
-          valid: false,
-          error: 'Use apenas letras e hífen (-); mínimo 2 letras por palavra'
-        };
+        errors.push('Cada palavra deve começar por maiúscula');
+        errors.push('Use apenas letras e hífen (-)');
+        errors.push('Cada palavra deve ter pelo menos 2 letras');
+        break;
       }
+    }
+    if (errors.length > 0) {
+      return { valid: false, error: errors.join('\n') };
     }
     return { valid: true };
   };
@@ -122,7 +126,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       return { valid: false, error: 'Data não pode ser no futuro' };
     }
 
-    // Validar idade mínima de 18 anos
+    // Validação de idade mínima 
     const age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
     const dayDiff = today.getDate() - date.getDate();
@@ -315,7 +319,13 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.name ? 'border-red-500' : ''
               }`}
           />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          {errors.name && (
+            <ul className="text-red-500 text-sm list-disc ml-4 space-y-0.5">
+              {errors.name.split('\n').filter(Boolean).map((msg, idx) => (
+                <li key={idx}>{msg}</li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="space-y-2">
