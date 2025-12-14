@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 // O componente Input não é usado para o ano
 import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../CustomIcons';
-import type { Appointment } from '../SecretaryDashboard';
-import { calendarioApi, BloqueioAgenda } from '../../services/api';
+import { Appointment } from '../../types';
+import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -23,6 +23,8 @@ interface WeeklyScheduleProps {
   onToggleView: () => void;
   isDarkMode: boolean;
   onRefresh?: () => Promise<void>;
+  onBlockSchedule?: () => void;
+  refreshTrigger?: number;
 }
 
 const generateTimeSlots = () => {
@@ -38,7 +40,7 @@ const generateTimeSlots = () => {
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger }: Readonly<WeeklyScheduleProps>) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
@@ -99,19 +101,81 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
 
-  // Verificar se um slot está bloqueado (fim de semana, feriado, etc)
-  const isSlotBlocked = async (date: Date, time: string): Promise<boolean> => {
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-    const key = `${dateStr}_${time}`;
-
+  // Carregar bloqueios
+  const fetchBlocks = async () => {
     try {
-      const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
-      return isBlocked;
+      setIsLoadingBlocks(true);
+      const blocks = await bloqueiosApi.listar();
+      const newBlockedSlots = new Set<string>();
+
+      blocks.forEach(block => {
+        // Fallback para data se dataInicio/Fim não existirem (compatibilidade)
+        const startD = new Date(block.dataInicio || block.data);
+        const endD = new Date(block.dataFim || block.data);
+
+        // Iterar por cada dia do intervalo
+        for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
+
+          // Gerar slots para este dia
+          // Se for dia intermédio (não inicio nem fim), bloqueia tudo
+          const isStartDay = d.getTime() === startD.getTime();
+          const isEndDay = d.getTime() === endD.getTime();
+
+          // Se for dia completo, bloqueia todos os slots
+          // Caso contrário, depende das horas
+          // Simplificação: Assumir que bloqueio define horaInicio e horaFim que se aplicam a cada dia do intervalo?
+          // OU que o bloqueio é contínuo (ex: dia 1 14h até dia 3 10h).
+          // A lógica do backend "bloquearIntervalo" trata dia a dia.
+          // Assumimos aqui que horaInicio/Fim se aplicam ao intervalo especifico desse dia.
+
+          // Para simplificar a visualização rápida, vamos assumir lógica diária:
+          // Se o bloqueio for multi-dia, a lógica de "horas" pode ser complexa.
+          // MAS, a API retorna lista de bloqueios. 
+          // Se o backend dividir em dias individuais, melhor.
+          // Se retornar um bloco grande, temos de processar.
+
+          const sTime = isStartDay ? block.horaInicio : "00:00";
+          const eTime = isEndDay ? block.horaFim : "23:59";
+
+          timeSlots.forEach(slot => {
+            if (slot >= sTime && slot <= eTime) {
+              newBlockedSlots.add(`${dateStr}_${slot}`);
+            }
+          });
+        }
+      });
+      setBlockedSlots(newBlockedSlots);
     } catch (error) {
-      console.error('Erro ao verificar bloqueio:', error);
-      return false;
+      console.error("Erro ao carregar bloqueios:", error);
+    } finally {
+      setIsLoadingBlocks(false);
     }
+  };
+
+  useEffect(() => {
+    fetchBlocks();
+  }, [currentDate, onRefresh, refreshTrigger]); // Recarregar quando muda a semana ou refresh solicitado
+
+  // Verificar se um slot está bloqueado (visualização + clique)
+  const isSlotBlockedSync = (date: Date, time: string): boolean => {
+    const dateStr = date.toISOString().split('T')[0];
+    const key = `${dateStr}_${time}`;
+    return blockedSlots.has(key);
+  };
+
+  // Async check for click action (double verification)
+  const isSlotBlocked = async (date: Date, time: string): Promise<boolean> => {
+    // Primeiro verifica cache local
+    if (isSlotBlockedSync(date, time)) return true;
+
+    // Fallback api check
+    const dateStr = date.toISOString().split('T')[0];
+    try {
+      return await calendarioApi.verificarSlot(dateStr, time);
+    } catch (e) { return false; }
   };
 
   const getAvailableSlotsForDate = (date: Date) =>
@@ -750,17 +814,30 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <ChevronRightIcon className="w-4 h-4" />
         </Button>
         {!isClient && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickDialogToggle(true)}
-            className={`px-3 ${isDarkMode
-              ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
-              : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-              }`}
-          >
-            Nova marcação
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBlockSchedule}
+              className={`px-3 ${isDarkMode
+                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+                }`}
+            >
+              Bloquear
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickDialogToggle(true)}
+              className={`px-3 ${isDarkMode
+                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+                }`}
+            >
+              Nova marcação
+            </Button>
+          </div>
         )}
       </div>
 
@@ -813,8 +890,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
                       appointments.some(a => a.id === appointment.id)
                     );
+
+                    const isBlockedAdmin = isSlotBlockedSync(day, time);
                     // Clientes só podem clicar nas suas próprias marcações
-                    const blocked = booked && isClient && !isOwn;
+                    // Admin bloqueado também conta como blocked
+                    const blocked = (booked && isClient && !isOwn) || isBlockedAdmin;
 
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                     const available = isDarkMode
@@ -898,6 +978,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           }`}
                       >
                         {(() => {
+                          // Render blocked status (Administrative)
+                          if (isBlockedAdmin) {
+                            return (
+                              <div className="flex items-center justify-center text-center font-medium text-xs text-gray-500 dark:text-gray-400">
+                                Indisponível
+                              </div>
+                            );
+                          }
+
                           // Render reserved status
                           if (appointment?.status === 'reserved') {
                             return (

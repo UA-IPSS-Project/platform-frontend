@@ -415,3 +415,36 @@ export const calendarioApi = {
       method: 'GET',
     }),
 };
+
+// ===================
+// Bloqueios API
+// ===================
+
+export interface Bloqueio {
+  id: number;
+  dataInicio?: string;
+  dataFim?: string;
+  horaInicio: string;
+  horaFim: string;
+  motivo?: string;
+  criadoPorId?: number;
+  data: string; // for compatibility with backend response (BloqueioAgenda)
+}
+
+export const bloqueiosApi = {
+  criar: (data: { dataInicio: string; dataFim: string; horaInicio: string; horaFim: string }, funcionarioId: number) =>
+    apiRequest('/api/bloqueios?funcionarioId=' + funcionarioId, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  listar: () =>
+    apiRequest<Bloqueio[]>('/api/bloqueios', {
+      method: 'GET',
+    }),
+
+  remover: (id: number) =>
+    apiRequest(`/api/bloqueios/${id}`, {
+      method: 'DELETE',
+    }),
+};

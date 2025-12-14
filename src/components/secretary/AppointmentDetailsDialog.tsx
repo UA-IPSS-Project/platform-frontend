@@ -10,7 +10,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { TrashIcon, XIcon, FileTextIcon, AlertCircleIcon, CalendarIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
-import type { Appointment } from '../SecretaryDashboard';
+import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 

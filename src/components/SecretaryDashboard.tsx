@@ -11,11 +11,13 @@ import { AppointmentDialog } from './secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { Sidebar } from './Sidebar';
+import { BlockedScheduleDialog } from './BlockedScheduleDialog';
 import { ProfilePage } from './ProfilePage';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
+import { Appointment, ViewType } from '../types';
 
 interface SecretaryDashboardProps {
   user: {
@@ -29,26 +31,6 @@ interface SecretaryDashboardProps {
   onToggleDarkMode: () => void;
 }
 
-export interface Appointment {
-  id: string;
-  version?: number;
-  date: Date;
-  time: string;
-  duration: number;
-  patientNIF: string;
-  patientName: string;
-  patientContact: string;
-  patientEmail: string;
-  subject: string;
-  description: string;
-  status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show';
-  cancellationReason?: string;
-  documents?: { name: string; invalid?: boolean; reason?: string }[];
-  attendantName?: string;
-}
-
-type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | string;
-
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -57,9 +39,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showBlockedDialog, setShowBlockedDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-  // Navigation History Stack
+  const [refreshKey, setRefreshKey] = useState(0); // Para forçar atualização do calendário
   const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
     // Restore history if needed, or start with just home
     const saved = localStorage.getItem('secretaryDashboardView');
@@ -584,6 +567,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     onToggleView={() => { /* no-op: monthly view removed */ }}
                     isDarkMode={isDarkMode}
                     onRefresh={carregarMarcacoes}
+                    onBlockSchedule={() => setShowBlockedDialog(true)}
                   />
                 </div>
 
@@ -666,6 +650,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             onViewAppointment={handleViewAppointment}
           />
         )}
+
+        <BlockedScheduleDialog
+          open={showBlockedDialog}
+          onOpenChange={setShowBlockedDialog}
+          appointments={appointments}
+          onSuccess={() => {
+            carregarMarcacoes();
+            setRefreshKey(prev => prev + 1);
+          }}
+        />
       </div>
     </div>
   );

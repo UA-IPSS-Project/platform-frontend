@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { toast } from 'sonner';
 import SUBJECTS from '../../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../CustomIcons';
-import type { Appointment } from '../SecretaryDashboard';
+import { Appointment } from '../../types';
 
 interface HistoryPageProps {
   appointments: Appointment[];
