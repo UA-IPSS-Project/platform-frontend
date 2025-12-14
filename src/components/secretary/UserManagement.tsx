@@ -166,7 +166,6 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         {formData.isEmployee && (
                             <div className="space-y-6 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
                                 <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18" /><path d="M5 21V7l8-4 8 4v14" /><path d="M17 21v-8.5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0-.5.5V21" /><path d="M9 9h.01" /><path d="M9 12h.01" /><path d="M9 15h.01" /><path d="M13 9h.01" /><path d="M13 12h.01" /><path d="M13 15h.01" /></svg>
                                     <span>Dados do Funcionário</span>
                                 </div>
 
@@ -188,12 +187,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                 <div className="space-y-2">
                                     <Label className="text-gray-700 dark:text-gray-300 font-medium">Email Institucional</Label>
                                     <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></svg>
-                                        </div>
                                         <Input
-                                            placeholder="email@instituicao.pt"
-                                            className="pl-10 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11"
+                                            placeholder="email@florinhasdovouga.pt"
+                                            className="pl-12 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11 text-sm"
                                             value={formData.email}
                                             onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         />
@@ -227,7 +223,6 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">Utilizadores Registados</h2>
@@ -241,10 +236,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                     {/* Search */}
                     <div className="relative mb-6">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                             placeholder="Pesquisar por nome ou NIF..."
-                            className="pl-10 h-11 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700"
+                            className="h-11 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 text-sm"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
