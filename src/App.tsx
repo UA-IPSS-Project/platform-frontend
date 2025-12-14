@@ -57,6 +57,7 @@ function App() {
         {/* Animated background */}
         <AbstractBackground isDarkMode={isDarkMode} />
 
+<<<<<<< HEAD
         {/* Logo - Only show on login/register */}
         {currentView !== 'dashboard' && (
           <div className="absolute top-6 left-20 z-50 transition-all duration-200">
@@ -67,6 +68,9 @@ function App() {
             />
           </div>
         )}
+=======
+        {/* Logo removed from corner as requested */}
+>>>>>>> 222f34c (Logotipo no Login)
 
         {/* Theme Toggle - Only show on login/register */}
         {currentView !== 'dashboard' && (
@@ -116,6 +120,7 @@ function App() {
           <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
             {currentView === 'login' && (
               <LoginForm
+                isDarkMode={isDarkMode}
                 onNavigateToRegister={(type) => {
                   setRegisterInitialType(type ?? 'user');
                   setCurrentView('register');

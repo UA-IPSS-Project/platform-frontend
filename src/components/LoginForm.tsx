@@ -8,9 +8,10 @@ import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
+  isDarkMode?: boolean;
 }
 
-export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
+export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -58,6 +59,13 @@ export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
   return (
     <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <img
+            src={isDarkMode ? "/src/assets/LogoModoEscuro1.png" : "/src/assets/LogoSemTextoUltimo.png"}
+            alt="Logo Florinhas"
+            className="h-16 w-auto object-contain"
+          />
+        </div>
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
         <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
         <div className="mt-4 flex items-center justify-center gap-4">
