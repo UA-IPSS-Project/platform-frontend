@@ -66,6 +66,31 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
+  // Nome completo: apenas letras (inclui acentos) e hífen (-) dentro das palavras,
+  // no mínimo 2 palavras, cada uma com pelo menos 2 letras
+  const validateName = (name: string): { valid: boolean; error?: string } => {
+    const normalized = name.trim().replace(/\s+/g, ' ');
+    if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
+
+    const words = normalized.split(' ');
+    if (words.length < 2) {
+      return { valid: false, error: 'Indique pelo menos 2 palavras' };
+    }
+
+    // Palavra: >=2 letras, pode conter segmentos separados por hífen, cada segmento >=2 letras
+    // Usa propriedades Unicode para abranger acentos
+    const wordPattern = /^[\p{L}]{2,}(?:-[\p{L}]{2,})*$/u;
+    for (const w of words) {
+      if (!wordPattern.test(w)) {
+        return {
+          valid: false,
+          error: 'Use apenas letras e hífen (-); mínimo 2 letras por palavra'
+        };
+      }
+    }
+    return { valid: true };
+  };
+
   const formatDate = (date: Date) => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -114,9 +139,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
-    }
+    const nameValidation = validateName(formData.name);
+    if (!nameValidation.valid) newErrors.name = nameValidation.error || 'Nome inválido';
 
     if (!formData.nif) {
       newErrors.nif = 'NIF é obrigatório';

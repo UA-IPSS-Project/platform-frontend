@@ -428,7 +428,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {/* Header - Full Width */}
           <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 relative z-10">
             <div className="px-6 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <img
+                  src={isDarkMode ? '/assets/LogoModoEscuro1.png' : '/assets/LogoSemTextoUltimo.png'}
+                  alt="Logo Florinhas do Vouga"
+                  className="h-10 w-auto object-contain"
+                />
                 <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)} className="text-gray-700 dark:text-gray-200">
                   <MenuIcon className="w-5 h-5" />
                 </Button>
