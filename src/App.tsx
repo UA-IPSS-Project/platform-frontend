@@ -61,7 +61,7 @@ function App() {
         {currentView !== 'dashboard' && (
           <div className="absolute top-6 left-20 z-50 transition-all duration-200">
             <img
-              src="/src/assets/LogoSemTextoUltimo.png"
+              src="/assets/LogoSemTextoUltimo.png"
               alt="Logo Florinhas"
               className="w-auto h-16 md:h-20 object-contain hover:scale-105 transition-transform duration-200"
             />
