@@ -341,14 +341,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 >
                   <MenuIcon className="w-5 h-5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigateTo('profile')}
-                >
-                  <UserIcon className="w-5 h-5" />
-                  <span>Perfil</span>
-                </Button>
-                <span className="text-gray-700 dark:text-gray-200">Utilizador</span>
               </div>
 
               <nav className="hidden md:flex items-center gap-1">

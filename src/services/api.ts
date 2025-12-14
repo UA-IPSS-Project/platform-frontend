@@ -173,6 +173,12 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(data),
     }, false),
+
+  updatePassword: (password: string) =>
+    apiRequest<void>('/api/auth/set-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
 };
 
 // ===================

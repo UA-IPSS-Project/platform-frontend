@@ -5,6 +5,8 @@ import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { ArrowLeftIcon, UserIcon } from './CustomIcons';
 import { utilizadoresApi } from '../services/api';
+import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
+import { ChangePasswordDialog } from './ChangePasswordDialog';
 
 interface ProfilePageProps {
   user: {
@@ -34,6 +36,13 @@ const formatDateToPT = (dateString: string | undefined): string => {
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfilePageProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [expanded, setExpanded] = useState({
+    personal: true,
+    address: true, // User wanted to "hide fields", maybe default false? Keeping true for better UX unless specified "start hidden".
+    professional: true
+  });
+
   const [formData, setFormData] = useState({
     fullName: user.name,
     address: 'Rua das Flores, 123',
@@ -118,7 +127,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
         contact: dadosAtualizados.telefone,
         email: dadosAtualizados.email,
       });
-      
+
       setIsEditing(false);
       toast.success('Perfil atualizado com sucesso');
     } catch (error) {
@@ -147,26 +156,45 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
     setIsEditing(false);
   };
 
-  const renderField = (label: string, value: string, field: string, editable: boolean = true) => (
-    <div>
+  const toggleSection = (section: keyof typeof expanded) => {
+    setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const renderField = (label: string, value: string, field: string, editable: boolean = true, placeholder: string = '', colSpan: string = '') => (
+    <div className={colSpan}>
       <Label className="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{label}</Label>
       {isEditing ? (
         editable ? (
           <Input
             value={value}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+            placeholder={placeholder}
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
           />
         ) : (
-          <div className="px-3 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-500 border border-gray-300 dark:border-gray-600">
-            {value}
+          <div className="px-3 py-2 rounded bg-gray-300 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 cursor-not-allowed select-none">
+            {value || <span className="text-gray-400 italic">{placeholder}</span>}
           </div>
         )
       ) : (
-        <div className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-          {value}
+        <div className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-transparent">
+          {value || <span className="text-gray-400 italic">{placeholder}</span>}
         </div>
       )}
+    </div>
+  );
+
+  const renderSectionHeader = (title: string, sectionKey: keyof typeof expanded) => (
+    <div
+      className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-2 rounded-lg transition-colors -ml-2"
+      onClick={() => toggleSection(sectionKey)}
+    >
+      {expanded[sectionKey] ? (
+        <ChevronDown className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+      ) : (
+        <ChevronRight className="w-5 h-5 text-gray-500" />
+      )}
+      <h2 className="text-gray-900 dark:text-gray-100 font-medium text-lg">{title}</h2>
     </div>
   );
 
@@ -179,7 +207,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
+    <div className="flex items-center justify-center min-h-[calc(100vh-120px)] pb-10">
       <div className="w-full max-w-2xl">
         {/* Back Button */}
         <button
@@ -204,13 +232,23 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
               </div>
             </div>
             {!isEditing ? (
-              <Button
-                onClick={() => setIsEditing(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-                disabled={loading}
-              >
-                Editar
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  onClick={() => setShowPasswordDialog(true)}
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Mudar Palavra-passe
+                </Button>
+                <Button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={loading}
+                >
+                  Editar
+                </Button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <Button
@@ -232,33 +270,56 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
             )}
           </div>
 
-          {/* Personal Information */}
-          <div className="mb-8">
-            <h2 className="text-gray-900 dark:text-gray-100 mb-4">Informação Pessoal</h2>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              {renderField('Nome Completo', formData.fullName, 'fullName', false)}
-              {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
-              {renderField('Morada', formData.address, 'address')}
-              {renderField('Freguesia', formData.parish, 'parish')}
-              {renderField('Código Postal', formData.postalCode, 'postalCode')}
-              {renderField('Telemóvel Pessoal', formData.phonePersonal, 'phonePersonal')}
-              {renderField('Email', formData.email, 'email', false)}
-              {renderField('NIF', formData.nif, 'nif', false)}
-            </div>
-          </div>
+          <div className="space-y-12">
+            {/* Personal Information */}
+            <div>
+              {renderSectionHeader('Informação Pessoal', 'personal')}
 
-          {/* Professional Information */}
-          <div>
-            <h2 className="text-gray-900 dark:text-gray-100 mb-4">Informação Profissional</h2>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              {renderField('Profissão', formData.profession, 'profession')}
-              {renderField('Local de Emprego', formData.workLocation, 'workLocation')}
-              {renderField('Morada do Emprego', formData.workAddress, 'workAddress')}
-              {renderField('Telefone do Emprego', formData.workPhone, 'workPhone')}
+              {expanded.personal && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
+                  {renderField('Nome Completo', formData.fullName, 'fullName', false, 'Nome indisponível', 'md:col-span-2')}
+                  {renderField('NIF', formData.nif, 'nif', false)}
+                  {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
+                  {renderField('Email', formData.email, 'email', false, 'Email indisponível', 'md:col-span-2')}
+                  {renderField('Telemóvel Pessoal', formData.phonePersonal, 'phonePersonal', true, 'Adicione contacto')}
+                </div>
+              )}
+            </div>
+
+            {/* Address Information (New Subdivision) */}
+            <div>
+              {renderSectionHeader('Morada', 'address')}
+
+              {expanded.address && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
+                  {renderField('Morada', formData.address, 'address', true, 'Adicione morada', 'md:col-span-2')}
+                  {renderField('Freguesia', formData.parish, 'parish', true, 'Adicione freguesia')}
+                  {renderField('Código Postal', formData.postalCode, 'postalCode', true, 'Adicione código postal')}
+                </div>
+              )}
+            </div>
+
+            {/* Professional Information */}
+            <div>
+              {renderSectionHeader('Informação Profissional', 'professional')}
+
+              {expanded.professional && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
+                  {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
+                  {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
+                  {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
+                  {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      <ChangePasswordDialog
+        open={showPasswordDialog}
+        onClose={() => setShowPasswordDialog(false)}
+      />
     </div>
   );
 }
