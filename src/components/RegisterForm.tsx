@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { ArrowLeft, Check, X, Calendar as CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -32,6 +32,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
   const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
   const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
@@ -71,43 +73,43 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     return `${day}/${month}/${year}`;
   };
 
-const validateBirthDate = (birthDate: string): { valid: boolean; error?: string } => {
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(birthDate)) {
-    return { valid: false, error: 'Utilize o formato dd/mm/aaaa' };
-  }
-  const [dayStr, monthStr, yearStr] = birthDate.split('/');
-  const day = Number(dayStr);
-  const month = Number(monthStr);
-  const year = Number(yearStr);
-  const date = new Date(year, month - 1, day);
-  const isRealDate =
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day;
+  const validateBirthDate = (birthDate: string): { valid: boolean; error?: string } => {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(birthDate)) {
+      return { valid: false, error: 'Utilize o formato dd/mm/aaaa' };
+    }
+    const [dayStr, monthStr, yearStr] = birthDate.split('/');
+    const day = Number(dayStr);
+    const month = Number(monthStr);
+    const year = Number(yearStr);
+    const date = new Date(year, month - 1, day);
+    const isRealDate =
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day;
 
-  if (!isRealDate) {
-    return { valid: false, error: 'Data inválida' };
-  }
+    if (!isRealDate) {
+      return { valid: false, error: 'Data inválida' };
+    }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (date > today) {
-    return { valid: false, error: 'Data não pode ser no futuro' };
-  }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date > today) {
+      return { valid: false, error: 'Data não pode ser no futuro' };
+    }
 
-  // Validar idade mínima de 18 anos
-  const age = today.getFullYear() - date.getFullYear();
-  const monthDiff = today.getMonth() - date.getMonth();
-  const dayDiff = today.getDate() - date.getDate();
-  
-  const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-  
-  if (actualAge < 18) {
-    return { valid: false, error: 'Deve ter pelo menos 18 anos para se registar' };
-  }
+    // Validar idade mínima de 18 anos
+    const age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
+    const dayDiff = today.getDate() - date.getDate();
 
-  return { valid: true };
-};
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+
+    if (actualAge < 18) {
+      return { valid: false, error: 'Deve ter pelo menos 18 anos para se registar' };
+    }
+
+    return { valid: true };
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -147,14 +149,14 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
       }
     }
 
-  if (!formData.birthDate) {
-    newErrors.birthDate = 'Data de nascimento é obrigatória';
-  } else {
-    const birthValidation = validateBirthDate(formData.birthDate);
-    if (!birthValidation.valid) {
-      newErrors.birthDate = birthValidation.error || 'Data inválida';
+    if (!formData.birthDate) {
+      newErrors.birthDate = 'Data de nascimento é obrigatória';
+    } else {
+      const birthValidation = validateBirthDate(formData.birthDate);
+      if (!birthValidation.valid) {
+        newErrors.birthDate = birthValidation.error || 'Data inválida';
+      }
     }
-  }
 
     if (!formData.password) {
       newErrors.password = 'Palavra-passe é obrigatória';
@@ -174,7 +176,7 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Por favor, corrija os erros no formulário');
       return;
@@ -283,9 +285,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
             placeholder="João Silva"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.name ? 'border-red-500' : ''
-            }`}
+            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.name ? 'border-red-500' : ''
+              }`}
           />
           {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
         </div>
@@ -305,9 +306,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
               <Button
                 type="button"
                 variant="outline"
-                className={`w-full justify-between bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${
-                  errors.birthDate ? 'border-red-500' : ''
-                }`}
+                className={`w-full justify-between bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''
+                  }`}
               >
                 {formData.birthDate || 'Selecionar data'}
                 <CalendarIcon className="w-4 h-4 opacity-70" />
@@ -340,7 +340,7 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                   }}
                   className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
                 >
-                  {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((mn, idx) => (
+                  {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((mn, idx) => (
                     <option key={mn} value={idx}>{mn}</option>
                   ))}
                 </select>
@@ -377,9 +377,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                 maxLength={9}
                 value={formData.nif}
                 onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                  errors.nif ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
+                  }`}
               />
               {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
             </div>
@@ -395,9 +394,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                 maxLength={9}
                 value={formData.contact}
                 onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                  errors.contact ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
+                  }`}
               />
               {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
             </div>
@@ -415,9 +413,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                 maxLength={9}
                 value={formData.nif}
                 onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                  errors.nif ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
+                  }`}
               />
               {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
             </div>
@@ -433,9 +430,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
                 maxLength={9}
                 value={formData.contact}
                 onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                  errors.contact ? 'border-red-500' : ''
-                }`}
+                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
+                  }`}
               />
               {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
             </div>
@@ -452,9 +448,8 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
             placeholder={accountType === 'employee' ? 'nome@florinhas.pt' : 'email@exemplo.pt'}
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.email ? 'border-red-500' : ''
-            }`}
+            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
+              }`}
           />
           {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
         </div>
@@ -483,17 +478,27 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
             Palavra-passe *
           </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            onFocus={() => setShowPasswordValidation(true)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.password ? 'border-red-500' : ''
-            }`}
-          />
+          <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
+            ? 'border-red-500 focus-within:ring-red-500/50'
+            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
+            } bg-gray-50 dark:bg-gray-700`}>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              onFocus={() => setShowPasswordValidation(true)}
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {showPasswordValidation && formData.password && (
             <div className="space-y-1 text-sm">
               <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
@@ -517,16 +522,26 @@ const validateBirthDate = (birthDate: string): { valid: boolean; error?: string 
           <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-gray-300">
             Confirmar Palavra-passe *
           </Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            placeholder="••••••••"
-            value={formData.confirmPassword}
-            onChange={(e) => handleChange('confirmPassword', e.target.value)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.confirmPassword ? 'border-red-500' : ''
-            }`}
-          />
+          <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.confirmPassword
+            ? 'border-red-500 focus-within:ring-red-500/50'
+            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
+            } bg-gray-50 dark:bg-gray-700`}>
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={(e) => handleChange('confirmPassword', e.target.value)}
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+            >
+              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
         </div>
 

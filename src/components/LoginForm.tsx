@@ -4,6 +4,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -12,6 +13,7 @@ interface LoginFormProps {
 export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
   const { login } = useAuth();
@@ -37,7 +39,7 @@ export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Por favor, preencha todos os campos');
       return;
@@ -109,9 +111,8 @@ export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
               setIdentifier(e.target.value);
               if (errors.identifier) setErrors({ ...errors, identifier: undefined });
             }}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.identifier ? 'border-red-500' : ''
-            }`}
+            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
+              }`}
           />
           {errors.identifier && (
             <p className="text-red-500 text-sm">{errors.identifier}</p>
@@ -122,19 +123,29 @@ export function LoginForm({ onNavigateToRegister }: LoginFormProps) {
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
             Palavra-passe
           </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (errors.password) setErrors({ ...errors, password: undefined });
-            }}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-              errors.password ? 'border-red-500' : ''
-            }`}
-          />
+          <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
+            ? 'border-red-500 focus-within:ring-red-500/50'
+            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
+            } bg-gray-50 dark:bg-gray-700`}>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: undefined });
+              }}
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {errors.password && (
             <p className="text-red-500 text-sm">{errors.password}</p>
           )}
