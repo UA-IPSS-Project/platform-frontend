@@ -2,7 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { ChevronRight } from 'lucide-react';
-import type { Appointment } from '../SecretaryDashboard';
+import { Appointment } from '../../types';
 import { calendarioApi } from '../../services/api';
 import { toast } from 'sonner';
 
@@ -36,10 +36,10 @@ export function DayScheduleDialog({
       aptDate.setHours(0, 0, 0, 0);
       const checkDate = new Date(date);
       checkDate.setHours(0, 0, 0, 0);
-      
-      return aptDate.getTime() === checkDate.getTime() && 
-             apt.time === time && 
-             apt.status !== 'cancelled';
+
+      return aptDate.getTime() === checkDate.getTime() &&
+        apt.time === time &&
+        apt.status !== 'cancelled';
     });
   };
 
@@ -95,7 +95,7 @@ export function DayScheduleDialog({
               {/* Time Slots */}
               {HOURS.map((time, index) => {
                 const appointment = getAppointmentForSlot(time);
-                
+
                 return (
                   <div
                     key={index}
@@ -114,7 +114,7 @@ export function DayScheduleDialog({
                           const dateStr = date.toISOString().split('T')[0];
                           const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
                           if (isBlocked) {
-                            toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+                            toast.error('Horário indisponível');
                             return;
                           }
 

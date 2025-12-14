@@ -8,7 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import SUBJECTS from '../../lib/subjects';
 import { toast } from 'sonner';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
-import type { Appointment } from '../SecretaryDashboard';
+import { Appointment } from '../../types';
 
 interface TodayAppointmentsProps {
   appointments: Appointment[];
@@ -28,8 +28,8 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
       // Apenas marcações de hoje que estão: Agendado, Em Curso ou Aviso
-      return aptDate.getTime() === today.getTime() && 
-             (apt.status === 'scheduled' || apt.status === 'in-progress' || apt.status === 'warning');
+      return aptDate.getTime() === today.getTime() &&
+        (apt.status === 'scheduled' || apt.status === 'in-progress' || apt.status === 'warning');
     })
     .sort((a, b) => {
       const [aHour, aMin] = a.time.split(':').map(Number);
@@ -197,7 +197,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       </div>
 
       {/* Card transparente com altura fixa para 5 marcações */}
-      <Card 
+      <Card
         className="p-4 border-transparent bg-transparent shadow-none"
         style={{ height: '650px' }}
       >
@@ -205,11 +205,10 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
         <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-gray-200 dark:scrollbar-thumb-purple-600 dark:scrollbar-track-gray-800">
           <div className="space-y-3">
             {filteredTodayAppointments.length === 0 ? (
-              <div className={`rounded-lg shadow-sm p-8 text-center ${
-                isDarkMode
+              <div className={`rounded-lg shadow-sm p-8 text-center ${isDarkMode
                   ? 'bg-gray-800 backdrop-blur border border-gray-700'
                   : 'bg-white/95 backdrop-blur border border-gray-200'
-              }`}>
+                }`}>
                 <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
                 <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
               </div>
@@ -217,11 +216,10 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
               filteredTodayAppointments.map((apt) => (
                 <div
                   key={apt.id}
-                  className={`rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4 ${
-                    isDarkMode
+                  className={`rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4 ${isDarkMode
                       ? 'bg-gray-800 backdrop-blur border border-gray-700 hover:border-purple-600'
                       : 'bg-white/95 backdrop-blur border border-gray-200 hover:border-purple-600'
-                  }`}
+                    }`}
                   onClick={() => onViewAppointment(apt)}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -231,7 +229,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                     </div>
                     {getStatusBadge(apt.status)}
                   </div>
-                  
+
                   <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
                   <p className="text-xs text-gray-600 dark:text-gray-400">{apt.subject}</p>
                 </div>

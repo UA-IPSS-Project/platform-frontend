@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 // O componente Input não é usado para o ano
 import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../CustomIcons';
-import type { Appointment } from '../SecretaryDashboard';
-import { calendarioApi, BloqueioAgenda } from '../../services/api';
+import { Appointment } from '../../types';
+import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -23,6 +23,8 @@ interface WeeklyScheduleProps {
   onToggleView: () => void;
   isDarkMode: boolean;
   onRefresh?: () => Promise<void>;
+  onBlockSchedule?: () => void;
+  refreshTrigger?: number;
 }
 
 const generateTimeSlots = () => {
@@ -38,7 +40,7 @@ const generateTimeSlots = () => {
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger }: Readonly<WeeklyScheduleProps>) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
@@ -99,19 +101,68 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
 
-  // Verificar se um slot está bloqueado (fim de semana, feriado, etc)
-  const isSlotBlocked = async (date: Date, time: string): Promise<boolean> => {
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-    const key = `${dateStr}_${time}`;
+  // Helper para minutos
+  const timeToMinutes = (time: string) => {
+    if (!time) return 0;
+    const [h, m] = time.split(':').map(Number);
+    return h * 60 + m;
+  };
 
+  // Carregar bloqueios
+  const fetchBlocks = async () => {
     try {
-      const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
-      return isBlocked;
+      setIsLoadingBlocks(true);
+      // Buscar todos os bloqueios para evitar problemas entre meses
+      const blocks = await bloqueiosApi.listar();
+
+      const newBlockedSlots = new Set<string>();
+
+      blocks.forEach(block => {
+        const date = new Date(block.data);
+        const dateStr = date.toISOString().split('T')[0];
+
+        // Usar lógica de minutos para comparar
+        const startMins = timeToMinutes(block.horaInicio);
+        const endMins = timeToMinutes(block.horaFim);
+
+        timeSlots.forEach(slot => {
+          const slotMins = timeToMinutes(slot);
+          if (slotMins >= startMins && slotMins < endMins) {
+            newBlockedSlots.add(`${dateStr}_${slot}`);
+          }
+        });
+      });
+      setBlockedSlots(newBlockedSlots);
     } catch (error) {
-      console.error('Erro ao verificar bloqueio:', error);
-      return false;
+      console.error("Erro ao carregar bloqueios:", error);
+    } finally {
+      setIsLoadingBlocks(false);
     }
+  };
+
+  useEffect(() => {
+    fetchBlocks();
+  }, [currentDate, onRefresh, refreshTrigger]); // Recarregar quando muda a semana ou refresh solicitado
+
+  // Verificar se um slot está bloqueado (visualização + clique)
+  const isSlotBlockedSync = (date: Date, time: string): boolean => {
+    const dateStr = date.toISOString().split('T')[0];
+    const key = `${dateStr}_${time}`;
+    return blockedSlots.has(key);
+  };
+
+  // Async check for click action (double verification)
+  const isSlotBlocked = async (date: Date, time: string): Promise<boolean> => {
+    // Primeiro verifica cache local
+    if (isSlotBlockedSync(date, time)) return true;
+
+    // Fallback api check
+    const dateStr = date.toISOString().split('T')[0];
+    try {
+      return await calendarioApi.verificarSlot(dateStr, time);
+    } catch (e) { return false; }
   };
 
   const getAvailableSlotsForDate = (date: Date) =>
@@ -183,7 +234,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
     const blocked = await isSlotBlocked(date, time);
     if (blocked) {
-      toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+      toast.error('Horário indisponível');
       return;
     }
 
@@ -596,46 +647,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     setQuickDate(newDate);
   }, [quickDay, quickMonth, quickYear]);
 
-  // Carregar bloqueios do mês atual
-  useEffect(() => {
-    const loadBlockedSlots = async () => {
-      try {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth() + 1; // JavaScript usa 0-11, API usa 1-12
 
-        const bloqueios = await calendarioApi.listarBloqueios(year, month);
-        const newBlockedSlots = new Set<string>();
-
-        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
-          const date = new Date(bloqueio.data);
-          const dateStr = date.toISOString().split('T')[0];
-
-          if (bloqueio.diaTodo) {
-            // Se é dia todo, bloquear todos os horários
-            timeSlots.forEach(slot => {
-              newBlockedSlots.add(`${dateStr}_${slot}`);
-            });
-          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
-            // Bloquear apenas os horários específicos
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
-
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlockedSlots.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
-        });
-
-        setBlockedSlots(newBlockedSlots);
-      } catch (error) {
-        console.error('Erro ao carregar bloqueios:', error);
-      }
-    };
-
-    loadBlockedSlots();
-  }, [currentDate]);
 
   // Carregar bloqueios do mês selecionado no quick dialog
   useEffect(() => {
@@ -648,20 +660,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           const date = new Date(bloqueio.data);
           const dateStr = date.toISOString().split('T')[0];
 
-          if (bloqueio.diaTodo) {
-            timeSlots.forEach(slot => {
-              newBlocks.add(`${dateStr}_${slot}`);
-            });
-          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
+          const startMins = timeToMinutes(bloqueio.horaInicio);
+          const endMins = timeToMinutes(bloqueio.horaFim);
 
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlocks.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
+          timeSlots.forEach(slot => {
+            const slotMins = timeToMinutes(slot);
+            if (slotMins >= startMins && slotMins < endMins) {
+              newBlocks.add(`${dateStr}_${slot}`);
+            }
+          });
         });
 
         setQuickMonthBlocks(newBlocks);
@@ -750,17 +757,30 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <ChevronRightIcon className="w-4 h-4" />
         </Button>
         {!isClient && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickDialogToggle(true)}
-            className={`px-3 ${isDarkMode
-              ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
-              : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-              }`}
-          >
-            Nova marcação
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onBlockSchedule}
+              className={`px-3 ${isDarkMode
+                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+                }`}
+            >
+              Bloquear
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickDialogToggle(true)}
+              className={`px-3 ${isDarkMode
+                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
+                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
+                }`}
+            >
+              Nova marcação
+            </Button>
+          </div>
         )}
       </div>
 
@@ -813,8 +833,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
                       appointments.some(a => a.id === appointment.id)
                     );
+
+                    const isBlockedAdmin = isSlotBlockedSync(day, time);
                     // Clientes só podem clicar nas suas próprias marcações
-                    const blocked = booked && isClient && !isOwn;
+                    // Admin bloqueado também conta como blocked
+                    const blocked = (booked && isClient && !isOwn) || isBlockedAdmin;
 
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                     const available = isDarkMode
@@ -898,6 +921,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           }`}
                       >
                         {(() => {
+                          // Render blocked status (Administrative)
+                          if (isBlockedAdmin) {
+                            return (
+                              <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
+                                <ClockIcon className="w-3 h-3 mr-1" />
+                                Indisponível
+                              </div>
+                            );
+                          }
+
                           // Render reserved status
                           if (appointment?.status === 'reserved') {
                             return (
