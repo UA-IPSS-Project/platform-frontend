@@ -147,6 +147,7 @@ export interface AuthResponse {
   email: string;
   nome: string;
   role: 'FUNCIONARIO' | 'UTENTE';
+  active: boolean;
 }
 
 export const authApi = {
@@ -333,7 +334,8 @@ export interface UtilizadorInfo {
   telefone: string;
   email: string;
   dataNascimento?: string;
-  activo: boolean;
+  active: boolean;
+  funcao?: string;
   morada?: string;
   codigoPostal?: string;
   freguesia?: string;
@@ -342,6 +344,8 @@ export interface UtilizadorInfo {
   moradaEmprego?: string;
   telefoneEmprego?: string;
 }
+
+export interface UtilizadorResponseDTO extends UtilizadorInfo { }
 
 export interface AtualizarUtilizadorRequest {
   nome?: string;
@@ -382,10 +386,30 @@ export const utilizadoresApi = {
       body: JSON.stringify(data),
     }),
 
-  // Buscar utilizador por NIF
   buscarPorNif: (nif: string) =>
     apiRequest<UtilizadorInfo>(`/api/utilizadores/nif/${nif}`, {
       method: 'GET',
+    }),
+
+  // Listar todos os funcionários (ativos e pendentes) -> Using the generic endpoint if it exists or special one
+  // Assuming the backend has a general list endpoint, but let's using the new specific ones or the general findAll filter
+  // Based on previous steps, I added `listarFuncionariosPendentes`.
+  // I likely need to add `listarFuncionarios` (all) in backend or user existing.
+  // Let's add the pending one first as it is confirmed.
+
+  listarFuncionariosPendentes: () =>
+    apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/funcionarios/pendentes', {
+      method: 'GET',
+    }),
+
+  listarFuncionarios: () =>
+    apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/funcionarios', {
+      method: 'GET',
+    }),
+
+  aprovarFuncionario: (id: number) =>
+    apiRequest<void>(`/api/utilizadores/${id}/aprovar`, {
+      method: 'PUT',
     }),
 };
 

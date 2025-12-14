@@ -172,12 +172,12 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between px-1 py-3 border-b dark:border-gray-800">
-            <div className="flex items-center gap-5">
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-gray-800">
+            <div className="flex items-center gap-3">
               <img
-                src="/src/assets/LogoSemTextoUltimo.png"
+                src={isDarkMode ? '/assets/LogoModoEscuro1.png' : '/assets/LogoSemTextoUltimo.png'}
                 alt="Logo Florinhas"
-                className="h-12 w-auto object-contain -ml-10"
+                className="h-12 w-auto object-contain"
               />
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">Florinhas do Vouga</span>

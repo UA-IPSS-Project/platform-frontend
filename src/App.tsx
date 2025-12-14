@@ -10,9 +10,17 @@ import AbstractBackground from './components/ui/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 
 function App() {
+  const getInitialTheme = () => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
   const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard' | 'set-new-password'>('login');
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
   useEffect(() => {
@@ -22,6 +30,8 @@ function App() {
     } else {
       root.classList.remove('dark');
     }
+
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
 
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
@@ -57,16 +67,7 @@ function App() {
         {/* Animated background */}
         <AbstractBackground isDarkMode={isDarkMode} />
 
-        {/* Logo - Only show on login/register */}
-        {currentView !== 'dashboard' && (
-          <div className="absolute top-6 left-20 z-50 transition-all duration-200">
-            <img
-              src="/src/assets/LogoSemTextoUltimo.png"
-              alt="Logo Florinhas"
-              className="w-auto h-16 md:h-20 object-contain hover:scale-105 transition-transform duration-200"
-            />
-          </div>
-        )}
+        {/* Logo removed from corner as requested */}
 
         {/* Theme Toggle - Only show on login/register */}
         {currentView !== 'dashboard' && (
@@ -116,6 +117,7 @@ function App() {
           <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
             {currentView === 'login' && (
               <LoginForm
+                isDarkMode={isDarkMode}
                 onNavigateToRegister={(type) => {
                   setRegisterInitialType(type ?? 'user');
                   setCurrentView('register');

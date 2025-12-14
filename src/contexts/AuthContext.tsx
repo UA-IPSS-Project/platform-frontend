@@ -270,6 +270,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const responseData = await response.json();
 
+      if (responseData.active === false && responseData.role === 'FUNCIONARIO') {
+        // Do not log in automatically if not active
+        return;
+      }
+
       const userData: User = {
         id: responseData.id,
         email: responseData.email,
