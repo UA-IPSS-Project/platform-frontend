@@ -166,8 +166,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
     if (accountType === 'employee') {
       // require institutional email
-      if (!formData.email.endsWith('@florinhas.pt')) {
-        newErrors.email = 'Use um email institucional (@florinhas.pt)';
+      if (!formData.email.endsWith('@florinhasdovouga.pt')) {
+        newErrors.email = 'Use um email institucional (@florinhasdovouga.pt)';
       }
     }
 
@@ -482,7 +482,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           <Input
             id="email"
             type="email"
-            placeholder={accountType === 'employee' ? 'nome@florinhas.pt' : 'email@exemplo.pt'}
+            placeholder={accountType === 'employee' ? 'nome@florinhasdovouga.pt' : 'email@exemplo.pt'}
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
