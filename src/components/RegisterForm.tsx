@@ -196,6 +196,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           dataNasc: isoDate,
           password: formData.password,
         });
+        toast.success('Conta criada com sucesso!');
+        onNavigateToLogin();
       } else {
         await registerFuncionario({
           nome: formData.name,
@@ -206,10 +208,11 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           funcao: employeeRole,
           password: formData.password,
         });
+        // Employee registration success
+        toast.success('Conta criada com sucesso! Aguarde aprovação da secretaria.');
+        onNavigateToLogin();
       }
 
-      toast.success('Conta criada com sucesso!');
-      onNavigateToLogin();
     } catch (error: any) {
       toast.error(error.message || 'Erro ao criar conta');
     }

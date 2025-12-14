@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { utilizadoresApi } from '../../services/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
-import { Search, UserPlus, Send, Eraser } from 'lucide-react';
+import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserManagementProps {
@@ -21,12 +22,43 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         email: ''
     });
 
+    const [users, setUsers] = useState<any[]>([]); // Use appropriate type if possible
     const [isLoading, setIsLoading] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
-    // Mock data for the right panel to visualize layout
-    const users: any[] = [
-        // Empty for now as per "Nenhum utilizador encontrado" in screenshot, or valid mock
-    ];
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    // Fetch users on mount
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const data = await utilizadoresApi.listarFuncionarios();
+            setUsers(data);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+            // toast.error("Erro ao carregar utilizadores");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleApprove = async (id: number) => {
+        try {
+            await utilizadoresApi.aprovarFuncionario(id);
+            toast.success("Funcionário aprovado com sucesso!");
+            fetchUsers(); // Refresh list
+        } catch (error) {
+            toast.error("Erro ao aprovar funcionário");
+        }
+    };
 
     const handleClear = () => {
         setFormData({
@@ -41,8 +73,21 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        toast.success("Funcionalidade de criação será conectada em breve.");
+        toast.success("Funcionalidade de criação via dashboard em breve.");
     };
+
+    // Filter users
+    const filteredUsers = users.filter(user =>
+        user.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.nif.includes(searchQuery)
+    );
+
+    const pendingCount = users.filter(u => u.active === false).length;
+
+    // Pagination
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -187,8 +232,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">Utilizadores Registados</h2>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Ver todas as notificações</span>
-                                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] flex items-center justify-center font-bold">0</span>
+                                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Pendentes</span>
+                                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] flex items-center justify-center font-bold">{pendingCount}</span>
                                 </div>
                             </div>
                         </div>
@@ -200,6 +245,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <Input
                             placeholder="Pesquisar por nome ou NIF..."
                             className="pl-10 h-11 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
 
@@ -211,29 +258,57 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     <th className="text-left pb-3 pl-2 font-medium">Nome</th>
                                     <th className="text-left pb-3 font-medium">NIF</th>
                                     <th className="text-left pb-3 font-medium">Função</th>
-                                    <th className="text-right pb-3 pr-2 font-medium">Estado</th>
+                                    <th className="text-left pb-3 font-medium">Estado</th>
+                                    <th className="text-left pb-3 font-medium">Ação</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
-                                {users.length === 0 ? (
+                                {isLoading ? (
                                     <tr>
-                                        <td colSpan={4} className="py-20 text-center text-gray-400">
+                                        <td colSpan={5} className="py-20 text-center text-gray-400">
+                                            Carregando...
+                                        </td>
+                                    </tr>
+                                ) : filteredUsers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-20 text-center text-gray-400">
                                             Nenhum utilizador encontrado
                                         </td>
                                     </tr>
                                 ) : (
-                                    users.map((user: any, index) => (
+                                    currentUsers.map((user: any, index) => (
                                         <tr key={index} className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                            <td className="py-3 pl-2 font-medium text-gray-900 dark:text-gray-200">{user.name}</td>
+                                            <td className="py-3 pl-2 font-medium text-gray-900 dark:text-gray-200">{user.nome}</td>
                                             <td className="py-3 text-gray-600 dark:text-gray-400">{user.nif}</td>
-                                            <td className="py-3 text-gray-600 dark:text-gray-400">{user.role || '-'}</td>
-                                            <td className="py-3 pr-2 text-right">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.isActive
+                                            <td className="py-3 text-gray-600 dark:text-gray-400">
+                                                {user.funcao ? (
+                                                    {
+                                                        'SECRETARIA': 'Secretaria',
+                                                        'BALNEARIO': 'Balneário Social',
+                                                        'ESCOLA': 'Escola',
+                                                        'INTERNOS': 'Serviços Internos',
+                                                        'OUTRO': 'Outro'
+                                                    }[user.funcao] || user.funcao
+                                                ) : '-'}
+                                            </td>
+                                            <td className="py-3 text-left">
+                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.active
                                                     ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                                                     : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                                                     }`}>
-                                                    {user.isActive ? 'Ativo' : 'Pendente'}
+                                                    {user.active ? 'Ativo' : 'Pendente'}
                                                 </span>
+                                            </td>
+                                            <td className="py-3 text-left">
+                                                {!user.active && (
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-purple-600 hover:bg-purple-700 text-white h-7 text-xs"
+                                                        onClick={() => handleApprove(user.id)}
+                                                    >
+                                                        Aprovar
+                                                    </Button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -241,6 +316,38 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredUsers.length)} de {filteredUsers.length}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <span className="text-sm text-gray-600 dark:text-gray-300 min-w-[3rem] text-center">
+                                    {currentPage} / {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 w-8 p-0"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
