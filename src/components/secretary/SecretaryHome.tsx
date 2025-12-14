@@ -18,37 +18,29 @@ interface SecretaryHomeProps {
 }
 
 const recentActivity = [
-  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min' },
-  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min' },
-  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora' },
-  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas' },
+  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-purple-500' },
+  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-pink-500' },
+  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-blue-500' },
+  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-green-500' },
 ];
 
 export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
-  const [marcacoesHoje, setMarcacoesHoje] = useState<number>(0);
-  const [utentesAtivos, setUtentesAtivos] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
+  const [utentesAtivos, setUtentesAtivos] = useState<string>('...');
 
   useEffect(() => {
     const fetchStats = async () => {
-      setLoading(true);
       try {
-        console.log('Carregando estatísticas...');
         const [marcacoes, utentes] = await Promise.all([
           marcacoesApi.contarHoje(),
           utilizadoresApi.contarUtentesAtivos(),
         ]);
-        console.log('Marcações hoje:', marcacoes);
-        console.log('Utentes ativos:', utentes);
-        setMarcacoesHoje(marcacoes);
-        setUtentesAtivos(utentes);
+        setMarcacoesHoje(marcacoes.toString());
+        setUtentesAtivos(utentes.toString());
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
-        // Mostrar valores como 0 em caso de erro
-        setMarcacoesHoje(0);
-        setUtentesAtivos(0);
-      } finally {
-        setLoading(false);
+        setMarcacoesHoje('0');
+        setUtentesAtivos('0');
       }
     };
 
@@ -56,52 +48,56 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
   }, []);
 
   const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: loading ? '...' : marcacoesHoje.toString(), color: 'bg-purple-500', view: 'appointments' },
-    { icon: Users, label: 'Utentes Ativos', value: loading ? '...' : utentesAtivos.toString(), color: 'bg-green-500', view: 'management' },
-    { icon: FileText, label: 'Candidaturas Pendentes', value: 'x', color: 'bg-pink-500', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições', value: 'x', color: 'bg-blue-500', view: 'requisitions' },
+    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: '#a855f7', view: 'appointments' }, // purple-500
+    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: '#db2777', view: 'candidaturas' }, // pink-600
+    { icon: ClipboardList, label: 'Requisições', value: '5', color: '#2563eb', view: 'requisitions' }, // blue-600
+    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: '#16a34a', view: 'management' }, // green-600
   ];
 
   const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
   const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
-  const hoverBgClass = isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-purple-50';
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto">
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       {/* Welcome Section */}
       <GlassCard className="p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-row items-center justify-between gap-4">
           <div>
-            <h1 className={`text-2xl font-bold ${textClass}`}>
+            <h1 className={`text-2xl font-bold ${textClass} mb-1`}>
               Bem-vindo ao Portal Florinhas do Vouga
             </h1>
-            <p className={`${textSecondaryClass} mt-1`}>
+            <p className={`text-base ${textSecondaryClass}`}>
               Gestão completa da instituição
             </p>
           </div>
-          <div className={`flex items-center gap-2 text-sm ${textSecondaryClass}`}>
-            <Clock className="w-4 h-4" />
-            {new Date().toLocaleDateString('pt-PT', { 
-              weekday: 'long', 
-              day: 'numeric', 
-              month: 'long',
-              year: 'numeric'
-            })}
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2 rounded-full border border-gray-100 dark:border-gray-700 whitespace-nowrap">
+            <Clock className={`w-4 h-4 ${textSecondaryClass}`} />
+            <span className={`text-sm font-medium ${textSecondaryClass} capitalize`}>
+              {new Date().toLocaleDateString('pt-PT', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
           </div>
         </div>
       </GlassCard>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Grid - Flex row for side-by-side */}
+      <div className="flex flex-row gap-6 w-full overflow-x-auto pb-2">
         {stats.map((stat, index) => (
-          <div key={index} onClick={() => onNavigate(stat.view)} className="cursor-pointer">
-            <GlassCard className="p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className={`text-sm ${textSecondaryClass} mb-2`}>{stat.label}</p>
-                  <p className={`text-3xl font-bold ${textClass}`}>{stat.value}</p>
+          <div key={index} onClick={() => onNavigate(stat.view)} className="cursor-pointer group flex-1 min-w-[200px]">
+            <GlassCard className="p-6 h-full hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1 relative overflow-hidden flex flex-col justify-center">
+              <div className="relative z-10 flex items-center justify-between w-full">
+                <div className="flex flex-col min-w-0">
+                  <p className={`text-xs font-medium ${textSecondaryClass} mb-1 truncate uppercase tracking-wider`}>{stat.label}</p>
+                  <p className={`text-3xl font-bold ${textClass} tracking-tight`}>{stat.value}</p>
                 </div>
-                <div className={`p-3 rounded-xl ${stat.color} flex-shrink-0`}>
+                <div
+                  className="p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3"
+                  style={{ backgroundColor: stat.color }}
+                >
                   <stat.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
@@ -110,70 +106,111 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
         ))}
       </div>
 
-      {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-2 gap-6 items-start">
         {/* Recent Activity */}
-        <GlassCard className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-lg font-semibold ${textClass}`}>Atividade Recente</h2>
-            <button 
+        <div className="space-y-4 h-full">
+          <div className="flex items-center justify-between px-1">
+            <h2 className={`text-lg font-bold ${textClass}`}>Atividade Recente</h2>
+            <button
               onClick={() => onNavigate('notificacoes')}
-              className="text-purple-600 dark:text-purple-400 text-sm hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1"
+              className="text-purple-600 dark:text-purple-400 text-sm font-medium hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 transition-colors"
             >
               Ver tudo <ArrowRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="space-y-3">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className={`flex items-start gap-3 p-3 rounded-xl ${hoverBgClass} transition-colors`}>
-                <div className="w-2 h-2 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{activity.text}</p>
-                  <p className={`text-xs ${textSecondaryClass} mt-1`}>{activity.time}</p>
+
+          <GlassCard className="p-0 overflow-hidden h-full min-h-[400px]">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="p-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div className={`w-2.5 h-2.5 rounded-full ${activity.color} mt-2 ring-4 ring-white dark:ring-gray-900 flex-shrink-0`} />
+                    <div>
+                      <p className={`font-medium ${textClass} text-sm`}>{activity.text}</p>
+                      <p className={`text-xs ${textSecondaryClass} mt-1`}>{activity.time}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
 
         {/* Quick Actions */}
-        <GlassCard className="p-6">
-          <h2 className={`text-lg font-semibold ${textClass} mb-4`}>Ações Rápidas</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={() => onNavigate('appointments')}
-              className={`w-full p-4 rounded-xl ${isDarkMode ? 'bg-purple-900/30 hover:bg-purple-900/50' : 'bg-purple-50 hover:bg-purple-100'} transition-colors text-left`}
-            >
-              <Calendar className={`w-6 h-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} mb-2`} />
-              <p className={`font-medium ${textClass}`}>Nova Marcação</p>
-              <p className={`text-xs ${textSecondaryClass}`}>Agendar atendimento</p>
-            </button>
-            <button 
-              onClick={() => onNavigate('candidaturas')}
-              className={`w-full p-4 rounded-xl ${isDarkMode ? 'bg-pink-900/30 hover:bg-pink-900/50' : 'bg-pink-50 hover:bg-pink-100'} transition-colors text-left`}
-            >
-              <FileText className={`w-6 h-6 ${isDarkMode ? 'text-pink-400' : 'text-pink-600'} mb-2`} />
-              <p className={`font-medium ${textClass}`}>Candidaturas</p>
-              <p className={`text-xs ${textSecondaryClass}`}>Ver pendentes</p>
-            </button>
-            <button 
-              onClick={() => onNavigate('management')}
-              className={`w-full p-4 rounded-xl ${isDarkMode ? 'bg-blue-900/30 hover:bg-blue-900/50' : 'bg-blue-50 hover:bg-blue-100'} transition-colors text-left`}
-            >
-              <UserPlus className={`w-6 h-6 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mb-2`} />
-              <p className={`font-medium ${textClass}`}>Criar Conta</p>
-              <p className={`text-xs ${textSecondaryClass}`}>Novo utilizador</p>
-            </button>
-            <button 
-              onClick={() => onNavigate('reports')}
-              className={`w-full p-4 rounded-xl ${isDarkMode ? 'bg-green-900/30 hover:bg-green-900/50' : 'bg-green-50 hover:bg-green-100'} transition-colors text-left`}
-            >
-              <TrendingUp className={`w-6 h-6 ${isDarkMode ? 'text-green-400' : 'text-green-600'} mb-2`} />
-              <p className={`font-medium ${textClass}`}>Relatórios</p>
-              <p className={`text-xs ${textSecondaryClass}`}>Ver estatísticas</p>
-            </button>
+        <div className="space-y-4 h-full">
+          <div className="px-1">
+            <h2 className={`text-lg font-bold ${textClass}`}>Ações Rápidas</h2>
           </div>
-        </GlassCard>
+
+          <GlassCard className="p-4 h-full min-h-[400px] flex items-center">
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <button
+                onClick={() => onNavigate('appointments')}
+                className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
+                style={{
+                  backgroundColor: isDarkMode ? 'rgba(88, 28, 135, 0.2)' : '#faf5ff', // purple-50
+                  borderColor: isDarkMode ? '#6b21a8' : '#f3e8ff'
+                }}
+              >
+                <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
+                  style={{ backgroundColor: isDarkMode ? 'rgba(88, 28, 135, 0.5)' : '#ffffff', color: '#9333ea' }}>
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <p className={`font-semibold ${textClass} text-lg mb-1`}>Nova Marcação</p>
+                <p className={`text-sm ${textSecondaryClass}`}>Agendar atendimento</p>
+              </button>
+
+              <button
+                onClick={() => onNavigate('candidaturas')}
+                className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
+                style={{
+                  backgroundColor: isDarkMode ? 'rgba(131, 24, 67, 0.2)' : '#fdf2f8', // pink-50 (#fdf2f8)
+                  borderColor: isDarkMode ? '#9d174d' : '#fce7f3'
+                }}
+              >
+                <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
+                  style={{ backgroundColor: isDarkMode ? 'rgba(131, 24, 67, 0.5)' : '#ffffff', color: '#db2777' }}>
+                  <FileText className="w-6 h-6" />
+                </div>
+                <p className={`font-semibold ${textClass} text-lg mb-1`}>Candidaturas</p>
+                <p className={`text-sm ${textSecondaryClass}`}>Ver pendentes</p>
+              </button>
+
+              <button
+                onClick={() => onNavigate('management')}
+                className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
+                style={{
+                  backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : '#eff6ff', // blue-50 (#eff6ff)
+                  borderColor: isDarkMode ? '#1e40af' : '#dbeafe'
+                }}
+              >
+                <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
+                  style={{ backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.5)' : '#ffffff', color: '#2563eb' }}>
+                  <UserPlus className="w-6 h-6" />
+                </div>
+                <p className={`font-semibold ${textClass} text-lg mb-1`}>Criar Conta</p>
+                <p className={`text-sm ${textSecondaryClass}`}>Novo utilizador</p>
+              </button>
+
+              <button
+                onClick={() => onNavigate('reports')}
+                className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
+                style={{
+                  backgroundColor: isDarkMode ? 'rgba(20, 83, 45, 0.2)' : '#f0fdf4', // green-50 (#f0fdf4)
+                  borderColor: isDarkMode ? '#166534' : '#dcfce7'
+                }}
+              >
+                <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
+                  style={{ backgroundColor: isDarkMode ? 'rgba(20, 83, 45, 0.5)' : '#ffffff', color: '#16a34a' }}>
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <p className={`font-semibold ${textClass} text-lg mb-1`}>Relatórios</p>
+                <p className={`text-sm ${textSecondaryClass}`}>Ver estatísticas</p>
+              </button>
+            </div>
+          </GlassCard>
+        </div>
       </div>
     </div>
   );
