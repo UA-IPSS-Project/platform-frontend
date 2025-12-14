@@ -9,7 +9,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 // O componente Input não é usado para o ano
 import { toast } from 'sonner';
-import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon } from '../CustomIcons';
+import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../CustomIcons';
 import type { Appointment } from '../SecretaryDashboard';
 import { calendarioApi, BloqueioAgenda } from '../../services/api';
 
@@ -38,10 +38,11 @@ const generateTimeSlots = () => {
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh }: WeeklyScheduleProps) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh }: Readonly<WeeklyScheduleProps>) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -195,8 +196,264 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     return `${firstDay.getDate()} de ${month}`;
   };
 
-  const handleExport = () => {
-    toast.success('Agenda semanal exportada com sucesso');
+  // Obter marcações da semana para exportação
+  const getWeekAppointments = () => {
+    const weekStart = new Date(weekDays[0]);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekDays[weekDays.length - 1]);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const weekAppointments = bookingSource.filter(apt => {
+      const aptDate = new Date(apt.date);
+      return aptDate >= weekStart && aptDate <= weekEnd && apt.status !== 'reserved';
+    });
+
+    // Ordenar por data e hora
+    return [...weekAppointments].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      const dateCompare = dateA.getTime() - dateB.getTime();
+      if (dateCompare !== 0) return dateCompare;
+      return a.time.localeCompare(b.time);
+    });
+  };
+
+  // Mapear status para português
+  const statusLabels: Record<string, string> = {
+    'scheduled': 'Agendado',
+    'in-progress': 'Em Curso',
+    'warning': 'Aviso',
+    'completed': 'Concluído',
+    'cancelled': 'Cancelado',
+    'no-show': 'Faltou'
+  };
+
+  // Gerar nome do arquivo
+  const getFileName = (extension: string) => {
+    const firstDay = weekDays[0];
+    const lastDay = weekDays[weekDays.length - 1];
+    return `agenda_${firstDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}_a_${lastDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}.${extension}`;
+  };
+
+  // Exportar como CSV
+  const handleExportCSV = () => {
+    const sortedAppointments = getWeekAppointments();
+
+    if (sortedAppointments.length === 0) {
+      toast.warning('Não existem marcações para exportar nesta semana');
+      return;
+    }
+
+    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const csvContent = [
+      headers.join(';'),
+      ...sortedAppointments.map(apt => {
+        const date = new Date(apt.date);
+        const formattedDate = date.toLocaleDateString('pt-PT');
+        const status = statusLabels[apt.status] || apt.status;
+
+        const escapeField = (field: string) => {
+          if (field.includes(';') || field.includes('"') || field.includes('\n')) {
+            return `"${field.replace(/"/g, '""')}"`;
+          }
+          return field;
+        };
+
+        return [
+          formattedDate,
+          apt.time,
+          escapeField(apt.patientName || ''),
+          apt.patientNIF || '',
+          apt.patientContact || '',
+          apt.patientEmail || '',
+          escapeField(apt.subject || ''),
+          status
+        ].join(';');
+      })
+    ].join('\n');
+
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', getFileName('csv'));
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    setExportDialogOpen(false);
+    toast.success('Agenda exportada em CSV com sucesso');
+  };
+
+  // Exportar como Excel (usando formato XML do Excel)
+  const handleExportExcel = () => {
+    const sortedAppointments = getWeekAppointments();
+
+    if (sortedAppointments.length === 0) {
+      toast.warning('Não existem marcações para exportar nesta semana');
+      return;
+    }
+
+    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+
+    // Criar conteúdo HTML que o Excel pode abrir
+    let tableContent = '<table border="1">';
+    tableContent += '<tr>' + headers.map(h => `<th style="background-color:#4a5568;color:white;font-weight:bold;padding:8px;">${h}</th>`).join('') + '</tr>';
+
+    // Função para obter cor do status
+    const getStatusColor = (statusKey: string) => {
+      switch (statusKey) {
+        case 'completed': return '#38a169'; // Verde
+        case 'no-show': return '#e53e3e'; // Vermelho
+        case 'warning': return '#d69e2e'; // Amarelo
+        case 'cancelled': return '#718096'; // Cinzento
+        case 'in-progress': return '#805ad5'; // Roxo
+        default: return '#4a5568'; // Default
+      }
+    };
+
+    sortedAppointments.forEach(apt => {
+      const date = new Date(apt.date);
+      const formattedDate = date.toLocaleDateString('pt-PT');
+      const status = statusLabels[apt.status] || apt.status;
+      const statusColor = getStatusColor(apt.status);
+
+      tableContent += '<tr>';
+      tableContent += `<td style="padding:6px;">${formattedDate}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.time}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.patientNIF || ''}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.subject || ''}</td>`;
+      tableContent += `<td style="padding:6px;color:${statusColor};font-weight:bold;">${status}</td>`;
+      tableContent += '</tr>';
+    });
+    tableContent += '</table>';
+
+    const excelContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+      <head><meta charset="UTF-8"></head>
+      <body>${tableContent}</body>
+      </html>
+    `;
+
+    const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', getFileName('xls'));
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    setExportDialogOpen(false);
+    toast.success('Agenda exportada em Excel com sucesso');
+  };
+
+  // Exportar como PDF
+  const handleExportPDF = () => {
+    const sortedAppointments = getWeekAppointments();
+
+    if (sortedAppointments.length === 0) {
+      toast.warning('Não existem marcações para exportar nesta semana');
+      return;
+    }
+
+    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const firstDay = weekDays[0];
+    const lastDay = weekDays[weekDays.length - 1];
+    const periodLabel = `${firstDay.toLocaleDateString('pt-PT')} a ${lastDay.toLocaleDateString('pt-PT')}`;
+
+    // Criar HTML para impressão como PDF
+    let htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Agenda Semanal - ${periodLabel}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
+          .period { text-align: center; color: #4a5568; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th { background-color: #4a5568; color: white; padding: 10px; text-align: left; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+          tr:nth-child(even) { background-color: #f7fafc; }
+          .status-scheduled { color: #4a5568; }
+          .status-completed { color: #38a169; font-weight: bold; }
+          .status-cancelled { color: #718096; }
+          .status-in_progress { color: #805ad5; font-weight: bold; }
+          .status-no_show { color: #e53e3e; font-weight: bold; }
+          .status-warning { color: #d69e2e; font-weight: bold; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #718096; }
+        </style>
+      </head>
+      <body>
+        <br/><br/><br/>
+        <h1>Agenda Semanal</h1>
+        <p class="period">${periodLabel}</p>
+        <table>
+          <thead>
+            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>
+    `;
+
+    sortedAppointments.forEach(apt => {
+      const date = new Date(apt.date);
+      const formattedDate = date.toLocaleDateString('pt-PT');
+      const status = statusLabels[apt.status] || apt.status;
+      const statusClass = `status-${apt.status.toLowerCase().replace('-', '_')}`;
+
+      htmlContent += `
+        <tr>
+          <td>${formattedDate}</td>
+          <td>${apt.time}</td>
+          <td>${apt.patientName || ''}</td>
+          <td>${apt.patientNIF || ''}</td>
+          <td>${apt.patientContact || ''}</td>
+          <td>${apt.patientEmail || ''}</td>
+          <td>${apt.subject || ''}</td>
+          <td class="${statusClass}">${status}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
+          </tbody>
+        </table>
+        <p class="footer">Gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}</p>
+      </body>
+      </html>
+    `;
+
+    // Abrir nova janela para impressão como PDF
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+      printWindow.document.replaceChild(
+        printWindow.document.importNode(doc.documentElement, true),
+        printWindow.document.documentElement
+      );
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+
+    setExportDialogOpen(false);
+    toast.success('A preparar PDF para impressão...');
+  };
+
+  const handleExportClick = () => {
+    setExportDialogOpen(true);
   };
 
   const handleQuickDialogToggle = async (open: boolean) => {
@@ -578,11 +835,70 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       </Card>
       <div className="flex justify-end mt-4">
-        <Button variant="outline" onClick={handleExport} className="gap-2 h-9 text-sm">
+        <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm">
           <DownloadIcon className="w-4 h-4" />
           Exportar Agenda
         </Button>
       </div>
+
+      {/* Dialog de seleção de formato de exportação */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Exportar Agenda</DialogTitle>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Escolha o formato de exportação da agenda semanal
+            </p>
+          </DialogHeader>
+          <div className="grid gap-3 mt-4">
+            <Button
+              variant="outline"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={handleExportCSV}
+            >
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <FileTextIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-left">
+                <div className="font-medium">CSV</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Formato de texto compatível com Excel e outras aplicações</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={handleExportExcel}
+            >
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <div className="font-medium">Excel</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Ficheiro formatado para Microsoft Excel</div>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              onClick={handleExportPDF}
+            >
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div className="text-left">
+                <div className="font-medium">PDF</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">Documento para impressão ou visualização</div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={quickDialogOpen} onOpenChange={handleQuickDialogToggle}>
         {/* CORREÇÃO 3: DialogContent como card */}
