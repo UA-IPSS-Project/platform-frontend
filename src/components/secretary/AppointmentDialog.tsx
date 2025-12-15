@@ -65,7 +65,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      // Validar se a data/hora não é no passado
+      // Validate if date/time is not in the past
       const now = new Date();
       if (dateTime <= now) {
         toast.error('Não é possível marcar para uma data/hora no passado');
@@ -93,7 +93,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         body: JSON.stringify({
           data: localDateTime,
           criadoPorId: funcionarioId,
-          // utenteId não enviado - secretaria ainda não sabe o utente
+          // utenteId not sent - secretary does not know the user yet
         }),
       });
 
@@ -170,7 +170,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   }, [formData.nif]);
 
   const handleClose = async () => {
-    // Liberar slot antes de fechar
     await liberarSlot();
     onClose();
   };
@@ -185,19 +184,18 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       errors.push('Indique pelo menos 2 palavras.');
     }
 
-    // Validação do nome
     const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u; 
     const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
     for (const w of words) {
       if (!wordPattern.test(w)) {
-        errors.push('Cada palavra deve começar por maiúscula');
-        errors.push('Use apenas letras e hífen (-)');
-        errors.push('Cada palavra deve ter pelo menos 2 letras');
+        errors.push('Cada palavra deve começar por maiúscula\n');
+        errors.push('Use apenas letras e hífen (-)\n');
+        errors.push('Cada palavra deve ter pelo menos 2 letras\n');
         break;
       }
     }
     if (errors.length > 0) {
-      return { valid: false, error: errors.join('\n') };
+      return { valid: false, error: errors.join('') };
     }
     return { valid: true };
   };
@@ -236,7 +234,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       // Refresh token logic
       const token = localStorage.getItem('token');
 
-      // 1. PRIMEIRO: Liberar slot temporário
       if (tempReservaId) {
         await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',
@@ -267,8 +264,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           throw e; // Stop here if update fails
         }
       }
-
-      // 2. DEPOIS: Criar marcação real
+      
       const dataHora = new Date(date);
       const [hours, minutes] = time.split(':');
       dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);

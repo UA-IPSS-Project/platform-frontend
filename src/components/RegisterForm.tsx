@@ -66,8 +66,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Nome completo: apenas letras (inclui acentos) e hífen (-) dentro das palavras,
-  // no mínimo 2 palavras, cada uma com pelo menos 2 letras
+  // Validation of name
   const validateName = (name: string): { valid: boolean; error?: string } => {
     const normalized = name.trim().replace(/\s+/g, ' ');
     if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
@@ -78,7 +77,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       errors.push('Indique pelo menos 2 palavras.');
     }
 
-    // Validação do nome
     const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u;
     const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
     for (const w of words) {
@@ -126,7 +124,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       return { valid: false, error: 'Data não pode ser no futuro' };
     }
 
-    // Validação de idade mínima 
+    // Validation for minimum age
     const age = today.getFullYear() - date.getFullYear();
     const monthDiff = today.getMonth() - date.getMonth();
     const dayDiff = today.getDate() - date.getDate();
@@ -211,7 +209,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     }
 
     try {
-      // Converter data de dd/mm/yyyy para yyyy-mm-dd
+      // Convert date from dd/mm/yyyy to yyyy-mm-dd
       const [day, month, year] = formData.birthDate.split('/');
       const isoDate = `${year}-${month}-${day}`;
 
