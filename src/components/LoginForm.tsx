@@ -113,7 +113,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
           <Input
             id="identifier"
             type="text"
-            placeholder={loginType === 'user' ? '123456789' : 'email@instituicao.pt'}
+            placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
             value={identifier}
             onChange={(e) => {
               setIdentifier(e.target.value);
