@@ -170,14 +170,42 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     onClose();
   };
 
+  const validateName = (name: string): { valid: boolean; error?: string } => {
+    const normalized = name.trim().replace(/\s+/g, ' ');
+    if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
+
+    const words = normalized.split(' ');
+    const errors: string[] = [];
+    if (words.length < 2) {
+      errors.push('Indique pelo menos 2 palavras.');
+    }
+
+    // Validação do nome
+    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u; 
+    const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
+    for (const w of words) {
+      if (!wordPattern.test(w)) {
+        errors.push('Cada palavra deve começar por maiúscula');
+        errors.push('Use apenas letras e hífen (-)');
+        errors.push('Cada palavra deve ter pelo menos 2 letras');
+        break;
+      }
+    }
+    if (errors.length > 0) {
+      return { valid: false, error: errors.join('\n') };
+    }
+    return { valid: true };
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.nif || !/^\d{9}$/.test(formData.nif)) {
       newErrors.nif = 'NIF deve ter 9 dígitos';
     }
-    if (!formData.name.trim()) {
-      newErrors.name = 'Nome é obrigatório';
+    const nameValidation = validateName(formData.name);
+    if (!nameValidation.valid) {
+      newErrors.name = nameValidation.error || 'Nome inválido';
     }
     if (!formData.email.trim()) {
       newErrors.email = 'Email é obrigatório';
@@ -405,7 +433,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+              {errors.name && <p className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
