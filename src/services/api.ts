@@ -358,6 +358,7 @@ export interface AtualizarUtilizadorRequest {
   localEmprego?: string;
   moradaEmprego?: string;
   telefoneEmprego?: string;
+  dataNasc?: string;
 }
 
 export const utilizadoresApi = {
