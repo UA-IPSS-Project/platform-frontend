@@ -10,6 +10,10 @@ import { Upload, X, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
+import SUBJECTS from '../../lib/subjects';
+import { calendarioApi, utilizadoresApi, API_BASE_URL, UtilizadorInfo } from '../../services/api';
+import { AlertCircleIcon } from '../CustomIcons';
+import { validateName, validateNIF, validateContact, validateEmail } from '../../lib/validations';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -19,10 +23,6 @@ interface AppointmentDialogProps {
   time: string;
   funcionarioId: number;
 }
-
-import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, utilizadoresApi, API_BASE_URL, UtilizadorInfo } from '../../services/api';
-import { AlertCircleIcon } from '../CustomIcons';
 
 export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
   const [formData, setFormData] = useState({
@@ -174,36 +174,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     onClose();
   };
 
-  const validateName = (name: string): { valid: boolean; error?: string } => {
-    const normalized = name.trim().replace(/\s+/g, ' ');
-    if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
-
-    const words = normalized.split(' ');
-    const errors: string[] = [];
-    if (words.length < 2) {
-      errors.push('Indique pelo menos 2 palavras.');
-    }
-
-    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u; 
-    const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
-    for (const w of words) {
-      if (!wordPattern.test(w)) {
-        errors.push('Cada palavra deve começar por maiúscula\n');
-        errors.push('Use apenas letras e hífen (-)\n');
-        errors.push('Cada palavra deve ter pelo menos 2 letras\n');
-        break;
-      }
-    }
-    if (errors.length > 0) {
-      return { valid: false, error: errors.join('') };
-    }
-    return { valid: true };
-  };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.nif || !/^\d{9}$/.test(formData.nif)) {
+    if (!validateNIF(formData.nif)) {
       newErrors.nif = 'NIF deve ter 9 dígitos';
     }
     const nameValidation = validateName(formData.name);
@@ -212,10 +186,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     }
     if (!formData.email.trim()) {
       newErrors.email = 'Email é obrigatório';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Email inválido';
     }
-    if (!formData.contact || !/^\d{9}$/.test(formData.contact)) {
+    if (!validateContact(formData.contact)) {
       newErrors.contact = 'Contacto deve ter 9 dígitos';
     }
     // Validation for date of birth if entered? Assuming optional or mandatory?
@@ -264,7 +238,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           throw e; // Stop here if update fails
         }
       }
-      
+
       const dataHora = new Date(date);
       const [hours, minutes] = time.split(':');
       dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);

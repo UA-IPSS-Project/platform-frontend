@@ -8,16 +8,21 @@ import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import {
+  validateName,
+  validateNIF,
+  validateContact,
+  validateEmail,
+  validatePassword,
+  isPasswordValid as checkPasswordValid,
+  validateBirthDate,
+  formatDate,
+  type PasswordValidation
+} from '../lib/validations';
 
 interface RegisterFormProps {
   onNavigateToLogin: () => void;
   initialAccountType?: 'user' | 'employee';
-}
-
-interface PasswordValidation {
-  minLength: boolean;
-  hasUpperLower: boolean;
-  hasNumber: boolean;
 }
 
 export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
@@ -43,100 +48,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [employeeRole, setEmployeeRole] = useState('');
   const { registerUtente, registerFuncionario } = useAuth();
 
-  const validatePassword = (password: string): PasswordValidation => {
-    return {
-      minLength: password.length >= 8,
-      hasUpperLower: /[a-z]/.test(password) && /[A-Z]/.test(password),
-      hasNumber: /\d/.test(password),
-    };
-  };
-
   const passwordValidation = validatePassword(formData.password);
-  const isPasswordValid = passwordValidation.minLength && passwordValidation.hasUpperLower && passwordValidation.hasNumber;
-
-  const validateNIF = (nif: string): boolean => {
-    return /^\d{9}$/.test(nif);
-  };
-
-  const validateContact = (contact: string): boolean => {
-    return /^\d{9}$/.test(contact);
-  };
-
-  const validateEmail = (email: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  // Validation of name
-  const validateName = (name: string): { valid: boolean; error?: string } => {
-    const normalized = name.trim().replace(/\s+/g, ' ');
-    if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
-
-    const words = normalized.split(' ');
-    const errors: string[] = [];
-    if (words.length < 2) {
-      errors.push('Indique pelo menos 2 palavras.');
-    }
-
-    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u;
-    const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
-    for (const w of words) {
-      if (!wordPattern.test(w)) {
-        errors.push('Cada palavra deve começar por maiúscula');
-        errors.push('Use apenas letras e hífen (-)');
-        errors.push('Cada palavra deve ter pelo menos 2 letras');
-        break;
-      }
-    }
-    if (errors.length > 0) {
-      return { valid: false, error: errors.join('\n') };
-    }
-    return { valid: true };
-  };
-
-  const formatDate = (date: Date) => {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
-  const validateBirthDate = (birthDate: string): { valid: boolean; error?: string } => {
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(birthDate)) {
-      return { valid: false, error: 'Utilize o formato dd/mm/aaaa' };
-    }
-    const [dayStr, monthStr, yearStr] = birthDate.split('/');
-    const day = Number(dayStr);
-    const month = Number(monthStr);
-    const year = Number(yearStr);
-    const date = new Date(year, month - 1, day);
-    const isRealDate =
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day;
-
-    if (!isRealDate) {
-      return { valid: false, error: 'Data inválida' };
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (date > today) {
-      return { valid: false, error: 'Data não pode ser no futuro' };
-    }
-
-    // Validation for minimum age
-    const age = today.getFullYear() - date.getFullYear();
-    const monthDiff = today.getMonth() - date.getMonth();
-    const dayDiff = today.getDate() - date.getDate();
-
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-
-    if (actualAge < 18) {
-      return { valid: false, error: 'Deve ter pelo menos 18 anos para se registar' };
-    }
-
-    return { valid: true };
-  };
+  const isPasswordValid = checkPasswordValid(formData.password);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

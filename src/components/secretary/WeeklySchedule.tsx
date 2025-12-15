@@ -942,7 +942,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           if (appointment?.status === 'reserved') {
                             return (
                               <div className="flex items-center justify-center text-center font-medium text-xs">
-                                reserved
+                                reservado
                               </div>
                             );
                           }

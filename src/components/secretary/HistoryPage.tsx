@@ -365,8 +365,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             <SelectContent>
               <SelectItem value="all">Todos os estados</SelectItem>
               <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="warning">Aviso</SelectItem>
+              {/* <SelectItem value="warning">Aviso</SelectItem> */}
               <SelectItem value="no-show">Não compareceu</SelectItem>
               <SelectItem value="cancelled">Cancelado</SelectItem>
             </SelectContent>
