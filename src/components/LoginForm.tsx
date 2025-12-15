@@ -25,7 +25,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     if (!identifier.trim()) {
       newErrors.identifier = 'Campo obrigatório';
     } else if (loginType === 'user' && !/^\d{9}$/.test(identifier.trim())) {
-      newErrors.identifier = 'NIF deve ter 9 dígitos';
+      newErrors.identifier = 'Apenas é permitido números';
     } else if (loginType === 'employee' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier.trim())) {
       newErrors.identifier = 'Email institucional inválido';
     }
@@ -115,8 +115,10 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
             type="text"
             placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
             value={identifier}
+            maxLength={loginType === 'user' ? 9 : undefined}
             onChange={(e) => {
-              setIdentifier(e.target.value);
+              const value = loginType === 'user' ? e.target.value.replace(/\D/g, '') : e.target.value;
+              setIdentifier(value);
               if (errors.identifier) setErrors({ ...errors, identifier: undefined });
             }}
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
