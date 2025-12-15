@@ -7,6 +7,7 @@ import { ArrowLeftIcon, UserIcon } from './CustomIcons';
 import { utilizadoresApi } from '../services/api';
 import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
+import { useIsMobile } from './ui/use-mobile';
 
 interface ProfilePageProps {
   user: {
@@ -34,6 +35,7 @@ const formatDateToPT = (dateString: string | undefined): string => {
 };
 
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfilePageProps) {
+  const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -232,36 +234,36 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
               </div>
             </div>
             {!isEditing ? (
-              <div className="flex gap-2">
+              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
                 <Button
                   variant="outline"
-                  className="border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className={`border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${isMobile ? 'w-full justify-center' : ''}`}
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
-                  Mudar Palavra-passe
+                  {isMobile ? 'Palavra-passe' : 'Mudar Palavra-passe'}
                 </Button>
                 <Button
                   onClick={() => setIsEditing(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   Editar
                 </Button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
                 <Button
                   onClick={handleCancel}
                   variant="outline"
-                  className="border-gray-300 dark:border-gray-700"
+                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   {loading ? 'A guardar...' : 'Guardar'}
