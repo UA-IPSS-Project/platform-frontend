@@ -119,7 +119,13 @@ export function AppointmentDetailsDialog({
   };
 
   const handleCancelAppointment = async () => {
-    const trimmedReason = cancelReason.trim();
+    let trimmedReason = cancelReason.trim();
+
+    // Se for cliente e não tiver motivo, define motivo padrão
+    if (isClient && !trimmedReason) {
+      trimmedReason = 'Cancelado pelo utente';
+    }
+
     if (!trimmedReason) {
       toast.error('Descreva o motivo do cancelamento');
       return;
