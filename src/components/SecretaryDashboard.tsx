@@ -59,8 +59,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const navigateBack = () => {
     setViewHistory(prev => {
-      if (prev.length <= 1) return prev; // Don't pop last item
-      return prev.slice(0, -1);
+      if (prev.length > 1) {
+        return prev.slice(0, -1);
+      }
+      return ['home'];
     });
   };
   // Monthly view removed - always use weekly schedule
