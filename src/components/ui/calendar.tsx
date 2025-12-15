@@ -2,10 +2,64 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, CaptionProps } from "react-day-picker";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
+
+function CustomCaption({ displayMonth, onMonthChange }: CaptionProps & { onMonthChange?: (date: Date) => void }) {
+  const months = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const currentYear = new Date().getFullYear();
+  // Gerar anos de 1900 até o ano atual
+  const yearCount = currentYear - 1900 + 1;
+  const years = Array.from({ length: yearCount }, (_, i) => 1900 + i);
+
+  const handleMonthChange = (monthIndex: string) => {
+    const newDate = new Date(displayMonth);
+    newDate.setMonth(parseInt(monthIndex));
+    onMonthChange?.(newDate);
+  };
+
+  const handleYearChange = (year: string) => {
+    const newDate = new Date(displayMonth);
+    newDate.setFullYear(parseInt(year));
+    onMonthChange?.(newDate);
+  };
+
+  return (
+    <div className="flex items-center justify-center gap-2 w-full">
+      <select
+        aria-label="Mês"
+        value={displayMonth.getMonth()}
+        onChange={(e) => handleMonthChange(e.target.value)}
+        className="h-7 w-[110px] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+      >
+        {months.map((month, index) => (
+          <option key={index} value={index}>
+            {month}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label="Ano"
+        value={displayMonth.getFullYear()}
+        onChange={(e) => handleYearChange(e.target.value)}
+        className="h-7 w-[80px] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+      >
+        {years.reverse().map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 function Calendar({
   className,
@@ -13,22 +67,31 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
+  const [month, setMonth] = React.useState<Date>(props.month || new Date());
+
+  React.useEffect(() => {
+    if (props.month) {
+      setMonth(props.month);
+    }
+  }, [props.month]);
+
+  const handleMonthChange = (newMonth: Date) => {
+    setMonth(newMonth);
+    props.onMonthChange?.(newMonth);
+  };
+
   return (
     <DayPicker
+      month={month}
+      onMonthChange={handleMonthChange}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
         caption: "flex justify-center pt-1 relative items-center w-full",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
-        nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "size-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-        ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        caption_label: "hidden",
+        nav: "hidden",
         table: "w-full border-collapse space-x-1",
         head_row: "flex",
         head_cell:
@@ -60,12 +123,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
+        Caption: (captionProps) => <CustomCaption {...captionProps} onMonthChange={handleMonthChange} />,
       }}
       {...props}
     />

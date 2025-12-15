@@ -79,7 +79,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     }
 
     // Validação do nome
-    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u; 
+    const segmentPattern = /^[\p{Lu}][\p{L}]{1,}$/u;
     const wordPattern = new RegExp(`^(?:${segmentPattern.source})(?:-(?:${segmentPattern.source}))*$`, 'u');
     for (const w of words) {
       if (!wordPattern.test(w)) {
@@ -350,38 +350,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 <CalendarIcon className="w-4 h-4 opacity-70" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-3" align="start">
-              <div className="flex gap-2 items-center mb-2">
-                <select
-                  aria-label="Ano"
-                  value={calendarMonth.getFullYear()}
-                  onChange={(e) => {
-                    const y = Number(e.target.value);
-                    const m = calendarMonth.getMonth();
-                    const newDate = new Date(y, m, 1);
-                    setCalendarMonth(newDate);
-                  }}
-                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
-                >
-                  {Array.from({ length: new Date().getFullYear() - 1900 + 1 }, (_, i) => 1900 + i).reverse().map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-                <select
-                  aria-label="Mês"
-                  value={calendarMonth.getMonth()}
-                  onChange={(e) => {
-                    const m = Number(e.target.value);
-                    const y = calendarMonth.getFullYear();
-                    setCalendarMonth(new Date(y, m, 1));
-                  }}
-                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
-                >
-                  {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((mn, idx) => (
-                    <option key={mn} value={idx}>{mn}</option>
-                  ))}
-                </select>
-              </div>
+            <PopoverContent className="p-0" align="start">
               <Calendar
                 mode="single"
                 selected={birthDateValue}

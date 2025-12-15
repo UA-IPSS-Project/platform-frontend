@@ -6,8 +6,10 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -39,6 +41,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingCreation, setPendingCreation] = useState<boolean>(false);
+  const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
+  const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
   // Reservar slot ao abrir o dialog
   useEffect(() => {
@@ -413,13 +418,40 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento</Label>
-                <Input
-                  id="dob"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
-                />
+                <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
+                  setBirthDatePickerOpen(open);
+                  if (open) {
+                    setCalendarMonth(birthDateValue ?? new Date());
+                  }
+                }}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      {formData.dateOfBirth || 'Selecionar data'}
+                      <CalendarIcon className="w-4 h-4 opacity-70" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={birthDateValue}
+                      month={calendarMonth}
+                      onMonthChange={(d) => setCalendarMonth(d)}
+                      initialFocus
+                      onSelect={(date) => {
+                        if (date) {
+                          setBirthDateValue(date);
+                          const formatted = date.toISOString().split('T')[0];
+                          setFormData({ ...formData, dateOfBirth: formatted });
+                          setBirthDatePickerOpen(false);
+                        }
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
