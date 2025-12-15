@@ -9,7 +9,7 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { TrashIcon, XIcon, FileTextIcon, AlertCircleIcon, CalendarIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
+import { XIcon, FileTextIcon, AlertCircleIcon, CalendarIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -375,11 +375,7 @@ export function AppointmentDetailsDialog({
           const date = new Date(bloqueio.data);
           const dateStr = date.toISOString().split('T')[0];
 
-          if (bloqueio.diaTodo) {
-            timeSlots.forEach(slot => {
-              newBlocks.add(`${dateStr}_${slot}`);
-            });
-          } else if (bloqueio.horaInicio && bloqueio.horaFim) {
+          if (bloqueio.horaInicio && bloqueio.horaFim) {
             const startTime = bloqueio.horaInicio;
             const endTime = bloqueio.horaFim;
 
@@ -682,33 +678,32 @@ export function AppointmentDetailsDialog({
             <div className="flex flex-col gap-2 pt-4 pb-2">
               {/* Botões para Secretaria */}
               {!isClient && (appointment.status === 'scheduled' || appointment.status === 'warning') && (
-                <Button
-                  onClick={handleStartAppointment}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
-                >
-                  <PlayIcon className="w-4 h-4" />
-                  Iniciar atendimento
-                </Button>
-              )}
-
-              {!isClient && appointment.status === 'in-progress' && (
-                <div className="grid grid-cols-2 gap-2">
+                <>
+                  <Button
+                    onClick={handleStartAppointment}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                  >
+                    <PlayIcon className="w-4 h-4" />
+                    Iniciar atendimento
+                  </Button>
                   <Button
                     onClick={handleNoShowAppointment}
-                    variant="outline"
-                    className="w-full border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 gap-2"
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
                   >
                     <AlertCircleIcon className="w-4 h-4" />
                     Não compareceu
                   </Button>
-                  <Button
-                    onClick={handleCompleteAppointment}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
-                  >
-                    <CheckCircleIcon className="w-4 h-4" />
-                    Concluir
-                  </Button>
-                </div>
+                </>
+              )}
+
+              {!isClient && appointment.status === 'in-progress' && (
+                <Button
+                  onClick={handleCompleteAppointment}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                >
+                  <CheckCircleIcon className="w-4 h-4" />
+                  Concluir
+                </Button>
               )}
 
               {!isClient && selectedDocs.length > 0 && (
@@ -719,16 +714,6 @@ export function AppointmentDetailsDialog({
                 >
                   <BellIcon className="w-4 h-4" />
                   Notificar Documento Inválido
-                </Button>
-              )}
-
-              {!isClient && appointment.status === 'warning' && (
-                <Button
-                  onClick={handleStartAppointment}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
-                >
-                  <PlayIcon className="w-4 h-4" />
-                  Iniciar atendimento
                 </Button>
               )}
 
