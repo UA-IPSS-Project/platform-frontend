@@ -556,6 +556,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={() => navigateBack()}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
+                isEmployee={true}
               />
             ) : currentView === 'history' ? (
               <HistoryPage

@@ -21,6 +21,7 @@ interface ProfilePageProps {
   onBack: () => void;
   onUpdateUser: (user: { name: string; nif: string; contact: string; email: string }) => void;
   isDarkMode: boolean;
+  isEmployee?: boolean;
 }
 
 // Função para formatar data no formato português
@@ -34,7 +35,7 @@ const formatDateToPT = (dateString: string | undefined): string => {
   }
 };
 
-export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfilePageProps) {
+export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -283,7 +284,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
                   {renderField('NIF', formData.nif, 'nif', false)}
                   {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
                   {renderField('Email', formData.email, 'email', false, 'Email indisponível', 'md:col-span-2')}
-                  {renderField('Telemóvel Pessoal', formData.phonePersonal, 'phonePersonal', true, 'Adicione contacto')}
+                  {renderField('Telemóvel', formData.phonePersonal, 'phonePersonal', true, 'Adicione contacto')}
                 </div>
               )}
             </div>
@@ -301,19 +302,21 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode }: ProfileP
               )}
             </div>
 
-            {/* Professional Information */}
-            <div>
-              {renderSectionHeader('Informação Profissional', 'professional')}
+            {/* Professional Information - Hidden for employees */}
+            {!isEmployee && (
+              <div>
+                {renderSectionHeader('Informação Profissional', 'professional')}
 
-              {expanded.professional && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
-                  {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
-                  {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
-                  {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
-                </div>
-              )}
-            </div>
+                {expanded.professional && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
+                    {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
+                    {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
+                    {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
+                    {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
