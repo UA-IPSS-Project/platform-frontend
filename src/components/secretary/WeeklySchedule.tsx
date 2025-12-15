@@ -923,6 +923,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         {(() => {
                           // Render blocked status (Administrative)
                           if (isBlockedAdmin) {
+                            // Se estiver no passado, não mostrar "Indisponível", apenas estilo desativado (retornar null deixa cair no default)
+                            if (inPast) return null;
+
                             return (
                               <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
                                 <ClockIcon className="w-3 h-3 mr-1" />
