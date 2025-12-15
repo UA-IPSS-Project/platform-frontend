@@ -74,8 +74,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const navigateBack = () => {
     setViewHistory(prev => {
-      if (prev.length <= 1) return prev;
-      return prev.slice(0, -1);
+      if (prev.length > 1) {
+        return prev.slice(0, -1);
+      }
+      return ['appointments'];
     });
   };
   // Monthly view removed - always use weekly schedule

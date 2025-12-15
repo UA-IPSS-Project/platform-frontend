@@ -110,20 +110,20 @@ export function DayScheduleDialog({
                         if (appointment) {
                           onViewAppointment(appointment);
                         } else {
-                          // Validar se o slot está bloqueado
-                          const dateStr = date.toISOString().split('T')[0];
-                          const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
-                          if (isBlocked) {
-                            toast.error('Horário indisponível');
-                            return;
-                          }
-
                           // Validar se não é no passado
                           const [hours, minutes] = time.split(':');
                           const slotDateTime = new Date(date);
                           slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
                           if (slotDateTime <= new Date()) {
                             toast.error('Não é possível marcar para uma data/hora no passado');
+                            return;
+                          }
+
+                          // Validar se o slot está bloqueado
+                          const dateStr = date.toISOString().split('T')[0];
+                          const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+                          if (isBlocked) {
+                            toast.error('Horário indisponível');
                             return;
                           }
 

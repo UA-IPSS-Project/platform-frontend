@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../CustomIcons';
 import { Appointment } from '../../types';
 import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
+import { useIsMobile } from '../ui/use-mobile';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -39,8 +40,11 @@ const generateTimeSlots = () => {
 };
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
+const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
 export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger }: Readonly<WeeklyScheduleProps>) {
+  const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
@@ -805,7 +809,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               {weekDays.map((day, index) => (
                 <div key={index} className="text-center">
                   <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {WEEKDAYS_SHORT[index]}
+                    {isMobile ? WEEKDAYS_MOBILE[index] : WEEKDAYS_SHORT[index]}
                   </div>
                   <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
                 </div>
@@ -923,10 +927,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         {(() => {
                           // Render blocked status (Administrative)
                           if (isBlockedAdmin) {
+                            // Se estiver no passado, não mostrar "Indisponível", apenas estilo desativado (retornar null deixa cair no default)
+                            if (inPast) return null;
+
                             return (
                               <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
-                                <ClockIcon className="w-3 h-3 mr-1" />
-                                Indisponível
+                                <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
+                                {!isMobile && 'Indisponível'}
                               </div>
                             );
                           }

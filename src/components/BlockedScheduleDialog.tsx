@@ -65,7 +65,21 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             const filtered = data.filter(b => {
                 const blockDate = new Date(b.data);
                 blockDate.setHours(0, 0, 0, 0);
-                return blockDate.getTime() >= today.getTime();
+
+                // Future dates: Keep
+                if (blockDate.getTime() > today.getTime()) return true;
+
+                // Past dates: Discard
+                if (blockDate.getTime() < today.getTime()) return false;
+
+                // Today: Check time
+                const now = new Date();
+                const currentHours = now.getHours().toString().padStart(2, '0');
+                const currentMinutes = now.getMinutes().toString().padStart(2, '0');
+                const currentTime = `${currentHours}:${currentMinutes}`;
+                const blockEndTime = b.horaFim.substring(0, 5);
+
+                return blockEndTime > currentTime;
             });
 
             const sorted = filtered.sort((a, b) => {
