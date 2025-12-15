@@ -790,42 +790,42 @@ export function AppointmentDetailsDialog({
       }}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {isClient ? 'Cancelar marcação' : 'Cancelar marcação'}
+            Cancelar marcação
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
             {isClient
-              ? 'Por favor, explique brevemente o motivo do cancelamento.'
+              ? 'Tem certeza que deseja cancelar a marcação?'
               : 'Explique brevemente ao utente porque esta marcação será cancelada.'}
           </DialogPrimitive.Description>
 
-          <Textarea
-            placeholder={isClient
-              ? "Ex.: Não posso comparecer devido a compromisso urgente..."
-              : "Ex.: Utente não enviou os documentos necessários..."}
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            rows={4}
-            className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {isClient
-              ? 'O motivo será enviado à secretaria juntamente com a notificação de cancelamento.'
-              : 'O motivo será enviado ao utente juntamente com a notificação de cancelamento.'}
-          </p>
+          {!isClient && (
+            <>
+              <Textarea
+                placeholder="Ex.: Utente não enviou os documentos necessários..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={4}
+                className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                O motivo será enviado ao utente juntamente com a notificação de cancelamento.
+              </p>
+            </>
+          )}
 
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => {
               setCancelReason('');
               setShowCancelDialog(false);
             }}>
-              Esquecer
+              {isClient ? 'Não' : 'Esquecer'}
             </Button>
             <Button
               variant="destructive"
               onClick={handleCancelAppointment}
-              disabled={!cancelReason.trim()}
+              disabled={!isClient && !cancelReason.trim()}
             >
-              Confirmar
+              {isClient ? 'Sim, cancelar' : 'Confirmar'}
             </Button>
           </div>
         </DialogContent>
