@@ -96,7 +96,24 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     // Filter slots based on appointments for the selected day
     const getAvailableSlots = (date: Date | undefined) => {
         if (!date) return [];
+
+        const now = new Date();
+        const isToday = date.getDate() === now.getDate() &&
+            date.getMonth() === now.getMonth() &&
+            date.getFullYear() === now.getFullYear();
+
         return allSlots.filter(slot => {
+            // If it's today, filter out past time slots
+            if (isToday) {
+                const [hours, minutes] = slot.split(':').map(Number);
+                const slotTime = new Date(date);
+                slotTime.setHours(hours, minutes, 0, 0);
+
+                if (slotTime <= now) {
+                    return false; // Slot is in the past
+                }
+            }
+
             // Check if any appointment exists at this time on this date
             const hasAppointment = appointments.some(appt => {
                 if (appt.status === 'cancelled') return false;
