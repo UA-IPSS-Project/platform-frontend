@@ -280,30 +280,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <button
-            type="button"
-            onClick={() => handleAccountTypeChange('user')}
-            className={
-              accountType === 'user'
-                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
-                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
-            }
-          >
-            Utilizador
-          </button>
-          <button
-            type="button"
-            onClick={() => handleAccountTypeChange('employee')}
-            className={
-              accountType === 'employee'
-                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
-                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
-            }
-          >
-            Funcionário
-          </button>
-        </div>
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
             Nome Completo *
@@ -368,79 +344,67 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           {errors.birthDate && <p className="text-red-500 text-sm">{errors.birthDate}</p>}
         </div>
 
-        {accountType === 'user' ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
-                NIF *
-              </Label>
-              <Input
-                id="nif"
-                type="text"
-                placeholder="123456789"
-                maxLength={9}
-                value={formData.nif}
-                onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
-                  }`}
-              />
-              {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-                Contacto *
-              </Label>
-              <Input
-                id="contact"
-                type="text"
-                placeholder="912345678"
-                maxLength={9}
-                value={formData.contact}
-                onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
-                  }`}
-              />
-              {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
-            </div>
+        {/* NIF and Contact fields - always visible */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
+              NIF *
+            </Label>
+            <Input
+              id="nif"
+              type="text"
+              placeholder="123456789"
+              maxLength={9}
+              value={formData.nif}
+              onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
+              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
+                }`}
+            />
+            {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
-                NIF *
-              </Label>
-              <Input
-                id="nif"
-                type="text"
-                placeholder="123456789"
-                maxLength={9}
-                value={formData.nif}
-                onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
-                  }`}
-              />
-              {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-                Contacto *
-              </Label>
-              <Input
-                id="contact"
-                type="text"
-                placeholder="912345678"
-                maxLength={9}
-                value={formData.contact}
-                onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-                className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
-                  }`}
-              />
-              {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
+              Contacto *
+            </Label>
+            <Input
+              id="contact"
+              type="text"
+              placeholder="912345678"
+              maxLength={9}
+              value={formData.contact}
+              onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
+              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
+                }`}
+            />
+            {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
           </div>
-        )}
+        </div>
+
+        {/* Account Type Selection - Checkboxes */}
+        <div className="space-y-2">
+          <Label className="text-gray-700 dark:text-gray-300">Tipo de Conta *</Label>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={accountType === 'user'}
+                onChange={() => handleAccountTypeChange('user')}
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+              />
+              <span className="text-gray-700 dark:text-gray-300">Utilizador</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={accountType === 'employee'}
+                onChange={() => handleAccountTypeChange('employee')}
+                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+              />
+              <span className="text-gray-700 dark:text-gray-300">Funcionário</span>
+            </label>
+          </div>
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
@@ -458,25 +422,27 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
         </div>
 
-        {accountType === 'employee' && (
-          <div className="space-y-2">
-            <Label className="text-gray-700 dark:text-gray-300">Função *</Label>
-            <div className="flex items-center gap-2">
-              <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
-                <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Selecione a função" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Secretaria">Secretaria</SelectItem>
-                  <SelectItem value="Balneário Social">Balneário Social</SelectItem>
-                  <SelectItem value="Escola">Escola</SelectItem>
-                  <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
-                </SelectContent>
-              </Select>
+        {
+          accountType === 'employee' && (
+            <div className="space-y-2">
+              <Label className="text-gray-700 dark:text-gray-300">Função *</Label>
+              <div className="flex items-center gap-2">
+                <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
+                  <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
+                    <SelectValue placeholder="Selecione a função" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Secretaria">Secretaria</SelectItem>
+                    <SelectItem value="Balneário Social">Balneário Social</SelectItem>
+                    <SelectItem value="Escola">Escola</SelectItem>
+                    <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {errors.employeeRole && <p className="text-red-500 text-sm">{errors.employeeRole}</p>}
             </div>
-            {errors.employeeRole && <p className="text-red-500 text-sm">{errors.employeeRole}</p>}
-          </div>
-        )}
+          )
+        }
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
@@ -555,7 +521,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         >
           Criar Conta
         </Button>
-      </form>
-    </div>
+      </form >
+    </div >
   );
 }
