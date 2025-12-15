@@ -72,7 +72,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const dateStr = date.toISOString().split('T')[0];
       const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
       if (isBlocked) {
-        toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+        toast.error('Horário indisponível');
         onClose();
         return;
       }
