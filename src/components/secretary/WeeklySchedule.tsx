@@ -39,6 +39,8 @@ const generateTimeSlots = () => {
 };
 
 const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
+const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
 export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger }: Readonly<WeeklyScheduleProps>) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -928,8 +930,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
                             return (
                               <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
-                                <ClockIcon className="w-3 h-3 mr-1" />
-                                Indisponível
+                                <ClockIcon className="w-3 h-3 md:mr-1" />
+                                <span className="hidden md:inline">Indisponível</span>
                               </div>
                             );
                           }
