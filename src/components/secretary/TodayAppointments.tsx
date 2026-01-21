@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Card } from '../ui/card';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
@@ -104,14 +103,14 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Header - Title top, buttons below right */}
+      <div className="flex flex-col mb-4 gap-2">
         <h2 className={`text-lg font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end">
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs">
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0">
                   Filtrar
                 </Button>
               </PopoverTrigger>
@@ -189,59 +188,56 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
             </Popover>
           )}
 
-          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs">
+          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0">
             <HistoryIcon className="w-3.5 h-3.5" />
             Histórico
           </Button>
         </div>
       </div>
 
-      {/* Card transparente com altura fixa para 5 marcações */}
-      <Card
-        className="p-4 border-transparent bg-transparent shadow-none"
-        style={{ height: '650px' }}
-      >
+      {/* Transparent container for floating cards list */}
+      <div className="flex-1 h-[650px] relative overflow-hidden flex flex-col">
         {/* Appointments List - Container com scroll */}
-        <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-gray-200 dark:scrollbar-thumb-purple-600 dark:scrollbar-track-gray-800">
+        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-gray-200 dark:scrollbar-thumb-purple-600 dark:scrollbar-track-gray-800">
           <div className="space-y-3">
             {filteredTodayAppointments.length === 0 ? (
-              <div className={`rounded-lg shadow-sm p-8 text-center ${isDarkMode
-                  ? 'bg-gray-800 backdrop-blur border border-gray-700'
-                  : 'bg-white/95 backdrop-blur border border-gray-200'
+              <div className={`rounded-lg p-8 text-center border-dashed border-2 ${isDarkMode
+                ? 'border-gray-700 bg-gray-800/50'
+                : 'border-gray-200 bg-gray-50/50'
                 }`}>
-                <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600" />
+                <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600 opacity-50" />
                 <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
               </div>
             ) : (
               filteredTodayAppointments.map((apt) => (
                 <div
                   key={apt.id}
-                  className={`rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow p-4 ${isDarkMode
-                      ? 'bg-gray-800 backdrop-blur border border-gray-700 hover:border-purple-600'
-                      : 'bg-white/95 backdrop-blur border border-gray-200 hover:border-purple-600'
+                  className={`rounded-xl p-4 cursor-pointer transition-all duration-200 border ${isDarkMode
+                    ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10'
+                    : 'bg-white/80 border-gray-100 hover:bg-white hover:border-purple-200 hover:shadow-md'
                     }`}
                   onClick={() => onViewAppointment(apt)}
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
                       <ClockIcon className="w-3.5 h-3.5" />
                       <span>{apt.time}</span>
                     </div>
                     {getStatusBadge(apt.status)}
                   </div>
 
-                  <h3 className="text-sm text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{apt.subject}</p>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{apt.subject}</p>
                 </div>
               ))
             )}
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Export Button */}
       {filteredTodayAppointments.length > 0 && (
-        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4" onClick={handleExport}>
+        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
           Exportar Lista Diária
         </Button>

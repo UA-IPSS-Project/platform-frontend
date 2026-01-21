@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { Card } from '../ui/card';
+import { GlassCard } from '../ui/glass-card';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 // NOTA: Não é preciso DialogFooter, vamos manter o layout inline
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -712,11 +712,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   return (
     <div>
       {/* Header - Outside Card */}
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="mb-4 flex flex-col gap-1">
         <div className="mb-1">
           <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
         </div>
-        <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300">
+        <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
           Clique numa célula vazia para iniciar uma marcação
         </p>
       </div>
@@ -788,10 +788,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         )}
       </div>
 
-      <Card
-        className={`p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
-        style={{ backgroundColor: isDarkMode ? '#111827dc' : '#ffffffc5' }}
-      >
+      <GlassCard className="p-4">
 
         {/* Schedule Grid */}
         <div className="w-full">
@@ -972,7 +969,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           </div>
         </div>
 
-      </Card>
+      </GlassCard>
       <div className="flex justify-end mt-4">
         <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm">
           <DownloadIcon className="w-4 h-4" />
