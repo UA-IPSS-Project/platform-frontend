@@ -99,7 +99,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
                 {/* Left Panel: Create Account Form */}
-                <div className="w-full md:w-[450px] flex-shrink-0 bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm">
+                <div className="w-full md:w-[450px] flex-shrink-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-xl p-8 shadow-sm border border-white/20 dark:border-gray-700/30">
                     <div className="flex items-center gap-4 mb-8">
                         <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white shadow-lg shadow-purple-200 dark:shadow-purple-900/20">
                             <UserPlus className="w-6 h-6" />
@@ -219,7 +219,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 </div>
 
                 {/* Right Panel: Registered Users List */}
-                <div className="flex-1 w-full min-w-0 bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm h-full flex flex-col">
+                <div className="flex-1 w-full min-w-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-xl p-8 shadow-sm h-full flex flex-col border border-white/20 dark:border-gray-700/30">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">

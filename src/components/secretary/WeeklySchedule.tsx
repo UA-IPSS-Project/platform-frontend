@@ -766,10 +766,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={onBlockSchedule}
-              className={`px-3 ${isDarkMode
-                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
-                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-                }`}
+              className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
               Bloquear
             </Button>
@@ -777,10 +774,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={() => handleQuickDialogToggle(true)}
-              className={`px-3 ${isDarkMode
-                ? 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700'
-                : 'bg-white text-gray-800 border-gray-200 hover:bg-gray-50'
-                }`}
+              className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
               Nova marcação
             </Button>
@@ -793,25 +787,24 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         {/* Schedule Grid */}
         <div className="w-full">
           {/* CORREÇÃO 1: Scrollbar para os dias/horários: max-height e overflow-y-auto */}
-          <div className="overflow-y-auto pr-2" style={{ maxHeight: '540px' }}>
-            {/* Header Row - Sticky */}
-            <div
-              className={`grid grid-cols-6 gap-2 mb-4 sticky top-0 z-10 ${isDarkMode
-                ? '!bg-gray-800 backdrop-blur border-b border-gray-700'
-                : 'bg-white backdrop-blur border-b border-gray-200'
-                }`}
-              style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
-            >
-              <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Hora</div>
-              {weekDays.map((day, index) => (
-                <div key={index} className="text-center">
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {isMobile ? WEEKDAYS_MOBILE[index] : WEEKDAYS_SHORT[index]}
-                  </div>
-                  <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
+          {/* Header Row - Static outside scroll */}
+          <div
+            className={`grid grid-cols-6 gap-2 mb-4 border-b border-gray-200 dark:border-gray-700 pr-4`}
+            style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
+          >
+            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Hora</div>
+            {weekDays.map((day, index) => (
+              <div key={index} className="text-center">
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {isMobile ? WEEKDAYS_MOBILE[index] : WEEKDAYS_SHORT[index]}
                 </div>
-              ))}
-            </div>
+                <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Time Slots - Scrollable */}
+          <div className="overflow-y-auto pr-2" style={{ maxHeight: '540px' }}>
 
             {/* Time Slots */}
             <div className="space-y-0.5 pb-2">
@@ -968,10 +961,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             </div>
           </div>
         </div>
-
       </GlassCard>
       <div className="flex justify-end mt-4">
-        <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm">
+        <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
           <DownloadIcon className="w-4 h-4" />
           Exportar Agenda
         </Button>
@@ -1179,6 +1171,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 }

@@ -110,7 +110,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0">
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
                   Filtrar
                 </Button>
               </PopoverTrigger>
@@ -188,7 +188,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
             </Popover>
           )}
 
-          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0">
+          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
             <HistoryIcon className="w-3.5 h-3.5" />
             Histórico
           </Button>
@@ -213,8 +213,8 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                 <div
                   key={apt.id}
                   className={`rounded-xl p-4 cursor-pointer transition-all duration-200 border ${isDarkMode
-                    ? 'bg-gray-800/80 border-gray-700/50 hover:bg-gray-800 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10'
-                    : 'bg-white/80 border-gray-100 hover:bg-white hover:border-purple-200 hover:shadow-md'
+                    ? 'bg-gray-900/95 border-gray-800 hover:bg-gray-900 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10'
+                    : 'bg-white/95 border-gray-100 hover:bg-white hover:border-purple-200 hover:shadow-md'
                     }`}
                   onClick={() => onViewAppointment(apt)}
                 >
@@ -237,7 +237,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
       {/* Export Button */}
       {filteredTodayAppointments.length > 0 && (
-        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm" onClick={handleExport}>
+        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
           Exportar Lista Diária
         </Button>

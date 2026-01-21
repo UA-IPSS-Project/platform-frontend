@@ -216,7 +216,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   };
 
   return (
-    <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
+    <div className="w-full max-w-md bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl p-8 transition-colors duration-300 border border-white/20 dark:border-gray-700/30">
       <button
         onClick={onNavigateToLogin}
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6 transition-colors"
