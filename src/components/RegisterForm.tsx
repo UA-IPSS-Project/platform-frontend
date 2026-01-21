@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -332,84 +332,109 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           </div>
         </div>
 
-        {/* Account Type Selection - Checkboxes */}
-        <div className="space-y-2">
-          <Label className="text-gray-700 dark:text-gray-300">Tipo de Conta *</Label>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={accountType === 'user'}
-                onChange={() => handleAccountTypeChange('user')}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span className="text-gray-700 dark:text-gray-300">Utilizador</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={accountType === 'employee'}
-                onChange={() => handleAccountTypeChange('employee')}
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-              />
-              <span className="text-gray-700 dark:text-gray-300">Funcionário</span>
-            </label>
+        {/* Account Type Selection - Animated Lightswitch */}
+        <div className="space-y-3">
+          <Label className="text-gray-700 dark:text-gray-300 block text-center mb-2">Tipo de Conta</Label>
+          <div className="relative flex p-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 h-12 w-full max-w-md mx-auto">
+            {/* Sliding Background */}
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-purple-600 shadow-md transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${accountType === 'employee' ? 'translate-x-full left-1' : 'left-1'
+                }`}
+            />
+
+            {/* User Button */}
+            <button
+              type="button"
+              onClick={() => handleAccountTypeChange('user')}
+              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ${accountType === 'user' ? 'text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+            >
+              <UserIcon className="w-4 h-4" />
+              Utilizador
+            </button>
+
+            {/* Employee Button */}
+            <button
+              type="button"
+              onClick={() => handleAccountTypeChange('employee')}
+              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ${accountType === 'employee' ? 'text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+            >
+              <BriefcaseIcon className="w-4 h-4" />
+              Funcionário
+            </button>
           </div>
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Selecione o tipo de perfil a criar
+          </p>
         </div>
 
         {accountType === 'employee' ? (
           <div className="space-y-3">
             <Label className="text-gray-700 dark:text-gray-300">Email Institucional *</Label>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <input
-                  type="radio"
-                  name="emailType"
-                  value="auto"
-                  checked={emailSelection === 'auto'}
-                  onChange={() => setEmailSelection('auto')}
-                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
-                />
+            <div className="space-y-3">
+              {/* Option 1: Auto Generated */}
+              <div
+                onClick={() => setEmailSelection('auto')}
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'auto'
+                  ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                  }`}
+              >
+                <div className={`flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${emailSelection === 'auto'
+                  ? 'border-purple-600 bg-purple-600'
+                  : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                  {emailSelection === 'auto' && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
                 <div className="flex flex-col">
                   {/* <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automático</span> */}
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
                     {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome primeiro)'}
                   </span>
                 </div>
-              </label>
+              </div>
 
-              <label className="flex items-start gap-2 cursor-pointer p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <input
-                  type="radio"
-                  name="emailType"
-                  value="manual"
-                  checked={emailSelection === 'manual'}
-                  onChange={() => setEmailSelection('manual')}
-                  className="w-4 h-4 mt-1 text-purple-600 focus:ring-purple-500"
-                />
-                <div className="flex-1 space-y-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Outro</span>
-                  {emailSelection === 'manual' && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="text"
-                        placeholder="nome.personalizado"
-                        value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
-                        onChange={(e) => {
-                          // Remove any @ chars to prevent confusion, or just rely on append
-                          const prefix = e.target.value.split('@')[0];
-                          handleChange('email', prefix + '@florinhasdovouga.pt');
-                        }}
-                        className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.email ? 'border-red-500' : ''}`}
-                      />
-                      <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">@florinhasdovouga.pt</span>
-                    </div>
-                  )}
+              {/* Option 2: Manual Entry */}
+              <div
+                onClick={() => setEmailSelection('manual')}
+                className={`flex flex-col gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'manual'
+                  ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
+                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                  }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${emailSelection === 'manual'
+                    ? 'border-purple-600 bg-purple-600'
+                    : 'border-gray-300 dark:border-gray-600'
+                    }`}>
+                    {emailSelection === 'manual' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                    Outro
+                  </span>
                 </div>
-              </label>
+
+                {emailSelection === 'manual' && (
+                  <div className="flex items-center gap-2 pl-8 animate-in mt-1">
+                    <Input
+                      type="text"
+                      placeholder="nome.personalizado"
+                      value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
+                      onChange={(e) => {
+                        // Remove any @ chars to prevent confusion, or just rely on append
+                        const prefix = e.target.value.split('@')[0];
+                        handleChange('email', prefix + '@florinhasdovouga.pt');
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`h-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-purple-500 text-sm ${errors.email ? 'border-red-500' : ''}`}
+                    />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">@florinhasdovouga.pt</span>
+                  </div>
+                )}
+              </div>
             </div>
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
           </div>
         ) : (
           <div className="space-y-2">

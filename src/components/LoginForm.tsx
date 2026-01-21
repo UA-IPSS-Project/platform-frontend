@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Briefcase } from 'lucide-react';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -68,40 +68,46 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
         </div>
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
         <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              setLoginType('user');
-              setIdentifier('');
-              setPassword('');
-              setErrors({});
-            }}
-            className={
-              loginType === 'user'
-                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
-                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
-            }
-          >
-            Utilizador
-          </button>
+        <div className="mt-6 flex items-center justify-center">
+          <div className="relative flex p-1 rounded-full bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 h-10 w-full max-w-[280px]">
+            {/* Sliding Background */}
+            <div
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white dark:bg-gray-700 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${loginType === 'employee' ? 'translate-x-full left-1' : 'left-1'
+                }`}
+            />
 
-          <button
-            type="button"
-            onClick={() => {
-              setLoginType('employee');
-              setIdentifier('');
-              setPassword('');
-              setErrors({});
-            }}
-            className={
-              loginType === 'employee'
-                ? 'text-purple-600 text-lg underline font-semibold focus:outline-none'
-                : 'text-gray-600 hover:text-purple-600 text-base focus:outline-none'
-            }
-          >
-            Funcionário
-          </button>
+            {/* User Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setLoginType('user');
+                setIdentifier('');
+                setPassword('');
+                setErrors({});
+              }}
+              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors duration-200 ${loginType === 'user' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              Utilizador
+            </button>
+
+            {/* Employee Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setLoginType('employee');
+                setIdentifier('');
+                setPassword('');
+                setErrors({});
+              }}
+              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors duration-200 ${loginType === 'employee' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              Funcionário
+            </button>
+          </div>
         </div>
       </div>
 
