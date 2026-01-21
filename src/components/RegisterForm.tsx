@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -46,6 +46,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
   const [accountType, setAccountType] = useState<'user' | 'employee'>(initialAccountType ?? 'user');
   const [employeeRole, setEmployeeRole] = useState('');
+  const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto'); // New state for email selection
   const { registerUtente, registerFuncionario } = useAuth();
 
   const passwordValidation = validatePassword(formData.password);
@@ -112,6 +113,43 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Helper to normalize strings (remove accents)
+  const normalizeString = (str: string) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
+
+  const generateInstitutionalEmail = (fullName: string) => {
+    if (!fullName) return '';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 0) return '';
+
+    // First name
+    const first = normalizeString(parts[0]);
+    if (parts.length === 1) return `${first}@florinhasdovouga.pt`;
+
+    // Last name
+    const last = normalizeString(parts[parts.length - 1]);
+
+    // Middle initials
+    let middles = '';
+    if (parts.length > 2) {
+      for (let i = 1; i < parts.length - 1; i++) {
+        const p = normalizeString(parts[i]);
+        if (p.length > 0) middles += p[0];
+      }
+    }
+
+    return `${first}${middles}${last}@florinhasdovouga.pt`;
+  };
+
+  // Update email when name changes IF selection is auto and account is employee
+  useEffect(() => {
+    if (accountType === 'employee' && emailSelection === 'auto') {
+      const generated = generateInstitutionalEmail(formData.name);
+      setFormData(prev => ({ ...prev, email: generated }));
+    }
+  }, [formData.name, accountType, emailSelection]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,21 +357,77 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
-            {accountType === 'employee' ? 'Email institucional *' : 'Email *'}
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder={accountType === 'employee' ? 'nome@florinhasdovouga.pt' : 'email@exemplo.pt'}
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
-              }`}
-          />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-        </div>
+        {accountType === 'employee' ? (
+          <div className="space-y-3">
+            <Label className="text-gray-700 dark:text-gray-300">Email Institucional *</Label>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <input
+                  type="radio"
+                  name="emailType"
+                  value="auto"
+                  checked={emailSelection === 'auto'}
+                  onChange={() => setEmailSelection('auto')}
+                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                />
+                <div className="flex flex-col">
+                  {/* <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automático</span> */}
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome primeiro)'}
+                  </span>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-2 cursor-pointer p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <input
+                  type="radio"
+                  name="emailType"
+                  value="manual"
+                  checked={emailSelection === 'manual'}
+                  onChange={() => setEmailSelection('manual')}
+                  className="w-4 h-4 mt-1 text-purple-600 focus:ring-purple-500"
+                />
+                <div className="flex-1 space-y-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Outro</span>
+                  {emailSelection === 'manual' && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="text"
+                        placeholder="nome.personalizado"
+                        value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
+                        onChange={(e) => {
+                          // Remove any @ chars to prevent confusion, or just rely on append
+                          const prefix = e.target.value.split('@')[0];
+                          handleChange('email', prefix + '@florinhasdovouga.pt');
+                        }}
+                        className={`bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 ${errors.email ? 'border-red-500' : ''}`}
+                      />
+                      <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">@florinhasdovouga.pt</span>
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+              Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="email@exemplo.pt"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
+                }`}
+            />
+            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+          </div>
+        )}
 
         {
           accountType === 'employee' && (

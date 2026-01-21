@@ -494,7 +494,7 @@ export function AppointmentDetailsDialog({
           Concluído
         </Badge>;
       case 'no-show':
-      case 'no-show':
+
         return (
           <Badge style={{ backgroundColor: '#f97316', color: 'white' }} className="rounded-full px-3 flex items-center gap-1">
             <UserIcon className="w-3 h-3 text-white" />
