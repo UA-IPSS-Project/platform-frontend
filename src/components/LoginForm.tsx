@@ -4,7 +4,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff, User, Briefcase } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import { GlassCard } from './ui/glass-card';
+import { LightSwitch } from './ui/light-switch';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -56,8 +58,15 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     }
   };
 
+  const handleToggle = (value: 'user' | 'employee') => {
+    setLoginType(value);
+    setIdentifier('');
+    setPassword('');
+    setErrors({});
+  };
+
   return (
-    <div className="w-full max-w-md bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl p-8 transition-colors duration-300 border border-white/20 dark:border-gray-700/30">
+    <GlassCard className="w-full max-w-md p-8 border border-white/20 dark:border-gray-700/30">
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <img
@@ -68,46 +77,13 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
         </div>
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
         <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
+
         <div className="mt-6 flex items-center justify-center">
-          <div className="relative flex p-1 rounded-full bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 h-10 w-full max-w-[280px]">
-            {/* Sliding Background */}
-            <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white dark:bg-gray-700 shadow-sm transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${loginType === 'employee' ? 'translate-x-full left-1' : 'left-1'
-                }`}
-            />
-
-            {/* User Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setLoginType('user');
-                setIdentifier('');
-                setPassword('');
-                setErrors({});
-              }}
-              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors duration-200 ${loginType === 'user' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              Utilizador
-            </button>
-
-            {/* Employee Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setLoginType('employee');
-                setIdentifier('');
-                setPassword('');
-                setErrors({});
-              }}
-              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full text-sm font-medium transition-colors duration-200 ${loginType === 'employee' ? 'text-purple-700 dark:text-purple-300' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              Funcionário
-            </button>
-          </div>
+          <LightSwitch
+            value={loginType}
+            onChange={handleToggle}
+            variant="subtle"
+          />
         </div>
       </div>
 
@@ -186,6 +162,6 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
           </button>
         </p>
       </div>
-    </div>
+    </GlassCard>
   );
 }

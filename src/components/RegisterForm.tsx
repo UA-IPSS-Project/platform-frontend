@@ -6,6 +6,7 @@ import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as Use
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { LightSwitch } from './ui/light-switch';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -332,38 +333,13 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           </div>
         </div>
 
-        {/* Account Type Selection - Animated Lightswitch */}
         <div className="space-y-3">
           <Label className="text-gray-700 dark:text-gray-300 block text-center mb-2">Tipo de Conta</Label>
-          <div className="relative flex p-1 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 h-12 w-full max-w-md mx-auto">
-            {/* Sliding Background */}
-            <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-purple-600 shadow-md transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${accountType === 'employee' ? 'translate-x-full left-1' : 'left-1'
-                }`}
-            />
-
-            {/* User Button */}
-            <button
-              type="button"
-              onClick={() => handleAccountTypeChange('user')}
-              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ${accountType === 'user' ? 'text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-            >
-              <UserIcon className="w-4 h-4" />
-              Utilizador
-            </button>
-
-            {/* Employee Button */}
-            <button
-              type="button"
-              onClick={() => handleAccountTypeChange('employee')}
-              className={`z-10 flex-1 flex items-center justify-center gap-2 rounded-full font-medium transition-colors duration-200 ${accountType === 'employee' ? 'text-white' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-            >
-              <BriefcaseIcon className="w-4 h-4" />
-              Funcionário
-            </button>
-          </div>
+          <LightSwitch
+            value={accountType}
+            onChange={(val: 'user' | 'employee') => handleAccountTypeChange(val)}
+            variant="default"
+          />
           <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1">
             Selecione o tipo de perfil a criar
           </p>

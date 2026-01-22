@@ -8,6 +8,7 @@ import SUBJECTS from '../../lib/subjects';
 import { toast } from 'sonner';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
 import { Appointment } from '../../types';
+import { StatusBadge } from '../ui/status-badge';
 
 interface TodayAppointmentsProps {
   appointments: Appointment[];
@@ -35,24 +36,6 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       const [bHour, bMin] = b.time.split(':').map(Number);
       return aHour * 60 + aMin - (bHour * 60 + bMin);
     });
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in-progress':
-        return <Badge className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-2 py-0.5 text-xs">Em Curso</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-pink-600 hover:bg-pink-700 text-white rounded-full px-2 py-0.5 text-xs">Agendado</Badge>;
-      case 'warning':
-        return (
-          <Badge className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-full px-2 py-0.5 text-xs flex items-center gap-1">
-            <AlertTriangleIcon className="w-3 h-3" />
-            Agendado
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
 
   const handleExport = () => {
     toast.success('Lista diária exportada com sucesso');
@@ -218,12 +201,11 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                     }`}
                   onClick={() => onViewAppointment(apt)}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
-                      <ClockIcon className="w-3.5 h-3.5" />
-                      <span>{apt.time}</span>
-                    </div>
-                    {getStatusBadge(apt.status)}
+                  <div className="flex items-start justify-between">
+                    <span className="font-medium text-gray-900 dark:text-gray-100 text-lg">
+                      {apt.time}
+                    </span>
+                    <StatusBadge status={apt.status} />
                   </div>
 
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
