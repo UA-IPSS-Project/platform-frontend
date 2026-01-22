@@ -128,6 +128,7 @@ export interface UtenteRegisterRequest {
   nif: string;
   telefone: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
+  termsAccepted: boolean;
 }
 
 export interface FuncionarioRegisterRequest {
@@ -138,6 +139,7 @@ export interface FuncionarioRegisterRequest {
   contacto: string;
   funcao: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
+  termsAccepted: boolean;
 }
 
 export interface AuthResponse {
@@ -175,10 +177,10 @@ export const authApi = {
       body: JSON.stringify(data),
     }, false),
 
-  updatePassword: (password: string) =>
+  updatePassword: (password: string, termsAccepted: boolean) =>
     apiRequest<void>('/api/auth/set-password', {
       method: 'POST',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, termsAccepted }),
     }),
 };
 

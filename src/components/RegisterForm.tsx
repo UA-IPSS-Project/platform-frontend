@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
+import { TermsOfUseModal } from './TermsOfUseModal';
 import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -35,6 +37,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     birthDate: '',
     password: '',
     confirmPassword: '',
+    termsAccepted: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,6 +47,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
   const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsRead, setTermsRead] = useState(false);
 
   const [accountType, setAccountType] = useState<'user' | 'employee'>(initialAccountType ?? 'user');
   const [employeeRole, setEmployeeRole] = useState('');
@@ -111,6 +116,10 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       newErrors.confirmPassword = 'As palavras-passe não coincidem';
     }
 
+    if (!formData.termsAccepted) {
+      newErrors.termsAccepted = 'Deve aceitar os termos de uso para se registar';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -173,6 +182,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           email: formData.email,
           dataNasc: isoDate,
           password: formData.password,
+          termsAccepted: formData.termsAccepted,
         });
         toast.success('Conta criada com sucesso!');
         onNavigateToLogin();
@@ -185,6 +195,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           dataNasc: isoDate,
           funcao: employeeRole,
           password: formData.password,
+          termsAccepted: formData.termsAccepted,
         });
         // Employee registration success
         toast.success('Conta criada com sucesso! Aguarde aprovação da secretaria.');
@@ -197,7 +208,11 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   };
 
   const handleChange = (field: string, value: string) => {
-    setFormData({ ...formData, [field]: value });
+    if (field === 'termsAccepted') {
+      setFormData({ ...formData, [field]: value === 'true' });
+    } else {
+      setFormData({ ...formData, [field]: value });
+    }
     if (errors[field]) {
       const newErrors = { ...errors };
       delete newErrors[field];
@@ -523,13 +538,64 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
         </div>
 
+        <div className="space-y-2">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="termsAccepted"
+              checked={formData.termsAccepted}
+              onCheckedChange={(checked) => {
+                if (!termsRead) {
+                  setShowTermsModal(true);
+                  return;
+                }
+                handleChange('termsAccepted', checked === true ? 'true' : 'false');
+              }}
+              className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
+            />
+            <label
+              htmlFor="termsAccepted"
+              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
+            >
+              Aceito os{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowTermsModal(true);
+                }}
+                className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+              >
+                termos de uso e política de privacidade
+              </button>
+            </label>
+          </div>
+          {errors.termsAccepted && (
+            <p className="text-red-500 text-sm ml-9">{errors.termsAccepted}</p>
+          )}
+        </div>
+
         <Button
           type="submit"
           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200 mt-6"
         >
           Criar Conta
         </Button>
-      </form >
-    </div >
+      </form>
+
+      {/* Modal de Termos de Uso */}
+      <TermsOfUseModal
+        open={showTermsModal}
+        onOpenChange={setShowTermsModal}
+        onAccept={() => {
+          setTermsRead(true);
+          setFormData({ ...formData, termsAccepted: true });
+          if (errors.termsAccepted) {
+            const newErrors = { ...errors };
+            delete newErrors.termsAccepted;
+            setErrors(newErrors);
+          }
+        }}
+      />
+    </div>
   );
 }

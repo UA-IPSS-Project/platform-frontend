@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { ArrowLeftIcon, BellIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from './CustomIcons';
 
@@ -21,6 +21,7 @@ interface NotificationsPageProps {
   onDelete: (id: string) => void;
   onDeleteAll: () => void;
   isDarkMode: boolean;
+  highlightedNotificationId?: string;
 }
 
 export function NotificationsPage({
@@ -30,9 +31,34 @@ export function NotificationsPage({
   onMarkAllAsRead,
   onDelete,
   onDeleteAll,
-  isDarkMode
+  isDarkMode,
+  highlightedNotificationId
 }: NotificationsPageProps) {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [animatingId, setAnimatingId] = useState<string | null>(null);
+  const notificationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Scroll e animação quando highlightedNotificationId muda
+  useEffect(() => {
+    if (highlightedNotificationId && notificationRefs.current[highlightedNotificationId]) {
+      const element = notificationRefs.current[highlightedNotificationId];
+      
+      // Scroll suave para o elemento
+      setTimeout(() => {
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      
+      // Iniciar animação
+      setTimeout(() => {
+        setAnimatingId(highlightedNotificationId);
+      }, 500);
+      
+      // Remover animação após 2 segundos
+      setTimeout(() => {
+        setAnimatingId(null);
+      }, 2500);
+    }
+  }, [highlightedNotificationId]);
 
   const filteredNotifications = filter === 'all'
     ? notifications
@@ -154,10 +180,16 @@ export function NotificationsPage({
           filteredNotifications.map((notification, index) => (
             <div
               key={notification.id}
+              ref={(el) => (notificationRefs.current[notification.id] = el)}
               className={`p-5 ${index !== filteredNotifications.length - 1
                 ? 'border-b border-gray-200 dark:border-gray-800'
                 : ''
-                } hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group ${!notification.isRead ? 'bg-purple-50/50 dark:bg-purple-900/10' : ''
+                } hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-500 group ${
+                !notification.isRead ? 'bg-purple-50/50 dark:bg-purple-900/10' : ''
+                } ${
+                animatingId === notification.id
+                  ? 'ring-4 ring-purple-400 dark:ring-purple-600 animate-pulse bg-purple-100/80 dark:bg-purple-900/40 scale-[1.01] shadow-xl'
+                  : ''
                 }`}
               onClick={() => onMarkAsRead(notification.id)}
             >

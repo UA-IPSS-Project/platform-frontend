@@ -20,7 +20,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
-  updatePassword: (password: string) => Promise<void>;
+  updatePassword: (password: string, termsAccepted: boolean) => Promise<void>;
 }
 
 interface UtenteRegisterData {
@@ -30,6 +30,7 @@ interface UtenteRegisterData {
   nif: string;
   telefone: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
+  termsAccepted: boolean;
 }
 
 interface FuncionarioRegisterData {
@@ -40,6 +41,7 @@ interface FuncionarioRegisterData {
   contacto: string;
   funcao: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
+  termsAccepted: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -299,7 +301,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updatePassword = async (password: string) => {
+  const updatePassword = async (password: string, termsAccepted: boolean) => {
     const savedToken = localStorage.getItem('token');
     if (!savedToken) throw new Error('Não autenticado');
 
@@ -310,7 +312,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${savedToken}`
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, termsAccepted }),
       });
 
       if (!response.ok) {

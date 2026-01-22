@@ -90,6 +90,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Carregar marcações da API
@@ -432,6 +433,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       onDeleteAll={handleDeleteAllNotifications}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
+                      onNotificationClick={(id) => {
+                        setHighlightedNotificationId(id);
+                        navigateTo('notificacoes');
+                      }}
                       isDarkMode={isDarkMode}
                     />
                   )}
@@ -462,12 +467,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   isRead: n.lida,
                   icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert' // Simple mapping
                 }))}
-                onBack={() => navigateBack()}
+                onBack={() => {
+                  navigateBack();
+                  setHighlightedNotificationId(null);
+                }}
                 onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 onDelete={(id) => handleDeleteNotification(parseInt(id))}
                 onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
+                highlightedNotificationId={highlightedNotificationId || undefined}
               />
             ) : currentView === 'profile' ? (
               <ProfilePage

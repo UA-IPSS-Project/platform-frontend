@@ -21,6 +21,7 @@ interface NotificationsPanelProps {
   onDeleteAll: () => void;
   onClose: () => void;
   onNavigateToPage?: () => void;
+  onNotificationClick?: (id: string) => void;
   isDarkMode?: boolean;
 }
 
@@ -34,6 +35,7 @@ export function NotificationsPanel({
   onDeleteAll,
   onClose,
   onNavigateToPage,
+  onNotificationClick,
   isDarkMode = false
 }: NotificationsPanelProps) {
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -110,7 +112,13 @@ export function NotificationsPanel({
                 key={notification.id}
                 className={`p-4 border-b border-pink-50 dark:border-gray-700/50 hover:bg-pink-50/50 dark:hover:bg-gray-800 transition-colors cursor-pointer ${!notification.isRead ? 'bg-purple-50/30 dark:bg-gray-800/50' : ''
                   }`}
-                onClick={() => onMarkAsRead(notification.id)}
+                onClick={() => {
+                  onMarkAsRead(notification.id);
+                  if (onNotificationClick) {
+                    onNotificationClick(notification.id);
+                    onClose();
+                  }
+                }}
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${!notification.isRead

@@ -3,7 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Checkbox } from './ui/checkbox';
 import { toast } from 'sonner';
+import { TermsOfUseModal } from './TermsOfUseModal';
 
 interface NewPasswordFormProps {
   onSuccess?: () => void;
@@ -12,13 +14,17 @@ interface NewPasswordFormProps {
 export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
-  const [errors, setErrors] = useState<{ password?: string; repeat?: string }>({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [termsRead, setTermsRead] = useState(false);
+  const [errors, setErrors] = useState<{ password?: string; repeat?: string; termsAccepted?: string }>({});
 
   const validate = () => {
-    const e: { password?: string; repeat?: string } = {};
+    const e: { password?: string; repeat?: string; termsAccepted?: string } = {};
     if (!password) e.password = 'Campo obrigatório';
     else if (password.length < 8) e.password = 'A palavra-passe deve ter pelo menos 8 caracteres';
     if (password !== repeat) e.repeat = 'As palavras-passe não coincidem';
+    if (!termsAccepted) e.termsAccepted = 'Deve aceitar os termos de uso para ativar a conta';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -33,7 +39,7 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
     }
 
     try {
-      await updatePassword(password);
+      await updatePassword(password, termsAccepted);
       toast.success('Palavra-passe definida com sucesso');
       onSuccess?.();
     } catch (error) {
@@ -81,10 +87,57 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
           {errors.repeat && <p className="text-red-500 text-sm">{errors.repeat}</p>}
         </div>
 
+        <div className="space-y-2">
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="termsAccepted"
+              checked={termsAccepted}
+              onCheckedChange={(checked) => {
+                if (!termsRead) {
+                  setShowTermsModal(true);
+                  return;
+                }
+                setTermsAccepted(checked === true);
+                if (errors.termsAccepted) setErrors({ ...errors, termsAccepted: undefined });
+              }}
+              className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
+            />
+            <label
+              htmlFor="termsAccepted"
+              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
+            >
+              Aceito os{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowTermsModal(true);
+                }}
+                className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+              >
+                termos de uso e política de privacidade
+              </button>
+            </label>
+          </div>
+          {errors.termsAccepted && (
+            <p className="text-red-500 text-sm ml-9">{errors.termsAccepted}</p>
+          )}
+        </div>
+
         <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200">
           Guardar e Entrar na Plataforma
         </Button>
       </form>
+
+      <TermsOfUseModal
+        open={showTermsModal}
+        onOpenChange={setShowTermsModal}
+        onAccept={() => {
+          setTermsRead(true);
+          setTermsAccepted(true);
+          if (errors.termsAccepted) setErrors({ ...errors, termsAccepted: undefined });
+        }}
+      />
     </div>
   );
 }

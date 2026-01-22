@@ -72,6 +72,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   const carregarMarcacoes = async () => {
@@ -487,6 +488,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onDeleteAll={handleDeleteAllNotifications}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
+                      onNotificationClick={(id) => {
+                        setHighlightedNotificationId(id);
+                        navigateTo('notificacoes');
+                      }}
                       isDarkMode={isDarkMode}
                     />
                   )}
@@ -524,12 +529,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   isRead: n.lida,
                   icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
                 }))}
-                onBack={() => navigateBack()}
+                onBack={() => {
+                  navigateBack();
+                  setHighlightedNotificationId(null);
+                }}
                 onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 onDelete={(id) => handleDeleteNotification(parseInt(id))}
                 onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
+                highlightedNotificationId={highlightedNotificationId || undefined}
               />
             ) : currentView === 'profile' ? (
               <ProfilePage

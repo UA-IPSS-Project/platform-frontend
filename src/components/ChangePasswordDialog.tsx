@@ -35,7 +35,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
 
         setLoading(true);
         try {
-            await authApi.updatePassword(password);
+            await authApi.updatePassword(password, true); // termsAccepted=true pois já foi aceite ao criar conta
             toast.success('Palavra-passe alterada com sucesso');
             onClose();
             setPassword('');
