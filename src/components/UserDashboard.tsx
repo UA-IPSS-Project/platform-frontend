@@ -12,7 +12,7 @@ import { ClientAppointmentDialog } from './client/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { ArrowLeftIcon, BellIcon, CalendarIcon, FileTextIcon as FolderIcon, HistoryIcon, HomeIcon, LogOutIcon, MenuIcon, UserIcon, ClockIcon, SunIcon, MoonIcon, ClipboardListIcon as ClipboardIcon } from './CustomIcons';
-import type { Appointment } from './SecretaryDashboard';
+import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
@@ -236,9 +236,29 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const handleMarkAllAsRead = async () => {
     try {
       setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-      await notificationsApi.marcarTodasComoLidas();
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);
+    }
+  };
+
+  const handleDeleteNotification = async (id: number) => {
+    try {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      await notificationsApi.eliminar(id);
+    } catch (error) {
+      console.error('Erro ao eliminar notificação:', error);
+      toast.error('Erro ao eliminar notificação');
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      setNotifications([]);
+      await notificationsApi.eliminarTodas();
+      toast.success('Todas as notificações foram eliminadas');
+    } catch (error) {
+      console.error('Erro ao eliminar todas as notificações:', error);
+      toast.error('Erro ao eliminar notificações');
     }
   };
 
@@ -408,6 +428,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       }))}
                       onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                       onMarkAllAsRead={handleMarkAllAsRead}
+                      onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                      onDeleteAll={handleDeleteAllNotifications}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
                       isDarkMode={isDarkMode}
@@ -443,6 +465,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 onBack={() => navigateBack()}
                 onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
+                onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
               />
             ) : currentView === 'profile' ? (

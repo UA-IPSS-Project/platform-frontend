@@ -192,6 +192,27 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
   };
 
+  const handleDeleteNotification = async (id: number) => {
+    try {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      await notificationsApi.eliminar(id);
+    } catch (error) {
+      console.error('Erro ao eliminar notificação:', error);
+      toast.error('Erro ao eliminar notificação');
+    }
+  };
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      setNotifications([]);
+      await notificationsApi.eliminarTodas();
+      toast.success('Todas as notificações foram eliminadas');
+    } catch (error) {
+      console.error('Erro ao eliminar todas as notificações:', error);
+      toast.error('Erro ao eliminar notificações');
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.lida).length;
 
   const handleCreateAppointment = async (date: Date, time: string) => {
@@ -462,6 +483,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       }))}
                       onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                       onMarkAllAsRead={handleMarkAllAsRead}
+                      onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                      onDeleteAll={handleDeleteAllNotifications}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
                       isDarkMode={isDarkMode}
@@ -504,6 +527,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={() => navigateBack()}
                 onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
+                onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
               />
             ) : currentView === 'profile' ? (

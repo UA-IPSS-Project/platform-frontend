@@ -25,6 +25,14 @@ export const notificationsApi = {
 
     marcarTodasComoLidas: async (): Promise<void> => {
         return apiRequest<void>('/api/notificacoes/ler-todas', { method: 'PUT' });
+    },
+
+    eliminar: async (id: number): Promise<void> => {
+        return apiRequest<void>(`/api/notificacoes/${id}`, { method: 'DELETE' });
+    },
+
+    eliminarTodas: async (): Promise<void> => {
+        return apiRequest<void>('/api/notificacoes', { method: 'DELETE' });
     }
 };
 
