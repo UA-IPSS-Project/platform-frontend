@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
 import { Appointment, ViewType } from '../types';
+import { notificationsApi, Notificacao } from '../services/notificationsApi';
 
 interface SecretaryDashboardProps {
   user: {
@@ -134,33 +135,33 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     return () => clearInterval(interval);
   }, [currentView]);
 
-  // Sample notifications for secretary
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      title: 'Relatório Mensal Disponível',
-      message: 'O relatório mensal de dezembro já está disponível para consulta.',
-      timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-      isRead: false,
-      icon: 'document' as const,
-    },
-    {
-      id: '2',
-      title: 'Nova marcação agendada',
-      message: 'João Santos agendou uma marcação para amanhã às 10:00.',
-      timestamp: new Date(Date.now() - 60 * 60000).toISOString(),
-      isRead: false,
-      icon: 'calendar' as const,
-    },
-    {
-      id: '3',
-      title: 'Candidatura aprovada',
-      message: 'A candidatura de Maria Silva para CATL foi aprovada.',
-      timestamp: new Date(Date.now() - 2 * 60 * 60000).toISOString(),
-      isRead: true,
-      icon: 'document' as const,
-    },
-  ]);
+
+  // ...
+
+  // Inside component:
+  const [notifications, setNotifications] = useState<Notificacao[]>([]);
+
+  const carregarNotificacoes = async () => {
+    try {
+      const data = await notificationsApi.listar();
+      setNotifications(data);
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (authUser?.id) {
+      carregarNotificacoes();
+    }
+  }, [authUser?.id]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      carregarNotificacoes();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -173,15 +174,25 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+      await notificationsApi.marcarComoLida(id);
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+      await notificationsApi.marcarTodasComoLidas();
+    } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error);
+    }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.lida).length;
 
   const handleCreateAppointment = async (date: Date, time: string) => {
     // Recarregar marcações antes de abrir o dialog
@@ -441,8 +452,15 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   </Button>
                   {showNotifications && (
                     <NotificationsPanel
-                      notifications={notifications}
-                      onMarkAsRead={handleMarkAsRead}
+                      notifications={notifications.map(n => ({
+                        id: n.id.toString(),
+                        title: n.titulo,
+                        message: n.mensagem,
+                        timestamp: n.dataCriacao,
+                        isRead: n.lida,
+                        icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
+                      }))}
+                      onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                       onMarkAllAsRead={handleMarkAllAsRead}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
@@ -475,9 +493,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
-                notifications={notifications}
+                notifications={notifications.map(n => ({
+                  id: n.id.toString(),
+                  title: n.titulo,
+                  message: n.mensagem,
+                  timestamp: n.dataCriacao,
+                  isRead: n.lida,
+                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
+                }))}
                 onBack={() => navigateBack()}
-                onMarkAsRead={handleMarkAsRead}
+                onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 isDarkMode={isDarkMode}
               />

@@ -16,6 +16,7 @@ import type { Appointment } from './SecretaryDashboard';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
+import { notificationsApi, Notificacao } from '../services/notificationsApi';
 
 interface UserDashboardProps {
   user: {
@@ -194,46 +195,54 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     return () => clearInterval(interval);
   }, [currentView]);
 
-  // Sample notifications for user
-  const [notifications, setNotifications] = useState([
-    {
-      id: '1',
-      title: 'Marcação confirmada',
-      message: 'A sua marcação para amanhã às 15:00 foi confirmada.',
-      timestamp: new Date(Date.now() - 10 * 60000).toISOString(),
-      isRead: false,
-      icon: 'calendar' as const,
-    },
-    {
-      id: '2',
-      title: 'Candidatura em análise',
-      message: 'A sua candidatura para CATL está em análise. Aguarde aprovação.',
-      timestamp: new Date(Date.now() - 3 * 60 * 60000).toISOString(),
-      isRead: false,
-      icon: 'document' as const,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notificacao[]>([]);
+
+  const carregarNotificacoes = async () => {
+    try {
+      console.log('Fetching notifications for user:', authUser?.id);
+      const data = await notificationsApi.listar();
+      console.log('Notifications fetched:', data);
+      setNotifications(data);
+    } catch (error) {
+      console.error('Erro ao carregar notificações:', error);
+    }
+  };
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
-        setShowNotifications(false);
-      }
-    };
+    if (authUser?.id) {
+      carregarNotificacoes();
+    }
+  }, [authUser?.id]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  // Atualizar notificações no intervalo
+  useEffect(() => {
+    const interval = setInterval(() => {
+      carregarNotificacoes();
+    }, 30000); // 30 segundos
+    return () => clearInterval(interval);
   }, []);
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      // Optimistic update
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
+      await notificationsApi.marcarComoLida(id);
+      // carregarNotificacoes(); // Optional to ensure sync
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const handleMarkAllAsRead = async () => {
+    try {
+      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+      await notificationsApi.marcarTodasComoLidas();
+    } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error);
+    }
   };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.lida).length;
 
   const visibleAppointments = useMemo(
     () => allAppointments.filter((apt) => apt.patientNIF === user.nif),
@@ -389,8 +398,15 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   </Button>
                   {showNotifications && (
                     <NotificationsPanel
-                      notifications={notifications}
-                      onMarkAsRead={handleMarkAsRead}
+                      notifications={notifications.map(n => ({
+                        id: n.id.toString(),
+                        title: n.titulo,
+                        message: n.mensagem,
+                        timestamp: n.dataCriacao,
+                        isRead: n.lida,
+                        icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
+                      }))}
+                      onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                       onMarkAllAsRead={handleMarkAllAsRead}
                       onClose={() => setShowNotifications(false)}
                       onNavigateToPage={() => navigateTo('notificacoes')}
@@ -416,9 +432,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           <main className="w-full px-6 py-6">
             {currentView === 'notificacoes' ? (
               <NotificationsPage
-                notifications={notifications}
+                notifications={notifications.map(n => ({
+                  id: n.id.toString(),
+                  title: n.titulo,
+                  message: n.mensagem,
+                  timestamp: n.dataCriacao,
+                  isRead: n.lida,
+                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert' // Simple mapping
+                }))}
                 onBack={() => navigateBack()}
-                onMarkAsRead={handleMarkAsRead}
+                onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
                 isDarkMode={isDarkMode}
               />
@@ -516,7 +539,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             date={editingSlot.date}
             time={editingSlot.time}
             utenteId={authUser.id}
-            onSuccess={carregarMarcacoes}
+            onSuccess={() => {
+              carregarMarcacoes();
+              carregarNotificacoes();
+            }}
           />
         )}
 

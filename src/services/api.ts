@@ -23,7 +23,7 @@ const buildHeaders = (includeAuth: boolean = true): HeadersInit => {
 };
 
 // Generic API request function
-async function apiRequest<T>(
+export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
   requiresAuth: boolean = true
