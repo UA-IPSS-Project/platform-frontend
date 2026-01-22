@@ -24,9 +24,10 @@ interface BlockedScheduleDialogProps {
 
 const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 9; hour < 17; hour++) {
+    for (let hour = 9; hour <= 17; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
-            if (hour === 16 && minute > 45) break;
+            // Stop at 17:00 exactly
+            if (hour === 17 && minute > 0) break;
             slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
         }
     }
@@ -42,7 +43,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
     const [endDate, setEndDate] = useState<Date | undefined>(new Date());
     const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('17:00');
+    const [endTime, setEndTime] = useState('09:15');
 
     const allSlots = generateTimeSlots();
 
@@ -52,7 +53,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             setStartDate(new Date());
             setEndDate(new Date());
             setStartTime('09:00');
-            setEndTime('17:00');
+            setEndTime('09:15');
         }
     }, [open]);
 
@@ -94,7 +95,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     };
 
     // Filter slots based on appointments for the selected day
-    const getAvailableSlots = (date: Date | undefined) => {
+    const getAvailableSlots = (date: Date | undefined, mode: 'start' | 'end' = 'start') => {
         if (!date) return [];
 
         const now = new Date();
@@ -125,6 +126,11 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     apptDate.getMonth() === date.getMonth() &&
                     apptDate.getFullYear() === date.getFullYear();
 
+                // For the end slot, it's okay to match an appointment time (as it ends there)
+                if (mode === 'end' && isSameDate && appt.time === slot) {
+                    return false; // NOT a collision, it's a valid border
+                }
+
                 return isSameDate && appt.time === slot;
             });
 
@@ -138,19 +144,29 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                 if (!isSameDate) return false;
 
-                // Simple string comparison works for "is within range" if format is HH:mm
-                // But better to be safe with standard comparison logic
-                return slot >= b.horaInicio.substring(0, 5) && slot < b.horaFim.substring(0, 5);
+                const start = b.horaInicio.substring(0, 5);
+                const end = b.horaFim.substring(0, 5);
+
+                // Start Mode: Strict containment [start, end)
+                if (mode === 'start') {
+                    return slot >= start && slot < end;
+                }
+
+                // End Mode: Boundary containment (start, end)
+                // We can end exactly at 'start' of another block
+                return slot > start && slot < end;
             });
+
+            // Check overlap with next appointment/block if this is an End Slot selection? 
+            // The dropdown logic filters > startTime.
+            // But we simply return "valid points" here.
 
             return !hasAppointment && !isBlocked;
         });
     };
 
-    const startSlots = getAvailableSlots(startDate);
-    // Include 17:00 as a valid end time -> removed per user request for inclusive slot logic
-    // The end slot list should just be the available slots (same as start slots)
-    const endSlots = getAvailableSlots(endDate);
+    const startSlots = getAvailableSlots(startDate, 'start').filter(s => s !== "17:00");
+    const endSlots = getAvailableSlots(endDate, 'end');
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -164,30 +180,24 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             return;
         }
 
+        if (startTime >= endTime && startDate.getTime() === endDate.getTime()) {
+            toast.error('A hora de fim deve ser posterior à hora de início');
+            return;
+        }
+
         try {
             setLoading(true);
-            setLoading(true);
 
-            // Lógica user-friendly: "Fim" representa o último slot BLOQUEADO (inclusivo).
-            // Se user escolhe inicio 9:00 e fim 9:15, quer bloquear slot 9:00 E slot 9:15.
-            // Backend espera Range [start, end), então fim deve ser 9:30.
-            // Transformação: Sempre adicionar 15 min à hora de fim selecionada.
-
-            let finalEndTime = endTime;
-            const [h, m] = endTime.split(':').map(Number);
-            let newM = m + 15;
-            let newH = h;
-            if (newM >= 60) {
-                newM -= 60;
-                newH += 1;
-            }
-            finalEndTime = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
+            // Updated User Friendly Logic:
+            // "Fim" represents the actual end time (Exclusive).
+            // Start 9:00, End 9:15 -> Block [9:00, 9:15).
+            // No need to add 15 minutes to endTime anymore.
 
             await bloqueiosApi.criar({
                 dataInicio: format(startDate, 'yyyy-MM-dd'),
                 dataFim: format(endDate, 'yyyy-MM-dd'),
                 horaInicio: startTime,
-                horaFim: finalEndTime
+                horaFim: endTime
             }, user?.id || 0);
 
             toast.success('Bloqueio criado com sucesso');
@@ -251,7 +261,6 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                     setStartDate(date);
                                                     if (date) {
                                                         setEndDate(date);
-                                                        // Reset times if needed, or keeping defaults is fine
                                                     }
                                                 }}
                                                 initialFocus
@@ -261,9 +270,16 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                                     <Select value={startTime} onValueChange={(val) => {
                                         setStartTime(val);
-                                        // Auto-update end time to be same as start (single cell block default)
-                                        // User logic: Start 9:00 -> End 9:00 means block 9:00 slot only
-                                        setEndTime(val);
+                                        // Auto-update end time to be Start + 15 min
+                                        const [h, m] = val.split(':').map(Number);
+                                        let newM = m + 15;
+                                        let newH = h;
+                                        if (newM >= 60) {
+                                            newM -= 60;
+                                            newH += 1;
+                                        }
+                                        const nextSlot = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
+                                        setEndTime(nextSlot);
                                     }}>
                                         <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                                             <SelectValue />
@@ -319,7 +335,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                         startDate.getDate() === endDate.getDate() &&
                                                         startDate.getMonth() === endDate.getMonth() &&
                                                         startDate.getFullYear() === endDate.getFullYear()) {
-                                                        return slot >= startTime;
+                                                        return slot > startTime;
                                                     }
                                                     return true;
                                                 })
@@ -330,7 +346,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                             startDate.getDate() === endDate.getDate() &&
                                                             startDate.getMonth() === endDate.getMonth() &&
                                                             startDate.getFullYear() === endDate.getFullYear()) {
-                                                            return slot >= startTime;
+                                                            return slot > startTime;
                                                         }
                                                         return true;
                                                     })
