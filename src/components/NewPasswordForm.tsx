@@ -88,39 +88,41 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="termsAccepted"
-              checked={termsAccepted}
-              onCheckedChange={(checked) => {
-                if (!termsRead) {
-                  setShowTermsModal(true);
-                  return;
-                }
-                setTermsAccepted(checked === true);
-                if (errors.termsAccepted) setErrors({ ...errors, termsAccepted: undefined });
-              }}
-              className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
-            />
-            <label
-              htmlFor="termsAccepted"
-              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
-            >
-              Aceito os{' '}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowTermsModal(true);
+          <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="termsAccepted"
+                checked={termsAccepted}
+                onCheckedChange={(checked) => {
+                  if (!termsRead) {
+                    setShowTermsModal(true);
+                    return;
+                  }
+                  setTermsAccepted(checked === true);
+                  if (errors.termsAccepted) setErrors({ ...errors, termsAccepted: undefined });
                 }}
-                className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+                className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
+              />
+              <label
+                htmlFor="termsAccepted"
+                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
               >
-                termos de uso e política de privacidade
-              </button>
-            </label>
+                Aceito os{' '}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowTermsModal(true);
+                  }}
+                  className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+                >
+                  termos de uso e política de privacidade
+                </button>
+              </label>
+            </div>
           </div>
           {errors.termsAccepted && (
-            <p className="text-red-500 text-sm ml-9">{errors.termsAccepted}</p>
+            <p className="text-red-500 text-sm pl-1">{errors.termsAccepted}</p>
           )}
         </div>
 

@@ -247,6 +247,15 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-3">
+          {/*<Label className="text-gray-700 dark:text-gray-300 block text-left mb-2">Tipo de Conta</Label> */}
+          <LightSwitch
+            value={accountType}
+            onChange={(val: 'user' | 'employee') => handleAccountTypeChange(val)}
+            variant="default"
+          />
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
             Nome Completo *
@@ -260,12 +269,13 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.name ? 'border-red-500' : ''
               }`}
           />
+          
           {errors.name && (
-            <ul className="text-red-500 text-sm list-disc ml-4 space-y-0.5">
+            <div className="text-red-500 text-sm mt-1 ml-1 space-y-0.5">
               {errors.name.split('\n').filter(Boolean).map((msg, idx) => (
-                <li key={idx}>{msg}</li>
+                <p key={idx}>{msg}</p>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
@@ -346,18 +356,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             />
             {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
           </div>
-        </div>
-
-        <div className="space-y-3">
-          <Label className="text-gray-700 dark:text-gray-300 block text-center mb-2">Tipo de Conta</Label>
-          <LightSwitch
-            value={accountType}
-            onChange={(val: 'user' | 'employee') => handleAccountTypeChange(val)}
-            variant="default"
-          />
-          <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Selecione o tipo de perfil a criar
-          </p>
         </div>
 
         {accountType === 'employee' ? (
@@ -539,38 +537,40 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-start space-x-3">
-            <Checkbox
-              id="termsAccepted"
-              checked={formData.termsAccepted}
-              onCheckedChange={(checked) => {
-                if (!termsRead) {
-                  setShowTermsModal(true);
-                  return;
-                }
-                handleChange('termsAccepted', checked === true ? 'true' : 'false');
-              }}
-              className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
-            />
-            <label
-              htmlFor="termsAccepted"
-              className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
-            >
-              Aceito os{' '}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowTermsModal(true);
+          <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="termsAccepted"
+                checked={formData.termsAccepted}
+                onCheckedChange={(checked) => {
+                  if (!termsRead) {
+                    setShowTermsModal(true);
+                    return;
+                  }
+                  handleChange('termsAccepted', checked === true ? 'true' : 'false');
                 }}
-                className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+                className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
+              />
+              <label
+                htmlFor="termsAccepted"
+                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
               >
-                termos de uso e política de privacidade
-              </button>
-            </label>
+                Aceito os{' '}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowTermsModal(true);
+                  }}
+                  className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+                >
+                  termos de uso e política de privacidade
+                </button>
+              </label>
+            </div>
           </div>
           {errors.termsAccepted && (
-            <p className="text-red-500 text-sm ml-9">{errors.termsAccepted}</p>
+            <p className="text-red-500 text-sm pl-1">{errors.termsAccepted}</p>
           )}
         </div>
 

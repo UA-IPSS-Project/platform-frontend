@@ -180,7 +180,7 @@ export function NotificationsPage({
           filteredNotifications.map((notification, index) => (
             <div
               key={notification.id}
-              ref={(el) => (notificationRefs.current[notification.id] = el)}
+              ref={(el) => {notificationRefs.current[notification.id] = el;}}
               className={`p-5 ${index !== filteredNotifications.length - 1
                 ? 'border-b border-gray-200 dark:border-gray-800'
                 : ''
