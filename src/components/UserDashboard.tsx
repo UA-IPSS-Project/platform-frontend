@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
+import { mapApiToAppointment } from '../utils/appointmentUtils';
 
 interface UserDashboardProps {
   user: {
@@ -91,13 +92,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
+  const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Carregar marcações da API
   const carregarMarcacoes = async () => {
     if (!authUser?.id) return;
-
-    console.log('authUser no UserDashboard:', authUser);
 
     setIsLoadingAppointments(true);
     try {
@@ -159,7 +159,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       });
 
       setBlockedAppointments(blockedFromAPI);
-      console.log(`${appointmentsFromAPI.length} marcações próprias e ${blockedFromAPI.length} bloqueadas carregadas`);
     } catch (error) {
       console.error('Erro ao carregar marcações:', error);
       toast.error('Erro ao carregar marcações');
@@ -200,9 +199,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const carregarNotificacoes = async () => {
     try {
-      console.log('Fetching notifications for user:', authUser?.id);
       const data = await notificationsApi.listar();
-      console.log('Notifications fetched:', data);
       setNotifications(data);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
@@ -408,7 +405,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     variant="ghost"
                     size="icon"
                     className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => setShowNotifications(!showNotifications)}
+                    onClick={() => {
+                      setShowNotifications(!showNotifications);
+                      if (!showNotifications) {
+                        carregarNotificacoes();
+                      }
+                    }}
                   >
                     <BellIcon className="w-5 h-5" />
                     {unreadCount > 0 && (
@@ -465,7 +467,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   message: n.mensagem,
                   timestamp: n.dataCriacao,
                   isRead: n.lida,
-                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert' // Simple mapping
+                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                  type: n.tipo,
+                  metadata: n.metadata,
                 }))}
                 onBack={() => {
                   navigateBack();
@@ -477,6 +481,49 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
                 highlightedNotificationId={highlightedNotificationId || undefined}
+                actionCallbacks={{
+                  onNavigateToAppointment: async (appointmentId) => {
+                    // Navegar para vista de agendamentos
+                    navigateTo('appointments');
+                    // Fechar modal e página de notificações
+                    setShowNotifications(false);
+                    // Buscar e abrir a marcação específica
+                    try {
+                      const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
+                      const response = await marcacoesApi.obterPorId(id);
+                      const appointment = mapApiToAppointment(response);
+                      setSelectedAppointment(appointment);
+                      setShowDetailsDialog(true);
+                      toast.success('Marcação encontrada');
+                    } catch (error) {
+                      console.error('Erro ao carregar marcação:', error);
+                      toast.error('Não foi possível encontrar a marcação');
+                    }
+                  },
+                  onNavigateToHistory: async (appointmentId) => {
+                    // Navegar para histórico
+                    navigateTo('history');
+                    setShowNotifications(false);
+                    // TODO: Implementar scroll/highlight para a marcação específica no histórico
+                    toast.info('A carregar histórico...');
+                  },
+                  onNavigateToDocument: (documentId) => {
+                    toast.info('Funcionalidade de documentos em desenvolvimento');
+                  },
+                  onNavigateToCancelledSlot: (dateStr, time) => {
+                    // Navegar para vista de agendamentos
+                    navigateTo('appointments');
+                    setShowNotifications(false);
+                    // Destacar o slot cancelado
+                    const slotDate = new Date(dateStr);
+                    setHighlightedSlot({ date: slotDate, time });
+                    // Limpar destaque após 5 segundos
+                    setTimeout(() => {
+                      setHighlightedSlot(null);
+                    }, 5000);
+                    toast.info('A mostrar slot cancelado no calendário');
+                  },
+                }}
               />
             ) : currentView === 'profile' ? (
               <ProfilePage
@@ -515,6 +562,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     onToggleView={() => { /* no-op: monthly view removed */ }}
                     isDarkMode={isDarkMode}
                     onRefresh={carregarMarcacoes}
+                    highlightedSlot={highlightedSlot}
                   />
                 </div>
 

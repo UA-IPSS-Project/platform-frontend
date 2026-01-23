@@ -21,7 +21,7 @@ export interface PasswordValidation {
  */
 export const validateName = (name: string): ValidationResult => {
     const normalized = name.trim().replace(/\s+/g, ' ');
-    if (!normalized) return { valid: false, error: 'Nome é obrigatório' };
+    if (!normalized) return { valid: false, error: 'O nome é obrigatório' };
 
     const words = normalized.split(' ');
     const errors: string[] = [];

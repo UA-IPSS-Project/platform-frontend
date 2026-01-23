@@ -73,6 +73,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
+  const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   const carregarMarcacoes = async () => {
@@ -463,7 +464,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     variant="ghost"
                     size="icon"
                     className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => setShowNotifications(!showNotifications)}
+                    onClick={() => {
+                      setShowNotifications(!showNotifications);
+                      if (!showNotifications) {
+                        carregarNotificacoes();
+                      }
+                    }}
                   >
                     <BellIcon className="w-5 h-5" />
                     {unreadCount > 0 && (
@@ -527,7 +533,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   message: n.mensagem,
                   timestamp: n.dataCriacao,
                   isRead: n.lida,
-                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
+                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                  type: n.tipo,
+                  metadata: n.metadata,
                 }))}
                 onBack={() => {
                   navigateBack();
@@ -539,6 +547,32 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
                 highlightedNotificationId={highlightedNotificationId || undefined}
+                actionCallbacks={{
+                  onNavigateToAppointment: async (appointmentId) => {
+                    navigateTo('appointments');
+                    setShowNotifications(false);
+                    try {
+                      const response = await marcacoesApi.obterPorId(parseInt(appointmentId));
+                      const appointment = mapApiToAppointment(response);
+                      setSelectedAppointment(appointment);
+                      setShowDetailsDialog(true);
+                      toast.success('Marcação encontrada');
+                    } catch (error) {
+                      console.error('Erro ao carregar marcação:', error);
+                      toast.error('Não foi possível encontrar a marcação');
+                    }
+                  },
+                  onNavigateToCancelledSlot: (dateStr, time) => {
+                    navigateTo('appointments');
+                    setShowNotifications(false);
+                    const slotDate = new Date(dateStr);
+                    setHighlightedSlot({ date: slotDate, time });
+                    setTimeout(() => {
+                      setHighlightedSlot(null);
+                    }, 5000);
+                    toast.info('A mostrar slot cancelado no calendário');
+                  },
+                }}
               />
             ) : currentView === 'profile' ? (
               <ProfilePage
@@ -576,6 +610,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     onRefresh={carregarMarcacoes}
                     onBlockSchedule={() => setShowBlockedDialog(true)}
                     refreshTrigger={refreshKey}
+                    highlightedSlot={highlightedSlot}
                   />
                 </div>
 

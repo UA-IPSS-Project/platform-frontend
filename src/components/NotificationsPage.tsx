@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { ArrowLeftIcon, BellIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from './CustomIcons';
+import { NotificationDetailModal } from './NotificationDetailModal';
+import { NotificationWithType, NotificationActionCallbacks } from '../hooks/useNotificationAction';
 
 interface Notification {
   id: string;
@@ -9,6 +11,8 @@ interface Notification {
   timestamp: string;
   isRead: boolean;
   icon: 'calendar' | 'document' | 'alert';
+  type?: string;
+  metadata?: Record<string, any>;
 }
 
 import { TrashIcon } from './CustomIcons';
@@ -22,6 +26,7 @@ interface NotificationsPageProps {
   onDeleteAll: () => void;
   isDarkMode: boolean;
   highlightedNotificationId?: string;
+  actionCallbacks?: NotificationActionCallbacks; // Callbacks para navegação
 }
 
 export function NotificationsPage({
@@ -32,10 +37,13 @@ export function NotificationsPage({
   onDelete,
   onDeleteAll,
   isDarkMode,
-  highlightedNotificationId
+  highlightedNotificationId,
+  actionCallbacks,
 }: NotificationsPageProps) {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [animatingId, setAnimatingId] = useState<string | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationWithType | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const notificationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Scroll e animação quando highlightedNotificationId muda
@@ -43,20 +51,21 @@ export function NotificationsPage({
     if (highlightedNotificationId && notificationRefs.current[highlightedNotificationId]) {
       const element = notificationRefs.current[highlightedNotificationId];
       
-      // Scroll suave para o elemento
+      // Delay inicial para permitir a renderização da página
       setTimeout(() => {
+        // Scroll suave para o elemento
         element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
+      }, 300);
       
-      // Iniciar animação
+      // Iniciar animação após o scroll começar
       setTimeout(() => {
         setAnimatingId(highlightedNotificationId);
-      }, 500);
+      }, 800);
       
-      // Remover animação após 2 segundos
+      // Remover animação após 3 segundos
       setTimeout(() => {
         setAnimatingId(null);
-      }, 2500);
+      }, 3800);
     }
   }, [highlightedNotificationId]);
 
@@ -96,8 +105,35 @@ export function NotificationsPage({
     }
   };
 
+  const handleNotificationClick = (notification: Notification) => {
+    // Marcar como lida
+    if (!notification.isRead) {
+      onMarkAsRead(notification.id);
+    }
+    
+    // Abrir modal com os detalhes
+    setSelectedNotification(notification as NotificationWithType);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedNotification(null);
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Modal de Detalhes */}
+      <NotificationDetailModal
+        notification={selectedNotification}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        actionCallbacks={actionCallbacks}
+        onActionComplete={() => {
+          // Callback opcional após a ação - pode ser usado para refresh de dados
+        }}
+      />
+
       {/* Header */}
       <div className="mb-6">
         <Button
@@ -184,14 +220,14 @@ export function NotificationsPage({
               className={`p-5 ${index !== filteredNotifications.length - 1
                 ? 'border-b border-gray-200 dark:border-gray-800'
                 : ''
-                } hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-500 group ${
+                } hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-300 group ${
                 !notification.isRead ? 'bg-purple-50/50 dark:bg-purple-900/10' : ''
                 } ${
                 animatingId === notification.id
-                  ? 'ring-4 ring-purple-400 dark:ring-purple-600 animate-pulse bg-purple-100/80 dark:bg-purple-900/40 scale-[1.01] shadow-xl'
+                  ? 'ring-4 ring-purple-400 dark:ring-purple-600 bg-purple-100/80 dark:bg-purple-900/40 scale-[1.02] shadow-2xl'
                   : ''
                 }`}
-              onClick={() => onMarkAsRead(notification.id)}
+              onClick={() => handleNotificationClick(notification)}
             >
               <div className="flex gap-4">
                 <div
@@ -199,11 +235,10 @@ export function NotificationsPage({
                     ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                     }`}
-                  onClick={() => onMarkAsRead(notification.id)}
                 >
                   {getIconComponent(notification.icon)}
                 </div>
-                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onMarkAsRead(notification.id)}>
+                <div className="flex-1 min-w-0 cursor-pointer">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className={`font-semibold ${!notification.isRead
                       ? 'text-gray-900 dark:text-gray-100'

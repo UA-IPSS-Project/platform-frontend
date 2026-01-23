@@ -26,6 +26,7 @@ interface WeeklyScheduleProps {
   onRefresh?: () => Promise<void>;
   onBlockSchedule?: () => void;
   refreshTrigger?: number;
+  highlightedSlot?: { date: Date; time: string } | null;
 }
 
 const generateTimeSlots = () => {
@@ -43,7 +44,7 @@ const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot }: Readonly<WeeklyScheduleProps>) {
   const isMobile = useIsMobile();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -83,6 +84,44 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const timeSlots = generateTimeSlots();
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
+  const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+
+  // Gerar ID estável para slot (formato: slot-YYYY-MM-DD-HHMM)
+  const getSlotId = (date: Date, time: string) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const timeFormatted = time.replace(':', '');
+    return `slot-${year}-${month}-${day}-${timeFormatted}`;
+  };
+
+  // Efeito para scroll e highlight quando highlightedSlot muda
+  useEffect(() => {
+    if (!highlightedSlot) {
+      setActiveHighlight(null);
+      return;
+    }
+
+    const slotId = getSlotId(highlightedSlot.date, highlightedSlot.time);
+    const element = document.getElementById(slotId);
+
+    if (element) {
+      // Scroll suave até o elemento
+      setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+
+      // Ativar highlight
+      setActiveHighlight(slotId);
+
+      // Remover highlight após 5 segundos (3 ciclos de 1.5s)
+      const timer = setTimeout(() => {
+        setActiveHighlight(null);
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedSlot]);
 
   const isSlotBooked = (date: Date, time: string) => {
     return bookingSource.some(apt => {
@@ -900,9 +939,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       return 'Clique para ver detalhes';
                     };
 
+                    // Gerar ID estável para este slot
+                    const slotId = getSlotId(day, time);
+                    const isActiveHighlight = activeHighlight === slotId;
+
                     return (
                       <button
                         key={idx}
+                        id={slotId}
                         onClick={() => handleSlotClick(day, time)}
                         disabled={inPast && !appointment}
                         style={appointment?.status === 'no-show' ? { backgroundColor: '#f97316', borderColor: '#ea580c', color: 'white' } : {}}
@@ -912,7 +956,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           : booked
                             ? appointmentStyles
                             : available
-                          }`}
+                          } ${isActiveHighlight ? 'slot-highlight' : ''}`}
                       >
                         {(() => {
                           // Render blocked status (Administrative)

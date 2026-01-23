@@ -8,6 +8,7 @@ export interface Notificacao {
     tipo: 'LEMBRETE' | 'CANCELAMENTO' | 'FICHEIRO' | 'SISTEMA';
     lida: boolean;
     dataCriacao: string;
+    metadata?: Record<string, any>;
 }
 
 export const notificationsApi = {
