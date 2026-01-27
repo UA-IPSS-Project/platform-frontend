@@ -1,19 +1,24 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { toast } from 'sonner';
 import { TermsOfUseModal } from './TermsOfUseModal';
+import { GlassCard } from './ui/glass-card';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface NewPasswordFormProps {
   onSuccess?: () => void;
+  isDarkMode?: boolean;
 }
 
-export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
+export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFormProps) {
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeat, setShowRepeat] = useState(false);
+
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
@@ -48,8 +53,15 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
   };
 
   return (
-    <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 transition-colors duration-300">
-      <div className="text-center mb-6">
+    <GlassCard className="w-full max-w-md p-8 border border-white/20 dark:border-gray-700/30">
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <img
+            src={isDarkMode ? "/assets/LogoModoEscuro1.png" : "/assets/LogoSemTextoUltimo.png"}
+            alt="Logo Florinhas"
+            className="h-16 w-auto object-contain"
+          />
+        </div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Definir Nova Palavra-Passe</h1>
         <p className="text-gray-600 dark:text-gray-400">Por favor, defina uma palavra-passe segura para aceder à sua conta.</p>
       </div>
@@ -57,33 +69,57 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="newPassword" className="text-gray-700 dark:text-gray-300">Nova Palavra-Passe</Label>
-          <Input
-            id="newPassword"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (errors.password) setErrors({ ...errors, password: undefined });
-            }}
-            className={`${errors.password ? 'border-red-500' : ''}`}
-          />
+          <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
+            ? 'border-red-500 focus-within:ring-red-500/50'
+            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
+            } bg-gray-50 dark:bg-gray-700`}>
+            <input
+              id="newPassword"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: undefined });
+              }}
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="repeatPassword" className="text-gray-700 dark:text-gray-300">Repetir Palavra-Passe</Label>
-          <Input
-            id="repeatPassword"
-            type="password"
-            placeholder="••••••••"
-            value={repeat}
-            onChange={(e) => {
-              setRepeat(e.target.value);
-              if (errors.repeat) setErrors({ ...errors, repeat: undefined });
-            }}
-            className={`${errors.repeat ? 'border-red-500' : ''}`}
-          />
+          <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.repeat
+            ? 'border-red-500 focus-within:ring-red-500/50'
+            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
+            } bg-gray-50 dark:bg-gray-700`}>
+            <input
+              id="repeatPassword"
+              type={showRepeat ? 'text' : 'password'}
+              placeholder="••••••••"
+              value={repeat}
+              onChange={(e) => {
+                setRepeat(e.target.value);
+                if (errors.repeat) setErrors({ ...errors, repeat: undefined });
+              }}
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+            />
+            <button
+              type="button"
+              onClick={() => setShowRepeat(!showRepeat)}
+              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+            >
+              {showRepeat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
           {errors.repeat && <p className="text-red-500 text-sm">{errors.repeat}</p>}
         </div>
 
@@ -140,6 +176,6 @@ export default function NewPasswordForm({ onSuccess }: NewPasswordFormProps) {
           if (errors.termsAccepted) setErrors({ ...errors, termsAccepted: undefined });
         }}
       />
-    </div>
+    </GlassCard>
   );
 }

@@ -76,7 +76,7 @@ function App() {
 
         {/* Theme Toggle - Only show specific pages or always? Keeping logic: not on dashboard if dashboard handles it */}
         {/* Actually dashboards have their own toggles often, but global one is useful outside */}
-        {!isAuthenticated && (
+        {(!isAuthenticated || location.pathname === '/set-password') && (
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="absolute top-6 right-6 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
@@ -118,7 +118,10 @@ function App() {
             <Route path="/set-password" element={
               isAuthenticated ? (
                 <div className="min-h-screen flex items-center justify-center p-4">
-                  <NewPasswordForm onSuccess={() => navigate('/dashboard')} />
+                  <NewPasswordForm
+                    onSuccess={() => navigate('/dashboard')}
+                    isDarkMode={isDarkMode}
+                  />
                 </div>
               ) : <Navigate to="/login" replace />
             } />
