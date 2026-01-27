@@ -39,7 +39,7 @@ export async function apiRequest<T>(
   };
 
   try {
-    console.log(`API Request: ${config.method || 'GET'} ${url}`);
+
     const response = await fetch(url, config);
 
     // Check if response is ok
@@ -413,6 +413,36 @@ export const utilizadoresApi = {
   aprovarFuncionario: (id: number) =>
     apiRequest<void>(`/api/utilizadores/${id}/aprovar`, {
       method: 'PUT',
+    }),
+
+  // Novos endpoints para Gestão da Secretaria
+  searchByNifForRecovery: (nif: string) =>
+    apiRequest<UtilizadorInfo>(`/api/utilizadores/recovery/search/${nif}`, {
+      method: 'GET',
+    }),
+
+  createBySecretary: (data: {
+    name: string;
+    nif: string;
+    contact: string;
+    email: string;
+    birthDate: string; // YYYY-MM-DD
+    isEmployee: boolean;
+    role?: string;
+  }) =>
+    apiRequest<UtilizadorInfo>('/api/utilizadores/create-by-secretary', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  recoverAccount: (data: {
+    nif: string;
+    updatedEmail?: string;
+    updatedContact?: string;
+  }) =>
+    apiRequest<void>('/api/utilizadores/recover', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
 };
 

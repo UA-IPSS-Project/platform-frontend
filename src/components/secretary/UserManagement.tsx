@@ -5,24 +5,67 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
-import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { GlassCard } from '../ui/glass-card';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "../ui/alert-dialog";
+import {
+    validateName,
+    validateNIF,
+    validateContact,
+    validateBirthDate,
+    validateEmail
+} from '../../lib/validations';
 
 interface UserManagementProps {
     isDarkMode: boolean;
 }
 
 export function UserManagement({ isDarkMode }: UserManagementProps) {
+    // State for Create Account Form
     const [formData, setFormData] = useState({
         nif: '',
         name: '',
         contact: '',
         isEmployee: false,
         role: '',
+        email: '',
+        birthDate: '',
+    });
+    const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto');
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // State for "User Exists" Dialog
+    const [showUserExistsDialog, setShowUserExistsDialog] = useState(false);
+    const [existingUserForDialog, setExistingUserForDialog] = useState<any | null>(null);
+
+    // State for "User Not Found" Dialog
+    const [showUserNotFoundDialog, setShowUserNotFoundDialog] = useState(false);
+    const [searchedNifForDialog, setSearchedNifForDialog] = useState('');
+
+    // State for Recover Account Form
+    const [recoverData, setRecoverData] = useState({
+        nifSearch: '',
+        foundUser: null as any | null, // Stores the user data if found
+        // Editable fields for recovery
+        name: '',
+        birthDate: '',
+        contact: '',
         email: ''
     });
 
-    const [users, setUsers] = useState<any[]>([]); // Use appropriate type if possible
+    const [activeSection, setActiveSection] = useState<'create' | 'recover'>('create');
+
+    const [users, setUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -32,7 +75,6 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         setCurrentPage(1);
     }, [searchQuery]);
 
-    // Fetch users on mount
     useEffect(() => {
         fetchUsers();
     }, []);
@@ -44,36 +86,294 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             setUsers(data);
         } catch (error) {
             console.error("Failed to fetch users", error);
-            // toast.error("Erro ao carregar utilizadores");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Helper functions for email generation (from RegisterForm)
+    const normalizeString = (str: string) => {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    };
+
+    const generateInstitutionalEmail = (fullName: string) => {
+        if (!fullName) return '';
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length === 0) return '';
+
+        // First name
+        const first = normalizeString(parts[0]);
+        if (parts.length === 1) return `${first}@florinhasdovouga.pt`;
+
+        // Last name
+        const last = normalizeString(parts[parts.length - 1]);
+
+        // Middle initials
+        let middles = '';
+        if (parts.length > 2) {
+            for (let i = 1; i < parts.length - 1; i++) {
+                const p = normalizeString(parts[i]);
+                if (p.length > 0) middles += p[0];
+            }
+        }
+
+        return `${first}${middles}${last}@florinhasdovouga.pt`;
+    };
+
+    // Auto-update email for employees
+    useEffect(() => {
+        if (formData.isEmployee && emailSelection === 'auto') {
+            const generated = generateInstitutionalEmail(formData.name);
+            setFormData(prev => ({ ...prev, email: generated }));
+        }
+    }, [formData.name, formData.isEmployee, emailSelection]);
+
+
     const handleApprove = async (id: number) => {
         try {
             await utilizadoresApi.aprovarFuncionario(id);
             toast.success("Funcionário aprovado com sucesso!");
-            fetchUsers(); // Refresh list
+            fetchUsers();
         } catch (error) {
             toast.error("Erro ao aprovar funcionário");
         }
     };
 
-    const handleClear = () => {
+    const handleClearCreate = () => {
         setFormData({
             nif: '',
             name: '',
             contact: '',
             isEmployee: false,
             role: '',
-            email: ''
+            email: '',
+            birthDate: '',
         });
+        setEmailSelection('auto');
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const checkNifExistence = async () => {
+        // Only check if NIF is valid (9 digits)
+        if (!formData.nif || !validateNIF(formData.nif)) return;
+
+        try {
+            const existingUser = await utilizadoresApi.buscarPorNif(formData.nif);
+            if (existingUser && existingUser.id) {
+                setExistingUserForDialog(existingUser);
+                setShowUserExistsDialog(true);
+            }
+        } catch (err) {
+            // Ignore if not found or error
+        }
+    };
+
+    const handleCreateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        toast.success("Funcionalidade de criação via dashboard em breve.");
+
+        // 1. Reset previous errors
+        setErrors({});
+
+        // 2. Run Validations
+        const newErrors: Record<string, string> = {};
+
+        // NIF
+        if (!formData.nif) {
+            newErrors.nif = 'NIF é obrigatório';
+        } else if (!validateNIF(formData.nif)) {
+            newErrors.nif = 'NIF deve ter 9 dígitos';
+        }
+
+        // Name
+        const nameVal = validateName(formData.name);
+        if (!nameVal.valid) {
+            newErrors.name = nameVal.error || 'Nome inválido';
+        }
+
+        // Contact
+        if (!formData.contact) {
+            newErrors.contact = 'Contacto é obrigatório';
+        } else if (!validateContact(formData.contact)) {
+            newErrors.contact = 'Contacto deve ter 9 dígitos';
+        }
+
+        // Email
+        if (!formData.email) {
+            newErrors.email = 'Email é obrigatório';
+        } else if (!validateEmail(formData.email)) {
+            newErrors.email = 'Email inválido';
+        }
+        // Institutional Check
+        if (formData.isEmployee && !formData.email.endsWith('@florinhasdovouga.pt')) {
+            newErrors.email = 'Funcionários devem usar email institucional (@florinhasdovouga.pt)';
+        }
+
+        // BirthDate
+        if (!formData.birthDate) {
+            newErrors.birthDate = 'Data de nascimento é obrigatória';
+        } else {
+            const birthVal = validateBirthDate(formData.birthDate); // Expects dd/mm/yyyy usually, but input date is yyyy-mm-dd
+            // The input type="date" gives YYYY-MM-DD. functional validation expects dd/mm/yyyy
+            // Let's adapt or ensure we pass what it expects.
+            // validateBirthDate expects dd/mm/yyyy.
+            const [y, m, d] = formData.birthDate.split('-');
+            const formattedDate = `${d}/${m}/${y}`;
+            const birthValCheck = validateBirthDate(formattedDate);
+            if (!birthValCheck.valid) {
+                newErrors.birthDate = birthValCheck.error || 'Data inválida';
+            }
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            toast.error("Corrija os erros no formulário");
+            return;
+        }
+
+        try {
+            // 3. Check if user already exists
+            try {
+                const existingUser = await utilizadoresApi.buscarPorNif(formData.nif);
+                if (existingUser && existingUser.id) {
+                    // User Exists! Show Dialog
+                    setExistingUserForDialog(existingUser);
+                    setShowUserExistsDialog(true);
+                    return;
+                }
+            } catch (err) {
+                // If 404/Not Found, good to proceed. If other error, maybe warn but usually 404 means safe to create.
+                // Depending on API implementation, it might throw error if not found.
+            }
+
+            // 4. Create Account
+            await utilizadoresApi.createBySecretary({
+                name: formData.name,
+                nif: formData.nif,
+                contact: formData.contact,
+                email: formData.email,
+                birthDate: formData.birthDate,
+                isEmployee: formData.isEmployee,
+                role: formData.role
+            });
+            toast.success(`Conta criada! Email de ativação enviado para ${formData.email}`);
+            handleClearCreate();
+            fetchUsers();
+        } catch (error: any) {
+            toast.error(error.message || "Erro ao criar conta");
+        }
+    };
+
+    const handleConfirmUpdateExisting = () => {
+        if (!existingUserForDialog) return;
+
+        // 1. Close Dialog
+        setShowUserExistsDialog(false);
+
+        // 2. Switch to Recover Mode
+        setActiveSection('recover');
+
+        // 3. Pre-fill Recovery Data
+        setRecoverData({
+            nifSearch: existingUserForDialog.nif,
+            foundUser: existingUserForDialog,
+            name: existingUserForDialog.nome,
+            birthDate: existingUserForDialog.dataNascimento || '',
+            contact: existingUserForDialog.telefone,
+            email: existingUserForDialog.email
+        });
+
+        // 4. Clear existing user temp state
+        setExistingUserForDialog(null);
+
+        toast.info("Redirecionado para recuperação de conta do utilizador existente.");
+    };
+
+    const handleConfirmCreateNew = () => {
+        // 1. Close Dialog
+        setShowUserNotFoundDialog(false);
+
+        // 2. Switch to Create Mode
+        setActiveSection('create');
+        handleClearCreate(); // Reset first
+
+        // 3. Pre-fill NIF in Create Form
+        setFormData(prev => ({
+            ...prev,
+            nif: searchedNifForDialog
+        }));
+
+        // 4. Reset temp state
+        setSearchedNifForDialog('');
+
+        toast.info("Redirecionado para criação de conta com o NIF não encontrado.");
+    };
+
+    const handleSearchForRecovery = async () => {
+        // Reset recovery data except search field (or keep it?)
+        setRecoverData(prev => ({ ...prev, foundUser: null }));
+
+        if (!recoverData.nifSearch) {
+            toast.error("Insira um NIF para pesquisar");
+            return;
+        }
+
+        if (!validateNIF(recoverData.nifSearch)) {
+            toast.error("NIF inválido (deve ter 9 dígitos)");
+            return;
+        }
+
+        try {
+            const user = await utilizadoresApi.searchByNifForRecovery(recoverData.nifSearch);
+            setRecoverData(prev => ({
+                ...prev,
+                foundUser: user,
+                name: user.nome,
+                birthDate: user.dataNascimento || '',
+                contact: user.telefone,
+                email: user.email
+            }));
+            toast.success("Utilizador encontrado!");
+        } catch (error) {
+            // User Not Found!
+            setSearchedNifForDialog(recoverData.nifSearch);
+            setShowUserNotFoundDialog(true);
+        }
+    };
+
+    const handleRecoverSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!recoverData.foundUser) return;
+
+        // Validation
+        if (recoverData.contact && !validateContact(recoverData.contact)) {
+            toast.error("Contacto inválido (deve ter 9 dígitos)");
+            return;
+        }
+        if (recoverData.email && !validateEmail(recoverData.email)) {
+            toast.error("Email inválido");
+            return;
+        }
+
+        try {
+            await utilizadoresApi.recoverAccount({
+                nif: recoverData.foundUser.nif,
+                updatedEmail: recoverData.email !== recoverData.foundUser.email ? recoverData.email : undefined,
+                updatedContact: recoverData.contact !== recoverData.foundUser.telefone ? recoverData.contact : undefined
+            });
+
+            toast.success(`Recuperação iniciada! Código enviado para ${recoverData.email}`);
+
+            // Reset recovery form
+            setRecoverData({
+                nifSearch: '',
+                foundUser: null,
+                name: '',
+                birthDate: '',
+                contact: '',
+                email: ''
+            });
+        } catch (error: any) {
+            toast.error(error.message || "Erro ao recuperar conta");
+        }
     };
 
     // Filter users
@@ -98,131 +398,349 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
-                {/* Left Panel: Create Account Form */}
-                <div className="w-full md:w-[450px] flex-shrink-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-xl p-8 shadow-sm border border-white/20 dark:border-gray-700/30">
-                    <div className="flex items-center gap-4 mb-8">
-                        <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center text-white shadow-lg shadow-purple-200 dark:shadow-purple-900/20">
-                            <UserPlus className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Criação de Conta</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Registar novo utente ou funcionário</p>
-                        </div>
-                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-gray-700 dark:text-gray-300 font-medium">NIF *</Label>
-                                <Input
-                                    placeholder="Número de identificação fiscal"
-                                    className="bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11"
-                                    value={formData.nif}
-                                    onChange={e => setFormData({ ...formData, nif: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-gray-700 dark:text-gray-300 font-medium">Nome Completo *</Label>
-                                <Input
-                                    placeholder="Nome e apelido"
-                                    className="bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11"
-                                    value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                />
-                            </div>
-                        </div>
+                {/* Left Panel: Accordion for Create / Recover */}
+                <div className="w-full md:w-[450px] flex-shrink-0 flex flex-col gap-4">
 
-                        <div className="space-y-2">
-                            <Label className="text-gray-700 dark:text-gray-300 font-medium">Contacto</Label>
-                            <Input
-                                placeholder="Número de telefone"
-                                className="bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11"
-                                value={formData.contact}
-                                onChange={e => setFormData({ ...formData, contact: e.target.value })}
-                            />
-                        </div>
-
-                        {/* Employee Checkbox Area */}
-                        <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-xl border border-purple-100 dark:border-purple-800/30">
-                            <div className="flex items-start gap-3">
-                                <Checkbox
-                                    id="isEmployee"
-                                    className="mt-1 data-[state=checked]:bg-purple-600 border-purple-300 dark:border-purple-700"
-                                    checked={formData.isEmployee}
-                                    onCheckedChange={(c) => setFormData({ ...formData, isEmployee: !!c })}
-                                />
-                                <div>
-                                    <label htmlFor="isEmployee" className="font-semibold text-gray-800 dark:text-gray-200 block cursor-pointer">
-                                        É funcionário?
-                                    </label>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                        Marque se esta pessoa é colaboradora da instituição
-                                    </p>
+                    {/* Create Account Section */}
+                    {/* Using Purple for active state */}
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-80 hover:opacity-100'}`}>
+                        <button
+                            onClick={() => setActiveSection('create')}
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeSection === 'create' ? 'bg-purple-600 shadow-purple-200 dark:shadow-purple-900/20' : 'bg-gray-400'}`}>
+                                    <UserPlus className="w-5 h-5" />
+                                </div>
+                                <div className="text-left">
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">Criação de Conta</h2>
+                                    {activeSection !== 'create' && <p className="text-xs text-gray-500">Clique para expandir</p>}
                                 </div>
                             </div>
-                        </div>
+                            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        </button>
 
-                        {/* Conditional Employee Fields */}
-                        {formData.isEmployee && (
-                            <div className="space-y-6 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-medium">
-                                    <span>Dados do Funcionário</span>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-gray-700 dark:text-gray-300 font-medium">Função</Label>
-                                    <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
-                                        <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 h-11">
-                                            <SelectValue placeholder="Selecione a função" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Secretaria">Secretaria</SelectItem>
-                                            <SelectItem value="Balneário Social">Balneário Social</SelectItem>
-                                            <SelectItem value="Escola">Escola</SelectItem>
-                                            <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-gray-700 dark:text-gray-300 font-medium">Email Institucional</Label>
-                                    <div className="relative">
-                                        <Input
-                                            placeholder="email@florinhasdovouga.pt"
-                                            className="pl-12 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 focus:ring-purple-500 h-11 text-sm"
-                                            value={formData.email}
-                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        />
+                        {activeSection === 'create' && (
+                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                <form onSubmit={handleCreateSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">NIF *</Label>
+                                            <Input
+                                                placeholder="123456789"
+                                                maxLength={9}
+                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.nif ? 'border-red-500' : ''}`}
+                                                value={formData.nif}
+                                                onChange={e => {
+                                                    setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') });
+                                                    if (errors.nif) setErrors({ ...errors, nif: '' });
+                                                }}
+                                                onBlur={checkNifExistence}
+                                            />
+                                            {errors.nif && <p className="text-red-500 text-xs">{errors.nif}</p>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Contacto *</Label>
+                                            <Input
+                                                placeholder="912345678"
+                                                maxLength={9}
+                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.contact ? 'border-red-500' : ''}`}
+                                                value={formData.contact}
+                                                onChange={e => {
+                                                    setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') });
+                                                    if (errors.contact) setErrors({ ...errors, contact: '' });
+                                                }}
+                                            />
+                                            {errors.contact && <p className="text-red-500 text-xs">{errors.contact}</p>}
+                                        </div>
                                     </div>
-                                </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Nome Completo *</Label>
+                                        <Input
+                                            placeholder="Nome e apelido"
+                                            className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.name ? 'border-red-500' : ''}`}
+                                            value={formData.name}
+                                            onChange={e => {
+                                                setFormData({ ...formData, name: e.target.value });
+                                                if (errors.name) setErrors({ ...errors, name: '' });
+                                            }}
+                                        />
+                                        {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Data de Nascimento *</Label>
+                                        <Input
+                                            type="date"
+                                            className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
+                                            value={formData.birthDate}
+                                            onChange={e => {
+                                                setFormData({ ...formData, birthDate: e.target.value });
+                                                if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                                            }}
+                                        />
+                                        {errors.birthDate && <p className="text-red-500 text-xs">{errors.birthDate}</p>}
+                                    </div>
+
+                                    {/* Employee Toggle */}
+                                    <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800/30">
+                                        <div className="flex items-start gap-3">
+                                            <Checkbox
+                                                id="isEmployee"
+                                                className="mt-1 data-[state=checked]:bg-purple-600 border-purple-300 dark:border-purple-700"
+                                                checked={formData.isEmployee}
+                                                onCheckedChange={(c) => setFormData({ ...formData, isEmployee: !!c })}
+                                            />
+                                            <div>
+                                                <label htmlFor="isEmployee" className="font-semibold text-sm text-gray-800 dark:text-gray-200 block cursor-pointer">
+                                                    É funcionário?
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {formData.isEmployee ? (
+                                        <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
+                                            <div className="space-y-2">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Função</Label>
+                                                <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
+                                                    <SelectTrigger className="bg-white dark:bg-gray-900 h-9 text-sm">
+                                                        <SelectValue placeholder="Selecione" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Secretaria">Secretaria</SelectItem>
+                                                        <SelectItem value="Balneário Social">Balneário Social</SelectItem>
+                                                        <SelectItem value="Escola">Escola</SelectItem>
+                                                        <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email Institucional</Label>
+
+                                                {/* Auto/Manual Toggle for Institutional Email */}
+                                                <div className="space-y-3">
+                                                    {/* Option 1: Auto Generated */}
+                                                    <div
+                                                        onClick={() => setEmailSelection('auto')}
+                                                        className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'auto'
+                                                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
+                                                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                                                            }`}
+                                                    >
+                                                        <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'auto'
+                                                            ? 'border-purple-600 bg-purple-600'
+                                                            : 'border-gray-300 dark:border-gray-600'
+                                                            }`}>
+                                                            {emailSelection === 'auto' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                                {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome)'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Option 2: Manual Entry */}
+                                                    <div
+                                                        onClick={() => setEmailSelection('manual')}
+                                                        className={`flex flex-col gap-2 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'manual'
+                                                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
+                                                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'manual'
+                                                                ? 'border-purple-600 bg-purple-600'
+                                                                : 'border-gray-300 dark:border-gray-600'
+                                                                }`}>
+                                                                {emailSelection === 'manual' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                            </div>
+                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                                Outro
+                                                            </span>
+                                                        </div>
+
+                                                        {emailSelection === 'manual' && (
+                                                            <div className="flex items-center gap-2 pl-7 animate-in">
+                                                                <Input
+                                                                    type="text"
+                                                                    placeholder="nome"
+                                                                    value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
+                                                                    onChange={(e) => {
+                                                                        const prefix = e.target.value.split('@')[0];
+                                                                        setFormData({ ...formData, email: prefix + '@florinhasdovouga.pt' });
+                                                                    }}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    className="h-8 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-xs"
+                                                                />
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">@florinhas...</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email *</Label>
+                                            <Input
+                                                type="email"
+                                                placeholder="email@exemplo.pt"
+                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
+                                                value={formData.email}
+                                                onChange={e => {
+                                                    setFormData({ ...formData, email: e.target.value });
+                                                    if (errors.email) setErrors({ ...errors, email: '' });
+                                                }}
+                                            />
+                                            {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-3 pt-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="flex-1 h-9 text-xs"
+                                            onClick={handleClearCreate}
+                                        >
+                                            Limpar
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            className="flex-1 h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium"
+                                        >
+                                            <UserPlus className="w-3 h-3 mr-2" />
+                                            Criar
+                                        </Button>
+                                    </div>
+                                </form>
                             </div>
                         )}
+                    </GlassCard>
 
-                        <div className="flex gap-3 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex-1 h-11 border-gray-200 hover:bg-gray-50 text-gray-700"
-                                onClick={handleClear}
-                            >
-                                Limpar
-                            </Button>
-                            <Button
-                                type="submit"
-                                className="flex-1 h-11 bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-200 dark:shadow-purple-900/20 font-medium"
-                            >
-                                <Send className="w-4 h-4 mr-2" />
-                                Notificar
-                            </Button>
-                        </div>
-                    </form>
+                    {/* Recover Account Section */}
+                    {/* Using Purple (or consistent theme) instead of Blue, per request */}
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'recover' ? 'ring-2 ring-purple-500/30' : 'opacity-80 hover:opacity-100'}`}>
+                        <button
+                            onClick={() => setActiveSection('recover')}
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-4">
+                                {/* Changed icon background from blue to purple to match theme as requested */}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeSection === 'recover' ? 'bg-purple-600 shadow-purple-200 dark:shadow-purple-900/20' : 'bg-gray-400'}`}>
+                                    <Lock className="w-5 h-5" />
+                                </div>
+                                <div className="text-left">
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">Recuperação de Conta</h2>
+                                    {activeSection !== 'recover' && <p className="text-xs text-gray-500">Clique para expandir</p>}
+                                </div>
+                            </div>
+                            {activeSection === 'recover' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                        </button>
+
+                        {activeSection === 'recover' && (
+                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                <form onSubmit={handleRecoverSubmit} className="space-y-4">
+                                    <p className="text-sm text-gray-500">
+                                        Pesquise pelo NIF para identificar o utilizador e validar a sua identidade.
+                                    </p>
+
+                                    {/* Step 1: Search by NIF */}
+                                    <div className="flex gap-2 items-end">
+                                        <div className="space-y-1 flex-1">
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Pesquisar NIF</Label>
+                                            <Input
+                                                placeholder="NIF do utilizador"
+                                                maxLength={9}
+                                                className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                value={recoverData.nifSearch}
+                                                onChange={e => setRecoverData({ ...recoverData, nifSearch: e.target.value.replace(/\D/g, '') })}
+                                            />
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            onClick={handleSearchForRecovery}
+                                            className="h-9 bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200"
+                                        >
+                                            <Search className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+
+                                    {/* Step 2: Confirm Identity & Edit Contact */}
+                                    {recoverData.foundUser && (
+                                        <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2 fade-in">
+                                            <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800/30 mb-2">
+                                                <p className="text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2">
+                                                    <Check className="w-3 h-3" />
+                                                    Identidade Encontrada
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Nome</Label>
+                                                <Input
+                                                    readOnly
+                                                    className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
+                                                    value={recoverData.name}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Data de Nascimento</Label>
+                                                <Input
+                                                    readOnly
+                                                    className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
+                                                    value={recoverData.birthDate}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Contacto (Atualizável)</Label>
+                                                <Input
+                                                    maxLength={9}
+                                                    className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                    value={recoverData.contact}
+                                                    onChange={e => setRecoverData({ ...recoverData, contact: e.target.value.replace(/\D/g, '') })}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email (Atualizável)</Label>
+                                                <Input
+                                                    className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                    value={recoverData.email}
+                                                    onChange={e => setRecoverData({ ...recoverData, email: e.target.value })}
+                                                />
+                                            </div>
+
+                                            <Button
+                                                type="submit"
+                                                className="w-full h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium mt-2"
+                                            >
+                                                <Send className="w-3 h-3 mr-2" />
+                                                Notificar Recuperação
+                                            </Button>
+                                        </div>
+                                    )}
+                                </form>
+                            </div>
+                        )}
+                    </GlassCard>
+
                 </div>
 
                 {/* Right Panel: Registered Users List */}
-                <div className="flex-1 w-full min-w-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-xl p-8 shadow-sm h-full flex flex-col border border-white/20 dark:border-gray-700/30">
+                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-white/20 dark:border-gray-700/30">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500">
+                            {/* Changed icon background from blue to purple */}
+                            <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600">
+                                <Users className="w-6 h-6" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold text-gray-800 dark:text-white">Utilizadores Registados</h2>
@@ -232,13 +750,22 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                 </div>
                             </div>
                         </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={fetchUsers}
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
                     </div>
 
                     {/* Search */}
                     <div className="relative mb-6">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                             placeholder="Pesquisar por nome ou NIF..."
-                            className="h-11 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 text-sm"
+                            className="h-10 pl-9 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 text-sm"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -342,8 +869,58 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                             </div>
                         </div>
                     )}
-                </div>
+                </GlassCard>
             </div>
+
+            {/* Existing User Dialog */}
+            <AlertDialog open={showUserExistsDialog} onOpenChange={setShowUserExistsDialog}>
+                <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Este utente já existe!</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+                            Já existe um registo com o NIF <strong>{existingUserForDialog?.nif}</strong>.
+                            <br /><br />
+                            <strong>Nome:</strong> {existingUserForDialog?.nome}
+                            <br />
+                            <strong>Email:</strong> {existingUserForDialog?.email}
+                            <br /><br />
+                            Gostaria de modificar os dados de contacto do utente?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowUserExistsDialog(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmUpdateExisting}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            Sim, atualizar dados
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* User Not Found Dialog (Recovery -> Create) */}
+            <AlertDialog open={showUserNotFoundDialog} onOpenChange={setShowUserNotFoundDialog}>
+                <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Utente não encontrado</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+                            Não existe nenhum registo com o NIF <strong>{searchedNifForDialog}</strong>.
+                            <br /><br />
+                            Gostaria de criar uma nova conta com este NIF?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowUserNotFoundDialog(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmCreateNew}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            Sim, criar nova conta
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

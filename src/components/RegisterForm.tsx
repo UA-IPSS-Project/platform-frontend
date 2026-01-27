@@ -8,6 +8,7 @@ import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as Use
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { GlassCard } from './ui/glass-card';
 import { LightSwitch } from './ui/light-switch';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -232,7 +233,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   };
 
   return (
-    <div className="w-full max-w-md bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl shadow-2xl p-8 transition-colors duration-300 border border-white/20 dark:border-gray-700/30">
+    <GlassCard className="w-full max-w-md p-8 border border-white/20 dark:border-gray-700/30">
       <button
         onClick={onNavigateToLogin}
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6 transition-colors"
@@ -269,7 +270,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.name ? 'border-red-500' : ''
               }`}
           />
-          
+
           {errors.name && (
             <div className="text-red-500 text-sm mt-1 ml-1 space-y-0.5">
               {errors.name.split('\n').filter(Boolean).map((msg, idx) => (
@@ -596,6 +597,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           }
         }}
       />
-    </div>
+    </GlassCard>
   );
 }

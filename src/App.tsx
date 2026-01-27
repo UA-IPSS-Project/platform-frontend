@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
 import NewPasswordForm from './components/NewPasswordForm';
@@ -18,10 +20,12 @@ function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   };
 
-  const [currentView, setCurrentView] = useState<'login' | 'register' | 'dashboard' | 'set-new-password'>('login');
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -30,27 +34,31 @@ function App() {
     } else {
       root.classList.remove('dark');
     }
-
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
 
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      if (!user.active) {
-        setCurrentView('set-new-password');
-      } else {
-        setCurrentView('dashboard');
-      }
-    } else {
-      setCurrentView('login');
+  // Protected Route Component
+  const ProtectedRoute = ({ children }: { children: any }) => {
+    if (isLoading) return null;
+
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
     }
-  }, [isAuthenticated, user]);
+
+    if (user && !user.active) {
+      // Allow access to set-password even if not active (technically active=false means they need to set password)
+      // But if they are here, they should be redirected to set-password
+      // effectively preventing dashboard access
+      return <Navigate to="/set-password" replace />;
+    }
+
+    return children;
+  };
 
   const handleLogout = () => {
     logout();
-    setCurrentView('login');
+    navigate('/login');
   };
 
   if (isLoading) {
@@ -64,13 +72,11 @@ function App() {
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen relative overflow-hidden transition-colors duration-300">
-        {/* Animated background */}
         <AbstractBackground isDarkMode={isDarkMode} />
 
-        {/* Logo removed from corner as requested */}
-
-        {/* Theme Toggle - Only show on login/register */}
-        {currentView !== 'dashboard' && (
+        {/* Theme Toggle - Only show specific pages or always? Keeping logic: not on dashboard if dashboard handles it */}
+        {/* Actually dashboards have their own toggles often, but global one is useful outside */}
+        {!isAuthenticated && (
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="absolute top-6 right-6 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
@@ -84,83 +90,87 @@ function App() {
           </button>
         )}
 
-        {/* Content */}
-        {currentView === 'dashboard' && isAuthenticated && user ? (
-          <div className="relative z-10 min-h-screen w-full">
-            {user.role === 'FUNCIONARIO' ? (
-              <SecretaryDashboard
-                user={{
-                  name: user.nome || '',
-                  nif: user.nif || '',
-                  contact: user.telefone || '',
-                  email: user.email || ''
-                }}
-                onLogout={handleLogout}
-                isDarkMode={isDarkMode}
-                onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-              />
-            ) : (
-              <UserDashboard
-                user={{
-                  name: user.nome || '',
-                  nif: user.nif || '',
-                  contact: user.telefone || '',
-                  email: user.email || ''
-                }}
-                onLogout={handleLogout}
-                isDarkMode={isDarkMode}
-                onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-              />
-            )}
-          </div>
-        ) : (
-          <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-            {currentView === 'login' && (
-              <LoginForm
-                isDarkMode={isDarkMode}
-                onNavigateToRegister={(type) => {
-                  setRegisterInitialType(type ?? 'user');
-                  setCurrentView('register');
-                }}
-              />
-            )}
-            {currentView === 'register' && (
-              <RegisterForm
-                onNavigateToLogin={() => setCurrentView('login')}
-                initialAccountType={registerInitialType}
-              />
-            )}
-            {currentView === 'set-new-password' && (
-              <NewPasswordForm onSuccess={() => setCurrentView('dashboard')} />
-            )}
-          </div>
-        )}
+        <div className="relative z-10 min-h-screen w-full">
+          <Routes>
+            <Route path="/login" element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> :
+                <div className="min-h-screen flex items-center justify-center p-4">
+                  <LoginForm
+                    isDarkMode={isDarkMode}
+                    onNavigateToRegister={(type) => {
+                      setRegisterInitialType(type ?? 'user');
+                      navigate('/register');
+                    }}
+                  />
+                </div>
+            } />
+
+            <Route path="/register" element={
+              isAuthenticated ? <Navigate to="/dashboard" replace /> :
+                <div className="min-h-screen flex items-center justify-center p-4">
+                  <RegisterForm
+                    onNavigateToLogin={() => navigate('/login')}
+                    initialAccountType={registerInitialType}
+                  />
+                </div>
+            } />
+
+            <Route path="/set-password" element={
+              isAuthenticated ? (
+                <div className="min-h-screen flex items-center justify-center p-4">
+                  <NewPasswordForm onSuccess={() => navigate('/dashboard')} />
+                </div>
+              ) : <Navigate to="/login" replace />
+            } />
+
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                {user ? (
+                  user.role === 'FUNCIONARIO' ? (
+                    <SecretaryDashboard
+                      user={{
+                        name: user.nome || '',
+                        nif: user.nif || '',
+                        contact: user.telefone || '',
+                        email: user.email || ''
+                      }}
+                      onLogout={handleLogout}
+                      isDarkMode={isDarkMode}
+                      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                    />
+                  ) : (
+                    <UserDashboard
+                      user={{
+                        name: user.nome || '',
+                        nif: user.nif || '',
+                        contact: user.telefone || '',
+                        email: user.email || ''
+                      }}
+                      onLogout={handleLogout}
+                      isDarkMode={isDarkMode}
+                      onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                    />
+                  )
+                ) : null}
+              </ProtectedRoute>
+            } />
+
+            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+          </Routes>
+        </div>
+
       </div>
 
       <style>{`
         @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
+          0% { transform: translate(0px, 0px) scale(1); }
+          33% { transform: translate(30px, -50px) scale(1.1); }
+          66% { transform: translate(-20px, 20px) scale(0.9); }
+          100% { transform: translate(0px, 0px) scale(1); }
         }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
       `}</style>
       <Toaster richColors position="top-center" closeButton />
     </div>
