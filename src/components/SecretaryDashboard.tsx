@@ -79,7 +79,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const carregarMarcacoes = async () => {
     if (!authUser?.id) return;
     try {
-      const data = await marcacoesApi.obterTodas();
+      const response = await marcacoesApi.obterTodas();
+      const data = response.content;
       const convertidas = data.map(mapApiToAppointment);
       setAppointments(convertidas);
       console.log('Total de marcações carregadas:', convertidas.length);

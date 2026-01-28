@@ -11,13 +11,15 @@ import { ProfilePage } from './ProfilePage';
 import { ClientAppointmentDialog } from './client/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
 import { DayScheduleDialog } from './secretary/DayScheduleDialog';
-import { ArrowLeftIcon, BellIcon, CalendarIcon, FileTextIcon as FolderIcon, HistoryIcon, HomeIcon, LogOutIcon, MenuIcon, UserIcon, ClockIcon, SunIcon, MoonIcon, ClipboardListIcon as ClipboardIcon } from './CustomIcons';
+import { BellIcon, ClockIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon } from './CustomIcons';
 import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useAppointments } from '../hooks/useAppointments';
 
 interface UserDashboardProps {
   user: {
@@ -31,59 +33,21 @@ interface UserDashboardProps {
   onToggleDarkMode: () => void;
 }
 
-type ViewType =
-  | 'appointments'
-  | 'history'
-  | 'profile'
-  | 'settings'
-  | 'notificacoes'
-  | 'balneario'
-  | 'balneario-sobre'
-  | 'voluntariado'
-  | 'voluntariado-sobre'
-  | 'requisitions'
-  | 'valencias'
-  | 'candidaturas'
-  | 'reports'
-  | 'management'
-  | 'material'
-  | 'manutencao'
-  | 'transportes'
-  | 'urgente'
-  | 'escola'
-  | 'creche'
-  | 'catl'
-  | 'erpi'
-  | 'administrative'
-  | 'home';
-
 export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
   const { user: authUser } = useAuth();
-  const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
-  const [blockedAppointments, setBlockedAppointments] = useState<Appointment[]>([]);
-  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
-  // Navigation History Stack
-  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-    const saved = localStorage.getItem('userDashboardView');
-    return saved ? [saved as ViewType] : ['appointments'];
-  });
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const currentView = viewHistory[viewHistory.length - 1] || 'appointments';
+  // Custom Hook for Appointments
+  const {
+    allAppointments,
+    blockedAppointments,
+    isLoading: isLoadingAppointments,
+    refreshAppointments,
+    setAllAppointments
+  } = useAppointments(authUser?.id, authUser?.nif);
 
-  const navigateTo = (view: ViewType) => {
-    setViewHistory(prev => [...prev, view]);
-  };
-
-  const navigateBack = () => {
-    setViewHistory(prev => {
-      if (prev.length > 1) {
-        return prev.slice(0, -1);
-      }
-      return ['appointments'];
-    });
-  };
-  // Monthly view removed - always use weekly schedule
-  const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
+  // States managed locally
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showClientDialog, setShowClientDialog] = useState(false);
   const [editingSlot, setEditingSlot] = useState<{ date: Date; time: string } | null>(null);
@@ -95,106 +59,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
 
-  // Carregar marcações da API
-  const carregarMarcacoes = async () => {
-    if (!authUser?.id) return;
-
-    setIsLoadingAppointments(true);
-    try {
-      // Carregar marcações próprias
-      const marcacoes = await marcacoesApi.obterPorUtente(authUser.id);
-
-      // Converter formato da API para o formato do componente
-      const appointmentsFromAPI: Appointment[] = marcacoes.map((m) => {
-        const dataHora = new Date(m.data);
-
-        // Mapear estado da API para o formato esperado
-        let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'no-show' = 'scheduled';
-        if (m.estado) {
-          const estadoUpper = m.estado.toUpperCase();
-          if (estadoUpper === 'AGENDADO') status = 'scheduled';
-          else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
-          else if (estadoUpper === 'AVISO') status = 'warning';
-          else if (estadoUpper === 'CONCLUIDO') status = 'completed';
-          else if (estadoUpper === 'CANCELADO') status = 'cancelled';
-          else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
-        }
-
-        return {
-          id: m.id.toString(),
-          date: dataHora,
-          time: `${dataHora.getHours().toString().padStart(2, '0')}:${dataHora.getMinutes().toString().padStart(2, '0')}`,
-          duration: 15,
-          patientNIF: authUser?.nif || '',
-          patientName: authUser?.nome || '',
-          patientContact: authUser?.telefone || '',
-          patientEmail: authUser?.email || '',
-          subject: m.marcacaoSecretaria?.assunto || 'Sem assunto',
-          description: m.marcacaoSecretaria?.descricao || '',
-          status: status,
-          attendantName: m.atendenteNome,
-        };
-      });
-
-      setAllAppointments(appointmentsFromAPI);
-
-      const bloqueadas = await marcacoesApi.obterMarcacoesBloqueadas(authUser.id);
-      const blockedFromAPI: Appointment[] = bloqueadas.map((b: any) => {
-        const dataHora = new Date(b.data);
-        const isReserved = b.estado === 'EM_PREENCHIMENTO';
-
-        return {
-          id: b.id.toString(),
-          date: dataHora,
-          time: `${dataHora.getHours().toString().padStart(2, '0')}:${dataHora.getMinutes().toString().padStart(2, '0')}`,
-          duration: 15,
-          patientNIF: '',
-          patientName: isReserved ? 'Reservado' : 'Ocupado',
-          patientContact: '',
-          patientEmail: '',
-          subject: isReserved ? 'Horário Indisponível' : 'Ocupado',
-          description: '',
-          status: isReserved ? 'reserved' : 'scheduled', // 'reserved' fica "reserved", 'scheduled' (de outro) fica bloqueado normal
-        };
-      });
-
-      setBlockedAppointments(blockedFromAPI);
-    } catch (error) {
-      console.error('Erro ao carregar marcações:', error);
-      toast.error('Erro ao carregar marcações');
-    } finally {
-      setIsLoadingAppointments(false);
-    }
-  };
-
-  // Carregar marcações ao montar o componente
-  useEffect(() => {
-    carregarMarcacoes();
-  }, [authUser?.id]);
-
-  // Recarregar marcações quando volta ao separador de appointments
-  useEffect(() => {
-    if (currentView === 'appointments') {
-      carregarMarcacoes();
-    }
-  }, [currentView]);
-
-  // Persist view changes
-  useEffect(() => {
-    localStorage.setItem('userDashboardView', currentView);
-  }, [currentView]);
-
-  // Atualização automática a cada 60 segundos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (currentView === 'appointments') {
-        carregarMarcacoes();
-      }
-    }, 60000); // 60 segundos
-
-    return () => clearInterval(interval);
-  }, [currentView]);
-
+  // Notifications State
   const [notifications, setNotifications] = useState<Notificacao[]>([]);
 
   const carregarNotificacoes = async () => {
@@ -212,52 +77,33 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     }
   }, [authUser?.id]);
 
-  // Atualizar notificações no intervalo
   useEffect(() => {
-    const interval = setInterval(() => {
-      carregarNotificacoes();
-    }, 30000); // 30 segundos
+    const interval = setInterval(carregarNotificacoes, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const handleMarkAsRead = async (id: number) => {
     try {
-      // Optimistic update
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
       await notificationsApi.marcarComoLida(id);
-      // carregarNotificacoes(); // Optional to ensure sync
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    try {
-      setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-    } catch (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
-    }
+    setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
+    try { await notificationsApi.marcarTodasComoLidas(); } catch (e) { console.error(e); }
   };
 
   const handleDeleteNotification = async (id: number) => {
-    try {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-      await notificationsApi.eliminar(id);
-    } catch (error) {
-      console.error('Erro ao eliminar notificação:', error);
-      toast.error('Erro ao eliminar notificação');
-    }
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    try { await notificationsApi.eliminar(id); } catch (e) { console.error(e); }
   };
 
   const handleDeleteAllNotifications = async () => {
-    try {
-      setNotifications([]);
-      await notificationsApi.eliminarTodas();
-      toast.success('Todas as notificações foram eliminadas');
-    } catch (error) {
-      console.error('Erro ao eliminar todas as notificações:', error);
-      toast.error('Erro ao eliminar notificações');
-    }
+    setNotifications([]);
+    try { await notificationsApi.eliminarTodas(); toast.success('Todas as notificações eliminadas'); } catch (e) { console.error(e); }
   };
 
   const unreadCount = notifications.filter(n => !n.lida).length;
@@ -267,83 +113,75 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     [allAppointments, user.nif]
   );
 
+  // Navigation Logic
+  // Derive currentView from path
+  const getCurrentView = () => {
+    const path = location.pathname;
+    if (path.endsWith('/history')) return 'history';
+    if (path.endsWith('/profile')) return 'profile';
+    if (path.endsWith('/notifications')) return 'notificacoes';
+    if (path.includes('/dashboard')) return 'appointments'; // default
+    return 'appointments';
+  };
+
+  const currentView = getCurrentView();
+
+  const handleNavigate = (view: string) => {
+    if (view === 'appointments') navigate('/dashboard');
+    else if (view === 'history') navigate('/dashboard/history');
+    else if (view === 'profile') navigate('/dashboard/profile');
+    else if (view === 'notificacoes') navigate('/dashboard/notifications');
+    else navigate(`/dashboard/${view}`); // Fail-safe for other views
+  };
+
   const handleCreateAppointment = async (date: Date, time: string) => {
-    // Recarregar marcações antes de abrir o dialog
-    await carregarMarcacoes();
+    await refreshAppointments();
     setEditingSlot({ date, time });
     setShowClientDialog(true);
   };
 
   const handleViewAppointment = async (appointment: Appointment) => {
     try {
-      // Fetch fresh data
       const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
-
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
-
-      // Determine if this is own appointment or blocked slot (other user)
-      const isOwnAppointment = utente?.nif === user.nif || appointment.patientNIF === user.nif;
+      const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
 
       let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
-      const estadoUpper = latestData.estado?.toUpperCase();
+      if (latestData.estado === 'EM_PREENCHIMENTO') status = 'reserved';
+      else if (latestData.estado === 'AGENDADO') status = 'scheduled';
+      else if (latestData.estado === 'EM_PROGRESSO') status = 'in-progress';
+      else if (latestData.estado === 'AVISO') status = 'warning';
+      else if (latestData.estado === 'CONCLUIDO') status = 'completed';
+      else if (latestData.estado === 'CANCELADO') status = 'cancelled';
+      else if (latestData.estado === 'NAO_COMPARECIDO') status = 'no-show';
 
-      if (latestData.estado) {
-        if (estadoUpper === 'EM_PREENCHIMENTO') status = 'reserved';
-        else if (estadoUpper === 'AGENDADO') status = 'scheduled';
-        else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
-        else if (estadoUpper === 'AVISO') status = 'warning';
-        else if (estadoUpper === 'CONCLUIDO') status = 'completed';
-        else if (estadoUpper === 'CANCELADO') status = 'cancelled';
-        else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
-      }
-
-      const freshAppointment: Appointment = {
+      const fresh: Appointment = {
         id: latestData.id.toString(),
         version: latestData.version,
         date: dateTime,
         time: dateTime.toTimeString().slice(0, 5),
         duration: 15,
-        // For own appointments show full info, for others show restricted info
-        patientNIF: isOwnAppointment ? (utente?.nif || 'N/A') : '',
-        patientName: isOwnAppointment ? (utente?.nome || 'Nome não disponível') : '',
-        patientContact: isOwnAppointment ? (utente?.telefone || 'N/A') : '',
-        patientEmail: isOwnAppointment ? (utente?.email || 'Email não disponível') : '',
-        subject: isOwnAppointment ? (latestData.marcacaoSecretaria?.assunto || 'Sem assunto') : '',
-        description: isOwnAppointment ? (latestData.marcacaoSecretaria?.descricao || '') : '',
+        patientNIF: isOwn ? utente?.nif || '' : '',
+        patientName: isOwn ? utente?.nome || '' : (status === 'reserved' ? 'Reservado' : 'Ocupado'),
+        patientContact: isOwn ? utente?.telefone || '' : '',
+        patientEmail: isOwn ? utente?.email || '' : '',
+        subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : (status === 'reserved' ? 'Horário Indisponível' : 'Ocupado'),
+        description: isOwn ? latestData.marcacaoSecretaria?.descricao || '' : '',
         status: status,
-        attendantName: latestData.atendenteNome,
+        attendantName: latestData.atendenteNome
       };
 
-      // Update in appropriate list
-      if (isOwnAppointment) {
-        setAllAppointments(prev => prev.map(apt => apt.id === freshAppointment.id ? freshAppointment : apt));
-      } else {
-        // If it's a blocked appointment (other user), update blocked list if needed
-        // Assuming blocked list structure is simpler, but keeping consistency
+      if (isOwn) {
+        setAllAppointments(prev => prev.map(a => a.id === fresh.id ? fresh : a));
       }
-
-      setSelectedAppointment(freshAppointment);
+      setSelectedAppointment(fresh);
       setShowDetailsDialog(true);
-    } catch (error) {
-      console.error('Erro ao atualizar marcação:', error);
-      toast.error('Não foi possível carregar os dados mais recentes da marcação.');
-      carregarMarcacoes();
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao carregar detalhes');
+      refreshAppointments();
     }
-  };
-
-  const handleUpdateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAllAppointments(allAppointments.map((apt) => (apt.id === id ? { ...apt, ...updates } : apt)));
-  };
-
-  const handleUpdateSelectedAppointment = (id: string, updates: Partial<Appointment>) => {
-    handleUpdateAppointment(id, updates);
-  };
-
-  const handleCancelAppointment = (id: string, reason?: string) => {
-    handleUpdateAppointment(id, { status: 'cancelled', cancellationReason: reason });
-    setShowDetailsDialog(false);
-    setSelectedAppointment(null);
   };
 
   const renderPlaceholder = (title: string) => (
@@ -380,7 +218,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <nav className="hidden md:flex items-center gap-1">
                 <Button
                   variant={currentView === 'appointments' ? 'default' : 'ghost'}
-                  onClick={() => navigateTo('appointments')}
+                  onClick={() => navigate('/dashboard')}
                   className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
                 >
                   Secretaria
@@ -394,7 +232,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     { id: 'erpi', label: 'ERPI' },
                   ]}
                   isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-                  onSelect={(id) => navigateTo(id as ViewType)}
+                  onSelect={(id) => navigate(`/dashboard/${id}`)}
                   isDarkMode={isDarkMode}
                 />
               </nav>
@@ -407,9 +245,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={() => {
                       setShowNotifications(!showNotifications);
-                      if (!showNotifications) {
-                        carregarNotificacoes();
-                      }
+                      if (!showNotifications) carregarNotificacoes();
                     }}
                   >
                     <BellIcon className="w-5 h-5" />
@@ -434,21 +270,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       onDelete={(id) => handleDeleteNotification(parseInt(id))}
                       onDeleteAll={handleDeleteAllNotifications}
                       onClose={() => setShowNotifications(false)}
-                      onNavigateToPage={() => navigateTo('notificacoes')}
+                      onNavigateToPage={() => navigate('/dashboard/notifications')}
                       onNotificationClick={(id) => {
                         setHighlightedNotificationId(id);
-                        navigateTo('notificacoes');
+                        navigate('/dashboard/notifications');
                       }}
                       isDarkMode={isDarkMode}
                     />
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onToggleDarkMode}
-                  className="text-gray-700 dark:text-gray-200"
-                >
+                <Button variant="ghost" size="icon" onClick={onToggleDarkMode} className="text-gray-700 dark:text-gray-200">
                   {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                 </Button>
                 <Button variant="ghost" size="icon" onClick={onLogout} className="text-gray-700 dark:text-gray-200">
@@ -459,144 +290,132 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           </header>
 
           <main className="w-full px-6 py-6">
-            {currentView === 'notificacoes' ? (
-              <NotificationsPage
-                notifications={notifications.map(n => ({
-                  id: n.id.toString(),
-                  title: n.titulo,
-                  message: n.mensagem,
-                  timestamp: n.dataCriacao,
-                  isRead: n.lida,
-                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
-                  type: n.tipo,
-                  metadata: n.metadata,
-                }))}
-                onBack={() => {
-                  navigateBack();
-                  setHighlightedNotificationId(null);
-                }}
-                onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
-                onMarkAllAsRead={handleMarkAllAsRead}
-                onDelete={(id) => handleDeleteNotification(parseInt(id))}
-                onDeleteAll={handleDeleteAllNotifications}
-                isDarkMode={isDarkMode}
-                highlightedNotificationId={highlightedNotificationId || undefined}
-                actionCallbacks={{
-                  onNavigateToAppointment: async (appointmentId) => {
-                    // Navegar para vista de agendamentos
-                    navigateTo('appointments');
-                    // Fechar modal e página de notificações
-                    setShowNotifications(false);
-                    // Buscar e abrir a marcação específica
-                    try {
-                      const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
-                      const response = await marcacoesApi.obterPorId(id);
-                      const appointment = mapApiToAppointment(response);
-                      setSelectedAppointment(appointment);
-                      setShowDetailsDialog(true);
-                      toast.success('Marcação encontrada');
-                    } catch (error) {
-                      console.error('Erro ao carregar marcação:', error);
-                      toast.error('Não foi possível encontrar a marcação');
-                    }
-                  },
-                  onNavigateToHistory: async (appointmentId) => {
-                    // Navegar para histórico
-                    navigateTo('history');
-                    setShowNotifications(false);
-                    // TODO: Implementar scroll/highlight para a marcação específica no histórico
-                    toast.info('A carregar histórico...');
-                  },
-                  onNavigateToDocument: (documentId) => {
-                    toast.info('Funcionalidade de documentos em desenvolvimento');
-                  },
-                  onNavigateToCancelledSlot: (dateStr, time) => {
-                    // Navegar para vista de agendamentos
-                    navigateTo('appointments');
-                    setShowNotifications(false);
-                    // Destacar o slot cancelado
-                    const slotDate = new Date(dateStr);
-                    setHighlightedSlot({ date: slotDate, time });
-                    // Limpar destaque após 5 segundos
-                    setTimeout(() => {
-                      setHighlightedSlot(null);
-                    }, 5000);
-                    toast.info('A mostrar slot cancelado no calendário');
-                  },
-                }}
-              />
-            ) : currentView === 'profile' ? (
-              <ProfilePage
-                user={{
-                  id: authUser?.id || 0,
-                  name: authUser?.nome || user.name,
-                  nif: authUser?.nif || user.nif,
-                  contact: authUser?.telefone || user.contact,
-                  email: authUser?.email || user.email,
-                }}
-                onBack={() => navigateBack()}
-                onUpdateUser={() => { }}
-                isDarkMode={isDarkMode}
-              />
-            ) : currentView === 'history' ? (
-              <HistoryPage
-                appointments={visibleAppointments.filter(apt =>
-                  apt.status !== 'scheduled' &&
-                  apt.status !== 'in-progress' &&
-                  apt.status !== 'reserved'
-                )}
-                onBack={() => navigateBack()}
-                onViewAppointment={handleViewAppointment}
-                isDarkMode={isDarkMode}
-              />
-            ) : currentView === 'appointments' ? (
-              <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
-                <div className="space-y-6">
-                  <WeeklySchedule
-                    appointments={visibleAppointments}
-                    allAppointments={[...allAppointments, ...blockedAppointments]}
-                    currentUserNif={user.nif}
-                    isClient
-                    onCreateAppointment={handleCreateAppointment}
-                    onViewAppointment={handleViewAppointment}
-                    onToggleView={() => { /* no-op: monthly view removed */ }}
-                    isDarkMode={isDarkMode}
-                    onRefresh={carregarMarcacoes}
-                    highlightedSlot={highlightedSlot}
-                  />
+            <Routes>
+              {/* Home / Appointments */}
+              <Route path="/" element={
+                <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                  <div className="space-y-6">
+                    <WeeklySchedule
+                      appointments={visibleAppointments}
+                      allAppointments={[...allAppointments, ...blockedAppointments]}
+                      currentUserNif={user.nif}
+                      isClient
+                      onCreateAppointment={handleCreateAppointment}
+                      onViewAppointment={handleViewAppointment}
+                      onToggleView={() => { }}
+                      isDarkMode={isDarkMode}
+                      onRefresh={refreshAppointments}
+                      highlightedSlot={highlightedSlot}
+                    />
+                  </div>
+                  <div>
+                    <TodayAppointments
+                      appointments={visibleAppointments}
+                      onViewAppointment={handleViewAppointment}
+                      onShowHistory={() => navigate('/dashboard/history')}
+                      isDarkMode={isDarkMode}
+                    />
+                  </div>
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600 col-span-full">
+                    <div className="flex items-center gap-3">
+                      <ClockIcon className="w-5 h-5 text-purple-600" />
+                      <p className="text-gray-800 dark:text-gray-200">Consulte e agende os seus horários disponíveis.</p>
+                    </div>
+                  </div>
                 </div>
+              } />
 
-                <div>
-                  <TodayAppointments
-                    appointments={visibleAppointments}
-                    onViewAppointment={handleViewAppointment}
-                    onShowHistory={() => navigateTo('history')}
-                    isDarkMode={isDarkMode}
-                  />
-                </div>
-              </div>
-            ) : currentView === 'balneario' ? (
-              renderPlaceholder('Balneário - Marcações')
-            ) : currentView === 'balneario-sobre' ? (
-              renderPlaceholder('Balneário - Sobre')
-            ) : currentView === 'voluntariado' ? (
-              renderPlaceholder('Voluntariado - Inscrição')
-            ) : currentView === 'voluntariado-sobre' ? (
-              renderPlaceholder('Voluntariado - Sobre')
-            ) : currentView === 'settings' ? (
-              renderPlaceholder('Definições')
-            ) : (
-              renderPlaceholder('Em desenvolvimento')
-            )}
+              {/* History */}
+              <Route path="/history" element={
+                <HistoryPage
+                  appointments={visibleAppointments.filter(apt =>
+                    apt.status !== 'scheduled' &&
+                    apt.status !== 'in-progress' &&
+                    apt.status !== 'reserved'
+                  )}
+                  onBack={() => navigate('/dashboard')}
+                  onViewAppointment={handleViewAppointment}
+                  isDarkMode={isDarkMode}
+                />
+              } />
 
-            {currentView === 'appointments' && (
-              <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
-                <div className="flex items-center gap-3">
-                  <ClockIcon className="w-5 h-5 text-purple-600" />
-                  <p className="text-gray-800 dark:text-gray-200">Consulte e agende os seus horários disponíveis.</p>
-                </div>
-              </div>
-            )}
+              {/* Profile */}
+              <Route path="/profile" element={
+                <ProfilePage
+                  user={{
+                    id: authUser?.id || 0,
+                    name: authUser?.nome || user.name,
+                    nif: authUser?.nif || user.nif,
+                    contact: authUser?.telefone || user.contact,
+                    email: authUser?.email || user.email,
+                  }}
+                  onBack={() => navigate('/dashboard')}
+                  onUpdateUser={() => { }}
+                  isDarkMode={isDarkMode}
+                />
+              } />
+
+              {/* Notifications */}
+              <Route path="/notifications" element={
+                <NotificationsPage
+                  notifications={notifications.map(n => ({
+                    id: n.id.toString(),
+                    title: n.titulo,
+                    message: n.mensagem,
+                    timestamp: n.dataCriacao,
+                    isRead: n.lida,
+                    icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                    type: n.tipo,
+                    metadata: n.metadata,
+                  }))}
+                  onBack={() => {
+                    navigate('/dashboard');
+                    setHighlightedNotificationId(null);
+                  }}
+                  onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
+                  onMarkAllAsRead={handleMarkAllAsRead}
+                  onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                  onDeleteAll={handleDeleteAllNotifications}
+                  isDarkMode={isDarkMode}
+                  highlightedNotificationId={highlightedNotificationId || undefined}
+                  actionCallbacks={{
+                    onNavigateToAppointment: async (appointmentId) => {
+                      navigate('/dashboard');
+                      setShowNotifications(false);
+                      try {
+                        const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
+                        const response = await marcacoesApi.obterPorId(id);
+                        const appointment = mapApiToAppointment(response);
+                        setSelectedAppointment(appointment);
+                        setShowDetailsDialog(true);
+                      } catch (e) {
+                        toast.error('Não foi possível encontrar a marcação');
+                      }
+                    },
+                    onNavigateToHistory: async () => {
+                      navigate('/dashboard/history');
+                      setShowNotifications(false);
+                    },
+                    onNavigateToDocument: () => toast.info('Em desenvolvimento'),
+                    onNavigateToCancelledSlot: (dateStr, time) => {
+                      navigate('/dashboard');
+                      setShowNotifications(false);
+                      const slotDate = new Date(dateStr);
+                      setHighlightedSlot({ date: slotDate, time });
+                      setTimeout(() => setHighlightedSlot(null), 5000);
+                    },
+                  }}
+                />
+              } />
+
+              {/* Placeholders */}
+              <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
+              <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
+              <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
+              <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
+              <Route path="/settings" element={renderPlaceholder('Definições')} />
+              <Route path="*" element={renderPlaceholder('Página não encontrada')} />
+            </Routes>
           </main>
         </div>
 
@@ -604,7 +423,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           currentView={currentView}
-          onNavigate={(view) => navigateTo(view as ViewType)}
+          onNavigate={handleNavigate}
           onLogout={onLogout}
           isDarkMode={isDarkMode}
           mode="client"
@@ -621,7 +440,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             time={editingSlot.time}
             utenteId={authUser.id}
             onSuccess={() => {
-              carregarMarcacoes();
+              refreshAppointments();
               carregarNotificacoes();
             }}
           />
@@ -633,11 +452,15 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             onClose={() => {
               setShowDetailsDialog(false);
               setSelectedAppointment(null);
-              carregarMarcacoes();
+              refreshAppointments();
             }}
             appointment={selectedAppointment}
-            onUpdate={handleUpdateSelectedAppointment}
-            onCancel={(id, reason) => handleCancelAppointment(id, reason)}
+            onUpdate={(id, updates) => refreshAppointments()}
+            onCancel={(id, reason) => {
+              setShowDetailsDialog(false);
+              setSelectedAppointment(null);
+              refreshAppointments();
+            }}
             isClient={true}
             existingAppointments={[...allAppointments, ...blockedAppointments]}
           />

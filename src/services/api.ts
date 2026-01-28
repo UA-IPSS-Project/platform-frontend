@@ -205,6 +205,15 @@ export interface MarcacaoRemotaRequest {
   linkReuniao: string;
 }
 
+export interface Page<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
 export interface MarcacaoResponse {
   id: number;
   version: number;
@@ -295,8 +304,8 @@ export const marcacoesApi = {
       method: 'GET',
     }),
 
-  obterTodas: () =>
-    apiRequest<MarcacaoResponse[]>('/api/marcacoes', {
+  obterTodas: (page = 0, size = 1000) =>
+    apiRequest<Page<MarcacaoResponse>>(`/api/marcacoes?page=${page}&size=${size}`, {
       method: 'GET',
     }),
 

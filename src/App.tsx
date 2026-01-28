@@ -126,7 +126,7 @@ function App() {
               ) : <Navigate to="/login" replace />
             } />
 
-            <Route path="/dashboard" element={
+            <Route path="/dashboard/*" element={
               <ProtectedRoute>
                 {user ? (
                   user.role === 'FUNCIONARIO' ? (
