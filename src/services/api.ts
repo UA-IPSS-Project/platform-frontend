@@ -6,11 +6,36 @@ const getToken = (): string | null => {
   return localStorage.getItem('token');
 };
 
+// Helper to get cookie by name
+const getCookie = (name: string): string | null => {
+  if (!document.cookie) return null;
+  const xsrfCookies = document.cookie.split(';')
+    .map(c => c.trim())
+    .filter(c => c.startsWith(name + '='));
+
+  if (xsrfCookies.length === 0) {
+    console.debug(`[CSRF] Cookie ${name} not found`);
+    return null;
+  }
+  const value = decodeURIComponent(xsrfCookies[0].substring(name.length + 1));
+  console.debug(`[CSRF] Found cookie ${name}:`, value ? 'present' : 'empty');
+  return value;
+};
+
 // Helper function to build headers
 const buildHeaders = (): HeadersInit => {
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
+
+  const xsrfToken = getCookie('XSRF-TOKEN');
+  if (xsrfToken) {
+    headers['X-XSRF-TOKEN'] = xsrfToken;
+    console.debug('[CSRF] Added header X-XSRF-TOKEN');
+  } else {
+    console.warn('[CSRF] XSRF-TOKEN cookie missing, header not added');
+  }
+
   return headers;
 };
 

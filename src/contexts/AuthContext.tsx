@@ -1,5 +1,5 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { API_BASE_URL } from '../services/api';
+import { API_BASE_URL, authApi, AuthResponse } from '../services/api';
 
 interface User {
   id: number;
@@ -166,41 +166,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
     try {
-      // use authApi exposed in api.ts instead of fetch? 
-      // For now keeping fetch logic to match existing pattern but need credentials: include
-      // But wait, authApi.loginFuncionario calls apiRequest which has credentials:include now.
-      // Let's verify if we use api directly or fetch.
-      // The original code used fetch inside login. Let's update it to use apiRequest or fetch with credentials.
+      let data: AuthResponse;
 
-      const endpoint = type === 'funcionario'
-        ? '/api/auth/login/funcionario'
-        : '/api/auth/login/utente';
-
-      const body = type === 'funcionario'
-        ? { email: identifier, password }
-        : { nif: identifier, password };
-
-      // Using apiRequest from ../services/api would be cleaner but let's stick to fetch inline as reference code did, 
-      // but MUST add credentials: 'include'
-
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Cookies
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Credenciais inválidas');
+      if (type === 'funcionario') {
+        data = await authApi.loginFuncionario({ email: identifier, password });
+      } else {
+        data = await authApi.loginUtente({ nif: identifier, password });
       }
 
-      const data = await response.json();
       handleAuthSuccess(data);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no login:', error);
       throw error;
     }
