@@ -1,5 +1,5 @@
 // API Base URL
-export const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Helper function to get token from localStorage
 const getToken = (): string | null => {
@@ -7,18 +7,10 @@ const getToken = (): string | null => {
 };
 
 // Helper function to build headers
-const buildHeaders = (includeAuth: boolean = true): HeadersInit => {
+const buildHeaders = (): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-
-  if (includeAuth) {
-    const token = getToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
   return headers;
 };
 
@@ -26,19 +18,21 @@ const buildHeaders = (includeAuth: boolean = true): HeadersInit => {
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
-  requiresAuth: boolean = true
+  _requiresAuth: boolean = true // Argument kept for compatibility but unused
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const config: RequestInit = {
     ...options,
+    credentials: 'include', // IMPORTANT: Send cookies with request
     headers: {
-      ...buildHeaders(requiresAuth),
+      ...buildHeaders(),
       ...options.headers,
     },
   };
 
   try {
+
 
     const response = await fetch(url, config);
 
@@ -143,8 +137,7 @@ export interface FuncionarioRegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
-  type: string;
+  // Token is now in HttpOnly Cookie
   id: number;
   email: string;
   nome: string;
@@ -181,6 +174,11 @@ export const authApi = {
     apiRequest<void>('/api/auth/set-password', {
       method: 'POST',
       body: JSON.stringify({ password, termsAccepted }),
+    }),
+
+  logout: () =>
+    apiRequest<void>('/api/auth/logout', {
+      method: 'POST',
     }),
 };
 

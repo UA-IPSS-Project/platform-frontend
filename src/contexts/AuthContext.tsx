@@ -48,44 +48,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  // Token state removed (managed by HTTP-Only Cookie)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
-  // const INACTIVITY_TIMEOUT = 60000;         // 1 minute
 
   const checkAuth = async () => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    const savedLastActivity = localStorage.getItem('lastActivity');
-
-    if (!savedToken || !savedUser) {
-      setIsLoading(false);
-      return;
-    }
-
-    // Check inactivity
-    if (savedLastActivity) {
-      const lastActivityTime = parseInt(savedLastActivity);
-      const now = Date.now();
-      if (now - lastActivityTime > INACTIVITY_TIMEOUT) {
-        logout();
-        setIsLoading(false);
-        return;
-      }
-    }
-
     try {
-      // Verify token with backend
+      // Verify session with backend (sends cookie automatically)
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${savedToken}`
-        }
+        credentials: 'include' // Important
       });
 
       if (response.ok) {
         const userData = await response.json();
-        // Update user data from server source of truth
         const updatedUser: User = {
           id: userData.id,
           email: userData.email,
@@ -93,32 +70,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: userData.role,
           nif: userData.nif,
           telefone: userData.telefone,
-          active: true, // Assuming /me always returns active users or we assume active if we can call /me? 
-          // Ideally /me should return active status too, but UserResponse might not have it.
-          // For now, let's look at AuthContext logic. We only block inactive at login time redirect.
-          // If they refresh, checkAuth calls /me.
-          // The UserResponse Java DTO needs 'active' too if we want to persist it correctly on refresh!
+          active: true,
         };
         setUser(updatedUser);
-        setToken(savedToken);
-        // Refresh activity timestamp on successful check
+        setIsAuthenticated(true);
         updateActivity();
       } else {
-        // Token invalid or expired
-        logout();
+        // Session invalid
+        handleLogoutState();
       }
     } catch (error) {
       console.error('Auth verification failed:', error);
-      // On network error, maybe keep local state? Or safer to logout?
-      // For security, if we can't verify, we might want to be cautious.
-      // But for resilience, if it's just a network blip, we shouldn't log out.
-      // Let's assume if fetch fails completely (network), we keep session if not expired locally.
-      // But if response is 401/403 (handled in else), we logout.
-      // For now, let's keep local state if verify fails due to network, 
-      // but rely on next check.
-      // However, to follow the requirement strictly "verify if state is on", let's be strict.
-      // Actually, if me endpoint fails, it likely means token is bad.
-      logout();
+      handleLogoutState();
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const handleActivity = () => {
       const now = Date.now();
       if (now - lastUpdateLocal > 60000) { // 1 minute throttle
-        if (token) {
+        if (isAuthenticated) {
           updateActivity();
           lastUpdateLocal = now;
         }
@@ -153,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Periodic check for inactivity interval
     const intervalId = setInterval(() => {
-      if (token) {
+      if (isAuthenticated) {
         const savedLastActivity = localStorage.getItem('lastActivity');
         if (savedLastActivity) {
           const lastActivityTime = parseInt(savedLastActivity);
@@ -169,23 +132,63 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       events.forEach(event => window.removeEventListener(event, handleActivity));
       clearInterval(intervalId);
     };
-  }, [token]); // Depend on token
+  }, [isAuthenticated]);
+
+  const handleAuthSuccess = (data: any) => {
+    const userData: User = {
+      id: data.id,
+      email: data.email,
+      nome: data.nome,
+      role: data.role,
+      nif: data.nif,
+      telefone: data.telefone,
+      active: data.active,
+    };
+
+    setUser(userData);
+    setIsAuthenticated(true);
+
+    localStorage.setItem('user', JSON.stringify(userData)); // Optional: cache user info, but NOT token
+    localStorage.setItem('lastActivity', Date.now().toString());
+
+    // Clear legacy dashboard views
+    localStorage.removeItem('userDashboardView');
+    localStorage.removeItem('secretaryDashboardView');
+  };
+
+  const handleLogoutState = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('lastActivity');
+    localStorage.removeItem('token'); // Clear legacy token if exists
+  };
 
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
     try {
+      // use authApi exposed in api.ts instead of fetch? 
+      // For now keeping fetch logic to match existing pattern but need credentials: include
+      // But wait, authApi.loginFuncionario calls apiRequest which has credentials:include now.
+      // Let's verify if we use api directly or fetch.
+      // The original code used fetch inside login. Let's update it to use apiRequest or fetch with credentials.
+
       const endpoint = type === 'funcionario'
-        ? `${API_BASE_URL}/api/auth/login/funcionario`
-        : `${API_BASE_URL}/api/auth/login/utente`;
+        ? '/api/auth/login/funcionario'
+        : '/api/auth/login/utente';
 
       const body = type === 'funcionario'
         ? { email: identifier, password }
         : { nif: identifier, password };
 
-      const response = await fetch(endpoint, {
+      // Using apiRequest from ../services/api would be cleaner but let's stick to fetch inline as reference code did, 
+      // but MUST add credentials: 'include'
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Cookies
         body: JSON.stringify(body),
       });
 
@@ -195,26 +198,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await response.json();
+      handleAuthSuccess(data);
 
-      const userData: User = {
-        id: data.id,
-        email: data.email,
-        nome: data.nome,
-        role: data.role,
-        nif: data.nif,
-        telefone: data.telefone,
-        active: data.active,
-      };
-
-      setToken(data.token);
-      setUser(userData);
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('lastActivity', Date.now().toString());
-      // Clear previous dashboard states on fresh login to ensure default view
-      localStorage.removeItem('userDashboardView');
-      localStorage.removeItem('secretaryDashboardView');
     } catch (error) {
       console.error('Erro no login:', error);
       throw error;
@@ -228,6 +213,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -237,25 +223,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const responseData = await response.json();
-
-      const userData: User = {
-        id: responseData.id,
-        email: responseData.email,
-        nome: responseData.nome,
-        role: responseData.role,
-        nif: responseData.nif,
-        telefone: responseData.telefone,
-        active: responseData.active,
-      };
-
-      setToken(responseData.token);
-      setUser(userData);
-
-      localStorage.setItem('token', responseData.token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('lastActivity', Date.now().toString());
-      localStorage.removeItem('userDashboardView');
-      localStorage.removeItem('secretaryDashboardView');
+      handleAuthSuccess(responseData);
     } catch (error) {
       console.error('Erro no registo:', error);
       throw error;
@@ -269,6 +237,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -280,28 +249,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const responseData = await response.json();
 
       if (responseData.active === false && responseData.role === 'FUNCIONARIO') {
-        // Do not log in automatically if not active
         return;
       }
 
-      const userData: User = {
-        id: responseData.id,
-        email: responseData.email,
-        nome: responseData.nome,
-        role: responseData.role,
-        nif: responseData.nif,
-        telefone: responseData.telefone,
-        active: responseData.active,
-      };
-
-      setToken(responseData.token);
-      setUser(userData);
-
-      localStorage.setItem('token', responseData.token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('lastActivity', Date.now().toString());
-      localStorage.removeItem('userDashboardView');
-      localStorage.removeItem('secretaryDashboardView');
+      handleAuthSuccess(responseData);
     } catch (error) {
       console.error('Erro no registo:', error);
       throw error;
@@ -309,16 +260,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updatePassword = async (password: string, termsAccepted: boolean) => {
-    const savedToken = localStorage.getItem('token');
-    if (!savedToken) throw new Error('Não autenticado');
-
     try {
+      // Using apiRequest/fetch with cookies
       const response = await fetch(`${API_BASE_URL}/api/auth/set-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${savedToken}`
         },
+        credentials: 'include',
         body: JSON.stringify({ password, termsAccepted }),
       });
 
@@ -326,7 +275,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Falha ao atualizar a palavra-passe');
       }
 
-      // Update local user active state
       if (user) {
         const updated = { ...user, active: true };
         setUser(updated);
@@ -338,24 +286,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('lastActivity');
-    localStorage.removeItem('userDashboardView');
-    localStorage.removeItem('secretaryDashboardView');
+  const logout = async () => {
+    // Optimistic logout: Clear state immediately to prevent race conditions (e.g. dashboard intervals firing)
+    handleLogoutState();
+
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include' // Cookies
+      });
+    } catch (e) {
+      console.error("Logout error (server side might not have cleared cookie):", e);
+    }
   };
 
   const value: AuthContextType = {
     user,
-    token,
+    token: null, // Legacy support (null)
     login,
     registerUtente,
     registerFuncionario,
     logout,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated,
     isLoading,
     updatePassword,
   };
