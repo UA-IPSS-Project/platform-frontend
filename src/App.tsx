@@ -47,9 +47,28 @@ function App() {
     }
 
     if (user && !user.active) {
-      // Allow access to set-password even if not active (technically active=false means they need to set password)
-      // But if they are here, they should be redirected to set-password
-      // effectively preventing dashboard access
+      // If a Funcionario is somehow logged in but inactive (e.g. waiting for approval),
+      // show a specific message instead of redirecting to set-password
+      if (user.role === 'FUNCIONARIO') {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Conta Pendente</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                A sua conta aguarda aprovação da secretaria. Por favor, aguarde ou contacte os serviços administrativos.
+              </p>
+              <button
+                onClick={handleLogout}
+                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+              >
+                Voltar ao Login
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      // For Utentes (or others), redirect to set-password/terms
       return <Navigate to="/set-password" replace />;
     }
 

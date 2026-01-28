@@ -136,9 +136,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Activity listeners
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+
+    // Throttle Update Activity to run max once every minute
+    let lastUpdateLocal = 0;
     const handleActivity = () => {
-      if (token) { // Using token as proxy for isAuthenticated
-        updateActivity();
+      const now = Date.now();
+      if (now - lastUpdateLocal > 60000) { // 1 minute throttle
+        if (token) {
+          updateActivity();
+          lastUpdateLocal = now;
+        }
       }
     };
 
