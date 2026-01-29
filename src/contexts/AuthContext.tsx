@@ -5,7 +5,7 @@ interface User {
   id: number;
   email: string;
   nome: string;
-  role: 'FUNCIONARIO' | 'UTENTE';
+  role: 'FUNCIONARIO' | 'UTENTE' | 'SECRETARIA';
   nif?: string;
   telefone?: string;
   active: boolean;
@@ -54,7 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
-  const checkAuth = async () => {
+  const checkAuth = async (retryCount = 0) => {
+    console.log('[Auth] checkAuth called - retryCount:', retryCount, 'current user:', user?.role);
     try {
       // Verify session with backend (sends cookie automatically)
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
@@ -63,6 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const userData = await response.json();
+        console.log('[Auth] checkAuth SUCCESS - role:', userData.role);
         const updatedUser: User = {
           id: userData.id,
           email: userData.email,
@@ -75,14 +77,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(updatedUser);
         setIsAuthenticated(true);
         updateActivity();
+        setIsLoading(false); // Success - stop loading
       } else {
-        // Session invalid
+        console.log('[Auth] checkAuth FAILED - status:', response.status, 'retryCount:', retryCount);
+        // Retry once after 500ms if this is the first attempt
+        // This handles page reload timing issues where cookies aren't immediately available
+        if (retryCount === 0) {
+          console.log('[Auth] Initial check failed, retrying in 500ms...');
+          // CRITICAL: Don't clear user state during retry - keep existing auth state
+          setTimeout(() => checkAuth(1), 500);
+          return; // Don't call handleLogoutState yet - and don't clear isLoading
+        }
+        // After retry, session is truly invalid
+        console.log('[Auth] Auth failed after retry - logging out');
         handleLogoutState();
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Auth verification failed:', error);
+      // Same retry logic for network errors
+      if (retryCount === 0) {
+        console.log('[Auth] Network error, retrying in 500ms...');
+        setTimeout(() => checkAuth(1), 500);
+        return;
+      }
       handleLogoutState();
-    } finally {
       setIsLoading(false);
     }
   };

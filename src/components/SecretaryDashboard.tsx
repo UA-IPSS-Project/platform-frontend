@@ -36,7 +36,7 @@ interface SecretaryDashboardProps {
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
-  const { user: authUser } = useAuth();
+  const { user: authUser, isLoading: authLoading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [userData, setUserData] = useState(user);
@@ -77,7 +77,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const notificationsRef = useRef<HTMLDivElement>(null);
 
   const carregarMarcacoes = async () => {
-    if (!authUser?.id) return;
+    console.log('[DEBUG] carregarMarcacoes called - authLoading:', authLoading, 'authUser:', authUser?.id);
+    // Wait for auth to complete before loading data
+    if (authLoading || !authUser?.id) {
+      console.log('[DEBUG] Skipping carregarMarcacoes - waiting for auth');
+      return;
+    }
+    console.log('[DEBUG] Proceeding to load marcações');
     try {
       const response = await marcacoesApi.obterTodas();
       const data = response.content;
@@ -104,8 +110,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
 
   useEffect(() => {
+    console.log('[DEBUG] useEffect[authUser.id, authLoading] triggered - authLoading:', authLoading, 'authUser:', authUser?.id);
     carregarMarcacoes();
-  }, [authUser?.id]);
+  }, [authUser?.id, authLoading]);
 
   // Recarregar marcações quando volta ao separador de appointments
   useEffect(() => {

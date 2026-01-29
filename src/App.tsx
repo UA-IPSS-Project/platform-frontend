@@ -148,7 +148,8 @@ function App() {
             <Route path="/dashboard/*" element={
               <ProtectedRoute>
                 {user ? (
-                  user.role === 'FUNCIONARIO' ? (
+                  // Backend returns role as "SECRETARIA" for funcionarios
+                  (user.role === 'FUNCIONARIO' || user.role === 'SECRETARIA') ? (
                     <SecretaryDashboard
                       user={{
                         name: user.nome || '',
