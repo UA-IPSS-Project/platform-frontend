@@ -60,9 +60,64 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const notificationsRef = useRef<HTMLDivElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // Navigation Logic
+  // Derive currentView from path
+  const getCurrentView = () => {
+    const path = location.pathname;
+    if (path.endsWith('/history')) return 'history';
+    if (path.endsWith('/profile')) return 'profile';
+    if (path.endsWith('/notifications')) return 'notificacoes';
+    if (path.includes('/dashboard')) return 'appointments'; // default
+    return 'appointments';
+  };
+
+  const currentView = getCurrentView();
+
   // History Date State
   const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
   const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
+  const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
+
+  const carregarHistorico = async () => {
+    if (!authUser?.id) return;
+
+    try {
+      const endOfDay = new Date(historyEndDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      // If startDate is null, use a far past date (or whatever backend expects for "all")
+      // Currently backend defaults to 2000-01-01 if null, so passing null or undefined is fine if API allows.
+      // But our updated API signature takes optional strings.
+      // Let's pass undefined if null.
+      const startIso = historyStartDate ? historyStartDate.toISOString() : undefined;
+
+      // But wait, if we want to ensure time starts at 00:00:00 for the selected start date:
+      let startIsoString = undefined;
+      if (historyStartDate) {
+        const s = new Date(historyStartDate);
+        s.setHours(0, 0, 0, 0);
+        startIsoString = s.toISOString();
+      }
+
+      const data = await marcacoesApi.obterPassadas(
+        startIsoString,
+        endOfDay.toISOString(),
+        authUser.id // Filter by current user
+      );
+
+      const mapped = data.map(mapApiToAppointment);
+      setHistoryAppointments(mapped);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast.error('Erro ao carregar histórico');
+    }
+  };
+
+  useEffect(() => {
+    if (getCurrentView() === 'history') {
+      carregarHistorico();
+    }
+  }, [location.pathname, historyStartDate, historyEndDate, authUser?.id]);
 
   // Notifications State
   const [notifications, setNotifications] = useState<Notificacao[]>([]);
@@ -118,18 +173,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     [allAppointments, user.nif]
   );
 
-  // Navigation Logic
-  // Derive currentView from path
-  const getCurrentView = () => {
-    const path = location.pathname;
-    if (path.endsWith('/history')) return 'history';
-    if (path.endsWith('/profile')) return 'profile';
-    if (path.endsWith('/notifications')) return 'notificacoes';
-    if (path.includes('/dashboard')) return 'appointments'; // default
-    return 'appointments';
-  };
 
-  const currentView = getCurrentView();
 
   const handleNavigate = (view: string) => {
     if (view === 'appointments') navigate('/dashboard');
@@ -339,20 +383,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               {/* History */}
               <Route path="/history" element={
                 <HistoryPage
-                  appointments={visibleAppointments.filter(apt =>
-                    apt.status !== 'scheduled' &&
-                    apt.status !== 'in-progress' &&
-                    apt.status !== 'reserved' &&
-                    // Simple client-side date filter since we are reusing 'visibleAppointments'
-                    // which contains ALL appointments fetched by useAppointments.
-                    // Ideally, we should fetch history from API with date ranges,
-                    // but reusing 'visibleAppointments' is faster for now if the list isn't huge.
-                    // However, 'visibleAppointments' might only contain recent/future ones?
-                    // Checking useAppointments.ts: loadAppointments uses marcacoesApi.obterPorUtente(userId).
-                    // This returns ALL appointments for the user. So filtering here works!
-                    (historyStartDate ? new Date(apt.date) >= historyStartDate : true) &&
-                    new Date(apt.date) <= historyEndDate
-                  )}
+                  appointments={historyAppointments}
                   onBack={() => navigate('/dashboard')}
                   onViewAppointment={handleViewAppointment}
                   isDarkMode={isDarkMode}
