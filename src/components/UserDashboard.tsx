@@ -345,6 +345,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   startDate={new Date(new Date().setDate(new Date().getDate() - 30))} // Default last 30 days
                   endDate={new Date()}
                   onDateChange={() => { }} // No-op for now
+                  isClient
                 />
               } />
 

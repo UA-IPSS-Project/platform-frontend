@@ -116,7 +116,12 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = ['Horário', 'Data', 'Atendente'];
+    if (!isClient) {
+      headers.push('Nome do Utente', 'NIF', 'Contacto', 'Email');
+    }
+    headers.push('Assunto', 'Estado');
+
     const csvContent = [
       headers.join(';'),
       ...filteredAppointments.map(apt => {
@@ -131,17 +136,27 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           return field;
         };
 
-        return [
+        const row = [
           apt.time,
           formattedDate,
-          escapeField(apt.attendantName || '-'),
-          escapeField(apt.patientName || ''),
-          apt.patientNIF || '',
-          apt.patientContact || '',
-          apt.patientEmail || '',
+          escapeField(apt.attendantName || '-')
+        ];
+
+        if (!isClient) {
+          row.push(
+            escapeField(apt.patientName || ''),
+            apt.patientNIF || '',
+            apt.patientContact || '',
+            apt.patientEmail || ''
+          );
+        }
+
+        row.push(
           escapeField(apt.subject || ''),
           status
-        ].join(';');
+        );
+
+        return row.join(';');
       })
     ].join('\n');
 
@@ -168,7 +183,11 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = ['Horário', 'Data', 'Atendente'];
+    if (!isClient) {
+      headers.push('Nome do Utente', 'NIF', 'Contacto', 'Email');
+    }
+    headers.push('Assunto', 'Estado');
 
     // Função para obter cor do status
     const getStatusColor = (statusKey: string) => {
@@ -194,10 +213,14 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       tableContent += `<td style="padding:6px;">${apt.time}</td>`;
       tableContent += `<td style="padding:6px;">${formattedDate}</td>`;
       tableContent += `<td style="padding:6px;">${apt.attendantName || '-'}</td>`;
-      tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
-      tableContent += `<td style="padding:6px;">${apt.patientNIF || ''}</td>`;
-      tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
-      tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
+
+      if (!isClient) {
+        tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
+        tableContent += `<td style="padding:6px;">${apt.patientNIF || ''}</td>`;
+        tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
+        tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
+      }
+
       tableContent += `<td style="padding:6px;">${apt.subject || ''}</td>`;
       tableContent += `<td style="padding:6px;color:${statusColor};font-weight:bold;">${status}</td>`;
       tableContent += '</tr>';
@@ -233,7 +256,12 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente', 'Nome do Utente', 'NIF', 'Assunto', 'Estado'];
+    const headers = ['Horário', 'Data', 'Atendente'];
+    if (!isClient) {
+      headers.push('Nome do Utente', 'NIF');
+    }
+    headers.push('Assunto', 'Estado');
+
     const today = new Date();
 
     let htmlContent = `
@@ -279,8 +307,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           <td>${apt.time}</td>
           <td>${formattedDate}</td>
           <td>${apt.attendantName || '-'}</td>
-          <td>${apt.patientName || ''}</td>
-          <td>${apt.patientNIF || ''}</td>
+          ${!isClient ? `<td>${apt.patientName || ''}</td><td>${apt.patientNIF || ''}</td>` : ''}
           <td>${apt.subject || ''}</td>
           <td class="${statusClass}">${status}</td>
         </tr>
