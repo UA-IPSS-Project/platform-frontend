@@ -26,7 +26,10 @@ interface WeeklyScheduleProps {
   onRefresh?: () => Promise<void>;
   onBlockSchedule?: () => void;
   refreshTrigger?: number;
+
   highlightedSlot?: { date: Date; time: string } | null;
+  currentDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 const generateTimeSlots = () => {
@@ -44,9 +47,9 @@ const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange }: Readonly<WeeklyScheduleProps>) {
   const isMobile = useIsMobile();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -67,20 +70,31 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const selectMenuClassName = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-y-auto";
   const selectMenuStyle = { maxHeight: '15rem' };
 
+  // Ensure currentDate is valid
+  const validCurrentDate = (currentDate && !isNaN(currentDate.getTime())) ? currentDate : new Date();
+
   const getWeekDays = (date: Date) => {
     const curr = new Date(date);
-    const first = curr.getDate() - curr.getDay() + 1;
+    if (isNaN(curr.getTime())) return [];
+
+    // Adjust to Monday
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1); // If Sunday, go back 6 days to Monday. If Mon-Sat, go back (day-1) to Monday.
+
     const days = [];
+    // Reset to Monday of that week
+    const monday = new Date(curr.setDate(diff));
 
     for (let i = 0; i < 5; i++) {
-      const day = new Date(curr.setDate(first + i));
-      days.push(day);
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      days.push(d);
     }
 
     return days;
   };
 
-  const weekDays = getWeekDays(currentDate);
+  const weekDays = getWeekDays(validCurrentDate);
   const timeSlots = generateTimeSlots();
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
@@ -164,6 +178,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       blocks.forEach(block => {
         const date = new Date(block.data);
+        if (isNaN(date.getTime())) return;
         const dateStr = date.toISOString().split('T')[0];
 
         // Usar lógica de minutos para comparar
@@ -191,6 +206,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // Verificar se um slot está bloqueado (visualização + clique)
   const isSlotBlockedSync = (date: Date, time: string): boolean => {
+    if (!date || isNaN(date.getTime())) return false;
     const dateStr = date.toISOString().split('T')[0];
     const key = `${dateStr}_${time}`;
     return blockedSlots.has(key);
@@ -219,14 +235,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
 
   const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentDate(newDate);
+    const newDate = new Date(validCurrentDate);
+    newDate.setDate(validCurrentDate.getDate() + (direction === 'next' ? 7 : -7));
+    onDateChange(newDate);
   };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      setCurrentDate(date);
+      onDateChange(date);
       setCalendarOpen(false);
     }
   };
@@ -784,7 +800,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <PopoverContent className="w-auto p-0" align="center">
             <CalendarComponent
               mode="single"
-              selected={currentDate}
+              selected={validCurrentDate}
               onSelect={handleDateSelect}
               initialFocus
             />

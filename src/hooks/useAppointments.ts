@@ -14,7 +14,8 @@ export function useAppointments(userId: number | undefined, userNif: string | un
         setIsLoading(true);
         try {
             // Carregar marcações próprias
-            const marcacoes = await marcacoesApi.obterPorUtente(userId);
+            const response = await marcacoesApi.obterPorUtente(userId);
+            const marcacoes = Array.isArray(response) ? response : [];
 
             // Converter formato da API para o formato do componente
             const appointmentsFromAPI: Appointment[] = marcacoes.map((m) => {
@@ -45,12 +46,14 @@ export function useAppointments(userId: number | undefined, userNif: string | un
                     description: m.marcacaoSecretaria?.descricao || '',
                     status: status,
                     attendantName: m.atendenteNome,
+                    cancellationReason: m.motivoCancelamento,
                 };
             });
 
             setAllAppointments(appointmentsFromAPI);
 
-            const bloqueadas = await marcacoesApi.obterMarcacoesBloqueadas(userId);
+            const bloqueadasResponse = await marcacoesApi.obterMarcacoesBloqueadas(userId);
+            const bloqueadas = Array.isArray(bloqueadasResponse) ? bloqueadasResponse : [];
             const blockedFromAPI: Appointment[] = bloqueadas.map((b: any) => {
                 const dataHora = new Date(b.data);
                 const isReserved = b.estado === 'EM_PREENCHIMENTO';

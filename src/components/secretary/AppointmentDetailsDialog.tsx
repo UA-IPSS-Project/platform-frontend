@@ -148,7 +148,8 @@ export function AppointmentDetailsDialog({
         parseInt(appointment.id),
         'CANCELADO',
         authUser.id,
-        appointment.version
+        appointment.version,
+        trimmedReason
       );
 
       // Atualizar estado local

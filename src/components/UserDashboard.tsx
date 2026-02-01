@@ -58,6 +58,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   // Notifications State
   const [notifications, setNotifications] = useState<Notificacao[]>([]);
@@ -213,6 +214,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 >
                   <MenuIcon className="w-5 h-5" />
                 </Button>
+                <span className="text-gray-700 dark:text-gray-200">Utente</span>
               </div>
 
               <nav className="hidden md:flex items-center gap-1">
@@ -293,36 +295,40 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             <Routes>
               {/* Home / Appointments */}
               <Route path="/" element={
-                <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
-                  <div className="space-y-6">
-                    <WeeklySchedule
-                      appointments={visibleAppointments}
-                      allAppointments={[...allAppointments, ...blockedAppointments]}
-                      currentUserNif={user.nif}
-                      isClient
-                      onCreateAppointment={handleCreateAppointment}
-                      onViewAppointment={handleViewAppointment}
-                      onToggleView={() => { }}
-                      isDarkMode={isDarkMode}
-                      onRefresh={refreshAppointments}
-                      highlightedSlot={highlightedSlot}
-                    />
+                <>
+                  <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                    <div className="space-y-6">
+                      <WeeklySchedule
+                        appointments={visibleAppointments}
+                        allAppointments={[...allAppointments, ...blockedAppointments]}
+                        currentUserNif={user.nif}
+                        isClient
+                        onCreateAppointment={handleCreateAppointment}
+                        onViewAppointment={handleViewAppointment}
+                        onToggleView={() => { }}
+                        isDarkMode={isDarkMode}
+                        onRefresh={refreshAppointments}
+                        highlightedSlot={highlightedSlot}
+                        currentDate={currentDate}
+                        onDateChange={setCurrentDate}
+                      />
+                    </div>
+                    <div>
+                      <TodayAppointments
+                        appointments={visibleAppointments}
+                        onViewAppointment={handleViewAppointment}
+                        onShowHistory={() => navigate('/dashboard/history')}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <TodayAppointments
-                      appointments={visibleAppointments}
-                      onViewAppointment={handleViewAppointment}
-                      onShowHistory={() => navigate('/dashboard/history')}
-                      isDarkMode={isDarkMode}
-                    />
-                  </div>
-                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600 col-span-full">
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
                     <div className="flex items-center gap-3">
                       <ClockIcon className="w-5 h-5 text-purple-600" />
                       <p className="text-gray-800 dark:text-gray-200">Consulte e agende os seus horários disponíveis.</p>
                     </div>
                   </div>
-                </div>
+                </>
               } />
 
               {/* History */}
@@ -336,6 +342,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   onBack={() => navigate('/dashboard')}
                   onViewAppointment={handleViewAppointment}
                   isDarkMode={isDarkMode}
+                  startDate={new Date(new Date().setDate(new Date().getDate() - 30))} // Default last 30 days
+                  endDate={new Date()}
+                  onDateChange={() => { }} // No-op for now
                 />
               } />
 

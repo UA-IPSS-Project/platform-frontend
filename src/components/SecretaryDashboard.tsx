@@ -39,6 +39,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const { user: authUser, isLoading: authLoading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
+  const [historyStartDate, setHistoryStartDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 90);
+    return d;
+  });
+  const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
   const [userData, setUserData] = useState(user);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
@@ -47,6 +53,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0); // Para forçar atualização do calendário
+  const [currentDate, setCurrentDate] = useState(new Date()); // Lifted state for week navigation
   const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
     // Restore history if needed, or start with just home
     const saved = localStorage.getItem('secretaryDashboardView');
@@ -85,11 +92,31 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
     console.log('[DEBUG] Proceeding to load marcações');
     try {
-      const response = await marcacoesApi.obterTodas();
-      const data = response.content;
-      const convertidas = data.map(mapApiToAppointment);
+      // Calcular início e fim da semana para filtrar
+      const curr = new Date(currentDate);
+      const day = curr.getDay(); // 0 (Sun) to 6 (Sat)
+      // Se for Domingo (0), queremos a segunda-feira da semana passada? 
+      // Ou assumimos que a semana começa à Segunda.
+      // Ajuste para garantir que apanhamos a Segunda-feira da semana atual
+      const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+
+      const startOfWeek = new Date(curr);
+      startOfWeek.setDate(diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(startOfWeek.getDate() + 6); // Até Domingo
+      endOfWeek.setHours(23, 59, 59, 999);
+
+      const response = await marcacoesApi.consultarAgenda(
+        startOfWeek.toISOString(),
+        endOfWeek.toISOString()
+      );
+      // A resposta de consultarAgenda é MarcacaoResponse[], não Page
+      const data = response;
+      const convertidas = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
       setAppointments(convertidas);
-      console.log('Total de marcações carregadas:', convertidas.length);
+      console.log('Total de marcações carregadas (semana):', convertidas.length);
     } catch (error) {
       console.error('Erro ao carregar marcações:', error);
       toast.error('Erro ao carregar marcações');
@@ -98,8 +125,22 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const carregarHistorico = async () => {
     try {
-      const data = await marcacoesApi.obterPassadas();
-      const convertidas = data.map(mapApiToAppointment);
+      // Use state dates
+      const start = historyStartDate;
+      const end = historyEndDate;
+
+      // Ensure end date covers the full day
+      const endOfDay = new Date(end);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const startOfDay = new Date(start);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const data = await marcacoesApi.obterPassadas(
+        startOfDay.toISOString(),
+        endOfDay.toISOString()
+      );
+      const convertidas = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
       setHistoryAppointments(convertidas);
       console.log('Total de histórico carregado:', convertidas.length);
     } catch (error) {
@@ -108,11 +149,17 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
   };
 
+  useEffect(() => {
+    if (currentView === 'history') {
+      carregarHistorico();
+    }
+    // Reload when filters change (if view is history)
+  }, [currentView, historyStartDate, historyEndDate]);
 
   useEffect(() => {
-    console.log('[DEBUG] useEffect[authUser.id, authLoading] triggered - authLoading:', authLoading, 'authUser:', authUser?.id);
+    console.log('[DEBUG] useEffect[authUser.id, authLoading, currentDate] triggered');
     carregarMarcacoes();
-  }, [authUser?.id, authLoading]);
+  }, [authUser?.id, authLoading, currentDate]);
 
   // Recarregar marcações quando volta ao separador de appointments
   useEffect(() => {
@@ -121,11 +168,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
   }, [currentView]);
 
-  useEffect(() => {
-    if (currentView === 'history') {
-      carregarHistorico();
-    }
-  }, [currentView]);
+  // Removed duplicate useEffect for history loading as it's merged above
+
 
   // Persist view changes (save only current view for refresh, but component logic uses history)
   useEffect(() => {
@@ -154,7 +198,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const carregarNotificacoes = async () => {
     try {
       const data = await notificationsApi.listar();
-      setNotifications(data);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     }
@@ -602,6 +646,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={() => navigateBack()}
                 onViewAppointment={handleViewAppointment}
                 isDarkMode={isDarkMode}
+                startDate={historyStartDate}
+                endDate={historyEndDate}
+                onDateChange={(start, end) => {
+                  setHistoryStartDate(start);
+                  setHistoryEndDate(end);
+                }}
               />
             ) : currentView === 'management' ? (
               <UserManagement isDarkMode={isDarkMode} />
@@ -619,6 +669,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     onBlockSchedule={() => setShowBlockedDialog(true)}
                     refreshTrigger={refreshKey}
                     highlightedSlot={highlightedSlot}
+                    currentDate={currentDate}
+                    onDateChange={setCurrentDate}
                   />
                 </div>
 

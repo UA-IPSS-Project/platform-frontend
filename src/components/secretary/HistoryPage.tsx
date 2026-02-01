@@ -14,9 +14,13 @@ interface HistoryPageProps {
   onBack: () => void;
   onViewAppointment: (appointment: Appointment) => void;
   isDarkMode: boolean;
+  startDate: Date;
+  endDate: Date;
+  onDateChange: (start: Date, end: Date) => void;
+  isClient?: boolean;
 }
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 10;
 
 const parseAppointmentDate = (value: Appointment['date']) => {
   const parsed = new Date(value as Date);
@@ -53,7 +57,7 @@ const getStatusBadge = (status: Appointment['status']) => {
   }
 };
 
-export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode }: HistoryPageProps) {
+export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode, startDate, endDate, onDateChange, isClient = false }: HistoryPageProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [subjectFilter, setSubjectFilter] = useState('all');
@@ -340,7 +344,33 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* Filters and Date Range */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Input
+            type="date"
+            value={startDate.toISOString().split('T')[0]}
+            onChange={(e) => {
+              const d = new Date(e.target.value);
+              if (!isNaN(d.getTime())) {
+                onDateChange(d, endDate);
+              } else {
+                console.warn('[HistoryPage] Invalid start date:', e.target.value);
+              }
+            }}
+            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+          />
+          <Input
+            type="date"
+            value={endDate.toISOString().split('T')[0]}
+            onChange={(e) => {
+              const d = new Date(e.target.value);
+              if (!isNaN(d.getTime())) {
+                onDateChange(startDate, d);
+              }
+            }}
+            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+          />
+
           <Input
             type="text"
             placeholder="Pesquisar..."
@@ -352,6 +382,11 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
           />
 
+          {/* More filter dropdowns if needed, or keeping existing structure */}
+        </div>
+
+        {/* Existing Filters Row 2 (Status/Subject) */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <Select
             value={statusFilter}
             onValueChange={(value) => {
@@ -400,7 +435,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">HORÁRIO</th>
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">DIA</th>
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ATENDENTE</th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">UTENTE</th>
+                {!isClient && <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">UTENTE</th>}
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ASSUNTO</th>
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ESTADO</th>
               </tr>
@@ -427,7 +462,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                       {parseAppointmentDate(apt.date)?.toLocaleDateString('pt-PT') ?? String(apt.date)}
                     </td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>
+                    {!isClient && <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>}
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.subject}</td>
                     <td className="py-4 px-4">{getStatusBadge(apt.status)}</td>
                   </tr>

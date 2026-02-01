@@ -256,19 +256,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updatePassword = async (password: string, termsAccepted: boolean) => {
     try {
-      // Using apiRequest/fetch with cookies
-      const response = await fetch(`${API_BASE_URL}/api/auth/set-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ password, termsAccepted }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Falha ao atualizar a palavra-passe');
-      }
+      // Use authApi to ensure correct endpoint and CSRF headers are sent
+      await authApi.updatePassword(password, termsAccepted);
 
       if (user) {
         const updated = { ...user, active: true };

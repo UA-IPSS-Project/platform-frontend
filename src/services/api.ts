@@ -8,13 +8,20 @@ const getToken = (): string | null => {
 
 // Helper to get cookie by name
 const getCookie = (name: string): string | null => {
-  if (!document.cookie) return null;
+  if (!document.cookie) {
+    console.debug(`[CSRF] No cookies found in document.cookie`);
+    return null;
+  }
+
+  // Log all cookies for debugging (be careful with sensitive info in prod, but ok for dev/debugging now)
+  // console.debug('[CSRF] Cookies present:', document.cookie);
+
   const xsrfCookies = document.cookie.split(';')
     .map(c => c.trim())
     .filter(c => c.startsWith(name + '='));
 
   if (xsrfCookies.length === 0) {
-    console.debug(`[CSRF] Cookie ${name} not found`);
+    console.warn(`[CSRF] Cookie ${name} not found in:`, document.cookie);
     return null;
   }
   const value = decodeURIComponent(xsrfCookies[0].substring(name.length + 1));
@@ -196,9 +203,9 @@ export const authApi = {
     }, false),
 
   updatePassword: (password: string, termsAccepted: boolean) =>
-    apiRequest<void>('/api/auth/set-password', {
-      method: 'POST',
-      body: JSON.stringify({ password, termsAccepted }),
+    apiRequest<void>('/api/auth/password', {
+      method: 'PUT',
+      body: JSON.stringify({ newPassword: password, termsAccepted }),
     }),
 
   logout: () =>
@@ -243,6 +250,7 @@ export interface MarcacaoResponse {
   data: string;
   estado: string;
   atendenteNome?: string;
+  motivoCancelamento?: string;
   marcacaoSecretaria?: {
     assunto: string;
     descricao?: string;
@@ -301,11 +309,15 @@ export const marcacoesApi = {
     );
   },
 
-  obterPassadas: () =>
-    apiRequest<MarcacaoResponse[]>(
-      `/api/marcacoes/passadas`,
-      { method: 'GET' }
-    ),
+  obterPassadas: (dataInicio?: string, dataFim?: string) => {
+    const params = new URLSearchParams();
+    if (dataInicio) params.append('dataInicio', dataInicio);
+    if (dataFim) params.append('dataFim', dataFim);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiRequest<MarcacaoResponse[]>(`/api/marcacoes/passadas${query}`, {
+      method: 'GET',
+    });
+  },
 
   obterPorUtente: (utenteId: number) =>
     apiRequest<MarcacaoResponse[]>(`/api/marcacoes/utente/${utenteId}`, {
@@ -333,13 +345,15 @@ export const marcacoesApi = {
     }),
 
   // Atualizar estado da marcação
-  atualizarEstado: (marcacaoId: number, novoEstado: string, funcionarioId: number, version?: number) =>
+  // Atualizar estado da marcação
+  atualizarEstado: (marcacaoId: number, novoEstado: string, funcionarioId: number, version?: number, motivoCancelamento?: string) =>
     apiRequest<MarcacaoResponse>(`/api/marcacoes/${marcacaoId}/estado`, {
       method: 'PUT',
       body: JSON.stringify({
         novoEstado,
         funcionarioId,
         version,
+        motivoCancelamento,
       }),
     }),
 
@@ -354,6 +368,19 @@ export const marcacoesApi = {
     apiRequest<MarcacaoResponse>(`/api/marcacoes/${id}/reagendar`, {
       method: 'PUT',
       body: JSON.stringify({ novaDataHora }),
+    }),
+
+  // Reservar slot temporário
+  reservarSlot: (data: { data: string; utenteId: number; criadoPorId: number }) =>
+    apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Libertar slot temporário
+  libertarSlot: (id: number) =>
+    apiRequest<void>(`/api/marcacoes/libertar-slot/${id}`, {
+      method: 'DELETE',
     }),
 };
 

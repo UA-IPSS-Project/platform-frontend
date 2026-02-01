@@ -31,7 +31,7 @@ export const mapApiToAppointment = (m: any): Appointment => {
         subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
         description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
         status: status,
-        cancellationReason: status === 'cancelled' ? (m.marcacaoSecretaria?.motivoCancelamento || 'Motivo não especificado') : undefined,
+        cancellationReason: status === 'cancelled' ? (m.motivoCancelamento || m.marcacaoSecretaria?.motivoCancelamento || 'Motivo não especificado') : undefined,
         attendantName: m.atendenteNome,
     };
 };

@@ -84,31 +84,21 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch(`${API_BASE_URL}/api/marcacoes/reservar-slot`, {
+      // Use apiRequest for automatic CSRF token inclusion and cookie-based auth
+      const { apiRequest } = await import('../../services/api');
+      const data = await apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
         body: JSON.stringify({
           data: localDateTime,
           criadoPorId: funcionarioId,
-          // utenteId not sent - secretary does not know the user yet
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTempReservaId(data.tempId);
-        console.log('Slot reservado temporariamente:', data.tempId);
-      } else {
-        const error = await response.text();
-        toast.error('Este horário já está ocupado');
-        onClose();
-      }
-    } catch (error) {
+      setTempReservaId(data.tempId);
+      console.log('Slot reservado temporariamente:', data.tempId);
+    } catch (error: any) {
       console.error('Erro ao reservar slot:', error);
-      toast.error('Erro ao verificar disponibilidade');
+      toast.error(error.message || 'Este horário já está ocupado');
       onClose();
     }
   };
@@ -117,11 +107,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!tempReservaId) return;
 
     try {
-      await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
+      const { apiRequest } = await import('../../services/api');
+      await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
       });
       console.log('Slot liberado:', tempReservaId);
       setTempReservaId(null);
@@ -205,15 +193,11 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const processCreation = async () => {
     try {
-      // Refresh token logic
-      const token = localStorage.getItem('token');
+      const { apiRequest } = await import('../../services/api');
 
       if (tempReservaId) {
-        await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
+        await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
         });
         setTempReservaId(null);
       }
@@ -255,29 +239,18 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         utenteTelefone: formData.contact,
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/marcacoes/presencial`, {
+      await apiRequest('/api/marcacoes/presencial', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        // Try to parse error message
-        const errorText = await response.text();
-        let errorMessage = 'Erro desconhecido ao criar marcação';
-        try {
-          const errorJson = JSON.parse(errorText);
-          errorMessage = errorJson.message || errorJson.error || errorText;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
+      console.log('[AppointmentDialog] Marcação criada no backend, aguardando 500ms antes de recarregar...');
       toast.success('Marcação criada com sucesso!');
+
+      // Wait 500ms to ensure backend transaction commits before reloading
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('[AppointmentDialog] Chamando onSuccess para recarregar marcações...');
       onSuccess();
       onClose();
     } catch (error: any) {

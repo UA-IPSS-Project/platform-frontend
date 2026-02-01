@@ -18,7 +18,7 @@ interface ClientAppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, API_BASE_URL } from '../../services/api';
+import { calendarioApi, marcacoesApi, apiRequest, API_BASE_URL } from '../../services/api';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
   const [subject, setSubject] = useState('');
@@ -33,7 +33,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     if (open) {
       reservarSlot();
     }
-    
+
     // Cleanup: liberar reserva ao fechar ou desmontar
     return () => {
       if (tempReservaId) {
@@ -47,7 +47,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const [hours, minutes] = time.split(':');
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
+
       // Validar se a data/hora não é no passado
       const now = new Date();
       if (dateTime <= now) {
@@ -64,48 +64,30 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
         onClose();
         return;
       }
-      
+
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch(`${API_BASE_URL}/api/marcacoes/reservar-slot`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          data: localDateTime,
-          utenteId: utenteId,
-          criadoPorId: utenteId,
-        }),
+      const data = await marcacoesApi.reservarSlot({
+        data: localDateTime,
+        utenteId: utenteId,
+        criadoPorId: utenteId,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setTempReservaId(data.tempId);
-        console.log('Slot reservado temporariamente:', data.tempId);
-      } else {
-        const error = await response.text();
-        toast.error('Este horário já está ocupado');
-        onClose();
-      }
+      setTempReservaId(data.tempId);
+      console.log('Slot reservado temporariamente:', data.tempId);
+
     } catch (error) {
       console.error('Erro ao reservar slot:', error);
-      toast.error('Erro ao verificar disponibilidade');
+      toast.error('Erro ao verificar disponibilidade ou horário ocupado');
       onClose();
     }
   };
 
   const liberarSlot = async () => {
     if (!tempReservaId) return;
-    
+
     try {
-      await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      await marcacoesApi.libertarSlot(tempReservaId);
       console.log('Slot liberado:', tempReservaId);
       setTempReservaId(null);
     } catch (error) {
@@ -137,12 +119,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     try {
       // 1. PRIMEIRO: Liberar slot temporário
       if (tempReservaId) {
-        await fetch(`${API_BASE_URL}/api/marcacoes/libertar-slot/${tempReservaId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
+        await marcacoesApi.libertarSlot(tempReservaId);
         console.log('Slot temporário liberado antes de criar marcação real');
         setTempReservaId(null);
       }
@@ -151,26 +128,20 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const [hours, minutes] = time.split(':');
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
+
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
-      const response = await fetch(`${API_BASE_URL}/api/marcacoes/remota`, {
+      // Use apiRequest directly to match exact original body format but with CSRF protection
+      // We avoid marcacoesApi.criarRemota here because strict typing would force us to send 
+      // fields that might not be needed by this specific endpoint variant
+      await apiRequest('/api/marcacoes/remota', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
         body: JSON.stringify({
           data: localDateTime,
           assunto: subject,
           utenteId: utenteId,
         }),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Erro ao criar marcação');
-      }
 
       toast.success('Marcação criada com sucesso!');
       onSuccess?.();
