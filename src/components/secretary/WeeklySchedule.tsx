@@ -248,7 +248,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const getAppointmentForSlot = (date: Date, time: string) => {
-    return bookingSource.find(apt => {
+    const slotAppointments = bookingSource.filter(apt => {
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
       const slotDate = new Date(date);
@@ -258,6 +258,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         apt.time === time &&
         apt.status !== 'cancelled';
     });
+
+    // Se houver mais do que uma (ex: Reservado + Agendado), dar prioridade à Agendada
+    // Ordenar: real (não-reserved) primeiro
+    slotAppointments.sort((a, b) => {
+      if (a.status === 'reserved' && b.status !== 'reserved') return 1;
+      if (a.status !== 'reserved' && b.status === 'reserved') return -1;
+      return 0;
+    });
+
+    return slotAppointments[0];
   };
 
   const handleSlotClick = async (date: Date, time: string) => {
@@ -291,9 +301,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
+    // Se isSlotBlocked retornar true, significa que o backend detectou algo (bloqueio ou marcação existente)
+    // Nesse caso, devemos forçar um refresh visual para o utilizador ver o novo estado
     const blocked = await isSlotBlocked(date, time);
     if (blocked) {
       toast.error('Horário indisponível');
+      if (onRefresh) {
+        // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
+        onRefresh();
+      }
       return;
     }
 
