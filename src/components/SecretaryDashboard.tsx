@@ -315,6 +315,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         subject: status === 'reserved' ? 'reserved' : (latestData.marcacaoSecretaria?.assunto || 'Sem assunto'),
         description: status === 'reserved' ? '' : (latestData.marcacaoSecretaria?.descricao || ''),
         status: status,
+        cancellationReason: latestData.motivoCancelamento,
         attendantName: latestData.atendenteNome,
       };
 

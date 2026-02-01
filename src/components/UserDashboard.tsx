@@ -170,6 +170,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : (status === 'reserved' ? 'Horário Indisponível' : 'Ocupado'),
         description: isOwn ? latestData.marcacaoSecretaria?.descricao || '' : '',
         status: status,
+        cancellationReason: latestData.motivoCancelamento,
         attendantName: latestData.atendenteNome
       };
 
