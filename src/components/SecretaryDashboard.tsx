@@ -39,11 +39,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const { user: authUser, isLoading: authLoading } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
-  const [historyStartDate, setHistoryStartDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 90);
-    return d;
-  });
+  const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
   const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
   const [userData, setUserData] = useState(user);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -133,7 +129,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       const endOfDay = new Date(end);
       endOfDay.setHours(23, 59, 59, 999);
 
-      const startOfDay = new Date(start);
+      const startOfDay = start ? new Date(start) : new Date('2000-01-01');
       startOfDay.setHours(0, 0, 0, 0);
 
       const data = await marcacoesApi.obterPassadas(

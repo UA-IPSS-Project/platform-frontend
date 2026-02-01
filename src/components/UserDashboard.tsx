@@ -60,6 +60,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const notificationsRef = useRef<HTMLDivElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // History Date State
+  const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
+  const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
+
   // Notifications State
   const [notifications, setNotifications] = useState<Notificacao[]>([]);
 
@@ -338,14 +342,26 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   appointments={visibleAppointments.filter(apt =>
                     apt.status !== 'scheduled' &&
                     apt.status !== 'in-progress' &&
-                    apt.status !== 'reserved'
+                    apt.status !== 'reserved' &&
+                    // Simple client-side date filter since we are reusing 'visibleAppointments'
+                    // which contains ALL appointments fetched by useAppointments.
+                    // Ideally, we should fetch history from API with date ranges,
+                    // but reusing 'visibleAppointments' is faster for now if the list isn't huge.
+                    // However, 'visibleAppointments' might only contain recent/future ones?
+                    // Checking useAppointments.ts: loadAppointments uses marcacoesApi.obterPorUtente(userId).
+                    // This returns ALL appointments for the user. So filtering here works!
+                    (historyStartDate ? new Date(apt.date) >= historyStartDate : true) &&
+                    new Date(apt.date) <= historyEndDate
                   )}
                   onBack={() => navigate('/dashboard')}
                   onViewAppointment={handleViewAppointment}
                   isDarkMode={isDarkMode}
-                  startDate={new Date(new Date().setDate(new Date().getDate() - 30))} // Default last 30 days
-                  endDate={new Date()}
-                  onDateChange={() => { }} // No-op for now
+                  startDate={historyStartDate}
+                  endDate={historyEndDate}
+                  onDateChange={(start, end) => {
+                    setHistoryStartDate(start);
+                    setHistoryEndDate(end);
+                  }}
                   isClient
                 />
               } />

@@ -14,9 +14,9 @@ interface HistoryPageProps {
   onBack: () => void;
   onViewAppointment: (appointment: Appointment) => void;
   isDarkMode: boolean;
-  startDate: Date;
+  startDate: Date | null;
   endDate: Date;
-  onDateChange: (start: Date, end: Date) => void;
+  onDateChange: (start: Date | null, end: Date) => void;
   isClient?: boolean;
 }
 
@@ -63,16 +63,23 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   const [subjectFilter, setSubjectFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  // Sort appointments by date (most recent first)
+  /* Sorting State */
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Sort appointments by date
   const sortedAppointments = [...appointments].sort((a, b) => {
     const dateA = parseAppointmentDate(a.date);
     const dateB = parseAppointmentDate(b.date);
     const dateCompare = (dateB?.getTime() ?? 0) - (dateA?.getTime() ?? 0);
-    if (dateCompare !== 0) return dateCompare;
+
+    // Reverse if ascending
+    const modifier = sortOrder === 'asc' ? -1 : 1;
+
+    if (dateCompare !== 0) return dateCompare * modifier;
 
     const [aHour, aMin] = a.time.split(':').map(Number);
     const [bHour, bMin] = b.time.split(':').map(Number);
-    return (bHour * 60 + bMin) - (aHour * 60 + aMin);
+    return ((bHour * 60 + bMin) - (aHour * 60 + aMin)) * modifier;
   });
 
   // Use the predefined SUBJECTS list for filters
@@ -103,6 +110,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedAppointments = filteredAppointments.slice(startIndex, endIndex);
 
+  // ... (Export functions remain unchanged)
   // Gerar nome do arquivo
   const getFileName = (extension: string) => {
     const today = new Date();
@@ -373,43 +381,41 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Filters */}
         {/* Filters and Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Input
-            type="date"
-            value={startDate.toISOString().split('T')[0]}
-            onChange={(e) => {
-              const d = new Date(e.target.value);
-              if (!isNaN(d.getTime())) {
-                onDateChange(d, endDate);
-              } else {
-                console.warn('[HistoryPage] Invalid start date:', e.target.value);
-              }
-            }}
-            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
-          />
-          <Input
-            type="date"
-            value={endDate.toISOString().split('T')[0]}
-            onChange={(e) => {
-              const d = new Date(e.target.value);
-              if (!isNaN(d.getTime())) {
-                onDateChange(startDate, d);
-              }
-            }}
-            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
-          />
+          <div className="md:col-span-1">
+            <label className="text-xs text-gray-500 mb-1 ml-1 block">A partir de</label>
+            <Input
+              type="date"
+              value={startDate ? startDate.toISOString().split('T')[0] : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!val) {
+                  onDateChange(null, endDate);
+                  return;
+                }
+                const d = new Date(val);
+                if (!isNaN(d.getTime())) {
+                  onDateChange(d, endDate);
+                } else {
+                  console.warn('[HistoryPage] Invalid start date:', val);
+                }
+              }}
+              className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+            />
+          </div>
 
-          <Input
-            type="text"
-            placeholder="Pesquisar..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
-          />
-
-          {/* More filter dropdowns if needed, or keeping existing structure */}
+          <div className="md:col-span-3">
+            <label className="text-xs text-gray-500 mb-1 ml-1 block">Pesquisar</label>
+            <Input
+              type="text"
+              placeholder="Pesquisar..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+            />
+          </div>
         </div>
 
         {/* Existing Filters Row 2 (Status/Subject) */}
@@ -460,7 +466,18 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             <thead className={isDarkMode ? 'bg-gray-900/30' : 'bg-gray-50'}>
               <tr className={`border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">HORÁRIO</th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">DIA</th>
+                <th
+                  className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group select-none"
+                  onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="flex items-center gap-1">
+                    DIA
+                    <span className="flex flex-col -space-y-1">
+                      <svg className={`w-2 h-2 ${sortOrder === 'asc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+                      <svg className={`w-2 h-2 ${sortOrder === 'desc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                    </span>
+                  </div>
+                </th>
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ATENDENTE</th>
                 {!isClient && <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">UTENTE</th>}
                 <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ASSUNTO</th>
