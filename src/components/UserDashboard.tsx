@@ -243,6 +243,55 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     </div>
   );
 
+  /* Logic for Next Appointment Countdown */
+  const getCurrentActivity = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTime = currentHour * 60 + currentMinute;
+
+    const todayAppointments = visibleAppointments
+      .filter(apt => {
+        const aptDate = new Date(apt.date);
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate.getTime() === today.getTime() && apt.status !== 'cancelled';
+      })
+      .sort((a, b) => {
+        const [aHour, aMin] = a.time.split(':').map(Number);
+        const [bHour, bMin] = b.time.split(':').map(Number);
+        return (aHour * 60 + aMin) - (bHour * 60 + bMin);
+      });
+
+    // Check for in-progress appointment
+    const inProgressApt = todayAppointments.find(apt => apt.status === 'in-progress');
+    if (inProgressApt) {
+      return `Atendimento a decorrer`;
+    }
+
+    // Find next upcoming appointment
+    for (const apt of todayAppointments) {
+      const [hour, minute] = apt.time.split(':').map(Number);
+      const aptTime = hour * 60 + minute;
+
+      if (currentTime < aptTime) {
+        const diff = aptTime - currentTime;
+        const hours = Math.floor(diff / 60);
+        const minutes = diff % 60;
+
+        if (hours > 0) {
+          return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+        } else {
+          return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+        }
+      }
+    }
+
+    return 'Ainda não existem marcações para hoje';
+  };
+
+  const currentActivity = getCurrentActivity();
+
   return (
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen relative">
@@ -374,7 +423,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
                     <div className="flex items-center gap-3">
                       <ClockIcon className="w-5 h-5 text-purple-600" />
-                      <p className="text-gray-800 dark:text-gray-200">Consulte e agende os seus horários disponíveis.</p>
+                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
                     </div>
                   </div>
                 </>
