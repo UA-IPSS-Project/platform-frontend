@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { Client } from '@stomp/stompjs';
 import { Button } from './ui/button';
 import { NavDropdown } from './ui/NavDropdown';
 import { NotificationsPanel } from './ui/NotificationsPanel';
@@ -17,7 +18,7 @@ import { ProfilePage } from './ProfilePage';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, ClockIcon, LogOutIcon } from './CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { marcacoesApi } from '../services/api';
+import { marcacoesApi, API_BASE_URL } from '../services/api';
 import { Appointment, ViewType } from '../types';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
 
@@ -78,6 +79,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const carregarMarcacoesRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   const carregarMarcacoes = async () => {
     console.log('[DEBUG] carregarMarcacoes called - authLoading:', authLoading, 'authUser:', authUser?.id);
@@ -118,6 +120,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       toast.error('Erro ao carregar marcações');
     }
   };
+
+  // Keep ref updated with latest function
+  carregarMarcacoesRef.current = carregarMarcacoes;
 
   const carregarHistorico = async () => {
     try {
@@ -207,10 +212,46 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   }, [authUser?.id]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      carregarNotificacoes();
-    }, 30000);
-    return () => clearInterval(interval);
+    // Configurar WebSocket
+    const baseUrl = API_BASE_URL || window.location.origin;
+    const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
+
+    const client = new Client({
+      brokerURL: wsUrl,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = () => {
+      console.log('WebSocket Conectado (Secretary)');
+      client.subscribe('/user/queue/notifications', (message) => {
+        if (message.body) {
+          try {
+            const novaNotificacao: Notificacao = JSON.parse(message.body);
+            setNotifications(prev => [novaNotificacao, ...prev]);
+            toast.info(novaNotificacao.titulo, {
+              description: novaNotificacao.mensagem,
+            });
+            // Refresh appointments to reflect changes
+            carregarMarcacoesRef.current?.();
+          } catch (e) {
+            console.error('Erro ao processar notificação:', e);
+          }
+        }
+      });
+    };
+
+    client.onStompError = (frame) => {
+      console.error('Erro no Broker STOMP:', frame.headers['message']);
+      console.error('Detalhes:', frame.body);
+    };
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
   }, []);
 
   useEffect(() => {

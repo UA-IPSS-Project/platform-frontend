@@ -160,6 +160,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             toast.info(novaNotificacao.titulo, {
               description: novaNotificacao.mensagem,
             });
+            // Refresh appointments to reflect changes (e.g., cancellation)
+            refreshAppointments();
           } catch (e) {
             console.error('Erro ao processar notificação:', e);
           }
