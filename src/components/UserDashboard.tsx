@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Client } from '@stomp/stompjs';
 import { Button } from './ui/button';
 import { NavDropdown } from './ui/NavDropdown';
 import { NotificationsPanel } from './ui/NotificationsPanel';
@@ -15,7 +16,7 @@ import { BellIcon, ClockIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon } from './
 import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { marcacoesApi } from '../services/api';
+import { marcacoesApi, API_BASE_URL } from '../services/api';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
@@ -138,8 +139,44 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   }, [authUser?.id]);
 
   useEffect(() => {
-    const interval = setInterval(carregarNotificacoes, 30000);
-    return () => clearInterval(interval);
+    // Configurar WebSocket
+    const baseUrl = API_BASE_URL || window.location.origin;
+    const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
+
+    const client = new Client({
+      brokerURL: wsUrl,
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+    });
+
+    client.onConnect = () => {
+      console.log('WebSocket Conectado');
+      client.subscribe('/user/queue/notifications', (message) => {
+        if (message.body) {
+          try {
+            const novaNotificacao: Notificacao = JSON.parse(message.body);
+            setNotifications(prev => [novaNotificacao, ...prev]);
+            toast.info(novaNotificacao.titulo, {
+              description: novaNotificacao.mensagem,
+            });
+          } catch (e) {
+            console.error('Erro ao processar notificação:', e);
+          }
+        }
+      });
+    };
+
+    client.onStompError = (frame) => {
+      console.error('Erro no Broker STOMP:', frame.headers['message']);
+      console.error('Detalhes:', frame.body);
+    };
+
+    client.activate();
+
+    return () => {
+      client.deactivate();
+    };
   }, []);
 
   const handleMarkAsRead = async (id: number) => {
