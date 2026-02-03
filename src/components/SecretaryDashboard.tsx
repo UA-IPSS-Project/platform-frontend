@@ -234,7 +234,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               description: novaNotificacao.mensagem,
             });
             // Refresh appointments to reflect changes
-            carregarMarcacoesRef.current?.();
+            // Small delay to allow backend transaction to commit before querying
+            setTimeout(() => {
+              console.log('[WS] Refreshing appointments after delay');
+              carregarMarcacoesRef.current?.();
+            }, 500);
           } catch (e) {
             console.error('Erro ao processar notificação:', e);
           }
@@ -379,6 +383,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const handleCancelAppointment = (id: string, reason: string) => {
     handleUpdateAppointment(id, { status: 'cancelled', cancellationReason: reason });
     toast.success('Marcação cancelada e utente notificado com o motivo');
+    // Refresh appointments to reflect the cancellation immediately
+    carregarMarcacoes();
   };
 
   const handleNavigate = (view: ViewType) => {

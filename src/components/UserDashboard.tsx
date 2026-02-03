@@ -161,7 +161,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               description: novaNotificacao.mensagem,
             });
             // Refresh appointments to reflect changes (e.g., cancellation)
-            refreshAppointments();
+            // Small delay to allow backend transaction to commit before querying
+            setTimeout(() => {
+              refreshAppointments();
+            }, 500);
           } catch (e) {
             console.error('Erro ao processar notificação:', e);
           }
