@@ -1,11 +1,6 @@
 // API Base URL
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
-// Helper function to get token from localStorage
-const getToken = (): string | null => {
-  return localStorage.getItem('token');
-};
-
 // Helper to get cookie by name
 const getCookie = (name: string): string | null => {
   if (!document.cookie) {
