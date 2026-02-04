@@ -41,7 +41,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
-  const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
+  const [historyEndDate, setHistoryEndDate] = useState<Date>(() => {
+    // Include future cancelled appointments by default (1 year ahead)
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    return futureDate;
+  });
   const [userData, setUserData] = useState(user);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);

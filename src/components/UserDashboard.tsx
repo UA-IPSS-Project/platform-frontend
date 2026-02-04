@@ -76,7 +76,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   // History Date State
   const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
-  const [historyEndDate, setHistoryEndDate] = useState<Date>(new Date());
+  const [historyEndDate, setHistoryEndDate] = useState<Date>(() => {
+    // Include future cancelled appointments by default (1 year ahead)
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    return futureDate;
+  });
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
 
   const carregarHistorico = async () => {
