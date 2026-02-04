@@ -11,7 +11,6 @@ import { HistoryPage } from './secretary/HistoryPage';
 import { ProfilePage } from './ProfilePage';
 import { ClientAppointmentDialog } from './client/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
-import { DayScheduleDialog } from './secretary/DayScheduleDialog';
 import { BellIcon, ClockIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon } from './CustomIcons';
 import type { Appointment } from '../types';
 import { toast } from 'sonner';
@@ -52,7 +51,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [editingSlot, setEditingSlot] = useState<{ date: Date; time: string } | null>(null);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
@@ -601,25 +599,22 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               refreshAppointments();
             }}
             appointment={selectedAppointment}
-            onUpdate={(id, updates) => refreshAppointments()}
+            onUpdate={(id, updates) => {
+              setAllAppointments(prev => prev.map(apt =>
+                apt.id === id ? { ...apt, ...updates } : apt
+              ));
+              refreshAppointments();
+            }}
             onCancel={(id, reason) => {
+              setAllAppointments(prev => prev.map(apt =>
+                apt.id === id ? { ...apt, status: 'cancelled' as const, cancellationReason: reason } : apt
+              ));
               setShowDetailsDialog(false);
               setSelectedAppointment(null);
               refreshAppointments();
             }}
             isClient={true}
             existingAppointments={[...allAppointments, ...blockedAppointments]}
-          />
-        )}
-
-        {showDaySchedule && (
-          <DayScheduleDialog
-            open={!!showDaySchedule}
-            onClose={() => setShowDaySchedule(null)}
-            date={showDaySchedule}
-            appointments={visibleAppointments}
-            onCreateAppointment={handleCreateAppointment}
-            onViewAppointment={handleViewAppointment}
           />
         )}
       </div>
