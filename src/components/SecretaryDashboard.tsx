@@ -77,8 +77,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       return ['home'];
     });
   };
-  // Monthly view removed - always use weekly schedule
-  const [scheduleView] = useState<'weekly' | 'monthly'>('weekly');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);

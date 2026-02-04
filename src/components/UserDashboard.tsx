@@ -19,7 +19,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi, API_BASE_URL } from '../services/api';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useAppointments } from '../hooks/useAppointments';
 
 interface UserDashboardProps {
@@ -39,11 +39,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Custom Hook for Appointments
   const {
     allAppointments,
     blockedAppointments,
-    isLoading: isLoadingAppointments,
     refreshAppointments,
     setAllAppointments
   } = useAppointments(authUser?.id, authUser?.nif);
@@ -91,13 +89,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const endOfDay = new Date(historyEndDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // If startDate is null, use a far past date (or whatever backend expects for "all")
-      // Currently backend defaults to 2000-01-01 if null, so passing null or undefined is fine if API allows.
-      // But our updated API signature takes optional strings.
-      // Let's pass undefined if null.
-      const startIso = historyStartDate ? historyStartDate.toISOString() : undefined;
-
-      // But wait, if we want to ensure time starts at 00:00:00 for the selected start date:
+      // Ensure time starts at 00:00:00 for the selected start date
       let startIsoString = undefined;
       if (historyStartDate) {
         const s = new Date(historyStartDate);
