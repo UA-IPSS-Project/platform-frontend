@@ -9,10 +9,12 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertCircleIcon, CalendarIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
+import { XIcon, FileTextIcon, AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
+import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
-import { marcacoesApi, calendarioApi, BloqueioAgenda } from '../../services/api';
+import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { DocumentUploadDialog } from '../DocumentUploadDialog';
 
 interface AppointmentDetailsDialogProps {
   open: boolean;
@@ -46,6 +48,11 @@ export function AppointmentDetailsDialog({
   const [newDocName, setNewDocName] = useState('');
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
 
+  // Estados para documentos
+  const [documentos, setDocumentos] = useState<DocumentoDTO[]>([]);
+  const [showDocUpload, setShowDocUpload] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
   // Estados para reagendamento
   const today = new Date();
   const [rescheduleYear, setRescheduleYear] = useState(today.getFullYear());
@@ -60,8 +67,71 @@ export function AppointmentDetailsDialog({
       setShowCancelDialog(false);
       setSelectedDocs([]);
       setInvalidReasons({});
+    } else {
+      // Carregar documentos quando abrir o dialog
+      loadDocumentos();
     }
   }, [open]);
+
+  const loadDocumentos = async () => {
+    setLoadingDocs(true);
+    try {
+      const docs = await documentosApi.listarDocumentos(parseInt(appointment.id));
+      console.log('=== DOCUMENTOS CARREGADOS ===');
+      console.log('Total de documentos:', docs.length);
+      docs.forEach((doc, index) => {
+        console.log(`\n--- Documento ${index + 1} ---`);
+        console.log('ID:', doc.id);
+        console.log('Marcação ID:', doc.marcacaoId);
+        console.log('Nome Original:', doc.nomeOriginal);
+        console.log('Tipo MIME:', doc.tipoMime);
+        console.log('Tamanho (bytes):', doc.tamanho);
+        console.log('Data Upload (raw):', doc.uploadedEm);
+        console.log('Data Upload (tipo):', typeof doc.uploadedEm);
+        console.log('Data Upload (parsed):', new Date(doc.uploadedEm));
+        console.log('Objeto completo:', JSON.stringify(doc, null, 2));
+      });
+      console.log('=== FIM DOCUMENTOS ===\n');
+      setDocumentos(docs);
+    } catch (error) {
+      console.error('Erro ao carregar documentos:', error);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  const handleDownloadDocumento = async (doc: DocumentoDTO) => {
+    try {
+      await documentosApi.downloadDocumento(doc.id, doc.nomeOriginal);
+      toast.success('Download iniciado');
+    } catch (error) {
+      console.error('Erro ao fazer download:', error);
+      toast.error('Erro ao fazer download do documento');
+    }
+  };
+
+  const handleRemoverDocumento = async (doc: DocumentoDTO) => {
+    if (!confirm(`Tem a certeza que deseja remover "${doc.nomeOriginal}"?`)) {
+      return;
+    }
+
+    try {
+      await documentosApi.removerDocumento(doc.id);
+      setDocumentos(prev => prev.filter(d => d.id !== doc.id));
+      toast.success('Documento removido');
+    } catch (error) {
+      console.error('Erro ao remover documento:', error);
+      toast.error('Erro ao remover documento');
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  };
 
   const handleDocToggle = (index: number) => {
     setSelectedDocs(prev => {
@@ -226,39 +296,6 @@ export function AppointmentDetailsDialog({
     } catch (error: any) {
       console.error('Erro ao marcar não comparência:', error);
       const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível atualizar estado';
-      toast.error(mensagemErro);
-    }
-  };
-
-  const handleConfirmAppointment = async () => {
-    if (!authUser?.id) {
-      toast.error('Erro de autenticação: Utilizador não identificado');
-      return;
-    }
-
-    try {
-      console.log('Confirmando marcação:', {
-        marcacaoId: parseInt(appointment.id),
-        novoEstado: 'AGENDADO',
-        funcionarioId: authUser.id
-      });
-
-      await marcacoesApi.atualizarEstado(
-        parseInt(appointment.id),
-        'AGENDADO',
-        authUser.id,
-        appointment.version
-      );
-
-      onUpdate(appointment.id, { status: 'scheduled' });
-      toast.success('Marcação confirmada com sucesso!');
-
-      // Fechar o diálogo após confirmar
-      onClose();
-
-    } catch (error: any) {
-      console.error('Erro ao confirmar marcação:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível confirmar a marcação';
       toast.error(mensagemErro);
     }
   };
@@ -625,12 +662,78 @@ export function AppointmentDetailsDialog({
               </div>
             )}
 
-            {/* Documents */}
+            {/* Documentos com API real */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                  <FileTextIcon className="w-4 h-4" />
+                  Documentos Anexados
+                </Label>
+                {!isClient && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setShowDocUpload(true)}
+                    className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    <Upload className="w-3 h-3 mr-1" />
+                    Adicionar
+                  </Button>
+                )}
+              </div>
+
+              {loadingDocs ? (
+                <p className="text-sm text-gray-500">A carregar documentos...</p>
+              ) : documentos.length === 0 ? (
+                <p className="text-sm text-gray-500">Nenhum documento anexado</p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {documentos.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <File className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                            {doc.nomeOriginal}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadDocumento(doc)}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverDocumento(doc)}
+                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                          title="Remover"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Documents antigos (manter para compatibilidade se houver) */}
             {appointment.documents && appointment.documents.length > 0 && (
               <div>
                 <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-3">
                   <FileTextIcon className="w-4 h-4" />
-                  Documentos Extra
+                  Documentos Extra (Legacy)
                 </Label>
                 <div className="space-y-3">
                   {appointment.documents.map((doc, index) => (
@@ -729,7 +832,7 @@ export function AppointmentDetailsDialog({
                 <>
                   <Button
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
-                    onClick={() => setShowAddDocDialog(true)}
+                    onClick={() => setShowDocUpload(true)}
                   >
                     <FileTextIcon className="w-4 h-4" />
                     Adicionar Documentos
@@ -991,6 +1094,17 @@ export function AppointmentDetailsDialog({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de Upload de Documentos */}
+      <DocumentUploadDialog
+        open={showDocUpload}
+        onClose={() => setShowDocUpload(false)}
+        marcacaoId={parseInt(appointment.id)}
+        onSuccess={(docs) => {
+          setDocumentos(prev => [...prev, ...docs]);
+          setShowDocUpload(false);
+        }}
+      />
     </>
   );
 }

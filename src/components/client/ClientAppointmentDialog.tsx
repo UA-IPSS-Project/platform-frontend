@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, File } from 'lucide-react';
 import { toast } from 'sonner';
+import { documentosApi } from '../../services/api';
 
 interface ClientAppointmentDialogProps {
   open: boolean;
@@ -18,14 +19,15 @@ interface ClientAppointmentDialogProps {
 }
 
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, marcacoesApi, apiRequest, API_BASE_URL } from '../../services/api';
+import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
-  const [documents, setDocuments] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
 
   // Reservar slot ao abrir o dialog
@@ -134,7 +136,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       // Use apiRequest directly to match exact original body format but with CSRF protection
       // We avoid marcacoesApi.criarRemota here because strict typing would force us to send 
       // fields that might not be needed by this specific endpoint variant
-      await apiRequest('/api/marcacoes/remota', {
+      const response = await apiRequest<{ id: number }>('/api/marcacoes/remota', {
         method: 'POST',
         body: JSON.stringify({
           data: localDateTime,
@@ -143,7 +145,22 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
         }),
       });
 
+      // Guardar o ID da marcação criada para upload de documentos
+      const marcacaoId = response.id;
+
       toast.success('Marcação criada com sucesso!');
+      
+      // Se houver ficheiros selecionados, fazer upload
+      if (selectedFiles.length > 0) {
+        try {
+          await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
+          toast.success(`${selectedFiles.length} documento(s) enviado(s) com sucesso!`);
+        } catch (uploadError) {
+          console.error('Erro ao enviar documentos:', uploadError);
+          toast.error('Marcação criada, mas houve erro ao enviar documentos');
+        }
+      }
+      
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -155,13 +172,39 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   };
 
   const handleFileSelect = () => {
-    const fileName = `Documento_${Date.now()}.pdf`;
-    setDocuments([...documents, fileName]);
-    toast.success('Ficheiro adicionado');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB em bytes
+      
+      // Validar tamanho de cada ficheiro
+      const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
+      
+      if (oversizedFiles.length > 0) {
+        const fileNames = oversizedFiles.map(f => f.name).join(', ');
+        toast.error(`Ficheiro(s) excede(m) 10MB: ${fileNames}`);
+        return;
+      }
+      
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} ficheiro(s) adicionado(s)`);
+    }
   };
 
   const removeDocument = (index: number) => {
-    setDocuments(documents.filter((_, i) => i !== index));
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
   };
 
   return (
@@ -207,7 +250,15 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-900 dark:text-gray-100">Documentos</Label>
+            <Label className="text-gray-900 dark:text-gray-100">Documentos (opcional)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+            />
             <button
               type="button"
               onClick={handleFileSelect}
@@ -216,15 +267,21 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
               <Upload className="w-5 h-5 mb-2" />
               Carregar documento
             </button>
-            {documents.length > 0 && (
+            {selectedFiles.length > 0 && (
               <div className="space-y-2">
-                {documents.map((doc, index) => (
-                  <div key={doc} className="flex items-center justify-between p-2 rounded border bg-white dark:bg-gray-800">
-                    <span className="text-sm text-gray-800 dark:text-gray-200">{doc}</span>
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 rounded border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <File className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removeDocument(index)}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex-shrink-0"
                       aria-label="Remover documento"
                     >
                       <X className="w-4 h-4" />
