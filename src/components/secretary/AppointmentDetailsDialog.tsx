@@ -77,21 +77,6 @@ export function AppointmentDetailsDialog({
     setLoadingDocs(true);
     try {
       const docs = await documentosApi.listarDocumentos(parseInt(appointment.id));
-      console.log('=== DOCUMENTOS CARREGADOS ===');
-      console.log('Total de documentos:', docs.length);
-      docs.forEach((doc, index) => {
-        console.log(`\n--- Documento ${index + 1} ---`);
-        console.log('ID:', doc.id);
-        console.log('Marcação ID:', doc.marcacaoId);
-        console.log('Nome Original:', doc.nomeOriginal);
-        console.log('Tipo MIME:', doc.tipoMime);
-        console.log('Tamanho (bytes):', doc.tamanho);
-        console.log('Data Upload (raw):', doc.uploadedEm);
-        console.log('Data Upload (tipo):', typeof doc.uploadedEm);
-        console.log('Data Upload (parsed):', new Date(doc.uploadedEm));
-        console.log('Objeto completo:', JSON.stringify(doc, null, 2));
-      });
-      console.log('=== FIM DOCUMENTOS ===\n');
       setDocumentos(docs);
     } catch (error) {
       console.error('Erro ao carregar documentos:', error);

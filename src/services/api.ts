@@ -617,12 +617,6 @@ export const documentosApi = {
       }
 
       const documento = await response.json();
-      console.log('=== DOCUMENTO ENVIADO ===');
-      console.log('Ficheiro:', file.name);
-      console.log('Resposta do backend:', JSON.stringify(documento, null, 2));
-      console.log('uploadedEm (raw):', documento.uploadedEm);
-      console.log('uploadedEm (tipo):', typeof documento.uploadedEm);
-      console.log('========================\n');
       uploadedDocs.push(documento);
     }
 
