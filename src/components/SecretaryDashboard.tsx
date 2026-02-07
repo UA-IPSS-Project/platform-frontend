@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Client } from '@stomp/stompjs';
 import { Button } from './ui/button';
 import { NavDropdown } from './ui/NavDropdown';
@@ -618,133 +619,143 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
           {/* Main Content */}
           <main className="w-full px-6 py-6">
-            {currentView === 'home' ? (
-              <SecretaryHome
+            <AnimatePresence mode="wait">
+              <motion.div
                 key={currentView}
-                isDarkMode={isDarkMode}
-                onNavigate={navigateTo}
-              />
-            ) : currentView === 'notificacoes' ? (
-              <NotificationsPage
-                notifications={notifications.map(n => ({
-                  id: n.id.toString(),
-                  title: n.titulo,
-                  message: n.mensagem,
-                  timestamp: n.dataCriacao,
-                  isRead: n.lida,
-                  icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
-                  type: n.tipo,
-                  metadata: n.metadata,
-                }))}
-                onBack={() => {
-                  navigateBack();
-                  setHighlightedNotificationId(null);
-                }}
-                onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
-                onMarkAllAsRead={handleMarkAllAsRead}
-                onDelete={(id) => handleDeleteNotification(parseInt(id))}
-                onDeleteAll={handleDeleteAllNotifications}
-                isDarkMode={isDarkMode}
-                highlightedNotificationId={highlightedNotificationId || undefined}
-                actionCallbacks={{
-                  onNavigateToAppointment: async (appointmentId) => {
-                    navigateTo('appointments');
-                    setShowNotifications(false);
-                    try {
-                      const response = await marcacoesApi.obterPorId(parseInt(appointmentId));
-                      const appointment = mapApiToAppointment(response);
-                      setSelectedAppointment(appointment);
-                      setShowDetailsDialog(true);
-                      toast.success('Marcação encontrada');
-                    } catch (error) {
-                      console.error('Erro ao carregar marcação:', error);
-                      toast.error('Não foi possível encontrar a marcação');
-                    }
-                  },
-                  onNavigateToCancelledSlot: (dateStr, time) => {
-                    navigateTo('appointments');
-                    setShowNotifications(false);
-                    const slotDate = new Date(dateStr);
-                    setHighlightedSlot({ date: slotDate, time });
-                    setTimeout(() => {
-                      setHighlightedSlot(null);
-                    }, 5000);
-                    toast.info('A mostrar slot cancelado no calendário');
-                  },
-                }}
-              />
-            ) : currentView === 'profile' ? (
-              <ProfilePage
-                user={{
-                  id: authUser?.id || 0,
-                  name: authUser?.nome || userData.name,
-                  nif: authUser?.nif || userData.nif,
-                  contact: authUser?.telefone || userData.contact,
-                  email: authUser?.email || userData.email,
-                }}
-                onBack={() => navigateBack()}
-                onUpdateUser={handleUpdateUser}
-                isDarkMode={isDarkMode}
-                isEmployee={true}
-              />
-            ) : currentView === 'history' ? (
-              <HistoryPage
-                appointments={historyAppointments}
-                onBack={() => navigateBack()}
-                onViewAppointment={handleViewAppointment}
-                isDarkMode={isDarkMode}
-                startDate={historyStartDate}
-                endDate={historyEndDate}
-                onDateChange={(start, end) => {
-                  setHistoryStartDate(start);
-                  setHistoryEndDate(end);
-                }}
-              />
-            ) : currentView === 'management' ? (
-              <UserManagement isDarkMode={isDarkMode} />
-            ) : currentView === 'appointments' ? (
-              <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
-                {/* Left Column - Schedules */}
-                <div className="space-y-6">
-                  <WeeklySchedule
-                    appointments={appointments}
-                    onCreateAppointment={handleCreateAppointment}
-                    onViewAppointment={handleViewAppointment}
-                    onToggleView={() => { /* no-op: monthly view removed */ }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                {currentView === 'home' ? (
+                  <SecretaryHome
+                    key={currentView}
                     isDarkMode={isDarkMode}
-                    onRefresh={carregarMarcacoes}
-                    onBlockSchedule={() => setShowBlockedDialog(true)}
-                    refreshTrigger={refreshKey}
-                    highlightedSlot={highlightedSlot}
-                    currentDate={currentDate}
-                    onDateChange={setCurrentDate}
+                    onNavigate={navigateTo}
                   />
-                </div>
-
-                {/* Right Column - Today's Appointments */}
-                <div>
-                  <TodayAppointments
-                    appointments={appointments}
-                    onViewAppointment={handleViewAppointment}
-                    onShowHistory={() => navigateTo('history')}
-                    showFilter={true}
+                ) : currentView === 'notificacoes' ? (
+                  <NotificationsPage
+                    notifications={notifications.map(n => ({
+                      id: n.id.toString(),
+                      title: n.titulo,
+                      message: n.mensagem,
+                      timestamp: n.dataCriacao,
+                      isRead: n.lida,
+                      icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                      type: n.tipo,
+                      metadata: n.metadata,
+                    }))}
+                    onBack={() => {
+                      navigateBack();
+                      setHighlightedNotificationId(null);
+                    }}
+                    onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
+                    onMarkAllAsRead={handleMarkAllAsRead}
+                    onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                    onDeleteAll={handleDeleteAllNotifications}
                     isDarkMode={isDarkMode}
+                    highlightedNotificationId={highlightedNotificationId || undefined}
+                    actionCallbacks={{
+                      onNavigateToAppointment: async (appointmentId) => {
+                        navigateTo('appointments');
+                        setShowNotifications(false);
+                        try {
+                          const response = await marcacoesApi.obterPorId(parseInt(appointmentId));
+                          const appointment = mapApiToAppointment(response);
+                          setSelectedAppointment(appointment);
+                          setShowDetailsDialog(true);
+                          toast.success('Marcação encontrada');
+                        } catch (error) {
+                          console.error('Erro ao carregar marcação:', error);
+                          toast.error('Não foi possível encontrar a marcação');
+                        }
+                      },
+                      onNavigateToCancelledSlot: (dateStr, time) => {
+                        navigateTo('appointments');
+                        setShowNotifications(false);
+                        const slotDate = new Date(dateStr);
+                        setHighlightedSlot({ date: slotDate, time });
+                        setTimeout(() => {
+                          setHighlightedSlot(null);
+                        }, 5000);
+                        toast.info('A mostrar slot cancelado no calendário');
+                      },
+                    }}
                   />
-                </div>
-              </div>
-            ) : (
-              renderPlaceholder(currentView)
-            )}
+                ) : currentView === 'profile' ? (
+                  <ProfilePage
+                    user={{
+                      id: authUser?.id || 0,
+                      name: authUser?.nome || userData.name,
+                      nif: authUser?.nif || userData.nif,
+                      contact: authUser?.telefone || userData.contact,
+                      email: authUser?.email || userData.email,
+                    }}
+                    onBack={() => navigateBack()}
+                    onUpdateUser={handleUpdateUser}
+                    isDarkMode={isDarkMode}
+                    isEmployee={true}
+                  />
+                ) : currentView === 'history' ? (
+                  <HistoryPage
+                    appointments={historyAppointments}
+                    onBack={() => navigateBack()}
+                    onViewAppointment={handleViewAppointment}
+                    isDarkMode={isDarkMode}
+                    startDate={historyStartDate}
+                    endDate={historyEndDate}
+                    onDateChange={(start, end) => {
+                      setHistoryStartDate(start);
+                      setHistoryEndDate(end);
+                    }}
+                  />
+                ) : currentView === 'management' ? (
+                  <UserManagement isDarkMode={isDarkMode} />
+                ) : currentView === 'appointments' ? (
+                  <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                    {/* Left Column - Schedules */}
+                    <div className="space-y-6">
+                      <WeeklySchedule
+                        appointments={appointments}
+                        onCreateAppointment={handleCreateAppointment}
+                        onViewAppointment={handleViewAppointment}
+                        onToggleView={() => { /* no-op: monthly view removed */ }}
+                        isDarkMode={isDarkMode}
+                        onRefresh={carregarMarcacoes}
+                        onBlockSchedule={() => setShowBlockedDialog(true)}
+                        refreshTrigger={refreshKey}
+                        highlightedSlot={highlightedSlot}
+                        currentDate={currentDate}
+                        onDateChange={setCurrentDate}
+                      />
+                    </div>
 
-            {/* Activity Banner - Always visible on appointments page */}
-            {currentView === 'appointments' && (
-              <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
-                <div className="flex items-center gap-3">
-                  <ClockIcon className="w-5 h-5 text-purple-600" />
-                  <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
-                </div>
-              </div>
-            )}
+                    {/* Right Column - Today's Appointments */}
+                    <div>
+                      <TodayAppointments
+                        appointments={appointments}
+                        onViewAppointment={handleViewAppointment}
+                        onShowHistory={() => navigateTo('history')}
+                        showFilter={true}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  renderPlaceholder(currentView)
+                )}
+
+                {/* Activity Banner - Always visible on appointments page */}
+                {currentView === 'appointments' && (
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                    <div className="flex items-center gap-3">
+                      <ClockIcon className="w-5 h-5 text-purple-600" />
+                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
 

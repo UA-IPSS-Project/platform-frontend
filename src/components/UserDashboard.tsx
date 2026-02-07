@@ -19,6 +19,7 @@ import { marcacoesApi, API_BASE_URL } from '../services/api';
 import { notificationsApi, Notificacao } from '../services/notificationsApi';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../hooks/useAppointments';
 
 interface UserDashboardProps {
@@ -427,7 +428,15 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           </header>
 
           <main className="w-full px-6 py-6">
-            <Routes>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+              >
+                <Routes location={location}>
               {/* Home / Appointments */}
               <Route path="/" element={
                 <>
@@ -559,7 +568,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
               <Route path="/settings" element={renderPlaceholder('Definições')} />
               <Route path="*" element={renderPlaceholder('Página não encontrada')} />
-            </Routes>
+                </Routes>
+              </motion.div>
+            </AnimatePresence>
           </main>
         </div>
 

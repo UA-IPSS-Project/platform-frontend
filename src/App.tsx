@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
 import NewPasswordForm from './components/NewPasswordForm';
@@ -111,7 +112,16 @@ function App() {
           )}
 
           <div className="relative z-10 min-h-screen w-full">
-            <Routes>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="min-h-screen"
+              >
+                <Routes location={location}>
               <Route path="/login" element={
                 isAuthenticated ? <Navigate to="/dashboard" replace /> :
                   <div className="min-h-screen flex items-center justify-center p-4">
@@ -180,7 +190,9 @@ function App() {
               } />
 
               <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
-            </Routes>
+                </Routes>
+              </motion.div>
+            </AnimatePresence>
           </div>
 
         </div>
