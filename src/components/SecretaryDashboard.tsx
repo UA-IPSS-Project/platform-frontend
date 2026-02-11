@@ -39,7 +39,21 @@ import { mapApiToAppointment } from '../utils/appointmentUtils';
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
+  
+  // ===== SLIDING WINDOW CACHE: Appointments =====
+  // Estado principal: marcações da semana atual (exibido no WeeklySchedule)
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  
+  // Cache: marcações organizadas por semana (chave = data da segunda-feira YYYY-MM-DD)
+  // Mantém apenas 5 semanas em memória: -2, -1, atual, +1, +2
+  const [appointmentsByWeek, setAppointmentsByWeek] = useState<Record<string, Appointment[]>>({});
+  
+  // Controlo de carregamento: conjunto de chaves de semanas em fetch
+  const [loadingWeeks, setLoadingWeeks] = useState<Set<string>>(new Set());
+  
+  // Chave da semana atual (para sincronizar UI e cache)
+  const [currentWeekKey, setCurrentWeekKey] = useState('');
+  // ===== END SLIDING WINDOW CACHE =====
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
   const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
   const [historyEndDate, setHistoryEndDate] = useState<Date>(() => {
@@ -84,49 +98,146 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const carregarMarcacoesRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  // ===== SLIDING WINDOW: Helper refs =====
+  // Ref para evitar múltiplas chamadas simultâneas da mesma semana
+  const inFlightWeeksRef = useRef<Set<string>>(new Set());
+  
+  // Ref para rastrear a semana atualmente visível (sincroniza com currentDate)
+  const currentWeekKeyRef = useRef<string>('');
 
-  const carregarMarcacoes = async () => {
-    console.log('[DEBUG] carregarMarcacoes called - authLoading:', authLoading, 'authUser:', authUser?.id);
-    // Wait for auth to complete before loading data
+  // ===== SLIDING WINDOW: Utility Functions =====
+  // Formatar data como chave (YYYY-MM-DD)
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Calcular início/fim de semana e gerar chave (segunda-feira)
+  const getWeekRange = (date: Date) => {
+    const safeDate = new Date(date);
+    if (isNaN(safeDate.getTime())) {
+      safeDate.setTime(Date.now());
+    }
+
+    const day = safeDate.getDay();
+    const diff = safeDate.getDate() - day + (day === 0 ? -6 : 1);
+
+    const startOfWeek = new Date(safeDate);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return {
+      startOfWeek,
+      endOfWeek,
+      key: formatDateKey(startOfWeek),
+    };
+  };
+
+  // Adicionar dias a uma data
+  const addDays = (date: Date, days: number) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+
+  // ===== SLIDING WINDOW: Carregar marcações de uma semana =====
+  // Busca marcações de uma semana específica e armazena no cache
+  // Opções:
+  //   - force: forçar reload mesmo se em cache
+  //   - setCurrent: atualizar appointments[] com os resultados
+  //   - expectedKey: validar se a semana ainda é a atual antes de atualizar UI
+  const loadWeekAppointments = async (
+    date: Date,
+    options: { force?: boolean; setCurrent?: boolean; expectedKey?: string } = {}
+  ) => {
+    // Aguardar autenticação
     if (authLoading || !authUser?.id) {
-      console.log('[DEBUG] Skipping carregarMarcacoes - waiting for auth');
       return;
     }
-    console.log('[DEBUG] Proceeding to load marcações');
+
+    const { startOfWeek, endOfWeek, key } = getWeekRange(date);
+    const cached = appointmentsByWeek[key];
+    const expectedKey = options.expectedKey ?? key;
+
+    // Se está em cache e não é force, usar cache
+    if (cached && !options.force) {
+      if (options.setCurrent && currentWeekKeyRef.current === expectedKey) {
+        setAppointments(cached);
+      }
+      return;
+    }
+
+    // Evitar múltiplas chamadas simultâneas para a mesma semana
+    if (inFlightWeeksRef.current.has(key)) {
+      return;
+    }
+
+    console.log('[DEBUG] loadWeekAppointments start', {
+      key,
+      expectedKey,
+      force: options.force,
+      setCurrent: options.setCurrent,
+    });
+
+    // Marcar como em fetch e adicionar ao controlo de carregamento
+    inFlightWeeksRef.current.add(key);
+    setLoadingWeeks(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+
     try {
-      // Calcular início e fim da semana para filtrar
-      const curr = new Date(currentDate);
-      const day = curr.getDay(); // 0 (Sun) to 6 (Sat)
-      // Se for Domingo (0), queremos a segunda-feira da semana passada? 
-      // Ou assumimos que a semana começa à Segunda.
-      // Ajuste para garantir que apanhamos a Segunda-feira da semana atual
-      const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
-
-      const startOfWeek = new Date(curr);
-      startOfWeek.setDate(diff);
-      startOfWeek.setHours(0, 0, 0, 0);
-
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6); // Até Domingo
-      endOfWeek.setHours(23, 59, 59, 999);
-
       const response = await marcacoesApi.consultarAgenda(
         startOfWeek.toISOString(),
         endOfWeek.toISOString()
       );
-      // A resposta de consultarAgenda é MarcacaoResponse[], não Page
       const data = response;
       const convertidas = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
-      setAppointments(convertidas);
-      console.log('Total de marcações carregadas (semana):', convertidas.length);
+
+      // Armazenar no cache
+      setAppointmentsByWeek(prev => ({
+        ...prev,
+        [key]: convertidas,
+      }));
+
+      // Se setCurrent e a semana ainda é a atual, atualizar UI
+      if (options.setCurrent && currentWeekKeyRef.current === expectedKey) {
+        setAppointments(convertidas);
+      }
     } catch (error) {
       console.error('Erro ao carregar marcações:', error);
       toast.error('Erro ao carregar marcações');
+    } finally {
+      // Limpar controlo de carregamento
+      inFlightWeeksRef.current.delete(key);
+      setLoadingWeeks(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      console.log('[DEBUG] loadWeekAppointments done', { key });
     }
   };
 
+  // ===== SLIDING WINDOW: Refresh da semana atual =====
+  // Força reload da semana visível (usado por botões e WebSocket)
+  const refreshCurrentWeek = async () => {
+    const { key } = getWeekRange(currentDate);
+    currentWeekKeyRef.current = key;
+    setCurrentWeekKey(key);
+    console.log('[DEBUG] refreshCurrentWeek', { key, date: currentDate });
+    await loadWeekAppointments(currentDate, { force: true, setCurrent: true, expectedKey: key });
+  };
+
   // Keep ref updated with latest function
-  carregarMarcacoesRef.current = carregarMarcacoes;
+  carregarMarcacoesRef.current = refreshCurrentWeek;
 
   const carregarHistorico = async () => {
     try {
@@ -161,15 +272,60 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     // Reload when filters change (if view is history)
   }, [currentView, historyStartDate, historyEndDate]);
 
+  // ===== SLIDING WINDOW: Efeito principal =====
+  // Quando currentDate muda, atualiza a janela deslizante:
+  //   1. Poda o cache (mantém apenas -2, -1, 0, +1, +2)
+  //   2. Carrega as 5 semanas (em paralelo, com cache check)
   useEffect(() => {
-    console.log('[DEBUG] useEffect[authUser.id, authLoading, currentDate] triggered');
-    carregarMarcacoes();
+    if (authLoading || !authUser?.id) {
+      return;
+    }
+
+    const { key: currentKey } = getWeekRange(currentDate);
+    currentWeekKeyRef.current = currentKey;
+    setCurrentWeekKey(currentKey);
+
+    // Calcular chaves das 5 semanas
+    const prevDate = addDays(currentDate, -7);
+    const prevPrevDate = addDays(currentDate, -14);
+    const nextDate = addDays(currentDate, 7);
+    const nextNextDate = addDays(currentDate, 14);
+    const { key: prevKey } = getWeekRange(prevDate);
+    const { key: prevPrevKey } = getWeekRange(prevPrevDate);
+    const { key: nextKey } = getWeekRange(nextDate);
+    const { key: nextNextKey } = getWeekRange(nextNextDate);
+
+    console.log('[DEBUG] sliding window update', {
+      currentKey,
+      prevKey,
+      prevPrevKey,
+      nextKey,
+      nextNextKey,
+    });
+
+    // Podar cache: manter apenas as 5 semanas
+    setAppointmentsByWeek(prev => {
+      const nextCache: Record<string, Appointment[]> = {};
+      if (prev[prevPrevKey]) nextCache[prevPrevKey] = prev[prevPrevKey];
+      if (prev[prevKey]) nextCache[prevKey] = prev[prevKey];
+      if (prev[currentKey]) nextCache[currentKey] = prev[currentKey];
+      if (prev[nextKey]) nextCache[nextKey] = prev[nextKey];
+      if (prev[nextNextKey]) nextCache[nextNextKey] = prev[nextNextKey];
+      return nextCache;
+    });
+
+    // Carregar as 5 semanas (em paralelo)
+    loadWeekAppointments(currentDate, { setCurrent: true, expectedKey: currentKey });
+    loadWeekAppointments(prevDate);
+    loadWeekAppointments(prevPrevDate);
+    loadWeekAppointments(nextDate);
+    loadWeekAppointments(nextNextDate);
   }, [authUser?.id, authLoading, currentDate]);
 
   // Recarregar marcações quando volta ao separador de appointments
   useEffect(() => {
     if (currentView === 'appointments') {
-      carregarMarcacoes();
+      refreshCurrentWeek();
     }
   }, [currentView]);
 
@@ -185,7 +341,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     const interval = setInterval(() => {
       if (currentView === 'appointments') {
-        carregarMarcacoes();
+        refreshCurrentWeek();
       } else if (currentView === 'history') {
         carregarHistorico();
       }
@@ -316,7 +472,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const handleCreateAppointment = async (date: Date, time: string) => {
     // Recarregar marcações antes de abrir o dialog
-    await carregarMarcacoes();
+    await refreshCurrentWeek();
     setEditingAppointment({ date, time });
     setShowAppointmentDialog(true);
   };
@@ -374,21 +530,31 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       toast.error('Não foi possível carregar os dados mais recentes da marcação.');
       // Fallback: open with existing data if fetch fails? Or just returning is safer?
       // Better to refresh list and stop if it likely doesn't exist.
-      carregarMarcacoes();
+      refreshCurrentWeek();
     }
   };
 
   const handleUpdateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments(appointments.map(apt =>
+    setAppointments(prev => prev.map(apt =>
       apt.id === id ? { ...apt, ...updates } : apt
     ));
+
+    const { key } = getWeekRange(currentDate);
+    setAppointmentsByWeek(prev => {
+      const currentWeek = prev[key];
+      if (!currentWeek) return prev;
+      return {
+        ...prev,
+        [key]: currentWeek.map(apt => (apt.id === id ? { ...apt, ...updates } : apt)),
+      };
+    });
   };
 
   const handleCancelAppointment = (id: string, reason: string) => {
     handleUpdateAppointment(id, { status: 'cancelled', cancellationReason: reason });
     toast.success('Marcação cancelada e utente notificado com o motivo');
     // Refresh appointments to reflect the cancellation immediately
-    carregarMarcacoes();
+    refreshCurrentWeek();
   };
 
   const handleNavigate = (view: ViewType) => {
@@ -446,6 +612,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   };
 
   const currentActivity = getCurrentActivity();
+  const isCurrentWeekLoading = currentWeekKey ? loadingWeeks.has(currentWeekKey) : false;
 
   const renderPlaceholder = (view: ViewType) => (
     <div className="flex items-center justify-center h-[600px]">
@@ -715,13 +882,18 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
                     {/* Left Column - Schedules */}
                     <div className="space-y-6">
+                      {isCurrentWeekLoading && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          A carregar semana...
+                        </div>
+                      )}
                       <WeeklySchedule
                         appointments={appointments}
                         onCreateAppointment={handleCreateAppointment}
                         onViewAppointment={handleViewAppointment}
                         onToggleView={() => { /* no-op: monthly view removed */ }}
                         isDarkMode={isDarkMode}
-                        onRefresh={carregarMarcacoes}
+                        onRefresh={refreshCurrentWeek}
                         onBlockSchedule={() => setShowBlockedDialog(true)}
                         refreshTrigger={refreshKey}
                         highlightedSlot={highlightedSlot}
@@ -777,7 +949,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               setShowAppointmentDialog(false);
               setEditingAppointment(null);
             }}
-            onSuccess={carregarMarcacoes}
+            onSuccess={refreshCurrentWeek}
             date={editingAppointment.date}
             time={editingAppointment.time}
             funcionarioId={authUser.id}
@@ -790,7 +962,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             onClose={() => {
               setShowDetailsDialog(false);
               setSelectedAppointment(null);
-              carregarMarcacoes();
+              refreshCurrentWeek();
             }}
             appointment={selectedAppointment}
             onUpdate={handleUpdateAppointment}
@@ -817,7 +989,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           onOpenChange={setShowBlockedDialog}
           appointments={appointments}
           onSuccess={() => {
-            carregarMarcacoes();
+            refreshCurrentWeek();
             setRefreshKey(prev => prev + 1);
           }}
         />

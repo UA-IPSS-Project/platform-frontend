@@ -63,7 +63,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
+  
+  // ===== SLIDING WINDOW CACHE: Holidays & Blocks =====
+  // Cache de feriados por ano (mantém todos os anos carregados)
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
+  
+  // Cache de bloqueios por semana (mantém apenas janela deslizante: -2, -1, 0, +1, +2)
+  const [blocksByWeek, setBlocksByWeek] = useState<Record<string, Set<string>>>({});
+  
+  // Rastreio de semanas em carregamento (para evitar múltiplas chamadas simultâneas)
+  const [loadingBlockWeeks, setLoadingBlockWeeks] = useState<Set<string>>(new Set());
 
   // Opções de ano (dropdown)
   const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
@@ -169,8 +178,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     return slotDateTime <= new Date();
   };
 
+  // ===== LEGACY STATE: blockedSlots (unified view from cache) =====
+  // Mantido para compatibilidade: agregado de todos os bloqueios das semanas em cache
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
 
+  // ===== HELPER FUNCTIONS =====
   // Helper para minutos
   const timeToMinutes = (time: string) => {
     if (!time) return 0;
@@ -178,39 +190,161 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     return h * 60 + m;
   };
 
-  // Carregar bloqueios
-  const fetchBlocks = async () => {
+  // Formatar chave de data (YYYY-MM-DD)
+  const formatDateKey = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Obter semana e chave
+  const getWeekRange = (date: Date) => {
+    const safeDate = new Date(date);
+    if (isNaN(safeDate.getTime())) {
+      safeDate.setTime(Date.now());
+    }
+
+    const day = safeDate.getDay();
+    const diff = safeDate.getDate() - day + (day === 0 ? -6 : 1);
+
+    const startOfWeek = new Date(safeDate);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return {
+      startOfWeek,
+      endOfWeek,
+      key: formatDateKey(startOfWeek),
+    };
+  };
+
+  // Adicionar dias a uma data
+  const addDays = (date: Date, days: number) => {
+    const next = new Date(date);
+    next.setDate(next.getDate() + days);
+    return next;
+  };
+
+  // ===== SLIDING WINDOW CACHE: Carregar bloqueios por semana =====
+  // Carrega bloqueios de uma semana específica e armazena no cache
+  const loadWeekBlocks = async (date: Date) => {
+    const { startOfWeek, endOfWeek, key } = getWeekRange(date);
+
+    // Se já está em cache ou em carregamento, skip
+    if (blocksByWeek[key] || loadingBlockWeeks.has(key)) {
+      console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
+      return;
+    }
+
+    console.log('[DEBUG] loadWeekBlocks start:', { key, start: startOfWeek, end: endOfWeek });
+    setLoadingBlockWeeks(prev => {
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+
     try {
-      // Buscar todos os bloqueios para evitar problemas entre meses
+      // Buscar bloqueios da semana
       const blocks = await bloqueiosApi.listar();
 
-      const newBlockedSlots = new Set<string>();
+      const weekBlockedSlots = new Set<string>();
 
       blocks.forEach(block => {
         const date = new Date(block.data);
         if (isNaN(date.getTime())) return;
-        const dateStr = date.toISOString().split('T')[0];
 
-        // Usar lógica de minutos para comparar
+        // Apenas bloqueios dentro da janela da semana
+        if (date < startOfWeek || date > endOfWeek) return;
+
+        const dateStr = date.toISOString().split('T')[0];
         const startMins = timeToMinutes(block.horaInicio);
         const endMins = timeToMinutes(block.horaFim);
 
         timeSlots.forEach(slot => {
           const slotMins = timeToMinutes(slot);
           if (slotMins >= startMins && slotMins < endMins) {
-            newBlockedSlots.add(`${dateStr}_${slot}`);
+            weekBlockedSlots.add(`${dateStr}_${slot}`);
           }
         });
       });
-      setBlockedSlots(newBlockedSlots);
+
+      // Armazenar no cache
+      setBlocksByWeek(prev => ({
+        ...prev,
+        [key]: weekBlockedSlots,
+      }));
+
+      console.log('[DEBUG] loadWeekBlocks done:', { key, count: weekBlockedSlots.size });
     } catch (error) {
-      console.error("Erro ao carregar bloqueios:", error);
+      console.error('[ERROR] loadWeekBlocks:', error);
+    } finally {
+      setLoadingBlockWeeks(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
+  // ===== SLIDING WINDOW: Atualizar janela de bloqueios (2 semanas antes/depois) =====
   useEffect(() => {
-    fetchBlocks();
-  }, [currentDate, onRefresh, refreshTrigger]); // Recarregar quando muda a semana ou refresh solicitado
+    console.log('[DEBUG] blocks sliding window update triggered:', { currentDate });
+
+    // Calcular chaves das 5 semanas (2 antes, atual, 2 depois)
+    const currentWeek = currentDate;
+    const prevWeek1 = addDays(currentDate, -7);
+    const prevWeek2 = addDays(currentDate, -14);
+    const nextWeek1 = addDays(currentDate, 7);
+    const nextWeek2 = addDays(currentDate, 14);
+
+    const { key: currentKey } = getWeekRange(currentWeek);
+    const { key: prevKey1 } = getWeekRange(prevWeek1);
+    const { key: prevKey2 } = getWeekRange(prevWeek2);
+    const { key: nextKey1 } = getWeekRange(nextWeek1);
+    const { key: nextKey2 } = getWeekRange(nextWeek2);
+
+    console.log('[DEBUG] blocks window keys:', {
+      prevKey2,
+      prevKey1,
+      currentKey,
+      nextKey1,
+      nextKey2,
+    });
+
+    // Podar cache: manter apenas as 5 semanas da janela
+    setBlocksByWeek(prev => {
+      const nextCache: Record<string, Set<string>> = {};
+      if (prev[prevKey2]) nextCache[prevKey2] = prev[prevKey2];
+      if (prev[prevKey1]) nextCache[prevKey1] = prev[prevKey1];
+      if (prev[currentKey]) nextCache[currentKey] = prev[currentKey];
+      if (prev[nextKey1]) nextCache[nextKey1] = prev[nextKey1];
+      if (prev[nextKey2]) nextCache[nextKey2] = prev[nextKey2];
+      return nextCache;
+    });
+
+    // Carregar as 5 semanas (em paralelo, mas cada função verifica cache)
+    loadWeekBlocks(prevWeek2);
+    loadWeekBlocks(prevWeek1);
+    loadWeekBlocks(currentWeek);
+    loadWeekBlocks(nextWeek1);
+    loadWeekBlocks(nextWeek2);
+  }, [currentDate, onRefresh, refreshTrigger]);
+
+  // ===== AGREGADO: Combinar todos os bloqueios em cache numa única Set =====
+  // (Para compatibilidade com código existente que usa blockedSlots)
+  useEffect(() => {
+    const allBlocks = new Set<string>();
+    Object.values(blocksByWeek).forEach(weekSet => {
+      weekSet.forEach(slot => allBlocks.add(slot));
+    });
+    setBlockedSlots(allBlocks);
+    console.log('[DEBUG] blockedSlots aggregated:', { total: allBlocks.size });
+  }, [blocksByWeek]);
 
   // Verificar se um slot está bloqueado (visualização + clique)
   const isSlotBlockedSync = (date: Date, time: string): boolean => {
@@ -778,13 +912,20 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
   }, [quickDate, appointments, blockedSlots, quickMonthBlocks]);
 
+  // ===== SLIDING WINDOW CACHE: Carregar feriados por ano =====
+  // Carrega feriados de um ano se ainda não estiverem em cache
   const loadHolidays = async (year: number) => {
-    if (holidaysByYear[year]) return;
+    if (holidaysByYear[year]) {
+      console.log('[DEBUG] loadHolidays skip (cached):', { year });
+      return;
+    }
+    console.log('[DEBUG] loadHolidays start:', { year });
     try {
       const dates = await calendarioApi.listarFeriados(year);
       setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
+      console.log('[DEBUG] loadHolidays done:', { year, count: dates.length });
     } catch (error) {
-      console.error('Erro ao carregar feriados:', error);
+      console.error('[ERROR] loadHolidays:', error);
     }
   };
 
@@ -796,6 +937,32 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     return set.has(key);
   };
 
+  // ===== SLIDING WINDOW: Carregar feriados dos anos das 5 semanas =====
+  useEffect(() => {
+    console.log('[DEBUG] holidays sliding window update triggered:', { currentDate });
+
+    // Calcular anos únicos nas 5 semanas (2 antes, atual, 2 depois)
+    const currentWeek = currentDate;
+    const prevWeek1 = addDays(currentDate, -7);
+    const prevWeek2 = addDays(currentDate, -14);
+    const nextWeek1 = addDays(currentDate, 7);
+    const nextWeek2 = addDays(currentDate, 14);
+
+    const years = new Set([
+      prevWeek2.getFullYear(),
+      prevWeek1.getFullYear(),
+      currentWeek.getFullYear(),
+      nextWeek1.getFullYear(),
+      nextWeek2.getFullYear(),
+    ]);
+
+    console.log('[DEBUG] holidays window years:', Array.from(years));
+
+    // Carregar feriados de cada ano único
+    years.forEach(year => loadHolidays(year));
+  }, [currentDate]);
+
+  // ===== QUICK DIALOG: Carregar feriados do ano selecionado =====
   useEffect(() => {
     if (quickDialogOpen) {
       loadHolidays(quickYear);
