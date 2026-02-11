@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { GlassCard } from '../ui/glass-card';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-// NOTA: Não é preciso DialogFooter, vamos manter o layout inline
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-// O componente Input não é usado para o ano
 import { toast } from 'sonner';
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../CustomIcons';
 import { Appointment } from '../../types';
@@ -47,8 +45,9 @@ const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onToggleView, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange }: Readonly<WeeklyScheduleProps>) {
   const isMobile = useIsMobile();
+  const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [quickDialogOpen, setQuickDialogOpen] = useState(false);
@@ -64,6 +63,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
+  const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
   // Opções de ano (dropdown)
   const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
@@ -99,6 +99,18 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const media = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
+    const handleChange = () => setIsTablet(media.matches);
+
+    handleChange();
+    media.addEventListener('change', handleChange);
+
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
 
   // Gerar ID estável para slot (formato: slot-YYYY-MM-DD-HHMM)
   const getSlotId = (date: Date, time: string) => {
@@ -158,7 +170,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
-  const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
 
   // Helper para minutos
   const timeToMinutes = (time: string) => {
@@ -170,7 +181,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Carregar bloqueios
   const fetchBlocks = async () => {
     try {
-      setIsLoadingBlocks(true);
       // Buscar todos os bloqueios para evitar problemas entre meses
       const blocks = await bloqueiosApi.listar();
 
@@ -195,8 +205,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       setBlockedSlots(newBlockedSlots);
     } catch (error) {
       console.error("Erro ao carregar bloqueios:", error);
-    } finally {
-      setIsLoadingBlocks(false);
     }
   };
 
@@ -681,7 +689,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
       // Verificar se há algum horário disponível nesse dia
-      const dateStr = testDate.toISOString().split('T')[0];
       let hasAvailable = false;
 
       for (const slot of timeSlots) {
@@ -770,6 +777,35 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       return slots[0];
     });
   }, [quickDate, appointments, blockedSlots, quickMonthBlocks]);
+
+  const loadHolidays = async (year: number) => {
+    if (holidaysByYear[year]) return;
+    try {
+      const dates = await calendarioApi.listarFeriados(year);
+      setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
+    } catch (error) {
+      console.error('Erro ao carregar feriados:', error);
+    }
+  };
+
+  // Helper function to check if a date is a holiday
+  const isHoliday = (date: Date): boolean => {
+    const set = holidaysByYear[date.getFullYear()];
+    if (!set) return false;
+    const key = date.toISOString().split('T')[0];
+    return set.has(key);
+  };
+
+  useEffect(() => {
+    if (quickDialogOpen) {
+      loadHolidays(quickYear);
+    }
+  }, [quickDialogOpen, quickYear, quickMonth]);
+
+  // Helper function to check if a date has available slots
+  const hasAvailableSlotsForDate = (date: Date): boolean => {
+    return getAvailableSlotsForDate(date).length > 0;
+  };
 
   const handleConfirmQuickAppointment = () => {
     if (!quickTime) {
@@ -867,7 +903,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             {weekDays.map((day, index) => (
               <div key={index} className="text-center">
                 <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {isMobile ? WEEKDAYS_MOBILE[index] : WEEKDAYS_SHORT[index]}
+                  {isMobile ? WEEKDAYS_MOBILE[index] : isTablet ? WEEKDAYS_MEDIUM[index] : WEEKDAYS_SHORT[index]}
                 </div>
                 <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
               </div>
@@ -900,6 +936,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     );
 
                     const isBlockedAdmin = isSlotBlockedSync(day, time);
+                    const isHolidayDay = isHoliday(day);
                     // Clientes só podem clicar nas suas próprias marcações
                     // Admin bloqueado também conta como blocked
                     const blocked = (booked && isClient && !isOwn) || isBlockedAdmin;
@@ -910,6 +947,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600 cursor-pointer';
                     const pastSlot = isDarkMode
                       ? 'border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed'
+                      : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
+                    const holidaySlot = isDarkMode
+                      ? 'border-gray-800 bg-gray-900/60 text-gray-500 cursor-not-allowed'
                       : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
 
                     // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
@@ -954,6 +994,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     // Compute tooltip title in a separate statement to avoid nested ternary
                     const getSlotTooltip = (): string => {
                       if (!appointment) {
+                        if (isHolidayDay) return 'Feriado';
                         return inPast ? 'Horário no passado' : 'Clique para marcar';
                       }
                       if (appointment.status === 'reserved') {
@@ -980,11 +1021,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         key={idx}
                         id={slotId}
                         onClick={() => handleSlotClick(day, time)}
-                        disabled={inPast && !appointment}
+                        disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
                         style={appointment?.status === 'no-show' ? { backgroundColor: '#f97316', borderColor: '#ea580c', color: 'white' } : {}}
                         title={getSlotTooltip()}
                         className={`${base} ${inPast && !appointment
                           ? pastSlot
+                          : isHolidayDay && !appointment
+                            ? holidaySlot
                           : booked
                             ? appointmentStyles
                             : available
@@ -1195,9 +1238,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       const day = index + 1;
                       const testDate = new Date(quickYear, quickMonth, day);
                       const dayOfWeek = testDate.getDay();
+                      const isPastDay = testDate < today;
 
                       // Filtrar apenas dias de semana (1=segunda, 5=sexta)
                       if (dayOfWeek === 0 || dayOfWeek === 6) return null;
+                      if (isHoliday(testDate)) return null;
+                      if (isPastDay) return null;
+                      if (!hasAvailableSlotsForDate(testDate)) return null;
 
                       return (
                         <SelectItem key={day} value={String(day)}>

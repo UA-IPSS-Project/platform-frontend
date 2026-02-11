@@ -362,6 +362,7 @@ export function AppointmentDetailsDialog({
   // Availability Logic for Rescheduling
   const [availableRescheduleSlots, setAvailableRescheduleSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
+  const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
   const generateTimeSlots = () => {
     const slots = [];
@@ -424,6 +425,29 @@ export function AppointmentDetailsDialog({
     loadBlocks();
   }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
 
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+
+    const loadHolidays = async () => {
+      if (holidaysByYear[rescheduleYear]) return;
+      try {
+        const dates = await calendarioApi.listarFeriados(rescheduleYear);
+        setHolidaysByYear(prev => ({ ...prev, [rescheduleYear]: new Set(dates) }));
+      } catch (error) {
+        console.error('Erro ao carregar feriados para reagendamento:', error);
+      }
+    };
+
+    loadHolidays();
+  }, [rescheduleYear, showRescheduleDialog, holidaysByYear]);
+
+  const isHoliday = (date: Date) => {
+    const set = holidaysByYear[date.getFullYear()];
+    if (!set) return false;
+    const key = date.toISOString().split('T')[0];
+    return set.has(key);
+  };
+
   // Update available slots when blocks, booked slots or date changes
   useEffect(() => {
     if (!showRescheduleDialog) return;
@@ -432,9 +456,10 @@ export function AppointmentDetailsDialog({
     const dateStr = selectedDate.toISOString().split('T')[0];
     const timeSlots = generateTimeSlots();
     const dayOfWeek = selectedDate.getDay();
+    const isHolidayDate = isHoliday(selectedDate);
 
     // Block weekends immediately
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
+    if (dayOfWeek === 0 || dayOfWeek === 6 || isHolidayDate) {
       setAvailableRescheduleSlots([]);
       setRescheduleTime('');
       return;
@@ -1040,7 +1065,7 @@ export function AppointmentDetailsDialog({
                     {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => {
                       const testDate = new Date(rescheduleYear, rescheduleMonth, day);
                       const dayOfWeek = testDate.getDay();
-                      if (dayOfWeek === 0 || dayOfWeek === 6) return null;
+                      if (dayOfWeek === 0 || dayOfWeek === 6 || isHoliday(testDate)) return null;
 
                       return <SelectItem key={day} value={String(day)}>{day}</SelectItem>;
                     })}

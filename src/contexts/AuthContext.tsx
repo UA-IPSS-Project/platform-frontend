@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: userData.role,
           nif: userData.nif,
           telefone: userData.telefone,
-          active: true,
+          active: userData.active,
         };
         setUser(updatedUser);
         setIsAuthenticated(true);

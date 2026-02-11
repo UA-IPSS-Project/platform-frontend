@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useAuth } from '../contexts/AuthContext';
-import { bloqueiosApi } from '../services/api';
+import { bloqueiosApi, calendarioApi } from '../services/api';
 import { toast } from 'sonner';
 import { Trash2, Calendar as CalendarIcon, Lock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,6 +38,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
+    const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
     // Form State
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
@@ -54,8 +55,20 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             setEndDate(new Date());
             setStartTime('09:00');
             setEndTime('09:15');
+            const year = (new Date()).getFullYear();
+            loadHolidays(year);
         }
     }, [open]);
+
+    const loadHolidays = async (year: number) => {
+        if (holidaysByYear[year]) return;
+        try {
+            const dates = await calendarioApi.listarFeriados(year);
+            setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
+        } catch (error) {
+            console.error('Erro ao carregar feriados:', error);
+        }
+    };
 
     const fetchBloqueios = async () => {
         try {
@@ -168,6 +181,30 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const startSlots = getAvailableSlots(startDate, 'start').filter(s => s !== "17:00");
     const endSlots = getAvailableSlots(endDate, 'end');
 
+    const isHoliday = (date: Date) => {
+        const set = holidaysByYear[date.getFullYear()];
+        if (!set) return false;
+        const key = date.toISOString().split('T')[0];
+        return set.has(key);
+    };
+
+    const isWeekend = (date: Date) => date.getDay() === 0 || date.getDay() === 6;
+
+    const isPastDate = (date: Date) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d < today;
+    };
+
+    const isDisabledStartDate = (date: Date) => isPastDate(date) || isWeekend(date) || isHoliday(date);
+
+    const isDisabledEndDate = (date: Date) => {
+        if (startDate && date < startDate) return true;
+        return isWeekend(date) || isHoliday(date);
+    };
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !endDate || !startTime || !endTime) {
@@ -263,6 +300,8 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                         setEndDate(date);
                                                     }
                                                 }}
+                                                onMonthChange={(date) => loadHolidays(date.getFullYear())}
+                                                disabled={isDisabledStartDate}
                                                 initialFocus
                                             />
                                         </PopoverContent>
@@ -317,7 +356,8 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                 mode="single"
                                                 selected={endDate}
                                                 onSelect={setEndDate}
-                                                disabled={(date) => startDate ? date < startDate : false}
+                                                onMonthChange={(date) => loadHolidays(date.getFullYear())}
+                                                disabled={isDisabledEndDate}
                                                 initialFocus
                                             />
                                         </PopoverContent>

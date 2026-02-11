@@ -526,6 +526,12 @@ export const calendarioApi = {
     apiRequest<BloqueioAgenda[]>(`/api/calendario/bloqueios?ano=${ano}&mes=${mes}`, {
       method: 'GET',
     }),
+
+  // Listar feriados de um ano
+  listarFeriados: (ano: number) =>
+    apiRequest<string[]>(`/api/calendario/feriados?ano=${ano}`, {
+      method: 'GET',
+    }),
 };
 
 // ===================
