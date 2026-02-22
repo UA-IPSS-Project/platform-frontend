@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Client } from '@stomp/stompjs';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { NavDropdown } from './ui/NavDropdown';
-import { NotificationsPanel } from './ui/NotificationsPanel';
 import { NotificationsPage } from './NotificationsPage';
 import { Sidebar } from './Sidebar';
 import { WeeklySchedule } from './secretary/WeeklySchedule';
@@ -11,16 +9,17 @@ import { HistoryPage } from './secretary/HistoryPage';
 import { ProfilePage } from './ProfilePage';
 import { ClientAppointmentDialog } from './client/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
-import { BellIcon, ClockIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon } from './CustomIcons';
+import { ClockIcon } from './CustomIcons';
 import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { marcacoesApi, API_BASE_URL } from '../services/api';
-import { notificationsApi, Notificacao } from '../services/api';
+import { marcacoesApi } from '../services/api';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../hooks/useAppointments';
+import { useNotifications } from '../hooks/useNotifications';
+import { DashboardLayout } from './layout/DashboardLayout';
 
 interface UserDashboardProps {
   user: {
@@ -46,6 +45,17 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     setAllAppointments
   } = useAppointments(authUser?.id, authUser?.nif);
 
+  // Custom Hooks
+  const {
+    notifications,
+    unreadCount,
+    carregarNotificacoes,
+    handleMarkAsRead,
+    handleMarkAllAsRead,
+    handleDeleteNotification,
+    handleDeleteAllNotifications
+  } = useNotifications(authUser?.email);
+
   // States managed locally
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showClientDialog, setShowClientDialog] = useState(false);
@@ -55,11 +65,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Navigation Logic
-  // Derive currentView from path
   const getCurrentView = () => {
     const path = location.pathname;
     if (path.endsWith('/history')) return 'history';
@@ -74,7 +82,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   // History Date State
   const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
   const [historyEndDate, setHistoryEndDate] = useState<Date>(() => {
-    // Include future cancelled appointments by default (1 year ahead)
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 1);
     return futureDate;
@@ -83,142 +90,38 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const carregarHistorico = async () => {
     if (!authUser?.id) return;
-
     try {
       const endOfDay = new Date(historyEndDate);
       endOfDay.setHours(23, 59, 59, 999);
-
-      // Ensure time starts at 00:00:00 for the selected start date
       let startIsoString = undefined;
       if (historyStartDate) {
         const s = new Date(historyStartDate);
         s.setHours(0, 0, 0, 0);
         startIsoString = s.toISOString();
       }
-
-      const data = await marcacoesApi.obterPassadas(
-        startIsoString,
-        endOfDay.toISOString(),
-        authUser.id // Filter by current user
-      );
-
-      const mapped = data.map(mapApiToAppointment);
-      setHistoryAppointments(mapped);
+      const data = await marcacoesApi.obterPassadas(startIsoString, endOfDay.toISOString(), authUser.id);
+      setHistoryAppointments(data.map(mapApiToAppointment));
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
       toast.error('Erro ao carregar histórico');
     }
   };
 
   useEffect(() => {
-    if (getCurrentView() === 'history') {
-      carregarHistorico();
-    }
+    if (getCurrentView() === 'history') carregarHistorico();
   }, [location.pathname, historyStartDate, historyEndDate, authUser?.id]);
 
-  // Notifications State
-  const [notifications, setNotifications] = useState<Notificacao[]>([]);
-
-  const carregarNotificacoes = async () => {
-    try {
-      const data = await notificationsApi.listar();
-      setNotifications(data);
-    } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (authUser?.id) {
-      carregarNotificacoes();
-    }
-  }, [authUser?.id]);
-
-  useEffect(() => {
-    // Configurar WebSocket
-    const baseUrl = API_BASE_URL || window.location.origin;
-    const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
-
-    const client = new Client({
-      brokerURL: wsUrl,
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
-
-    client.onConnect = () => {
-      console.log('WebSocket Conectado');
-      client.subscribe('/user/queue/notifications', (message) => {
-        if (message.body) {
-          try {
-            const novaNotificacao: Notificacao = JSON.parse(message.body);
-            setNotifications(prev => [novaNotificacao, ...prev]);
-            toast.info(novaNotificacao.titulo, {
-              description: novaNotificacao.mensagem,
-            });
-            // Refresh appointments to reflect changes (e.g., cancellation)
-            // Small delay to allow backend transaction to commit before querying
-            setTimeout(() => {
-              refreshAppointments();
-            }, 500);
-          } catch (e) {
-            console.error('Erro ao processar notificação:', e);
-          }
-        }
-      });
-    };
-
-    client.onStompError = (frame) => {
-      console.error('Erro no Broker STOMP:', frame.headers['message']);
-      console.error('Detalhes:', frame.body);
-    };
-
-    client.activate();
-
-    return () => {
-      client.deactivate();
-    };
-  }, []);
-
-  const handleMarkAsRead = async (id: number) => {
-    try {
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
-      await notificationsApi.marcarComoLida(id);
-    } catch (error) {
-      console.error('Erro ao marcar como lida:', error);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-    try { await notificationsApi.marcarTodasComoLidas(); } catch (e) { console.error(e); }
-  };
-
-  const handleDeleteNotification = async (id: number) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-    try { await notificationsApi.eliminar(id); } catch (e) { console.error(e); }
-  };
-
-  const handleDeleteAllNotifications = async () => {
-    setNotifications([]);
-    try { await notificationsApi.eliminarTodas(); toast.success('Todas as notificações eliminadas'); } catch (e) { console.error(e); }
-  };
-
-  const unreadCount = notifications.filter(n => !n.lida).length;
 
   const visibleAppointments = useMemo(
     () => allAppointments.filter((apt) => apt.patientNIF === user.nif),
     [allAppointments, user.nif]
   );
 
-
-
   const handleNavigate = (view: string) => {
     if (view === 'appointments') navigate('/dashboard');
     else if (view === 'history') navigate('/dashboard/history');
     else if (view === 'profile') navigate('/dashboard/profile');
     else if (view === 'notificacoes') navigate('/dashboard/notifications');
-    else navigate(`/dashboard/${view}`); // Fail-safe for other views
+    else navigate(`/dashboard/${view}`);
   };
 
   const handleCreateAppointment = async (date: Date, time: string) => {
@@ -266,7 +169,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       setSelectedAppointment(fresh);
       setShowDetailsDialog(true);
     } catch (e) {
-      console.error(e);
       toast.error('Erro ao carregar detalhes');
       refreshAppointments();
     }
@@ -281,13 +183,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     </div>
   );
 
-  /* Logic for Next Appointment Countdown */
   const getCurrentActivity = () => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentTime = currentHour * 60 + currentMinute;
+    const currentTime = now.getHours() * 60 + now.getMinutes();
 
     const todayAppointments = visibleAppointments
       .filter(apt => {
@@ -301,13 +200,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         return (aHour * 60 + aMin) - (bHour * 60 + bMin);
       });
 
-    // Check for in-progress appointment
     const inProgressApt = todayAppointments.find(apt => apt.status === 'in-progress');
-    if (inProgressApt) {
-      return `Atendimento a decorrer`;
-    }
+    if (inProgressApt) return `Atendimento a decorrer`;
 
-    // Find next upcoming appointment
     for (const apt of todayAppointments) {
       const [hour, minute] = apt.time.split(':').map(Number);
       const aptTime = hour * 60 + minute;
@@ -316,319 +211,260 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         const diff = aptTime - currentTime;
         const hours = Math.floor(diff / 60);
         const minutes = diff % 60;
-
-        if (hours > 0) {
-          return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-        } else {
-          return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-        }
+        if (hours > 0) return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+        return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
       }
     }
-
     return 'Ainda não existem marcações para hoje';
   };
 
   const currentActivity = getCurrentActivity();
 
+  const UserNavigation = (
+    <>
+      <Button
+        variant={currentView === 'appointments' ? 'default' : 'ghost'}
+        onClick={() => navigate('/dashboard')}
+        className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+      >
+        Secretaria
+      </Button>
+
+      <NavDropdown
+        label="Candidaturas"
+        items={[
+          { id: 'creche', label: 'Creche' },
+          { id: 'catl', label: 'CATL' },
+          { id: 'erpi', label: 'ERPI' },
+        ]}
+        isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
+        onSelect={(id) => navigate(`/dashboard/${id}`)}
+        isDarkMode={isDarkMode}
+      />
+    </>
+  );
+
   return (
-    <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen relative">
-        <div className="relative">
-          <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 relative z-10">
-            <div className="px-6 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <img
-                  src={isDarkMode ? '/assets/LogoModoEscuro1.png' : '/assets/LogoSemTextoUltimo.png'}
-                  alt="Logo Florinhas do Vouga"
-                  className="h-10 w-auto object-contain"
+    <>
+      <DashboardLayout
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={onToggleDarkMode}
+        onLogout={onLogout}
+        onMenuToggle={() => setSidebarOpen(true)}
+        roleTitle="Utente"
+        navigationContent={UserNavigation}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        showNotifications={showNotifications}
+        onToggleNotifications={(show) => {
+          setShowNotifications(show);
+          if (!show) carregarNotificacoes();
+        }}
+        onMarkAsRead={handleMarkAsRead}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onDeleteNotification={handleDeleteNotification}
+        onDeleteAllNotifications={handleDeleteAllNotifications}
+        onNavigateToNotifications={() => {
+          navigate('/dashboard/notifications');
+          setShowNotifications(false);
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            <Routes location={location}>
+              {/* Home / Appointments */}
+              <Route path="/" element={
+                <>
+                  <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                    <div className="space-y-6">
+                      <WeeklySchedule
+                        appointments={visibleAppointments}
+                        allAppointments={[...allAppointments, ...blockedAppointments]}
+                        currentUserNif={user.nif}
+                        isClient
+                        onCreateAppointment={handleCreateAppointment}
+                        onViewAppointment={handleViewAppointment}
+                        onToggleView={() => { }}
+                        isDarkMode={isDarkMode}
+                        onRefresh={refreshAppointments}
+                        highlightedSlot={highlightedSlot}
+                        currentDate={currentDate}
+                        onDateChange={setCurrentDate}
+                      />
+                    </div>
+                    <div>
+                      <TodayAppointments
+                        appointments={visibleAppointments}
+                        onViewAppointment={handleViewAppointment}
+                        onShowHistory={() => navigate('/dashboard/history')}
+                        isDarkMode={isDarkMode}
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                    <div className="flex items-center gap-3">
+                      <ClockIcon className="w-5 h-5 text-purple-600" />
+                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
+                    </div>
+                  </div>
+                </>
+              } />
+
+              {/* History */}
+              <Route path="/history" element={
+                <HistoryPage
+                  appointments={historyAppointments}
+                  onBack={() => navigate('/dashboard')}
+                  onViewAppointment={handleViewAppointment}
+                  isDarkMode={isDarkMode}
+                  startDate={historyStartDate}
+                  endDate={historyEndDate}
+                  onDateChange={(start, end) => {
+                    setHistoryStartDate(start);
+                    setHistoryEndDate(end);
+                  }}
+                  isClient
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSidebarOpen(true)}
-                  className="text-gray-700 dark:text-gray-200"
-                >
-                  <MenuIcon className="w-5 h-5" />
-                </Button>
-                <span className="text-gray-700 dark:text-gray-200">Utente</span>
-              </div>
+              } />
 
-              <nav className="hidden md:flex items-center gap-1">
-                <Button
-                  variant={currentView === 'appointments' ? 'default' : 'ghost'}
-                  onClick={() => navigate('/dashboard')}
-                  className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-                >
-                  Secretaria
-                </Button>
-
-                <NavDropdown
-                  label="Candidaturas"
-                  items={[
-                    { id: 'creche', label: 'Creche' },
-                    { id: 'catl', label: 'CATL' },
-                    { id: 'erpi', label: 'ERPI' },
-                  ]}
-                  isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-                  onSelect={(id) => navigate(`/dashboard/${id}`)}
+              {/* Profile */}
+              <Route path="/profile" element={
+                <ProfilePage
+                  user={{
+                    id: authUser?.id || 0,
+                    name: authUser?.nome || user.name,
+                    nif: authUser?.nif || user.nif,
+                    contact: authUser?.telefone || user.contact,
+                    email: authUser?.email || user.email,
+                  }}
+                  onBack={() => navigate('/dashboard')}
+                  onUpdateUser={() => { }}
                   isDarkMode={isDarkMode}
                 />
-              </nav>
+              } />
 
-              <div className="flex items-center gap-2">
-                <div className="relative z-[10000]" ref={notificationsRef}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    onClick={() => {
-                      setShowNotifications(!showNotifications);
-                      if (!showNotifications) carregarNotificacoes();
-                    }}
-                  >
-                    <BellIcon className="w-5 h-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Button>
-                  {showNotifications && (
-                    <NotificationsPanel
-                      notifications={notifications.map(n => ({
-                        id: n.id.toString(),
-                        title: n.titulo,
-                        message: n.mensagem,
-                        timestamp: n.dataCriacao,
-                        isRead: n.lida,
-                        icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert'
-                      }))}
-                      onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
-                      onMarkAllAsRead={handleMarkAllAsRead}
-                      onDelete={(id) => handleDeleteNotification(parseInt(id))}
-                      onDeleteAll={handleDeleteAllNotifications}
-                      onClose={() => setShowNotifications(false)}
-                      onNavigateToPage={() => navigate('/dashboard/notifications')}
-                      onNotificationClick={(id) => {
-                        setHighlightedNotificationId(id);
-                        navigate('/dashboard/notifications');
-                      }}
-                      isDarkMode={isDarkMode}
-                    />
-                  )}
-                </div>
-                <Button variant="ghost" size="icon" onClick={onToggleDarkMode} className="text-gray-700 dark:text-gray-200">
-                  {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={onLogout} className="text-gray-700 dark:text-gray-200">
-                  <LogOutIcon className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          </header>
+              {/* Notifications */}
+              <Route path="/notifications" element={
+                <NotificationsPage
+                  notifications={notifications.map(n => ({
+                    id: n.id.toString(),
+                    title: n.titulo,
+                    message: n.mensagem,
+                    timestamp: n.dataCriacao,
+                    isRead: n.lida,
+                    icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                    type: n.tipo,
+                    metadata: n.metadata,
+                  }))}
+                  onBack={() => {
+                    navigate('/dashboard');
+                    setHighlightedNotificationId(null);
+                  }}
+                  onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
+                  onMarkAllAsRead={handleMarkAllAsRead}
+                  onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                  onDeleteAll={handleDeleteAllNotifications}
+                  isDarkMode={isDarkMode}
+                  highlightedNotificationId={highlightedNotificationId || undefined}
+                  actionCallbacks={{
+                    onNavigateToAppointment: async (appointmentId) => {
+                      navigate('/dashboard');
+                      setShowNotifications(false);
+                      try {
+                        const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
+                        const response = await marcacoesApi.obterPorId(id);
+                        const appointment = mapApiToAppointment(response);
+                        setSelectedAppointment(appointment);
+                        setShowDetailsDialog(true);
+                      } catch (e) {
+                        toast.error('Não foi possível encontrar a marcação');
+                      }
+                    },
+                    onNavigateToHistory: async () => {
+                      navigate('/dashboard/history');
+                      setShowNotifications(false);
+                    },
+                    onNavigateToDocument: () => toast.info('Em desenvolvimento'),
+                    onNavigateToCancelledSlot: (dateStr, time) => {
+                      navigate('/dashboard');
+                      setShowNotifications(false);
+                      const slotDate = new Date(dateStr);
+                      setHighlightedSlot({ date: slotDate, time });
+                      setTimeout(() => setHighlightedSlot(null), 5000);
+                    },
+                  }}
+                />
+              } />
 
-          <main className="w-full px-6 py-6">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-              >
-                <Routes location={location}>
-                  {/* Home / Appointments */}
-                  <Route path="/" element={
-                    <>
-                      <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
-                        <div className="space-y-6">
-                          <WeeklySchedule
-                            appointments={visibleAppointments}
-                            allAppointments={[...allAppointments, ...blockedAppointments]}
-                            currentUserNif={user.nif}
-                            isClient
-                            onCreateAppointment={handleCreateAppointment}
-                            onViewAppointment={handleViewAppointment}
-                            onToggleView={() => { }}
-                            isDarkMode={isDarkMode}
-                            onRefresh={refreshAppointments}
-                            highlightedSlot={highlightedSlot}
-                            currentDate={currentDate}
-                            onDateChange={setCurrentDate}
-                          />
-                        </div>
-                        <div>
-                          <TodayAppointments
-                            appointments={visibleAppointments}
-                            onViewAppointment={handleViewAppointment}
-                            onShowHistory={() => navigate('/dashboard/history')}
-                            isDarkMode={isDarkMode}
-                          />
-                        </div>
-                      </div>
-                      <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
-                        <div className="flex items-center gap-3">
-                          <ClockIcon className="w-5 h-5 text-purple-600" />
-                          <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
-                        </div>
-                      </div>
-                    </>
-                  } />
+              {/* Placeholders */}
+              <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
+              <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
+              <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
+              <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
+              <Route path="/settings" element={renderPlaceholder('Definições')} />
+              <Route path="*" element={renderPlaceholder('Página não encontrada')} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
+      </DashboardLayout>
 
-                  {/* History */}
-                  <Route path="/history" element={
-                    <HistoryPage
-                      appointments={historyAppointments}
-                      onBack={() => navigate('/dashboard')}
-                      onViewAppointment={handleViewAppointment}
-                      isDarkMode={isDarkMode}
-                      startDate={historyStartDate}
-                      endDate={historyEndDate}
-                      onDateChange={(start, end) => {
-                        setHistoryStartDate(start);
-                        setHistoryEndDate(end);
-                      }}
-                      isClient
-                    />
-                  } />
+      {/* Floating Overlays */}
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onLogout={onLogout}
+        isDarkMode={isDarkMode}
+        mode="client"
+      />
 
-                  {/* Profile */}
-                  <Route path="/profile" element={
-                    <ProfilePage
-                      user={{
-                        id: authUser?.id || 0,
-                        name: authUser?.nome || user.name,
-                        nif: authUser?.nif || user.nif,
-                        contact: authUser?.telefone || user.contact,
-                        email: authUser?.email || user.email,
-                      }}
-                      onBack={() => navigate('/dashboard')}
-                      onUpdateUser={() => { }}
-                      isDarkMode={isDarkMode}
-                    />
-                  } />
-
-                  {/* Notifications */}
-                  <Route path="/notifications" element={
-                    <NotificationsPage
-                      notifications={notifications.map(n => ({
-                        id: n.id.toString(),
-                        title: n.titulo,
-                        message: n.mensagem,
-                        timestamp: n.dataCriacao,
-                        isRead: n.lida,
-                        icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
-                        type: n.tipo,
-                        metadata: n.metadata,
-                      }))}
-                      onBack={() => {
-                        navigate('/dashboard');
-                        setHighlightedNotificationId(null);
-                      }}
-                      onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
-                      onMarkAllAsRead={handleMarkAllAsRead}
-                      onDelete={(id) => handleDeleteNotification(parseInt(id))}
-                      onDeleteAll={handleDeleteAllNotifications}
-                      isDarkMode={isDarkMode}
-                      highlightedNotificationId={highlightedNotificationId || undefined}
-                      actionCallbacks={{
-                        onNavigateToAppointment: async (appointmentId) => {
-                          navigate('/dashboard');
-                          setShowNotifications(false);
-                          try {
-                            const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
-                            const response = await marcacoesApi.obterPorId(id);
-                            const appointment = mapApiToAppointment(response);
-                            setSelectedAppointment(appointment);
-                            setShowDetailsDialog(true);
-                          } catch (e) {
-                            toast.error('Não foi possível encontrar a marcação');
-                          }
-                        },
-                        onNavigateToHistory: async () => {
-                          navigate('/dashboard/history');
-                          setShowNotifications(false);
-                        },
-                        onNavigateToDocument: () => toast.info('Em desenvolvimento'),
-                        onNavigateToCancelledSlot: (dateStr, time) => {
-                          navigate('/dashboard');
-                          setShowNotifications(false);
-                          const slotDate = new Date(dateStr);
-                          setHighlightedSlot({ date: slotDate, time });
-                          setTimeout(() => setHighlightedSlot(null), 5000);
-                        },
-                      }}
-                    />
-                  } />
-
-                  {/* Placeholders */}
-                  <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
-                  <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
-                  <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
-                  <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
-                  <Route path="/settings" element={renderPlaceholder('Definições')} />
-                  <Route path="*" element={renderPlaceholder('Página não encontrada')} />
-                </Routes>
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
-
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          currentView={currentView}
-          onNavigate={handleNavigate}
-          onLogout={onLogout}
-          isDarkMode={isDarkMode}
-          mode="client"
+      {showClientDialog && editingSlot && authUser && (
+        <ClientAppointmentDialog
+          open={showClientDialog}
+          onClose={() => {
+            setShowClientDialog(false);
+            setEditingSlot(null);
+          }}
+          date={editingSlot.date}
+          time={editingSlot.time}
+          utenteId={authUser.id}
+          onSuccess={() => {
+            refreshAppointments();
+            carregarNotificacoes();
+          }}
         />
+      )}
 
-        {showClientDialog && editingSlot && authUser && (
-          <ClientAppointmentDialog
-            open={showClientDialog}
-            onClose={() => {
-              setShowClientDialog(false);
-              setEditingSlot(null);
-            }}
-            date={editingSlot.date}
-            time={editingSlot.time}
-            utenteId={authUser.id}
-            onSuccess={() => {
-              refreshAppointments();
-              carregarNotificacoes();
-            }}
-          />
-        )}
-
-        {showDetailsDialog && selectedAppointment && (
-          <AppointmentDetailsDialog
-            open={showDetailsDialog}
-            onClose={() => {
-              setShowDetailsDialog(false);
-              setSelectedAppointment(null);
-              refreshAppointments();
-            }}
-            appointment={selectedAppointment}
-            onUpdate={(id, updates) => {
-              setAllAppointments(prev => prev.map(apt =>
-                apt.id === id ? { ...apt, ...updates } : apt
-              ));
-              refreshAppointments();
-            }}
-            onCancel={(id, reason) => {
-              setAllAppointments(prev => prev.map(apt =>
-                apt.id === id ? { ...apt, status: 'cancelled' as const, cancellationReason: reason } : apt
-              ));
-              setShowDetailsDialog(false);
-              setSelectedAppointment(null);
-              refreshAppointments();
-            }}
-            isClient={true}
-            existingAppointments={[...allAppointments, ...blockedAppointments]}
-          />
-        )}
-      </div>
-    </div>
+      {showDetailsDialog && selectedAppointment && (
+        <AppointmentDetailsDialog
+          open={showDetailsDialog}
+          onClose={() => {
+            setShowDetailsDialog(false);
+            setSelectedAppointment(null);
+            refreshAppointments();
+          }}
+          appointment={selectedAppointment}
+          onUpdate={(id, updates) => {
+            setAllAppointments(prev => prev.map(apt => apt.id === id ? { ...apt, ...updates } : apt));
+            refreshAppointments();
+          }}
+          onCancel={(id, reason) => {
+            setAllAppointments(prev => prev.map(apt => apt.id === id ? { ...apt, status: 'cancelled' as const, cancellationReason: reason } : apt));
+            setShowDetailsDialog(false);
+            setSelectedAppointment(null);
+            refreshAppointments();
+          }}
+          isClient={true}
+          existingAppointments={[...allAppointments, ...blockedAppointments]}
+        />
+      )}
+    </>
   );
 }
