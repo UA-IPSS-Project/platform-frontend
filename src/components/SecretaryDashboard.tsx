@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi, API_BASE_URL } from '../services/api';
 import { Appointment, ViewType } from '../types';
-import { notificationsApi, Notificacao } from '../services/notificationsApi';
+import { notificationsApi, Notificacao } from '../services/api';
 
 interface SecretaryDashboardProps {
   user: {
@@ -39,18 +39,18 @@ import { mapApiToAppointment } from '../utils/appointmentUtils';
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
-  
+
   // ===== SLIDING WINDOW CACHE: Appointments =====
   // Estado principal: marcações da semana atual (exibido no WeeklySchedule)
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  
+
   // Cache: marcações organizadas por semana (chave = data da segunda-feira YYYY-MM-DD)
   // Mantém apenas 5 semanas em memória: -2, -1, atual, +1, +2
   const [appointmentsByWeek, setAppointmentsByWeek] = useState<Record<string, Appointment[]>>({});
-  
+
   // Controlo de carregamento: conjunto de chaves de semanas em fetch
   const [loadingWeeks, setLoadingWeeks] = useState<Set<string>>(new Set());
-  
+
   // Chave da semana atual (para sincronizar UI e cache)
   const [currentWeekKey, setCurrentWeekKey] = useState('');
   // ===== END SLIDING WINDOW CACHE =====
@@ -101,7 +101,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   // ===== SLIDING WINDOW: Helper refs =====
   // Ref para evitar múltiplas chamadas simultâneas da mesma semana
   const inFlightWeeksRef = useRef<Set<string>>(new Set());
-  
+
   // Ref para rastrear a semana atualmente visível (sincroniza com currentDate)
   const currentWeekKeyRef = useRef<string>('');
 

@@ -16,7 +16,7 @@ import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi, API_BASE_URL } from '../services/api';
-import { notificationsApi, Notificacao } from '../services/notificationsApi';
+import { notificationsApi, Notificacao } from '../services/api';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -437,137 +437,137 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 transition={{ duration: 0.2, ease: 'easeOut' }}
               >
                 <Routes location={location}>
-              {/* Home / Appointments */}
-              <Route path="/" element={
-                <>
-                  <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
-                    <div className="space-y-6">
-                      <WeeklySchedule
-                        appointments={visibleAppointments}
-                        allAppointments={[...allAppointments, ...blockedAppointments]}
-                        currentUserNif={user.nif}
-                        isClient
-                        onCreateAppointment={handleCreateAppointment}
-                        onViewAppointment={handleViewAppointment}
-                        onToggleView={() => { }}
-                        isDarkMode={isDarkMode}
-                        onRefresh={refreshAppointments}
-                        highlightedSlot={highlightedSlot}
-                        currentDate={currentDate}
-                        onDateChange={setCurrentDate}
-                      />
-                    </div>
-                    <div>
-                      <TodayAppointments
-                        appointments={visibleAppointments}
-                        onViewAppointment={handleViewAppointment}
-                        onShowHistory={() => navigate('/dashboard/history')}
-                        isDarkMode={isDarkMode}
-                      />
-                    </div>
-                  </div>
-                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
-                    <div className="flex items-center gap-3">
-                      <ClockIcon className="w-5 h-5 text-purple-600" />
-                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
-                    </div>
-                  </div>
-                </>
-              } />
+                  {/* Home / Appointments */}
+                  <Route path="/" element={
+                    <>
+                      <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                        <div className="space-y-6">
+                          <WeeklySchedule
+                            appointments={visibleAppointments}
+                            allAppointments={[...allAppointments, ...blockedAppointments]}
+                            currentUserNif={user.nif}
+                            isClient
+                            onCreateAppointment={handleCreateAppointment}
+                            onViewAppointment={handleViewAppointment}
+                            onToggleView={() => { }}
+                            isDarkMode={isDarkMode}
+                            onRefresh={refreshAppointments}
+                            highlightedSlot={highlightedSlot}
+                            currentDate={currentDate}
+                            onDateChange={setCurrentDate}
+                          />
+                        </div>
+                        <div>
+                          <TodayAppointments
+                            appointments={visibleAppointments}
+                            onViewAppointment={handleViewAppointment}
+                            onShowHistory={() => navigate('/dashboard/history')}
+                            isDarkMode={isDarkMode}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                        <div className="flex items-center gap-3">
+                          <ClockIcon className="w-5 h-5 text-purple-600" />
+                          <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
+                        </div>
+                      </div>
+                    </>
+                  } />
 
-              {/* History */}
-              <Route path="/history" element={
-                <HistoryPage
-                  appointments={historyAppointments}
-                  onBack={() => navigate('/dashboard')}
-                  onViewAppointment={handleViewAppointment}
-                  isDarkMode={isDarkMode}
-                  startDate={historyStartDate}
-                  endDate={historyEndDate}
-                  onDateChange={(start, end) => {
-                    setHistoryStartDate(start);
-                    setHistoryEndDate(end);
-                  }}
-                  isClient
-                />
-              } />
+                  {/* History */}
+                  <Route path="/history" element={
+                    <HistoryPage
+                      appointments={historyAppointments}
+                      onBack={() => navigate('/dashboard')}
+                      onViewAppointment={handleViewAppointment}
+                      isDarkMode={isDarkMode}
+                      startDate={historyStartDate}
+                      endDate={historyEndDate}
+                      onDateChange={(start, end) => {
+                        setHistoryStartDate(start);
+                        setHistoryEndDate(end);
+                      }}
+                      isClient
+                    />
+                  } />
 
-              {/* Profile */}
-              <Route path="/profile" element={
-                <ProfilePage
-                  user={{
-                    id: authUser?.id || 0,
-                    name: authUser?.nome || user.name,
-                    nif: authUser?.nif || user.nif,
-                    contact: authUser?.telefone || user.contact,
-                    email: authUser?.email || user.email,
-                  }}
-                  onBack={() => navigate('/dashboard')}
-                  onUpdateUser={() => { }}
-                  isDarkMode={isDarkMode}
-                />
-              } />
+                  {/* Profile */}
+                  <Route path="/profile" element={
+                    <ProfilePage
+                      user={{
+                        id: authUser?.id || 0,
+                        name: authUser?.nome || user.name,
+                        nif: authUser?.nif || user.nif,
+                        contact: authUser?.telefone || user.contact,
+                        email: authUser?.email || user.email,
+                      }}
+                      onBack={() => navigate('/dashboard')}
+                      onUpdateUser={() => { }}
+                      isDarkMode={isDarkMode}
+                    />
+                  } />
 
-              {/* Notifications */}
-              <Route path="/notifications" element={
-                <NotificationsPage
-                  notifications={notifications.map(n => ({
-                    id: n.id.toString(),
-                    title: n.titulo,
-                    message: n.mensagem,
-                    timestamp: n.dataCriacao,
-                    isRead: n.lida,
-                    icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
-                    type: n.tipo,
-                    metadata: n.metadata,
-                  }))}
-                  onBack={() => {
-                    navigate('/dashboard');
-                    setHighlightedNotificationId(null);
-                  }}
-                  onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
-                  onMarkAllAsRead={handleMarkAllAsRead}
-                  onDelete={(id) => handleDeleteNotification(parseInt(id))}
-                  onDeleteAll={handleDeleteAllNotifications}
-                  isDarkMode={isDarkMode}
-                  highlightedNotificationId={highlightedNotificationId || undefined}
-                  actionCallbacks={{
-                    onNavigateToAppointment: async (appointmentId) => {
-                      navigate('/dashboard');
-                      setShowNotifications(false);
-                      try {
-                        const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
-                        const response = await marcacoesApi.obterPorId(id);
-                        const appointment = mapApiToAppointment(response);
-                        setSelectedAppointment(appointment);
-                        setShowDetailsDialog(true);
-                      } catch (e) {
-                        toast.error('Não foi possível encontrar a marcação');
-                      }
-                    },
-                    onNavigateToHistory: async () => {
-                      navigate('/dashboard/history');
-                      setShowNotifications(false);
-                    },
-                    onNavigateToDocument: () => toast.info('Em desenvolvimento'),
-                    onNavigateToCancelledSlot: (dateStr, time) => {
-                      navigate('/dashboard');
-                      setShowNotifications(false);
-                      const slotDate = new Date(dateStr);
-                      setHighlightedSlot({ date: slotDate, time });
-                      setTimeout(() => setHighlightedSlot(null), 5000);
-                    },
-                  }}
-                />
-              } />
+                  {/* Notifications */}
+                  <Route path="/notifications" element={
+                    <NotificationsPage
+                      notifications={notifications.map(n => ({
+                        id: n.id.toString(),
+                        title: n.titulo,
+                        message: n.mensagem,
+                        timestamp: n.dataCriacao,
+                        isRead: n.lida,
+                        icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                        type: n.tipo,
+                        metadata: n.metadata,
+                      }))}
+                      onBack={() => {
+                        navigate('/dashboard');
+                        setHighlightedNotificationId(null);
+                      }}
+                      onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
+                      onMarkAllAsRead={handleMarkAllAsRead}
+                      onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                      onDeleteAll={handleDeleteAllNotifications}
+                      isDarkMode={isDarkMode}
+                      highlightedNotificationId={highlightedNotificationId || undefined}
+                      actionCallbacks={{
+                        onNavigateToAppointment: async (appointmentId) => {
+                          navigate('/dashboard');
+                          setShowNotifications(false);
+                          try {
+                            const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
+                            const response = await marcacoesApi.obterPorId(id);
+                            const appointment = mapApiToAppointment(response);
+                            setSelectedAppointment(appointment);
+                            setShowDetailsDialog(true);
+                          } catch (e) {
+                            toast.error('Não foi possível encontrar a marcação');
+                          }
+                        },
+                        onNavigateToHistory: async () => {
+                          navigate('/dashboard/history');
+                          setShowNotifications(false);
+                        },
+                        onNavigateToDocument: () => toast.info('Em desenvolvimento'),
+                        onNavigateToCancelledSlot: (dateStr, time) => {
+                          navigate('/dashboard');
+                          setShowNotifications(false);
+                          const slotDate = new Date(dateStr);
+                          setHighlightedSlot({ date: slotDate, time });
+                          setTimeout(() => setHighlightedSlot(null), 5000);
+                        },
+                      }}
+                    />
+                  } />
 
-              {/* Placeholders */}
-              <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
-              <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
-              <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
-              <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
-              <Route path="/settings" element={renderPlaceholder('Definições')} />
-              <Route path="*" element={renderPlaceholder('Página não encontrada')} />
+                  {/* Placeholders */}
+                  <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
+                  <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
+                  <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
+                  <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
+                  <Route path="/settings" element={renderPlaceholder('Definições')} />
+                  <Route path="*" element={renderPlaceholder('Página não encontrada')} />
                 </Routes>
               </motion.div>
             </AnimatePresence>

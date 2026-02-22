@@ -1,0 +1,22 @@
+import { apiRequest } from '../core/client';
+import { BloqueioAgenda } from './types';
+
+export const calendarioApi = {
+    // Verificar se um slot específico está bloqueado
+    verificarSlot: (data: string, hora: string) =>
+        apiRequest<boolean>(`/api/calendario/verificar-slot?data=${data}&hora=${hora}`, {
+            method: 'GET',
+        }),
+
+    // Listar bloqueios de um mês
+    listarBloqueios: (ano: number, mes: number) =>
+        apiRequest<BloqueioAgenda[]>(`/api/calendario/bloqueios?ano=${ano}&mes=${mes}`, {
+            method: 'GET',
+        }),
+
+    // Listar feriados de um ano
+    listarFeriados: (ano: number) =>
+        apiRequest<string[]>(`/api/calendario/feriados?ano=${ano}`, {
+            method: 'GET',
+        }),
+};

@@ -1,15 +1,5 @@
-import { apiRequest } from './api';
-
-export interface Notificacao {
-    id: number;
-    utilizadorId: number;
-    titulo: string;
-    mensagem: string;
-    tipo: 'LEMBRETE' | 'CANCELAMENTO' | 'FICHEIRO' | 'SISTEMA';
-    lida: boolean;
-    dataCriacao: string;
-    metadata?: Record<string, any>;
-}
+import { apiRequest } from '../core/client';
+import { Notificacao } from './types';
 
 export const notificationsApi = {
     listar: async (): Promise<Notificacao[]> => {
@@ -36,4 +26,3 @@ export const notificationsApi = {
         return apiRequest<void>('/api/notificacoes', { method: 'DELETE' });
     }
 };
-
