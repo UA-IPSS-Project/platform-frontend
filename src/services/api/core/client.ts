@@ -44,8 +44,7 @@ export const buildHeaders = (): HeadersInit => {
 // Generic API request function
 export async function apiRequest<T>(
     endpoint: string,
-    options: RequestInit = {},
-    _requiresAuth: boolean = true // Argument kept for compatibility but unused
+    options: RequestInit = {}
 ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 

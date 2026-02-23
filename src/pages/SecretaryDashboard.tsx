@@ -238,6 +238,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         isDarkMode={isDarkMode}
+        className="hidden lg:block"
       />
 
       <Button
@@ -258,12 +259,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         isDarkMode={isDarkMode}
+        className="hidden lg:block"
       />
 
       <Button
         variant={currentView === 'reports' ? 'default' : 'ghost'}
         onClick={() => navigateTo('reports')}
-        className={`text-sm ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+        className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
         Relatórios
       </Button>

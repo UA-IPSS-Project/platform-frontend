@@ -6,10 +6,10 @@ interface NavDropdownProps {
   items: Array<{ id: string; label: string }>;
   isActive: boolean;
   onSelect: (id: string) => void;
-  isDarkMode?: boolean;
+  className?: string;
 }
 
-export function NavDropdown({ label, items, isActive, onSelect, isDarkMode = false }: NavDropdownProps) {
+export function NavDropdown({ label, items, isActive, onSelect, className = '' }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -49,23 +49,22 @@ export function NavDropdown({ label, items, isActive, onSelect, isDarkMode = fal
   };
 
   return (
-    <div 
+    <div
       ref={dropdownRef}
-      className="relative"
+      className={`relative ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <button
-        className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors text-sm ${
-          isActive
-            ? 'bg-purple-600 hover:bg-purple-700 text-white'
-            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
-        }`}
+        className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors text-sm ${isActive
+          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`}
         onClick={() => setIsOpen(!isOpen)}
       >
         {label}
-        <ChevronDownIcon 
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+        <ChevronDownIcon
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 

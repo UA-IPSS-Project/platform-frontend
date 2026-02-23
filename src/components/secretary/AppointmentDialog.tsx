@@ -12,7 +12,7 @@ import { FileUpload } from '../shared/FileUpload';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi } from '../../services/api';
+import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail } from '../../lib/validations';
 
@@ -85,7 +85,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const localDateTime = dateTime.toISOString().slice(0, 19);
 
       // Use apiRequest for automatic CSRF token inclusion and cookie-based auth
-      const { apiRequest } = await import('../../services/api');
       const data = await apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
         method: 'POST',
         body: JSON.stringify({
@@ -107,7 +106,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!tempReservaId) return;
 
     try {
-      const { apiRequest } = await import('../../services/api');
       await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
       });
@@ -193,8 +191,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const processCreation = async () => {
     try {
-      const { apiRequest } = await import('../../services/api');
-
       if (tempReservaId) {
         await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
           method: 'DELETE',

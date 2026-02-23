@@ -122,74 +122,74 @@ function App() {
                 className="min-h-screen"
               >
                 <Routes location={location}>
-              <Route path="/login" element={
-                isAuthenticated ? <Navigate to="/dashboard" replace /> :
-                  <div className="min-h-screen flex items-center justify-center p-4">
-                    <LoginForm
-                      isDarkMode={isDarkMode}
-                      onNavigateToRegister={(type) => {
-                        setRegisterInitialType(type ?? 'user');
-                        navigate('/register');
-                      }}
-                    />
-                  </div>
-              } />
+                  <Route path="/login" element={
+                    isAuthenticated ? <Navigate to="/dashboard" replace /> :
+                      <div className="min-h-screen flex items-center justify-center p-4">
+                        <LoginForm
+                          isDarkMode={isDarkMode}
+                          onNavigateToRegister={(type) => {
+                            setRegisterInitialType(type ?? 'user');
+                            navigate('/register');
+                          }}
+                        />
+                      </div>
+                  } />
 
-              <Route path="/register" element={
-                isAuthenticated ? <Navigate to="/dashboard" replace /> :
-                  <div className="min-h-screen flex items-center justify-center p-4">
-                    <RegisterForm
-                      onNavigateToLogin={() => navigate('/login')}
-                      initialAccountType={registerInitialType}
-                    />
-                  </div>
-              } />
+                  <Route path="/register" element={
+                    isAuthenticated ? <Navigate to="/dashboard" replace /> :
+                      <div className="min-h-screen flex items-center justify-center p-4">
+                        <RegisterForm
+                          onNavigateToLogin={() => navigate('/login')}
+                          initialAccountType={registerInitialType}
+                        />
+                      </div>
+                  } />
 
-              <Route path="/set-password" element={
-                isAuthenticated ? (
-                  <div className="min-h-screen flex items-center justify-center p-4">
-                    <NewPasswordForm
-                      onSuccess={() => navigate('/dashboard')}
-                      isDarkMode={isDarkMode}
-                    />
-                  </div>
-                ) : <Navigate to="/login" replace />
-              } />
+                  <Route path="/set-password" element={
+                    isAuthenticated ? (
+                      <div className="min-h-screen flex items-center justify-center p-4">
+                        <NewPasswordForm
+                          onSuccess={() => navigate('/dashboard')}
+                          isDarkMode={isDarkMode}
+                        />
+                      </div>
+                    ) : <Navigate to="/login" replace />
+                  } />
 
-              <Route path="/dashboard/*" element={
-                <ProtectedRoute>
-                  {user ? (
-                    // Backend returns role as "SECRETARIA" for funcionarios
-                    (user.role === 'FUNCIONARIO' || user.role === 'SECRETARIA') ? (
-                      <SecretaryDashboard
-                        user={{
-                          name: user.nome || '',
-                          nif: user.nif || '',
-                          contact: user.telefone || '',
-                          email: user.email || ''
-                        }}
-                        onLogout={handleLogout}
-                        isDarkMode={isDarkMode}
-                        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                      />
-                    ) : (
-                      <UserDashboard
-                        user={{
-                          name: user.nome || '',
-                          nif: user.nif || '',
-                          contact: user.telefone || '',
-                          email: user.email || ''
-                        }}
-                        onLogout={handleLogout}
-                        isDarkMode={isDarkMode}
-                        onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                      />
-                    )
-                  ) : null}
-                </ProtectedRoute>
-              } />
+                  <Route path="/dashboard/*" element={
+                    <ProtectedRoute>
+                      {user ? (
+                        // Backend returns role as "SECRETARIA" for funcionarios
+                        (user.role === 'FUNCIONARIO' || user.role === 'SECRETARIA') ? (
+                          <SecretaryDashboard
+                            user={{
+                              name: user.nome || '',
+                              nif: user.nif || '',
+                              contact: user.telefone || '',
+                              email: user.email || ''
+                            }}
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : (
+                          <UserDashboard
+                            user={{
+                              name: user.nome || '',
+                              nif: user.nif || '',
+                              contact: user.telefone || '',
+                              email: user.email || ''
+                            }}
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        )
+                      ) : null}
+                    </ProtectedRoute>
+                  } />
 
-              <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+                  <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
                 </Routes>
               </motion.div>
             </AnimatePresence>
@@ -197,17 +197,6 @@ function App() {
 
         </div>
 
-        <style>{`
-        @keyframes blob {
-          0% { transform: translate(0px, 0px) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-          100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-      `}</style>
         <Toaster richColors position="top-center" closeButton />
       </div>
     </ErrorBoundary>

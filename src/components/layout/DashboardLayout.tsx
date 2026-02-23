@@ -1,4 +1,4 @@
-import React, { ReactNode, useRef, useEffect } from 'react';
+import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../shared/CustomIcons';
@@ -68,7 +68,7 @@ export function DashboardLayout({
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
-                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200 lg:hidden">
+                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200">
                                     <MenuIcon className="w-5 h-5" />
                                 </Button>
                                 <span className="text-gray-700 dark:text-gray-200 font-medium hidden sm:inline-block">
@@ -112,7 +112,7 @@ export function DashboardLayout({
                                             onDeleteAll={onDeleteAllNotifications}
                                             onClose={() => onToggleNotifications(false)}
                                             onNavigateToPage={onNavigateToNotifications}
-                                            onNotificationClick={(id) => {
+                                            onNotificationClick={() => {
                                                 onNavigateToNotifications();
                                             }}
                                             isDarkMode={isDarkMode}

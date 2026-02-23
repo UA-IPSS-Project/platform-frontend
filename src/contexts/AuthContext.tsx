@@ -13,7 +13,6 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (identifier: string, password: string, type: 'funcionario' | 'utente') => Promise<void>;
   registerUtente: (data: UtenteRegisterData) => Promise<void>;
   registerFuncionario: (data: FuncionarioRegisterData) => Promise<void>;
@@ -286,7 +285,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value: AuthContextType = {
     user,
-    token: null, // Legacy support (null)
     login,
     registerUtente,
     registerFuncionario,
