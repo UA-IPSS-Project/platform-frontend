@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LoginForm } from './components/LoginForm';
-import { RegisterForm } from './components/RegisterForm';
-import NewPasswordForm from './components/NewPasswordForm';
-import { UserDashboard } from './components/UserDashboard';
-import { SecretaryDashboard } from './components/SecretaryDashboard';
+import { LoginForm } from './components/auth/LoginForm';
+import { RegisterForm } from './components/auth/RegisterForm';
+import NewPasswordForm from './components/auth/NewPasswordForm';
+import { UserDashboard } from './pages/UserDashboard';
+import { SecretaryDashboard } from './pages/SecretaryDashboard';
 import { Toaster } from 'sonner';
-import AbstractBackground from './components/ui/AbstractBackground';
+import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
 function App() {
   const getInitialTheme = () => {

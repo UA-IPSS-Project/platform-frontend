@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import SUBJECTS from '../../lib/subjects';
-import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../CustomIcons';
-import { Appointment } from '../../types';
+import SUBJECTS from '../lib/subjects';
+import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../components/shared/CustomIcons';
+import { Appointment } from '../types';
 
 interface HistoryPageProps {
   appointments: Appointment[];

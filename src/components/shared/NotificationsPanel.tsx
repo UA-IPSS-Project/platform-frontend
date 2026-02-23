@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
-import { BellIcon, XIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from '../CustomIcons';
+import { BellIcon, XIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from './CustomIcons';
 
 interface Notification {
   id: string;
@@ -11,7 +11,7 @@ interface Notification {
   icon: 'calendar' | 'document' | 'alert';
 }
 
-import { TrashIcon } from '../CustomIcons';
+import { TrashIcon } from './CustomIcons';
 
 interface NotificationsPanelProps {
   notifications: Notification[];

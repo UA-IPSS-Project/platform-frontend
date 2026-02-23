@@ -1,7 +1,7 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
-import { Button } from './ui/button';
-import { CalendarIcon, ClipboardListIcon, AlertCircleIcon, XIcon } from './CustomIcons';
-import { NotificationWithType, useNotificationAction, NotificationActionCallbacks } from '../hooks/useNotificationAction';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { CalendarIcon, ClipboardListIcon, AlertCircleIcon, XIcon } from '../shared/CustomIcons';
+import { NotificationWithType, useNotificationAction, NotificationActionCallbacks } from '../../hooks/useNotificationAction';
 
 interface NotificationDetailModalProps {
   notification: NotificationWithType | null;

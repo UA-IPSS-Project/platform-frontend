@@ -1,7 +1,7 @@
 import React, { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { NotificationsPanel } from '../ui/NotificationsPanel';
-import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../CustomIcons';
+import { NotificationsPanel } from '../shared/NotificationsPanel';
+import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
 
 interface DashboardLayoutProps {

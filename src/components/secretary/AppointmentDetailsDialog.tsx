@@ -9,12 +9,12 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../CustomIcons';
+import { XIcon, FileTextIcon, AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { DocumentUploadDialog } from '../DocumentUploadDialog';
+import { DocumentUploadDialog } from '../dialogs/DocumentUploadDialog';
 
 interface AppointmentDetailsDialogProps {
   open: boolean;

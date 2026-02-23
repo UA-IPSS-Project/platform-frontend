@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { Search, Calendar, Clock } from 'lucide-react';
-import type { Appointment } from '../SecretaryDashboard';
+import type { Appointment } from '../../pages/SecretaryDashboard';
 
 interface HistoryDialogProps {
   open: boolean;

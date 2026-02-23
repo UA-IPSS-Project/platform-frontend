@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon } from '../CustomIcons';
+import { ChevronDownIcon } from '../shared/CustomIcons';
 
 interface NavDropdownProps {
   label: string;

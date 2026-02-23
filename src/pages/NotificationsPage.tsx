@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from './ui/button';
-import { ArrowLeftIcon, BellIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from './CustomIcons';
-import { NotificationDetailModal } from './NotificationDetailModal';
+import { Button } from '../components/ui/button';
+import { ArrowLeftIcon, BellIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from '../components/shared/CustomIcons';
+import { NotificationDetailModal } from '../components/dialogs/NotificationDetailModal';
 import { NotificationWithType, NotificationActionCallbacks } from '../hooks/useNotificationAction';
 
 interface Notification {
@@ -15,7 +15,7 @@ interface Notification {
   metadata?: Record<string, any>;
 }
 
-import { TrashIcon } from './CustomIcons';
+import { TrashIcon } from '../components/shared/CustomIcons';
 
 interface NotificationsPageProps {
   notifications: Notification[];

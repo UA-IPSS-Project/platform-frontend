@@ -1,20 +1,20 @@
 import { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Button } from './ui/button';
-import { NavDropdown } from './ui/NavDropdown';
+import { Button } from '../components/ui/button';
+import { NavDropdown } from '../components/layout/NavDropdown';
 import { NotificationsPage } from './NotificationsPage';
-import { WeeklySchedule } from './secretary/WeeklySchedule';
-import { TodayAppointments } from './secretary/TodayAppointments';
-import { HistoryPage } from './secretary/HistoryPage';
-import SecretaryHome from './secretary/SecretaryHome';
-import { AppointmentDialog } from './secretary/AppointmentDialog';
-import { AppointmentDetailsDialog } from './secretary/AppointmentDetailsDialog';
-import { DayScheduleDialog } from './secretary/DayScheduleDialog';
-import { Sidebar } from './Sidebar';
-import { BlockedScheduleDialog } from './BlockedScheduleDialog';
-import { UserManagement } from './secretary/UserManagement';
+import { WeeklySchedule } from '../components/secretary/WeeklySchedule';
+import { TodayAppointments } from '../components/secretary/TodayAppointments';
+import { HistoryPage } from './HistoryPage';
+import SecretaryHome from '../components/secretary/SecretaryHome';
+import { AppointmentDialog } from '../components/secretary/AppointmentDialog';
+import { AppointmentDetailsDialog } from '../components/secretary/AppointmentDetailsDialog';
+import { DayScheduleDialog } from '../components/secretary/DayScheduleDialog';
+import { Sidebar } from '../components/layout/Sidebar';
+import { BlockedScheduleDialog } from '../components/dialogs/BlockedScheduleDialog';
+import { UserManagement } from '../components/secretary/UserManagement';
 import { ProfilePage } from './ProfilePage';
-import { ClockIcon } from './CustomIcons';
+import { ClockIcon } from '../components/shared/CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
@@ -22,7 +22,7 @@ import { Appointment, ViewType } from '../types';
 import { mapApiToAppointment } from '../utils/appointmentUtils';
 import { useNotifications } from '../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../hooks/useSlidingWindowAppointments';
-import { DashboardLayout } from './layout/DashboardLayout';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
 
 interface SecretaryDashboardProps {
   user: {

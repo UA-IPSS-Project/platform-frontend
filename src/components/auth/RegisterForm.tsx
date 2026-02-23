@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
-import { TermsOfUseModal } from './TermsOfUseModal';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
+import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
 import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Calendar } from './ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { GlassCard } from './ui/glass-card';
-import { LightSwitch } from './ui/light-switch';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { GlassCard } from '../ui/glass-card';
+import { LightSwitch } from '../shared/light-switch';
 import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   validateName,
   validateNIF,
@@ -22,7 +22,7 @@ import {
   validateBirthDate,
   formatDate,
   type PasswordValidation
-} from '../lib/validations';
+} from '../../lib/validations';
 
 interface RegisterFormProps {
   onNavigateToLogin: () => void;

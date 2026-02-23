@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { useAuth } from '../contexts/AuthContext';
-import { bloqueiosApi, calendarioApi } from '../services/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useAuth } from '../../contexts/AuthContext';
+import { bloqueiosApi, calendarioApi } from '../../services/api';
 import { toast } from 'sonner';
 import { Trash2, Calendar as CalendarIcon, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Calendar } from './ui/calendar';
-import { cn } from './ui/utils';
-import { Appointment } from '../types';
-import { Bloqueio } from '../services/api';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
+import { cn } from '../ui/utils';
+import { Appointment } from '../../types';
+import { Bloqueio } from '../../services/api';
 
 interface BlockedScheduleDialogProps {
     open: boolean;

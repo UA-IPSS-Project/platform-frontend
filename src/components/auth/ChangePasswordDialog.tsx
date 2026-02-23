@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { authApi } from '../services/api';
+import { authApi } from '../../services/api';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
 
 interface ChangePasswordDialogProps {

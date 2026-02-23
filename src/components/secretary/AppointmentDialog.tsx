@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import SUBJECTS from '../../lib/subjects';
 import { calendarioApi, utilizadoresApi, API_BASE_URL, UtilizadorInfo, apiRequest, documentosApi } from '../../services/api';
-import { AlertCircleIcon } from '../CustomIcons';
+import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail } from '../../lib/validations';
 
 interface AppointmentDialogProps {

@@ -6,9 +6,9 @@ import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import SUBJECTS from '../../lib/subjects';
 import { toast } from 'sonner';
-import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../CustomIcons';
+import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
-import { StatusBadge } from '../ui/status-badge';
+import { StatusBadge } from '../shared/status-badge';
 
 interface TodayAppointmentsProps {
   appointments: Appointment[];

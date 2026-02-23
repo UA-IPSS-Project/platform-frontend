@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import { ArrowLeftIcon, UserIcon } from './CustomIcons';
+import { ArrowLeftIcon, UserIcon } from '../components/shared/CustomIcons';
 import { utilizadoresApi } from '../services/api';
 import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
-import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { useIsMobile } from './ui/use-mobile';
+import { ChangePasswordDialog } from '../components/auth/ChangePasswordDialog';
+import { useIsMobile } from '../components/ui/use-mobile';
 
 interface ProfilePageProps {
   user: {

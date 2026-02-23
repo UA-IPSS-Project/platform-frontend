@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from './utils';
+import { cn } from '../ui/utils';
 import { User, Briefcase } from 'lucide-react';
 
 interface LightSwitchProps {

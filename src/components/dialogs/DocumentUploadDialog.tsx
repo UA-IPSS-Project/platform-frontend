@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 import { Upload, X, File, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { documentosApi, DocumentoDTO } from '../services/api';
+import { documentosApi, DocumentoDTO } from '../../services/api';
 
 interface DocumentUploadDialogProps {
   open: boolean;

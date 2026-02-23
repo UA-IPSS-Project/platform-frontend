@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from './ui/button';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
+import { useAuth } from '../../contexts/AuthContext';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
-import { TermsOfUseModal } from './TermsOfUseModal';
-import { GlassCard } from './ui/glass-card';
+import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
+import { GlassCard } from '../ui/glass-card';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface NewPasswordFormProps {

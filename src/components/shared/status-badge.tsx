@@ -1,7 +1,7 @@
 import React from 'react';
-import { Badge } from './badge';
-import { AlertTriangleIcon } from '../CustomIcons';
-import { cn } from './utils';
+import { Badge } from '../ui/badge';
+import { AlertTriangleIcon } from './CustomIcons';
+import { cn } from '../ui/utils';
 import { Appointment } from '../../types';
 
 interface StatusBadgeProps {
