@@ -28,6 +28,7 @@ interface WeeklyScheduleProps {
   highlightedSlot?: { date: Date; time: string } | null;
   currentDate: Date;
   onDateChange: (date: Date) => void;
+  isLoading?: boolean;
 }
 
 const generateTimeSlots = () => {
@@ -45,7 +46,7 @@ const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading }: Readonly<WeeklyScheduleProps>) {
   const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
@@ -63,14 +64,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
-  
+
   // ===== SLIDING WINDOW CACHE: Holidays & Blocks =====
   // Cache de feriados por ano (mantém todos os anos carregados)
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
-  
+
   // Cache de bloqueios por semana (mantém apenas janela deslizante: -2, -1, 0, +1, +2)
   const [blocksByWeek, setBlocksByWeek] = useState<Record<string, Set<string>>>({});
-  
+
   // Rastreio de semanas em carregamento (para evitar múltiplas chamadas simultâneas)
   const [loadingBlockWeeks, setLoadingBlockWeeks] = useState<Set<string>>(new Set());
 
@@ -1195,9 +1196,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           ? pastSlot
                           : isHolidayDay && !appointment
                             ? holidaySlot
-                          : booked
-                            ? appointmentStyles
-                            : available
+                            : booked
+                              ? appointmentStyles
+                              : available
                           } ${isActiveHighlight ? 'slot-highlight' : ''}`}
                       >
                         {(() => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../components/ui/button';
 import { NavDropdown } from '../components/layout/NavDropdown';
@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
 import { Appointment, ViewType } from '../types';
-import { mapApiToAppointment } from '../utils/appointmentUtils';
+import { mapApiToAppointment, getCurrentActivity } from '../utils/appointmentUtils';
 import { useNotifications } from '../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../hooks/useSlidingWindowAppointments';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
@@ -75,7 +75,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showBlockedDialog, setShowBlockedDialog] = useState(false);
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
     const saved = localStorage.getItem('secretaryDashboardView');
@@ -183,39 +183,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     setUserData(updatedUser);
   };
 
-  const getCurrentActivity = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const todayAppointments = appointments
-      .filter(apt => {
-        const aptDate = new Date(apt.date);
-        aptDate.setHours(0, 0, 0, 0);
-        return aptDate.getTime() === today.getTime() && apt.status !== 'cancelled';
-      })
-      .sort((a, b) => {
-        const [aHour, aMin] = a.time.split(':').map(Number);
-        const [bHour, bMin] = b.time.split(':').map(Number);
-        return (aHour * 60 + aMin) - (bHour * 60 + bMin);
-      });
-
-    const inProgressApt = todayAppointments.find(apt => apt.status === 'in-progress');
-    if (inProgressApt) return `Atendimento a decorrer - ${inProgressApt.patientName}`;
-
-    for (const apt of todayAppointments) {
-      const [hour, minute] = apt.time.split(':').map(Number);
-      const aptTime = hour * 60 + minute;
-      if (currentTime < aptTime) {
-        const diff = aptTime - currentTime;
-        const hours = Math.floor(diff / 60);
-        const minutes = diff % 60;
-        if (hours > 0) return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-        return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-      }
-    }
-    return 'Ainda não existem marcações para hoje';
-  };
 
   const renderPlaceholder = (view: ViewType) => (
     <div className="flex items-center justify-center h-[600px]">
@@ -361,9 +329,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onViewAppointment={handleViewAppointment}
                       onToggleView={() => { }}
                       isDarkMode={isDarkMode}
-                      onRefresh={() => {
-                        setRefreshKey(prev => prev + 1);
-                        refreshCurrentWeek(currentDate);
+                      onRefresh={async () => {
+                        await refreshCurrentWeek(currentDate);
                       }}
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
@@ -384,7 +351,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
                   <div className="flex items-center gap-3">
                     <ClockIcon className="w-5 h-5 text-purple-600" />
-                    <p className="text-gray-800 dark:text-gray-200">{getCurrentActivity()}</p>
+                    <p className="text-gray-800 dark:text-gray-200">{getCurrentActivity(appointments, true)}</p>
                   </div>
                 </div>
               </>
@@ -428,9 +395,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   navigateBack();
                   setHighlightedNotificationId(null);
                 }}
-                onMarkAsRead={handleMarkAsRead}
+                onMarkAsRead={(id) => handleMarkAsRead(Number(id))}
                 onMarkAllAsRead={handleMarkAllAsRead}
-                onDelete={handleDeleteNotification}
+                onDelete={(id) => handleDeleteNotification(Number(id))}
                 onDeleteAll={handleDeleteAllNotifications}
                 isDarkMode={isDarkMode}
                 highlightedNotificationId={highlightedNotificationId || undefined}
@@ -478,7 +445,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onNavigate={navigateTo}
         onLogout={onLogout}
         isDarkMode={isDarkMode}
-        mode="secretary"
+        mode="secretaria"
       />
 
       {showAppointmentDialog && editingAppointment && authUser?.id && (

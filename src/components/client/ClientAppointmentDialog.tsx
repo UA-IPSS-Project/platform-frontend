@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Upload, X, File } from 'lucide-react';
+
 import { toast } from 'sonner';
 import { documentosApi } from '../../services/api';
+import { FileUpload } from '../shared/FileUpload';
 
 interface ClientAppointmentDialogProps {
   open: boolean;
@@ -27,7 +28,6 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
 
   // Reservar slot ao abrir o dialog
@@ -149,7 +149,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const marcacaoId = response.id;
 
       toast.success('Marcação criada com sucesso!');
-      
+
       // Se houver ficheiros selecionados, fazer upload
       if (selectedFiles.length > 0) {
         try {
@@ -160,7 +160,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           toast.error('Marcação criada, mas houve erro ao enviar documentos');
         }
       }
-      
+
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -171,41 +171,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     }
   };
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const newFiles = Array.from(files);
-      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB em bytes
-      
-      // Validar tamanho de cada ficheiro
-      const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
-      
-      if (oversizedFiles.length > 0) {
-        const fileNames = oversizedFiles.map(f => f.name).join(', ');
-        toast.error(`Ficheiro(s) excede(m) 10MB: ${fileNames}`);
-        return;
-      }
-      
-      setSelectedFiles(prev => [...prev, ...newFiles]);
-      toast.success(`${newFiles.length} ficheiro(s) adicionado(s)`);
-    }
-  };
-
-  const removeDocument = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -250,46 +216,12 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-900 dark:text-gray-100">Documentos (opcional)</Label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif"
+            <Label className="text-gray-900 dark:text-gray-100 mb-2 block">Documentos (opcional)</Label>
+            <FileUpload
+              selectedFiles={selectedFiles}
+              onChange={setSelectedFiles}
+              isUploading={isLoading}
             />
-            <button
-              type="button"
-              onClick={handleFileSelect}
-              className="w-full border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600"
-            >
-              <Upload className="w-5 h-5 mb-2" />
-              Carregar documento
-            </button>
-            {selectedFiles.length > 0 && (
-              <div className="space-y-2">
-                {selectedFiles.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 rounded border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <File className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{file.name}</p>
-                        <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeDocument(index)}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex-shrink-0"
-                      aria-label="Remover documento"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="flex gap-3 pt-2">

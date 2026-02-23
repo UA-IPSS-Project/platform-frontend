@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Client } from '@stomp/stompjs';
+import { useState, useEffect, useCallback } from 'react';
+import { useWebSocket } from './useWebSocket';
 import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
 
 export function useNotifications(userEmail: string | undefined) {
     const [notifications, setNotifications] = useState<Notificacao[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const stompClient = useRef<Client | null>(null);
 
     const carregarNotificacoes = useCallback(async () => {
         try {
@@ -17,62 +16,30 @@ export function useNotifications(userEmail: string | undefined) {
             console.error('Erro ao carregar notificações:', error);
         }
     }, []);
+    const onNotificationReceived = useCallback((notificacao: Notificacao) => {
+        console.log('Nova notificação recebida via WS:', notificacao);
+
+        setNotifications(prev => [notificacao, ...prev]);
+        setUnreadCount(prev => prev + 1);
+
+        toast(notificacao.titulo, {
+            description: notificacao.mensagem,
+            duration: 5000,
+            action: {
+                label: 'Ver',
+                onClick: () => {
+                    console.log('Toast Action Clicked:', notificacao.id);
+                }
+            }
+        });
+    }, []);
+
+    const topic = userEmail ? `/user/${userEmail}/queue/notifications` : null;
+    useWebSocket('ws://localhost:8080/ws', topic, onNotificationReceived);
 
     useEffect(() => {
         carregarNotificacoes();
-
-        if (!userEmail) return;
-
-        // Configuração do WebSocket
-        stompClient.current = new Client({
-            brokerURL: 'ws://localhost:8080/ws',
-            reconnectDelay: 5000,
-            heartbeatIncoming: 4000,
-            heartbeatOutgoing: 4000,
-        });
-
-        stompClient.current.onConnect = () => {
-            console.log('Conectado ao WebSocket');
-
-            const topic = `/user/${userEmail}/queue/notifications`;
-            stompClient.current?.subscribe(topic, (message) => {
-                try {
-                    const notificacao: Notificacao = JSON.parse(message.body);
-                    console.log('Nova notificação recebida via WS:', notificacao);
-
-                    setNotifications(prev => [notificacao, ...prev]);
-                    setUnreadCount(prev => prev + 1);
-
-                    toast(notificacao.titulo, {
-                        description: notificacao.mensagem,
-                        duration: 5000,
-                        action: {
-                            label: 'Ver',
-                            onClick: () => {
-                                // Return generic action identifier handled by parent component if needed
-                                console.log('Toast Action Clicked:', notificacao.id);
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error('Erro ao processar mensagem WS:', error);
-                }
-            });
-        };
-
-        stompClient.current.onStompError = (frame) => {
-            console.error('Erro STOMP:', frame.headers['message']);
-            console.error('Detalhes:', frame.body);
-        };
-
-        stompClient.current.activate();
-
-        return () => {
-            if (stompClient.current?.active) {
-                stompClient.current.deactivate();
-            }
-        };
-    }, [userEmail, carregarNotificacoes]);
+    }, [carregarNotificacoes]);
 
     const handleMarkAsRead = async (id: number) => {
         try {

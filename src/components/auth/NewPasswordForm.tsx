@@ -6,7 +6,8 @@ import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
 import { GlassCard } from '../ui/glass-card';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { validatePassword, isPasswordValid as checkPasswordValid } from '../../lib/validations';
 
 interface NewPasswordFormProps {
   onSuccess?: () => void;
@@ -24,10 +25,14 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
   const [termsRead, setTermsRead] = useState(false);
   const [errors, setErrors] = useState<{ password?: string; repeat?: string; termsAccepted?: string }>({});
 
+  const isPasswordValid = checkPasswordValid(password);
+  const passwordValidation = validatePassword(password);
+  const [showPasswordValidation, setShowPasswordValidation] = useState(false);
+
   const validate = () => {
     const e: { password?: string; repeat?: string; termsAccepted?: string } = {};
     if (!password) e.password = 'Campo obrigatório';
-    else if (password.length < 8) e.password = 'A palavra-passe deve ter pelo menos 8 caracteres';
+    else if (!isPasswordValid) e.password = 'A palavra-passe não cumpre os requisitos';
     if (password !== repeat) e.repeat = 'As palavras-passe não coincidem';
     if (!termsAccepted) e.termsAccepted = 'Deve aceitar os termos de uso para ativar a conta';
     setErrors(e);
@@ -78,6 +83,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={password}
+              onFocus={() => setShowPasswordValidation(true)}
               onChange={(e) => {
                 setPassword(e.target.value);
                 if (errors.password) setErrors({ ...errors, password: undefined });
@@ -93,6 +99,22 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
             </button>
           </div>
           {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+          {showPasswordValidation && password && (
+            <div className="space-y-1 text-sm pt-2">
+              <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.minLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>Min. 8 caracteres</span>
+              </div>
+              <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasUpperLower ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>Maiúsculas e minúsculas</span>
+              </div>
+              <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+                {passwordValidation.hasNumber ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>Números</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

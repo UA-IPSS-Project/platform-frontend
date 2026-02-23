@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { authApi } from '../../services/api';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
+import { validatePassword, isPasswordValid as checkPasswordValid } from '../../lib/validations';
 
 interface ChangePasswordDialogProps {
     open: boolean;
@@ -20,11 +20,10 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
     const [loading, setLoading] = useState(false);
 
     // Validation States
-    const hasMinLen = password.length >= 8;
-    const hasUpperLower = /[a-z]/.test(password) && /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
+    const passwordValidation = validatePassword(password);
+    const isPasswordValid = checkPasswordValid(password);
 
-    const isValid = hasMinLen && hasUpperLower && hasNumber && password === confirmPassword && password.length > 0;
+    const isValid = isPasswordValid && password === confirmPassword && password.length > 0;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -89,9 +88,9 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
 
                         {/* Password Requirements */}
                         <div className="space-y-1 pt-1 ml-1">
-                            <RequirementItem fulfilled={hasMinLen} text="Min. 8 caracteres" />
-                            <RequirementItem fulfilled={hasUpperLower} text="Maiúsculas e minúsculas" />
-                            <RequirementItem fulfilled={hasNumber} text="Números" />
+                            <RequirementItem fulfilled={passwordValidation.minLength} text="Min. 8 caracteres" />
+                            <RequirementItem fulfilled={passwordValidation.hasUpperLower} text="Maiúsculas e minúsculas" />
+                            <RequirementItem fulfilled={passwordValidation.hasNumber} text="Números" />
                         </div>
                     </div>
 

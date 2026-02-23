@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -6,12 +6,13 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Upload, X, Calendar as CalendarIcon, File } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { FileUpload } from '../shared/FileUpload';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import SUBJECTS from '../../lib/subjects';
-import { calendarioApi, utilizadoresApi, API_BASE_URL, UtilizadorInfo, apiRequest, documentosApi } from '../../services/api';
+import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail } from '../../lib/validations';
 
@@ -35,7 +36,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     description: '',
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
@@ -302,41 +302,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     await processCreation();
   };
 
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
-  };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const newFiles = Array.from(files);
-      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB em bytes
-      
-      // Validar tamanho de cada ficheiro
-      const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
-      
-      if (oversizedFiles.length > 0) {
-        const fileNames = oversizedFiles.map(f => f.name).join(', ');
-        toast.error(`Ficheiro excede 10MB: ${fileNames}`);
-        return;
-      }
-      
-      setSelectedFiles(prev => [...prev, ...newFiles]);
-      toast.success(`${newFiles.length} ficheiro adicionado`);
-    }
-  };
-
-  const removeDocument = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
@@ -505,46 +471,12 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 dark:text-gray-100">Anexar documentos (opcional)</Label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                className="hidden"
+              <Label className="text-gray-900 dark:text-gray-100 mb-2 block">Anexar documentos (opcional)</Label>
+              <FileUpload
+                selectedFiles={selectedFiles}
+                onChange={setSelectedFiles}
+                isUploading={isLoading}
               />
-              <div
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
-                onClick={handleFileSelect}
-              >
-                <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">Clique para selecionar ficheiros</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PDF, JPEG, PNG, DOC, DOCX (máx. 10MB)</p>
-              </div>
-
-              {selectedFiles.length > 0 && (
-                <div className="space-y-2 mt-2">
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center gap-2">
-                        <File className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-900 dark:text-gray-100">{file.name}</span>
-                        <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeDocument(index)}
-                        className="text-gray-600 dark:text-gray-400"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             <div className="flex gap-3 pt-4">

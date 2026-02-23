@@ -14,7 +14,7 @@ import type { Appointment } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { marcacoesApi } from '../services/api';
-import { mapApiToAppointment } from '../utils/appointmentUtils';
+import { mapApiToAppointment, mapStatusFromApiToUi, getCurrentActivity } from '../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../hooks/useAppointments';
@@ -137,14 +137,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const utente = latestData.marcacaoSecretaria?.utente;
       const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
 
-      let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' = 'scheduled';
-      if (latestData.estado === 'EM_PREENCHIMENTO') status = 'reserved';
-      else if (latestData.estado === 'AGENDADO') status = 'scheduled';
-      else if (latestData.estado === 'EM_PROGRESSO') status = 'in-progress';
-      else if (latestData.estado === 'AVISO') status = 'warning';
-      else if (latestData.estado === 'CONCLUIDO') status = 'completed';
-      else if (latestData.estado === 'CANCELADO') status = 'cancelled';
-      else if (latestData.estado === 'NAO_COMPARECIDO') status = 'no-show';
+      const status = mapStatusFromApiToUi(latestData.estado);
 
       const fresh: Appointment = {
         id: latestData.id.toString(),
@@ -183,42 +176,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     </div>
   );
 
-  const getCurrentActivity = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-
-    const todayAppointments = visibleAppointments
-      .filter(apt => {
-        const aptDate = new Date(apt.date);
-        aptDate.setHours(0, 0, 0, 0);
-        return aptDate.getTime() === today.getTime() && apt.status !== 'cancelled';
-      })
-      .sort((a, b) => {
-        const [aHour, aMin] = a.time.split(':').map(Number);
-        const [bHour, bMin] = b.time.split(':').map(Number);
-        return (aHour * 60 + aMin) - (bHour * 60 + bMin);
-      });
-
-    const inProgressApt = todayAppointments.find(apt => apt.status === 'in-progress');
-    if (inProgressApt) return `Atendimento a decorrer`;
-
-    for (const apt of todayAppointments) {
-      const [hour, minute] = apt.time.split(':').map(Number);
-      const aptTime = hour * 60 + minute;
-
-      if (currentTime < aptTime) {
-        const diff = aptTime - currentTime;
-        const hours = Math.floor(diff / 60);
-        const minutes = diff % 60;
-        if (hours > 0) return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-        return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-      }
-    }
-    return 'Ainda não existem marcações para hoje';
-  };
-
-  const currentActivity = getCurrentActivity();
+  const currentActivity = getCurrentActivity(visibleAppointments, false);
 
   const UserNavigation = (
     <>

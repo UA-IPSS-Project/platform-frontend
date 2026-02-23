@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { marcacoesApi } from '../services/api';
 import type { Appointment } from '../types';
+import { mapStatusFromApiToUi } from '../utils/appointmentUtils';
 
 export function useAppointments(userId: number | undefined, userNif: string | undefined) {
     const [allAppointments, setAllAppointments] = useState<Appointment[]>([]);
@@ -21,17 +22,7 @@ export function useAppointments(userId: number | undefined, userNif: string | un
             const appointmentsFromAPI: Appointment[] = marcacoes.map((m) => {
                 const dataHora = new Date(m.data);
 
-                // Mapear estado da API para o formato esperado
-                let status: 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'no-show' = 'scheduled';
-                if (m.estado) {
-                    const estadoUpper = m.estado.toUpperCase();
-                    if (estadoUpper === 'AGENDADO') status = 'scheduled';
-                    else if (estadoUpper === 'EM_PROGRESSO' || estadoUpper === 'EM PROGRESSO') status = 'in-progress';
-                    else if (estadoUpper === 'AVISO') status = 'warning';
-                    else if (estadoUpper === 'CONCLUIDO') status = 'completed';
-                    else if (estadoUpper === 'CANCELADO') status = 'cancelled';
-                    else if (estadoUpper === 'NAO_COMPARECIDO') status = 'no-show';
-                }
+                const status = mapStatusFromApiToUi(m.estado);
 
                 return {
                     id: m.id.toString(),
