@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';

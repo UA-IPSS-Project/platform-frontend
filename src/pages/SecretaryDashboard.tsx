@@ -226,7 +226,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
-        isDarkMode={isDarkMode}
       />
 
       <NavDropdown
@@ -237,7 +236,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
-        isDarkMode={isDarkMode}
         className="hidden lg:block"
       />
 
@@ -258,7 +256,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
-        isDarkMode={isDarkMode}
         className="hidden lg:block"
       />
 
