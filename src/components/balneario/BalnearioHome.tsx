@@ -103,16 +103,20 @@ export default function BalnearioHome({ isDarkMode, onNavigate }: BalnearioHomeP
                                 Ver tudo <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>
-                        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                        <div className="p-4 space-y-3">
                             {recentActivity.map((activity, index) => (
-                                <div key={index} className="px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                    <div className="flex items-start gap-3">
-                                        <div className={`w-2 h-2 rounded-full ${activity.color} mt-2 flex-shrink-0`} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className={`font-medium ${textClass} text-sm`}>{activity.text}</p>
-                                            <p className={`text-xs ${textSecondaryClass} mt-1`}>{activity.time}</p>
+                                <div key={index} className="group p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0 ${activity.color}`}>
+                                        {activity.type === 'marcacao' ? <Calendar className="w-5 h-5" /> : <Coffee className="w-5 h-5" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}>{activity.text}</p>
+                                        <div className="flex items-center gap-1.5">
+                                            <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
+                                            <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
                                         </div>
                                     </div>
+                                    <ArrowRight className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-purple-500 transition-colors transform group-hover:translate-x-1" />
                                 </div>
                             ))}
                         </div>
