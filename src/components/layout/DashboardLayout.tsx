@@ -57,7 +57,7 @@ export function DashboardLayout({
 
     return (
         <div className={isDarkMode ? 'dark' : ''}>
-            <div className="min-h-screen relative bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            <div className="min-h-screen relative bg-transparent transition-colors duration-200">
                 <div className="relative">
                     {/* Header - Full Width */}
                     <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 relative z-10 sticky top-0">

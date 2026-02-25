@@ -5,8 +5,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import NewPasswordForm from './components/auth/NewPasswordForm';
-import { UserDashboard } from './pages/UserDashboard';
-import { SecretaryDashboard } from './pages/SecretaryDashboard';
+import { UserDashboard } from './pages/utente/UserDashboard';
+import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
+import { InternoDashboard } from './pages/interno/InternoDashboard';
+import { EscolaDashboard } from './pages/escola/EscolaDashboard';
 import { Toaster } from 'sonner';
 import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
@@ -48,19 +52,24 @@ function App() {
     }
 
     if (user && !user.active) {
-      // If a Funcionario is somehow logged in but inactive (e.g. waiting for approval),
+      // If a Staff member is somehow logged in but inactive (e.g. waiting for approval),
       // show a specific message instead of redirecting to set-password
-      if (user.role === 'FUNCIONARIO') {
+      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA', 'ADMIN'].includes(user.role)) {
         return (
-          <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-md p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 max-w-md w-full text-center">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Conta Pendente</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-8">
                 A sua conta aguarda aprovação da secretaria. Por favor, aguarde ou contacte os serviços administrativos.
               </p>
               <button
                 onClick={handleLogout}
-                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+                className="w-full bg-purple-600 text-white font-medium px-4 py-3 rounded-md hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
               >
                 Voltar ao Login
               </button>
@@ -83,8 +92,9 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center transition-colors duration-300">
+        <AbstractBackground isDarkMode={isDarkMode} />
+        <div className="relative z-10 animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -145,6 +155,22 @@ function App() {
                       </div>
                   } />
 
+                  {/* Rota 404 - Not Found */}
+                  <Route path="*" element={
+                    <div className="min-h-screen flex items-center justify-center p-4">
+                      <div className="backdrop-blur-md p-8 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 text-center max-w-md w-full">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Página não encontrada</h2>
+                        <p className="text-gray-600 dark:text-gray-400 mb-6">A página que procura não existe ou foi movida.</p>
+                        <button
+                          onClick={() => navigate('/')}
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-md transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                        >
+                          Voltar ao Início
+                        </button>
+                      </div>
+                    </div>
+                  } />
+
                   <Route path="/set-password" element={
                     isAuthenticated ? (
                       <div className="min-h-screen flex items-center justify-center p-4">
@@ -159,8 +185,7 @@ function App() {
                   <Route path="/dashboard/*" element={
                     <ProtectedRoute>
                       {user ? (
-                        // Backend returns role as "SECRETARIA" for funcionarios
-                        (user.role === 'FUNCIONARIO' || user.role === 'SECRETARIA') ? (
+                        user.role === 'SECRETARIA' ? (
                           <SecretaryDashboard
                             user={{
                               name: user.nome || '',
@@ -168,6 +193,30 @@ function App() {
                               contact: user.telefone || '',
                               email: user.email || ''
                             }}
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'ADMIN' ? (
+                          <AdminDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'BALNEARIO' ? (
+                          <BalnearioDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'INTERNO' ? (
+                          <InternoDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'ESCOLA' ? (
+                          <EscolaDashboard
                             onLogout={handleLogout}
                             isDarkMode={isDarkMode}
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}

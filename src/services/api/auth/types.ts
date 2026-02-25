@@ -34,6 +34,6 @@ export interface AuthResponse {
     id: number;
     email: string;
     nome: string;
-    role: 'FUNCIONARIO' | 'UTENTE';
+    role: 'UTENTE' | 'SECRETARIA' | 'ADMIN' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
     active: boolean;
 }

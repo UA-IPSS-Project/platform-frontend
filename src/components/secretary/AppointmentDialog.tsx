@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -14,7 +14,7 @@ import { Calendar } from '../ui/calendar';
 import SUBJECTS from '../../lib/subjects';
 import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
-import { validateName, validateNIF, validateContact, validateEmail } from '../../lib/validations';
+import { validateName, validateNIF, validateContact, validateEmail, validateBirthDate } from '../../lib/validations';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -39,6 +39,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+  const tempReservaRef = useRef<number | null>(null);
+
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
@@ -53,8 +55,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
     // Cleanup: liberar reserva ao fechar ou desmontar
     return () => {
-      if (tempReservaId) {
-        liberarSlot();
+      if (tempReservaRef.current) {
+        liberarSlotRef(tempReservaRef.current);
       }
     };
   }, [open]);
@@ -94,11 +96,23 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
 
       setTempReservaId(data.tempId);
+      tempReservaRef.current = data.tempId;
       console.log('Slot reservado temporariamente:', data.tempId);
     } catch (error: any) {
       console.error('Erro ao reservar slot:', error);
       toast.error(error.message || 'Este horário já está ocupado');
       onClose();
+    }
+  };
+
+  const liberarSlotRef = async (id: number) => {
+    try {
+      await apiRequest(`/api/marcacoes/libertar-slot/${id}`, {
+        method: 'DELETE',
+      });
+      console.log('Slot liberado via ref:', id);
+    } catch (error) {
+      console.error('Erro ao liberar slot:', error);
     }
   };
 
@@ -111,6 +125,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
       console.log('Slot liberado:', tempReservaId);
       setTempReservaId(null);
+      tempReservaRef.current = null;
     } catch (error) {
       console.error('Erro ao liberar slot:', error);
     }
@@ -178,9 +193,20 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!validateContact(formData.contact)) {
       newErrors.contact = 'Contacto deve ter 9 dígitos';
     }
-    // Validation for date of birth if entered? Assuming optional or mandatory?
-    // User requested "Data de nascimento" field. Let's make it optional for now or consistent with others.
-    // If auto-fill brings it, good.
+
+    // Mandatory Date of Birth validation
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Data de nascimento é obrigatória';
+    } else {
+      // Reformat from YYYY-MM-DD to DD/MM/YYYY for the validator
+      const [year, month, day] = formData.dateOfBirth.split('-');
+      const formattedDateForValidation = `${day}/${month}/${year}`;
+      const birthValidation = validateBirthDate(formattedDateForValidation);
+      if (!birthValidation.valid) {
+        newErrors.dateOfBirth = birthValidation.error || 'Data inválida';
+      }
+    }
+
     if (!formData.subject) {
       newErrors.subject = 'Selecione um assunto';
     }
@@ -358,7 +384,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento</Label>
+                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento *</Label>
                 <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
                   setBirthDatePickerOpen(open);
                   if (open) {
@@ -369,7 +395,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                      className={`w-full justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                     >
                       {formData.dateOfBirth || 'Selecionar data'}
                       <CalendarIcon className="w-4 h-4 opacity-70" />
@@ -393,6 +419,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                     />
                   </PopoverContent>
                 </Popover>
+                {errors.dateOfBirth && <p className="text-sm text-red-500">{errors.dateOfBirth}</p>}
               </div>
             </div>
 

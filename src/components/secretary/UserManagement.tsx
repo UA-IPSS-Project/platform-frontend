@@ -36,8 +36,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         nif: '',
         name: '',
         contact: '',
-        isEmployee: false,
-        role: '',
+        role: 'UTENTE',
         email: '',
         birthDate: '',
     });
@@ -122,11 +121,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     // Auto-update email for employees
     useEffect(() => {
-        if (formData.isEmployee && emailSelection === 'auto') {
+        if (formData.role !== 'UTENTE' && emailSelection === 'auto') {
             const generated = generateInstitutionalEmail(formData.name);
             setFormData(prev => ({ ...prev, email: generated }));
         }
-    }, [formData.name, formData.isEmployee, emailSelection]);
+    }, [formData.name, formData.role, emailSelection]);
 
 
     const handleApprove = async (id: number) => {
@@ -144,8 +143,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             nif: '',
             name: '',
             contact: '',
-            isEmployee: false,
-            role: '',
+            role: 'UTENTE',
             email: '',
             birthDate: '',
         });
@@ -203,7 +201,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             newErrors.email = 'Email inválido';
         }
         // Institutional Check
-        if (formData.isEmployee && !formData.email.endsWith('@florinhasdovouga.pt')) {
+        if (formData.role !== 'UTENTE' && !formData.email.endsWith('@florinhasdovouga.pt')) {
             newErrors.email = 'Funcionários devem usar email institucional (@florinhasdovouga.pt)';
         }
 
@@ -251,7 +249,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 contact: formData.contact,
                 email: formData.email,
                 birthDate: formData.birthDate,
-                isEmployee: formData.isEmployee,
+                isEmployee: formData.role !== 'UTENTE',
                 role: formData.role
             });
             toast.success(`Conta criada! Email de ativação enviado para ${formData.email}`);
@@ -484,40 +482,25 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                         {errors.birthDate && <p className="text-red-500 text-xs">{errors.birthDate}</p>}
                                     </div>
 
-                                    {/* Employee Toggle */}
-                                    <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800/30">
-                                        <div className="flex items-start gap-3">
-                                            <Checkbox
-                                                id="isEmployee"
-                                                className="mt-1 data-[state=checked]:bg-purple-600 border-purple-300 dark:border-purple-700"
-                                                checked={formData.isEmployee}
-                                                onCheckedChange={(c) => setFormData({ ...formData, isEmployee: !!c })}
-                                            />
-                                            <div>
-                                                <label htmlFor="isEmployee" className="font-semibold text-sm text-gray-800 dark:text-gray-200 block cursor-pointer">
-                                                    É funcionário?
-                                                </label>
-                                            </div>
-                                        </div>
+                                    {/* Role Selection */}
+                                    <div className="space-y-2 pt-2">
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Tipo de Utilizador *</Label>
+                                        <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
+                                            <SelectTrigger className="bg-white dark:bg-gray-900 h-9 text-sm">
+                                                <SelectValue placeholder="Selecione o papel" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="UTENTE">Utente Comum</SelectItem>
+                                                <SelectItem value="SECRETARIA">Secretaria</SelectItem>
+                                                <SelectItem value="BALNEARIO">Balneário Social</SelectItem>
+                                                <SelectItem value="INTERNO">Serviços Internos</SelectItem>
+                                                <SelectItem value="ADMIN">Administrador</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
 
-                                    {formData.isEmployee ? (
+                                    {formData.role !== 'UTENTE' ? (
                                         <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                            <div className="space-y-2">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Função</Label>
-                                                <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
-                                                    <SelectTrigger className="bg-white dark:bg-gray-900 h-9 text-sm">
-                                                        <SelectValue placeholder="Selecione" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Secretaria">Secretaria</SelectItem>
-                                                        <SelectItem value="Balneário Social">Balneário Social</SelectItem>
-                                                        <SelectItem value="Escola">Escola</SelectItem>
-                                                        <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
                                             <div className="space-y-2">
                                                 <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email Institucional</Label>
 

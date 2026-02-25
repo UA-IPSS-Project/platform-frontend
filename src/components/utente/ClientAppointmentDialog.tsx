@@ -186,7 +186,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           Preencha os dados do agendamento
         </DialogPrimitive.Description>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
             <Select value={subject} onValueChange={(value) => setSubject(value)}>
