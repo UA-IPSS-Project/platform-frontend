@@ -10,6 +10,7 @@ import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
 import { InternoDashboard } from './pages/interno/InternoDashboard';
+import { EscolaDashboard } from './pages/escola/EscolaDashboard';
 import { Toaster } from 'sonner';
 import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
@@ -193,13 +194,7 @@ function App() {
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
                           />
                         ) : user.role === 'ESCOLA' ? (
-                          <UserDashboard
-                            user={{
-                              name: user.nome || '',
-                              nif: user.nif || '',
-                              contact: user.telefone || '',
-                              email: user.email || ''
-                            }}
+                          <EscolaDashboard
                             onLogout={handleLogout}
                             isDarkMode={isDarkMode}
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
