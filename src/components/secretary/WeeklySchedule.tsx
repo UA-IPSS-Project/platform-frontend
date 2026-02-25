@@ -233,11 +233,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // ===== SLIDING WINDOW CACHE: Carregar bloqueios por semana =====
   // Carrega bloqueios de uma semana específica e armazena no cache
-  const loadWeekBlocks = async (date: Date) => {
+  const loadWeekBlocks = async (date: Date, force = false) => {
     const { startOfWeek, endOfWeek, key } = getWeekRange(date);
 
     // Se já está em cache ou em carregamento, skip
-    if (blocksByWeek[key] || loadingBlockWeeks.has(key)) {
+    if (!force && (blocksByWeek[key] || loadingBlockWeeks.has(key))) {
       console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
       return;
     }
@@ -334,7 +334,26 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     loadWeekBlocks(currentWeek);
     loadWeekBlocks(nextWeek1);
     loadWeekBlocks(nextWeek2);
-  }, [currentDate, onRefresh, refreshTrigger]);
+  }, [currentDate, onRefresh]);
+
+  // Forçar reload de bloqueios quando houver alteração explícita (add/remove bloqueio)
+  useEffect(() => {
+    if (refreshTrigger === undefined) return;
+
+    console.log('[DEBUG] force reload blocks by refreshTrigger:', { refreshTrigger });
+
+    const currentWeek = currentDate;
+    const prevWeek1 = addDays(currentDate, -7);
+    const prevWeek2 = addDays(currentDate, -14);
+    const nextWeek1 = addDays(currentDate, 7);
+    const nextWeek2 = addDays(currentDate, 14);
+
+    loadWeekBlocks(prevWeek2, true);
+    loadWeekBlocks(prevWeek1, true);
+    loadWeekBlocks(currentWeek, true);
+    loadWeekBlocks(nextWeek1, true);
+    loadWeekBlocks(nextWeek2, true);
+  }, [refreshTrigger, currentDate]);
 
   // ===== AGREGADO: Combinar todos os bloqueios em cache numa única Set =====
   // (Para compatibilidade com código existente que usa blockedSlots)

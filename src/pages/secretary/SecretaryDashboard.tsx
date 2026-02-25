@@ -88,6 +88,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
   const navigateTo = (view: ViewType) => {
     setViewHistory(prev => [...prev, view]);
@@ -335,10 +336,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onToggleView={() => { }}
                       isDarkMode={isDarkMode}
                       onRefresh={handleRefreshCurrentWeek}
+                      onBlockSchedule={() => setShowBlockedDialog(true)}
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
                       isLoading={isCurrentWeekLoading}
                       highlightedSlot={highlightedSlot}
+                      refreshTrigger={blockRefreshTrigger}
                     />
                   </div>
                   <div className="space-y-6 lg:sticky lg:top-24">
@@ -509,7 +512,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           open={showBlockedDialog}
           onOpenChange={setShowBlockedDialog}
           appointments={appointments}
-          onSuccess={() => refreshCurrentWeek(currentDate)}
+          onSuccess={() => {
+            refreshCurrentWeek(currentDate);
+            setBlockRefreshTrigger(prev => prev + 1);
+          }}
         />
       )}
     </>
