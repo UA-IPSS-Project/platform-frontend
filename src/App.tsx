@@ -5,8 +5,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import NewPasswordForm from './components/auth/NewPasswordForm';
-import { UserDashboard } from './pages/UserDashboard';
-import { SecretaryDashboard } from './pages/SecretaryDashboard';
+import { UserDashboard } from './pages/utente/UserDashboard';
+import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
+import { InternoDashboard } from './pages/interno/InternoDashboard';
 import { Toaster } from 'sonner';
 import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
@@ -48,9 +51,9 @@ function App() {
     }
 
     if (user && !user.active) {
-      // If a Funcionario is somehow logged in but inactive (e.g. waiting for approval),
+      // If a Staff member is somehow logged in but inactive (e.g. waiting for approval),
       // show a specific message instead of redirecting to set-password
-      if (user.role === 'FUNCIONARIO') {
+      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ADMIN'].includes(user.role)) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
@@ -159,8 +162,7 @@ function App() {
                   <Route path="/dashboard/*" element={
                     <ProtectedRoute>
                       {user ? (
-                        // Backend returns role as "SECRETARIA" for funcionarios
-                        (user.role === 'FUNCIONARIO' || user.role === 'SECRETARIA') ? (
+                        user.role === 'SECRETARIA' ? (
                           <SecretaryDashboard
                             user={{
                               name: user.nome || '',
@@ -168,6 +170,24 @@ function App() {
                               contact: user.telefone || '',
                               email: user.email || ''
                             }}
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'ADMIN' ? (
+                          <AdminDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'BALNEARIO' ? (
+                          <BalnearioDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'INTERNO' ? (
+                          <InternoDashboard
                             onLogout={handleLogout}
                             isDarkMode={isDarkMode}
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}

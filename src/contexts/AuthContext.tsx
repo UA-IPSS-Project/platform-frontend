@@ -5,7 +5,7 @@ interface User {
   id: number;
   email: string;
   nome: string;
-  role: 'FUNCIONARIO' | 'UTENTE' | 'SECRETARIA';
+  role: 'UTENTE' | 'SECRETARIA' | 'ADMIN' | 'BALNEARIO' | 'INTERNO';
   nif?: string;
   telefone?: string;
   active: boolean;

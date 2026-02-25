@@ -1,25 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '../components/ui/button';
-import { NavDropdown } from '../components/layout/NavDropdown';
-import { NotificationsPage } from './NotificationsPage';
-import { Sidebar } from '../components/layout/Sidebar';
-import { WeeklySchedule } from '../components/secretary/WeeklySchedule';
-import { TodayAppointments } from '../components/secretary/TodayAppointments';
-import { HistoryPage } from './HistoryPage';
-import { ProfilePage } from './ProfilePage';
-import { ClientAppointmentDialog } from '../components/client/ClientAppointmentDialog';
-import { AppointmentDetailsDialog } from '../components/secretary/AppointmentDetailsDialog';
-import { ClockIcon } from '../components/shared/CustomIcons';
-import type { Appointment } from '../types';
+import { Button } from '../../components/ui/button';
+import { NavDropdown } from '../../components/layout/NavDropdown';
+import { NotificationsPage } from '../NotificationsPage';
+import { Sidebar } from '../../components/layout/Sidebar';
+import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
+import { TodayAppointments } from '../../components/secretary/TodayAppointments';
+import { HistoryPage } from '../HistoryPage';
+import { ProfilePage } from '../ProfilePage';
+import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
+import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
+import { ClockIcon } from '../../components/shared/CustomIcons';
+import type { Appointment } from '../../types';
 import { toast } from 'sonner';
-import { useAuth } from '../contexts/AuthContext';
-import { marcacoesApi } from '../services/api';
-import { mapApiToAppointment, mapStatusFromApiToUi, getCurrentActivity } from '../utils/appointmentUtils';
+import { useAuth } from '../../contexts/AuthContext';
+import { marcacoesApi } from '../../services/api';
+import { mapApiToAppointment, mapStatusFromApiToUi, getCurrentActivity } from '../../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAppointments } from '../hooks/useAppointments';
-import { useNotifications } from '../hooks/useNotifications';
-import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { useAppointments } from '../../hooks/useAppointments';
+import { useNotifications } from '../../hooks/useNotifications';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
 interface UserDashboardProps {
   user: {
@@ -197,7 +197,6 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         ]}
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
         onSelect={(id) => navigate(`/dashboard/${id}`)}
-        isDarkMode={isDarkMode}
       />
     </>
   );
