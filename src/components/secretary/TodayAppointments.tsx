@@ -87,7 +87,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     <div className="flex flex-col h-full">
       {/* Header - Title top, buttons below right */}
       <div className="flex flex-col mb-4 gap-2">
-        <h2 className={`text-lg font-semibold ${headerTextClass}`}>Agendamentos de Hoje</h2>
+        <h2 className={`text-2xl font-bold ml-1 ${headerTextClass}`}>Agendamentos de Hoje</h2>
         <div className="flex items-center gap-2 self-end">
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
