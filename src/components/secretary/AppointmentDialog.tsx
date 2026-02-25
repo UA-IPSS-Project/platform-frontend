@@ -47,6 +47,13 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
 
+  // Gracefully synchronize the calendar view to the selected date only when it explicitly updates
+  useEffect(() => {
+    if (birthDateValue) {
+      setCalendarMonth(birthDateValue);
+    }
+  }, [birthDateValue]);
+
   // Reservar slot ao abrir o dialog
   useEffect(() => {
     if (open) {
@@ -387,9 +394,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento *</Label>
                 <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
                   setBirthDatePickerOpen(open);
-                  if (open) {
-                    setCalendarMonth(birthDateValue ?? new Date());
-                  }
                 }}>
                   <PopoverTrigger asChild>
                     <Button
@@ -401,14 +405,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                       <CalendarIcon className="w-4 h-4 opacity-70" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0" align="start">
+                  <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
                     <Calendar
                       mode="single"
                       selected={birthDateValue}
                       month={calendarMonth}
-                      onMonthChange={(d) => setCalendarMonth(d)}
+                      onMonthChange={(d: Date) => setCalendarMonth(d)}
                       initialFocus
-                      onSelect={(date) => {
+                      onSelect={(date: Date | undefined) => {
                         if (date) {
                           setBirthDateValue(date);
                           const formatted = date.toISOString().split('T')[0];

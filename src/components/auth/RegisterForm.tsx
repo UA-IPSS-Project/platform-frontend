@@ -302,7 +302,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 <CalendarIcon className="w-4 h-4 opacity-70" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0" align="start">
+            <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
               <Calendar
                 mode="single"
                 selected={birthDateValue}
