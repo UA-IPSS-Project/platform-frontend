@@ -53,7 +53,7 @@ function App() {
     if (user && !user.active) {
       // If a Staff member is somehow logged in but inactive (e.g. waiting for approval),
       // show a specific message instead of redirecting to set-password
-      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ADMIN'].includes(user.role)) {
+      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA', 'ADMIN'].includes(user.role)) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md max-w-md w-full text-center">
@@ -188,6 +188,18 @@ function App() {
                           />
                         ) : user.role === 'INTERNO' ? (
                           <InternoDashboard
+                            onLogout={handleLogout}
+                            isDarkMode={isDarkMode}
+                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+                          />
+                        ) : user.role === 'ESCOLA' ? (
+                          <UserDashboard
+                            user={{
+                              name: user.nome || '',
+                              nif: user.nif || '',
+                              contact: user.telefone || '',
+                              email: user.email || ''
+                            }}
                             onLogout={handleLogout}
                             isDarkMode={isDarkMode}
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
