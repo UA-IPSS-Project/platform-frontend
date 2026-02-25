@@ -290,17 +290,17 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                 {startDate ? format(startDate, "dd/MM/yyyy") : <span>Data</span>}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
+                                        <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto">
                                             <Calendar
                                                 mode="single"
                                                 selected={startDate}
-                                                onSelect={(date) => {
+                                                onSelect={(date: Date | undefined) => {
                                                     setStartDate(date);
                                                     if (date) {
                                                         setEndDate(date);
                                                     }
                                                 }}
-                                                onMonthChange={(date) => loadHolidays(date.getFullYear())}
+                                                onMonthChange={(date: Date) => loadHolidays(date.getFullYear())}
                                                 disabled={isDisabledStartDate}
                                                 initialFocus
                                             />
@@ -351,12 +351,12 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                 {endDate ? format(endDate, "dd/MM/yyyy") : <span>Data</span>}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
+                                        <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto">
                                             <Calendar
                                                 mode="single"
                                                 selected={endDate}
                                                 onSelect={setEndDate}
-                                                onMonthChange={(date) => loadHolidays(date.getFullYear())}
+                                                onMonthChange={(date: Date) => loadHolidays(date.getFullYear())}
                                                 disabled={isDisabledEndDate}
                                                 initialFocus
                                             />
