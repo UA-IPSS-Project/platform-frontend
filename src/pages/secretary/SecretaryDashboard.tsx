@@ -6,6 +6,7 @@ import { NotificationsPage } from '../NotificationsPage';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
+import { DocumentsSearchPage } from './DocumentsSearchPage';
 import SecretaryHome from '../../components/secretary/SecretaryHome';
 import { AppointmentDialog } from '../../components/secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
@@ -345,6 +346,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       appointments={appointments}
                       onViewAppointment={handleViewAppointment}
                       onShowHistory={() => navigateTo('history')}
+                      onShowDocumentSearch={() => navigateTo('documents-search')}
                       isDarkMode={isDarkMode}
                     />
                   </div>
@@ -369,6 +371,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   setHistoryStartDate(start);
                   setHistoryEndDate(end);
                 }}
+              />
+            ) : currentView === 'documents-search' ? (
+              <DocumentsSearchPage
+                onBack={navigateBack}
+                isDarkMode={isDarkMode}
               />
             ) : currentView === 'management' ? (
               <UserManagement

@@ -1,5 +1,5 @@
 import { apiRequest, API_BASE_URL, getCookie } from '../core/client';
-import { DocumentoDTO } from './types';
+import { DocumentoDTO, PesquisaDocumentosParams } from './types';
 
 export const documentosApi = {
     // Upload de documento(s) para uma marcação
@@ -75,4 +75,24 @@ export const documentosApi = {
         apiRequest<void>(`/api/documentos/${documentoId}`, {
             method: 'DELETE',
         }),
+
+    // Pesquisar documentos por metadados
+    pesquisarDocumentos: (params: PesquisaDocumentosParams = {}) => {
+        const searchParams = new URLSearchParams();
+
+        if (params.nomeOriginal?.trim()) searchParams.append('nomeOriginal', params.nomeOriginal.trim());
+        if (params.nomeArmazenado?.trim()) searchParams.append('nomeArmazenado', params.nomeArmazenado.trim());
+        if (params.tipo?.trim()) searchParams.append('tipo', params.tipo.trim());
+        if (params.utenteNome?.trim()) searchParams.append('utenteNome', params.utenteNome.trim());
+        if (params.utenteNif?.trim()) searchParams.append('utenteNif', params.utenteNif.trim());
+        if (params.desde?.trim()) searchParams.append('desde', params.desde.trim());
+        if (params.ate?.trim()) searchParams.append('ate', params.ate.trim());
+
+        const query = searchParams.toString();
+        const endpoint = query ? `/api/documentos/pesquisar?${query}` : '/api/documentos/pesquisar';
+
+        return apiRequest<DocumentoDTO[]>(endpoint, {
+            method: 'GET',
+        });
+    },
 };
