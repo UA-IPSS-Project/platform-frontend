@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -39,6 +39,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+  const tempReservaRef = useRef<number | null>(null);
+
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
@@ -53,8 +55,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
     // Cleanup: liberar reserva ao fechar ou desmontar
     return () => {
-      if (tempReservaId) {
-        liberarSlot();
+      if (tempReservaRef.current) {
+        liberarSlotRef(tempReservaRef.current);
       }
     };
   }, [open]);
@@ -94,11 +96,23 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
 
       setTempReservaId(data.tempId);
+      tempReservaRef.current = data.tempId;
       console.log('Slot reservado temporariamente:', data.tempId);
     } catch (error: any) {
       console.error('Erro ao reservar slot:', error);
       toast.error(error.message || 'Este horário já está ocupado');
       onClose();
+    }
+  };
+
+  const liberarSlotRef = async (id: number) => {
+    try {
+      await apiRequest(`/api/marcacoes/libertar-slot/${id}`, {
+        method: 'DELETE',
+      });
+      console.log('Slot liberado via ref:', id);
+    } catch (error) {
+      console.error('Erro ao liberar slot:', error);
     }
   };
 
@@ -111,6 +125,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
       console.log('Slot liberado:', tempReservaId);
       setTempReservaId(null);
+      tempReservaRef.current = null;
     } catch (error) {
       console.error('Erro ao liberar slot:', error);
     }

@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker, CaptionProps } from "react-day-picker";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
+
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
 function CustomCaption({ displayMonth, onMonthChange }: CaptionProps & { onMonthChange?: (date: Date) => void }) {
   const months = [
@@ -32,31 +33,35 @@ function CustomCaption({ displayMonth, onMonthChange }: CaptionProps & { onMonth
 
   return (
     <div className="flex items-center justify-center gap-2 w-full">
-      <select
-        aria-label="Mês"
-        value={displayMonth.getMonth()}
-        onChange={(e) => handleMonthChange(e.target.value)}
-        className="h-7 w-[110px] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-      >
-        {months.map((month, index) => (
-          <option key={index} value={index}>
-            {month}
-          </option>
-        ))}
-      </select>
+      <Select value={displayMonth.getMonth().toString()} onValueChange={handleMonthChange}>
+        <SelectTrigger className="h-7 w-[110px] text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <SelectValue aria-label="Mês">
+            {months[displayMonth.getMonth()]}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-[200px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+          {months.map((month, index) => (
+            <SelectItem key={index} value={index.toString()} className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-700">
+              {month}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <select
-        aria-label="Ano"
-        value={displayMonth.getFullYear()}
-        onChange={(e) => handleYearChange(e.target.value)}
-        className="h-7 w-[80px] text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-      >
-        {years.reverse().map((year) => (
-          <option key={year} value={year}>
-            {year}
-          </option>
-        ))}
-      </select>
+      <Select value={displayMonth.getFullYear().toString()} onValueChange={handleYearChange}>
+        <SelectTrigger className="h-7 w-[80px] text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <SelectValue aria-label="Ano">
+            {displayMonth.getFullYear()}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="max-h-[200px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+          {years.reverse().map((year) => (
+            <SelectItem key={year} value={year.toString()} className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-700">
+              {year}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

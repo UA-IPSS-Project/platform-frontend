@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { NavDropdown } from '../../components/layout/NavDropdown';
@@ -151,6 +151,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }, 60000);
     return () => clearInterval(interval);
   }, [currentView, refreshCurrentWeek, currentDate]);
+
+  const handleRefreshCurrentWeek = useCallback(async () => {
+    await refreshCurrentWeek(currentDate);
+  }, [refreshCurrentWeek, currentDate]);
+
 
   const handleCreateAppointment = async (date: Date, time: string) => {
     await refreshCurrentWeek(currentDate);
@@ -328,9 +333,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onViewAppointment={handleViewAppointment}
                       onToggleView={() => { }}
                       isDarkMode={isDarkMode}
-                      onRefresh={async () => {
-                        await refreshCurrentWeek(currentDate);
-                      }}
+                      onRefresh={handleRefreshCurrentWeek}
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
                       isLoading={isCurrentWeekLoading}
