@@ -238,7 +238,7 @@ function App() {
                     </ProtectedRoute>
                   } />
 
-                  <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+                  <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
                 </Routes>
               </motion.div>
             </AnimatePresence>
