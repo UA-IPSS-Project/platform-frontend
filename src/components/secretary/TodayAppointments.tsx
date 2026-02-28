@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import SUBJECTS from '../../lib/subjects';
 import { toast } from 'sonner';
-import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon } from '../shared/CustomIcons';
+import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon, FileTextIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
 import { StatusBadge } from '../shared/status-badge';
 
@@ -13,13 +13,14 @@ interface TodayAppointmentsProps {
   appointments: Appointment[];
   onViewAppointment: (appointment: Appointment) => void;
   onShowHistory: () => void;
+  onShowDocumentSearch?: () => void;
   isDarkMode: boolean;
   /** show filter button and controls (secretary only) */
   showFilter?: boolean;
   isBalneario?: boolean;
 }
 
-export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
+export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, onShowDocumentSearch, isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -177,6 +178,18 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
             <HistoryIcon className="w-3.5 h-3.5" />
             Histórico
           </Button>
+
+          {onShowDocumentSearch && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onShowDocumentSearch}
+              className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <FileTextIcon className="w-3.5 h-3.5" />
+              Pesquisa de Documentos
+            </Button>
+          )}
         </div>
       </div>
 

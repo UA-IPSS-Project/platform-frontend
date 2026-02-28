@@ -4,14 +4,11 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useAuth } from '../../contexts/AuthContext';
-import { bloqueiosApi, calendarioApi } from '../../services/api';
+import { bloqueiosApi } from '../../services/api';
 import { toast } from 'sonner';
-import { Trash2, Calendar as CalendarIcon, Lock } from 'lucide-react';
+import { Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
-import { cn } from '../ui/utils';
 import { Appointment } from '../../types';
 import { Bloqueio } from '../../services/api';
 
@@ -38,7 +35,6 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
-    const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
     // Form State
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
@@ -55,20 +51,8 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             setEndDate(new Date());
             setStartTime('09:00');
             setEndTime('09:15');
-            const year = (new Date()).getFullYear();
-            loadHolidays(year);
         }
     }, [open]);
-
-    const loadHolidays = async (year: number) => {
-        if (holidaysByYear[year]) return;
-        try {
-            const dates = await calendarioApi.listarFeriados(year);
-            setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
-        } catch (error) {
-            console.error('Erro ao carregar feriados:', error);
-        }
-    };
 
     const fetchBloqueios = async () => {
         try {
@@ -181,30 +165,6 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const startSlots = getAvailableSlots(startDate, 'start').filter(s => s !== "17:00");
     const endSlots = getAvailableSlots(endDate, 'end');
 
-    const isHoliday = (date: Date) => {
-        const set = holidaysByYear[date.getFullYear()];
-        if (!set) return false;
-        const key = date.toISOString().split('T')[0];
-        return set.has(key);
-    };
-
-    const isWeekend = (date: Date) => date.getDay() === 0 || date.getDay() === 6;
-
-    const isPastDate = (date: Date) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const d = new Date(date);
-        d.setHours(0, 0, 0, 0);
-        return d < today;
-    };
-
-    const isDisabledStartDate = (date: Date) => isPastDate(date) || isWeekend(date) || isHoliday(date);
-
-    const isDisabledEndDate = (date: Date) => {
-        if (startDate && date < startDate) return true;
-        return isWeekend(date) || isHoliday(date);
-    };
-
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !endDate || !startTime || !endTime) {
@@ -225,19 +185,74 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
         try {
             setLoading(true);
 
-            // Updated User Friendly Logic:
-            // "Fim" represents the actual end time (Exclusive).
-            // Start 9:00, End 9:15 -> Block [9:00, 9:15).
-            // No need to add 15 minutes to endTime anymore.
+            // Logic to create blocks for each day:
+            // - Same day: block from startTime to endTime
+            // - Multiple days: 
+            //   - First day: startTime to 17:00
+            //   - Middle days: 09:00 to 17:00 (full day)
+            //   - Last day: 09:00 to endTime
 
-            await bloqueiosApi.criar({
-                dataInicio: format(startDate, 'yyyy-MM-dd'),
-                dataFim: format(endDate, 'yyyy-MM-dd'),
-                horaInicio: startTime,
-                horaFim: endTime
-            }, user?.id || 0);
+            const isSameDay = startDate.getTime() === endDate.getTime();
+            
+            if (isSameDay) {
+                // Single day block
+                await bloqueiosApi.criar({
+                    dataInicio: format(startDate, 'yyyy-MM-dd'),
+                    dataFim: format(startDate, 'yyyy-MM-dd'),
+                    horaInicio: startTime,
+                    horaFim: endTime
+                }, user?.id || 0);
+                toast.success('Bloqueio criado com sucesso');
+            } else {
+                // Multiple day blocks
+                const blocks = [];
+                const current = new Date(startDate);
 
-            toast.success('Bloqueio criado com sucesso');
+                while (current <= endDate) {
+                    const dateStr = format(current, 'yyyy-MM-dd');
+                    let blockStart = startTime;
+                    let blockEnd = endTime;
+
+                    if (current.getTime() === startDate.getTime()) {
+                        // First day: from startTime to 17:00
+                        blockStart = startTime;
+                        blockEnd = '17:00';
+                    } else if (current.getTime() === endDate.getTime()) {
+                        // Last day: from 09:00 to endTime
+                        blockStart = '09:00';
+                        blockEnd = endTime;
+                    } else {
+                        // Middle days: full day 09:00 to 17:00
+                        blockStart = '09:00';
+                        blockEnd = '17:00';
+                    }
+
+                    blocks.push({
+                        dataInicio: dateStr,
+                        dataFim: dateStr,
+                        horaInicio: blockStart,
+                        horaFim: blockEnd
+                    });
+
+                    current.setDate(current.getDate() + 1);
+                }
+
+                // Create each block and wait for completion
+                for (const block of blocks) {
+                    await bloqueiosApi.criar(block, user?.id || 0);
+                    // Reload blocks after each creation to show updates
+                    await fetchBloqueios();
+                }
+
+                toast.success(`${blocks.length} bloqueios criados com sucesso`);
+            }
+
+            // Final reload and reset
+            await fetchBloqueios();
+            setStartDate(new Date());
+            setEndDate(new Date());
+            setStartTime('09:00');
+            setEndTime('09:15');
             onSuccess?.();
             onOpenChange(false);
         } catch (error) {
@@ -253,7 +268,8 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
         try {
             await bloqueiosApi.remover(id);
             toast.success('Bloqueio removido');
-            fetchBloqueios();
+            await fetchBloqueios();
+            onSuccess?.();
         } catch (error) {
             toast.error('Erro ao remover bloqueio');
         }
@@ -277,39 +293,21 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-gray-500 font-semibold">Início</Label>
                                 <div className="flex gap-2">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700",
-                                                    !startDate && "text-muted-foreground"
-                                                )}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {startDate ? format(startDate, "dd/MM/yyyy") : <span>Data</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto">
-                                            <Calendar
-                                                mode="single"
-                                                selected={startDate}
-                                                onSelect={(date: Date | undefined) => {
-                                                    setStartDate(date);
-                                                    if (date) {
-                                                        setEndDate(date);
-                                                    }
-                                                }}
-                                                onMonthChange={(date: Date) => loadHolidays(date.getFullYear())}
-                                                disabled={isDisabledStartDate}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <input
+                                        type="date"
+                                        value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                const date = new Date(e.target.value + 'T00:00:00');
+                                                setStartDate(date);
+                                                setEndDate(date);
+                                            }
+                                        }}
+                                        className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
+                                    />
 
                                     <Select value={startTime} onValueChange={(val) => {
                                         setStartTime(val);
-                                        // Auto-update end time to be Start + 15 min
                                         const [h, m] = val.split(':').map(Number);
                                         let newM = m + 15;
                                         let newH = h;
@@ -338,30 +336,17 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-gray-500 font-semibold">Fim</Label>
                                 <div className="flex gap-2">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700",
-                                                    !endDate && "text-muted-foreground"
-                                                )}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {endDate ? format(endDate, "dd/MM/yyyy") : <span>Data</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto">
-                                            <Calendar
-                                                mode="single"
-                                                selected={endDate}
-                                                onSelect={setEndDate}
-                                                onMonthChange={(date: Date) => loadHolidays(date.getFullYear())}
-                                                disabled={isDisabledEndDate}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                                    <input
+                                        type="date"
+                                        value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            if (e.target.value) {
+                                                const date = new Date(e.target.value + 'T00:00:00');
+                                                setEndDate(date);
+                                            }
+                                        }}
+                                        className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
+                                    />
 
                                     <Select value={endTime} onValueChange={setEndTime}>
                                         <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
@@ -412,7 +397,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     {/* List Table */}
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            <CalendarIcon className="w-4 h-4" />
+                            <Lock className="w-4 h-4 text-red-500" />
                             Bloqueios Ativos
                         </h3>
 

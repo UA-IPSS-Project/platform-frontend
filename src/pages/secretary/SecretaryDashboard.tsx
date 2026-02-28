@@ -6,6 +6,7 @@ import { NotificationsPage } from '../NotificationsPage';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
+import { DocumentsSearchPage } from './DocumentsSearchPage';
 import SecretaryHome from '../../components/secretary/SecretaryHome';
 import { AppointmentDialog } from '../../components/secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
@@ -87,6 +88,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
   const navigateTo = (view: ViewType) => {
     setViewHistory(prev => [...prev, view]);
@@ -334,12 +336,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onToggleView={() => { }}
                       isDarkMode={isDarkMode}
                       onRefresh={handleRefreshCurrentWeek}
+                      onBlockSchedule={() => setShowBlockedDialog(true)}
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
                       isLoading={isCurrentWeekLoading}
                       appointmentType="SECRETARIA"
                       highlightedSlot={highlightedSlot}
-                      onBlockSchedule={() => setShowBlockedDialog(true)}
+                      refreshTrigger={blockRefreshTrigger}
                     />
                   </div>
                   <div className="space-y-6 lg:sticky lg:top-24">
@@ -347,6 +350,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       appointments={appointments}
                       onViewAppointment={handleViewAppointment}
                       onShowHistory={() => navigateTo('history')}
+                      onShowDocumentSearch={() => navigateTo('documents-search')}
                       isDarkMode={isDarkMode}
                     />
                   </div>
@@ -371,6 +375,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   setHistoryStartDate(start);
                   setHistoryEndDate(end);
                 }}
+              />
+            ) : currentView === 'documents-search' ? (
+              <DocumentsSearchPage
+                onBack={navigateBack}
+                isDarkMode={isDarkMode}
               />
             ) : currentView === 'management' ? (
               <UserManagement
@@ -504,7 +513,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           open={showBlockedDialog}
           onOpenChange={setShowBlockedDialog}
           appointments={appointments}
-          onSuccess={() => refreshCurrentWeek(currentDate)}
+          onSuccess={() => {
+            refreshCurrentWeek(currentDate);
+            setBlockRefreshTrigger(prev => prev + 1);
+          }}
         />
       )}
     </>
