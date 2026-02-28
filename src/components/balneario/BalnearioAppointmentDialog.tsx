@@ -125,7 +125,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             const [hours, minutes] = time.split(':');
             dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-            // Map checklist options to specific booleans and clothing array
+            // Map checklist options to specific booleans and clothing/items array
             let hasHygiene = false;
             let hasLaundry = false;
             const roupasVal: { categoria: string, quantidade: number }[] = [];
@@ -135,8 +135,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                 if (HYGIENE_OPTIONS.includes(option)) {
                     hasHygiene = true;
+                    roupasVal.push({ categoria: option, quantidade: 1 });
                 } else if (LAUNDRY_OPTIONS.includes(option)) {
                     hasLaundry = true;
+                    roupasVal.push({ categoria: option, quantidade: 1 });
                 } else if (CLOTHING_OPTIONS.includes(option)) {
                     roupasVal.push({ categoria: option, quantidade: 1 });
                 }
