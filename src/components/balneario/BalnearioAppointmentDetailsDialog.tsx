@@ -5,7 +5,7 @@ import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { XIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon } from '../shared/CustomIcons';
-import { Check, ClipboardList } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,19 +28,6 @@ export function BalnearioAppointmentDetailsDialog({
     onCancel
 }: BalnearioAppointmentDetailsDialogProps) {
     const { user: authUser } = useAuth();
-
-    // Safely parse the description which we structured as JSON
-    let descriptionData = { necessidades: [], notas: '' };
-    try {
-        if (appointment.description) {
-            const parsed = JSON.parse(appointment.description);
-            if (parsed.necessidades) descriptionData = parsed;
-            else descriptionData.notas = appointment.description; // Fallback if it wasn't JSON
-        }
-    } catch (e) {
-        // If it's not JSON, just treat it all as notes
-        descriptionData.notas = appointment.description || '';
-    }
 
     const handleCancelAppointment = async () => {
         const reason = 'Cancelado pelo funcionário do Balneário';
@@ -215,34 +202,51 @@ export function BalnearioAppointmentDetailsDialog({
                     )}
 
                     {/* Checklist */}
-                    {descriptionData.necessidades && descriptionData.necessidades.length > 0 && (
-                        <div>
-                            <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
-                                <ClipboardList className="w-4 h-4 text-purple-600" />
-                                Necessidades Assinaladas
-                            </Label>
-                            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
-                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {descriptionData.necessidades.map((item: string) => (
-                                        <li key={item} className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
-                                            <div className="bg-purple-100 dark:bg-purple-900/40 p-1 rounded-full text-purple-600 dark:text-purple-400">
-                                                <Check className="w-3 h-3 flex-shrink-0" />
-                                            </div>
-                                            <span className="text-sm font-medium">{item}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    )}
+                    <div>
+                        <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
+                            <ClipboardList className="w-4 h-4 text-purple-600" />
+                            Necessidades Assinaladas
+                        </Label>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">Serviços Solicitados:</h4>
+                        <div className="space-y-2">
+                            {(!appointment.balnearioDetails?.produtosHigiene &&
+                                !appointment.balnearioDetails?.lavagemRoupa &&
+                                (!appointment.balnearioDetails?.roupas || appointment.balnearioDetails.roupas.length === 0)) ? (
+                                <p className="text-sm text-gray-500 italic">Nenhum serviço logístico específico registado.</p>
+                            ) : (
+                                <>
+                                    {appointment.balnearioDetails?.produtosHigiene && (
+                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            Produtos de higiene (Gel de banho / Shampoo)
+                                        </div>
+                                    )}
 
-                    {/* Notes */}
-                    {descriptionData.notas && (
+                                    {appointment.balnearioDetails?.lavagemRoupa && (
+                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            Lavar a roupa
+                                        </div>
+                                    )}
+
+                                    {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
+                                        <div key={index} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            Fornecimento: {roupa.categoria} {roupa.tamanho ? `(Tam: ${roupa.tamanho})` : ''} x{roupa.quantidade}
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Additional Notes */}
+                    {appointment.description && appointment.description !== 'Serviços Logísticos' && (
                         <div>
-                            <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2 block">Notas Adicionais</Label>
-                            <div className="bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/20 p-4">
-                                <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{descriptionData.notas}</p>
-                            </div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">Notas Adicionais:</h4>
+                            <p className="text-sm text-gray-700 bg-yellow-50 p-3 rounded-md whitespace-pre-wrap border border-yellow-100">
+                                {appointment.description}
+                            </p>
                         </div>
                     )}
 

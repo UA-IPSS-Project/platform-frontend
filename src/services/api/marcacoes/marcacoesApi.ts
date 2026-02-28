@@ -19,10 +19,11 @@ export const marcacoesApi = {
         }),
 
     // Consultar agenda geral (sem filtros ou com filtros de data)
-    consultarAgenda: (dataInicio?: string, dataFim?: string) => {
+    consultarAgenda: (dataInicio?: string, dataFim?: string, tipo?: string) => {
         const params = new URLSearchParams();
         if (dataInicio) params.append('dataInicio', dataInicio);
         if (dataFim) params.append('dataFim', dataFim);
+        if (tipo) params.append('tipo', tipo);
         const query = params.toString() ? `?${params.toString()}` : '';
         return apiRequest<MarcacaoResponse[]>(`/api/marcacoes/agenda${query}`, {
             method: 'GET',

@@ -53,7 +53,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         refreshCurrentWeek,
         updateAppointmentOptimistically,
         getWeekKeyByDate
-    } = useSlidingWindowAppointments();
+    } = useSlidingWindowAppointments('BALNEARIO');
 
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);

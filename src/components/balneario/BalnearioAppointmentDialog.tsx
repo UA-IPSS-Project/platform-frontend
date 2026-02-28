@@ -111,11 +111,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!name.trim()) {
-            setErrors({ name: 'Nome é obrigatório' });
-            toast.error('O nome do utente é obrigatório.');
-            return;
-        }
+
 
         setIsLoading(true);
 
@@ -129,29 +125,36 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             const [hours, minutes] = time.split(':');
             dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-            // Structure descriptions
-            const activeOptions = Object.entries(selectedOptions)
-                .filter(([_, isSelected]) => isSelected)
-                .map(([option]) => option);
+            // Map checklist options to specific booleans and clothing array
+            let hasHygiene = false;
+            let hasLaundry = false;
+            const roupasVal: { categoria: string, quantidade: number }[] = [];
 
-            const structuredDescription = JSON.stringify({
-                necessidades: activeOptions,
-                notas: notes
+            Object.entries(selectedOptions).forEach(([option, isSelected]) => {
+                if (!isSelected) return;
+
+                if (option === 'Produtos de higiene' || option === 'Gel de banho' || option === 'Shampoo/Amaciador') {
+                    hasHygiene = true;
+                } else if (option === 'Lavar a roupa') {
+                    hasLaundry = true;
+                } else if (option === 'Peças de vestuário' || option === 'Roupa interior') {
+                    // This is grouped, but for tracking let's record the category
+                    roupasVal.push({ categoria: option, quantidade: 1 });
+                } else if (option === 'Calças' || option === 'Sapatos' || option === 'T-shirts/Casacos') {
+                    roupasVal.push({ categoria: option, quantidade: 1 });
+                }
             });
 
             const payload = {
-                funcionarioId,
-                criadoPorId: funcionarioId,
                 data: dataHora.toISOString().slice(0, 19),
-                assunto: 'Balneário Social',
-                descricao: structuredDescription,
-                utenteNif: '',
-                utenteNome: name.trim(),
-                utenteEmail: '',
-                utenteTelefone: '',
+                nomeUtente: name.trim() || 'Anónimo',
+                produtosHigiene: hasHygiene,
+                lavagemRoupa: hasLaundry,
+                responsavelId: funcionarioId,
+                roupas: roupasVal
             };
 
-            await apiRequest<{ id: number }>('/api/marcacoes/presencial', {
+            await apiRequest<{ id: number }>('/api/marcacoes/balneario', {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
@@ -185,7 +188,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100 font-bold text-base">Nome do Utente *</Label>
+                        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100 font-bold text-base">Nome do Utente</Label>
                         <Input
                             id="name"
                             type="text"
@@ -203,56 +206,56 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     <div className="space-y-4">
                         <h3 className="font-semibold text-purple-700 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/40 pb-2">Necessidades do Utente</h3>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-4">
                             {/* Hygiene */}
-                            <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300">Higiene</Label>
-                                <div className="space-y-2">
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-2">
+                                        <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
                                                 id={`opt-${opt}`}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600"
+                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none">{opt}</label>
+                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Laundry */}
-                            <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300">Lavandaria</Label>
-                                <div className="space-y-2">
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-2">
+                                        <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
                                                 id={`opt-${opt}`}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600"
+                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none">{opt}</label>
+                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Clothing */}
-                            <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300">Vestuário</Label>
-                                <div className="space-y-2">
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</Label>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {CLOTHING_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-2">
+                                        <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
                                                 id={`opt-${opt}`}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600"
+                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none">{opt}</label>
+                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
