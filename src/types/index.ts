@@ -14,6 +14,16 @@ export interface Appointment {
     cancellationReason?: string;
     documents?: { name: string; invalid?: boolean; reason?: string }[];
     attendantName?: string;
+    balnearioDetails?: {
+        produtosHigiene: boolean;
+        lavagemRoupa: boolean;
+        roupas: {
+            id: number;
+            categoria: string;
+            tamanho: string;
+            quantidade: number;
+        }[];
+    };
 }
 
-export type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | string;
+export type ViewType = 'home' | 'requisitions' | 'sections' | 'appointments' | 'management' | 'more' | 'profile' | 'history' | 'settings' | 'administrative' | 'material' | 'manutencao' | 'transportes' | 'urgente' | 'balneario' | 'escola' | 'valencias' | 'candidaturas' | 'creche' | 'catl' | 'erpi' | 'reports' | 'consumos' | string;

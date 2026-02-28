@@ -58,7 +58,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     refreshCurrentWeek,
     updateAppointmentOptimistically,
     getWeekKeyByDate
-  } = useSlidingWindowAppointments();
+  } = useSlidingWindowAppointments('SECRETARIA');
 
   // Component States
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
@@ -340,6 +340,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
                       isLoading={isCurrentWeekLoading}
+                      appointmentType="SECRETARIA"
                       highlightedSlot={highlightedSlot}
                       refreshTrigger={blockRefreshTrigger}
                     />

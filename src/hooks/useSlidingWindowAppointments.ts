@@ -12,7 +12,7 @@ interface WeekCache {
     };
 }
 
-export function useSlidingWindowAppointments() {
+export function useSlidingWindowAppointments(tipo?: string) {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loadingWeeks, setLoadingWeeks] = useState<{ [key: string]: boolean }>({});
 
@@ -89,7 +89,8 @@ export function useSlidingWindowAppointments() {
             try {
                 const response = await marcacoesApi.consultarAgenda(
                     format(monday, "yyyy-MM-dd'T'HH:mm:ss"),
-                    format(sunday, "yyyy-MM-dd'T'HH:mm:ss")
+                    format(sunday, "yyyy-MM-dd'T'HH:mm:ss"),
+                    tipo
                 );
                 const mapped = response.map(mapApiToAppointment);
 

@@ -32,7 +32,7 @@ interface SidebarProps {
   onNavigate: (view: string) => void;
   onLogout: () => void;
   isDarkMode: boolean;
-  mode?: 'client' | 'secretaria';
+  mode?: 'client' | 'secretaria' | 'balneario';
 }
 
 export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria' }: SidebarProps) {
@@ -163,6 +163,15 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     { id: 'settings', label: 'Definições', icon: SlidersIcon },
   ];
 
+  // Main menu structure for Balneario
+  const balnearioMenuItems = [
+    { id: 'home', label: 'Início', icon: HomeIcon },
+    { id: 'appointments', label: 'Marcações', icon: CalendarIcon },
+    { id: 'consumos', label: 'Consumos', icon: HistoryIcon }, // using HistoryIcon temporarily
+    { id: 'requisitions', label: 'Requisições', icon: ClipboardListIcon },
+    { id: 'reports', label: 'Relatórios', icon: FileTextIcon },
+  ];
+
   return (
     <>
       {isOpen && <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />}
@@ -195,11 +204,11 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           <div className="flex-1 overflow-y-auto p-4">
             <>
               <div className="space-y-1 mb-6">
-                {(isClient ? clientMenuItems : secretaryMenuItems).map((item) => {
+                {((isClient ? clientMenuItems : (mode === 'balneario' ? balnearioMenuItems : secretaryMenuItems)) as any[]).map((item) => {
                   const Icon = item.icon;
                   const isActive = currentView === item.id;
-                  const isExpanded = expandedMenus.includes(item.id);
                   const hasSubitems = item.subitems && item.subitems.length > 0;
+                  const isExpanded = expandedMenus.includes(item.id);
 
                   return (
                     <div key={item.id}>
@@ -231,9 +240,9 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
                       </button>
 
                       {/* Subitems */}
-                      {hasSubitems && isExpanded && (
+                      {hasSubitems && 'subitems' in item && isExpanded && (
                         <div className="ml-8 mt-1 space-y-1">
-                          {item.subitems!.map((subitem) => {
+                          {item.subitems!.map((subitem: any) => {
                             const SubIcon = subitem.icon;
                             const isSubActive = currentView === subitem.id;
                             return (

@@ -29,6 +29,7 @@ interface WeeklyScheduleProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   isLoading?: boolean;
+  appointmentType?: 'SECRETARIA' | 'BALNEARIO';
 }
 
 const generateTimeSlots = () => {
@@ -46,7 +47,7 @@ const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
   const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
@@ -382,7 +383,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     // Fallback api check
     const dateStr = date.toISOString().split('T')[0];
     try {
-      return await calendarioApi.verificarSlot(dateStr, time);
+      return await calendarioApi.verificarSlot(dateStr, time, appointmentType);
     } catch (e) { return false; }
   };
 

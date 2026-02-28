@@ -7,7 +7,6 @@ import { cn } from "./utils";
 import { buttonVariants } from "./button";
 
 import { GlassCard } from "./glass-card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
 function CustomCaption({ displayMonth }: CaptionProps) {
   const { goToMonth } = useNavigation();
@@ -17,7 +16,7 @@ function CustomCaption({ displayMonth }: CaptionProps) {
   ];
 
   const currentYear = new Date().getFullYear();
-  // Gerar anos de 1900 até o ano atual mais 10 para o futuro
+  // Gerar anos de 1900 até o ano atual mais 11 para abranger o futuro
   const yearCount = currentYear - 1900 + 11;
   const years = Array.from({ length: yearCount }, (_, i) => 1900 + i);
 
@@ -34,36 +33,39 @@ function CustomCaption({ displayMonth }: CaptionProps) {
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 w-full px-2">
-      <Select value={displayMonth.getMonth().toString()} onValueChange={handleMonthChange}>
-        <SelectTrigger className="h-8 w-[120px] text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <SelectValue aria-label="Mês">
-            {months[displayMonth.getMonth()]}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="max-h-[200px]" position="popper">
+    <div
+      className="flex flex-col gap-2 w-full px-1 pb-2"
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-center w-full gap-2">
+        <select
+          aria-label="Mês"
+          value={displayMonth.getMonth()}
+          onChange={(e) => handleMonthChange(e.target.value)}
+          className="flex h-9 w-[130px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-purple-600 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium scrollbar-thin scrollbar-thumb-purple-200 dark:scrollbar-thumb-purple-800"
+          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
+        >
           {months.map((month, index) => (
-            <SelectItem key={index} value={index.toString()} className="cursor-pointer">
+            <option key={index} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 checked:bg-purple-100 dark:checked:bg-purple-900/50 cursor-pointer">
               {month}
-            </SelectItem>
+            </option>
           ))}
-        </SelectContent>
-      </Select>
+        </select>
 
-      <Select value={displayMonth.getFullYear().toString()} onValueChange={handleYearChange}>
-        <SelectTrigger className="h-8 w-[90px] text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <SelectValue aria-label="Ano">
-            {displayMonth.getFullYear()}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="max-h-[200px]" position="popper">
+        <select
+          aria-label="Ano"
+          value={displayMonth.getFullYear()}
+          onChange={(e) => handleYearChange(e.target.value)}
+          className="flex h-9 w-[90px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-purple-600 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium scrollbar-thin scrollbar-thumb-purple-200 dark:scrollbar-thumb-purple-800"
+          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
+        >
           {years.reverse().map((year) => (
-            <SelectItem key={year} value={year.toString()} className="cursor-pointer">
+            <option key={year} value={year} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 checked:bg-purple-100 dark:checked:bg-purple-900/50 cursor-pointer">
               {year}
-            </SelectItem>
+            </option>
           ))}
-        </SelectContent>
-      </Select>
+        </select>
+      </div>
     </div>
   );
 }
@@ -116,7 +118,7 @@ function Calendar({
           ...classNames,
         }}
         components={{
-          Caption: (captionProps) => <CustomCaption {...captionProps} />,
+          Caption: CustomCaption,
         }}
         {...props}
       />

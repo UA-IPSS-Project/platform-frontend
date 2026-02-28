@@ -3,8 +3,8 @@ import { BloqueioAgenda } from './types';
 
 export const calendarioApi = {
     // Verificar se um slot específico está bloqueado
-    verificarSlot: (data: string, hora: string) =>
-        apiRequest<boolean>(`/api/calendario/verificar-slot?data=${data}&hora=${hora}`, {
+    verificarSlot: (data: string, hora: string, tipo?: string) =>
+        apiRequest<boolean>(`/api/calendario/verificar-slot?data=${data}&hora=${hora}${tipo ? `&tipo=${tipo}` : ''}`, {
             method: 'GET',
         }),
 

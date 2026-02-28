@@ -15,8 +15,15 @@ export const mapStatusFromApiToUi = (estado: string | undefined): 'scheduled' | 
 export const mapApiToAppointment = (m: any): Appointment => {
     const dateTime = new Date(m.data);
     const utente = m.marcacaoSecretaria?.utente;
+    const isBalneario = m.marcacaoBalneario != null;
 
     const status = mapStatusFromApiToUi(m.estado);
+
+    const determinePatientName = () => {
+        if (status === 'reserved') return 'reserved';
+        if (isBalneario) return m.marcacaoBalneario.nomeUtente || 'Nome não disponível';
+        return utente?.nome || 'Nome não disponível';
+    };
 
     return {
         id: m.id.toString(),
@@ -24,15 +31,20 @@ export const mapApiToAppointment = (m: any): Appointment => {
         date: dateTime,
         time: dateTime.toTimeString().slice(0, 5),
         duration: 15,
-        patientNIF: status === 'reserved' ? '' : (utente?.nif || 'N/A'),
-        patientName: status === 'reserved' ? 'reserved' : (utente?.nome || 'Nome não disponível'),
-        patientContact: status === 'reserved' ? '' : (utente?.telefone || 'N/A'),
-        patientEmail: status === 'reserved' ? '' : (utente?.email || 'Email não disponível'),
-        subject: status === 'reserved' ? 'reserved' : (m.marcacaoSecretaria?.assunto || 'Sem assunto'),
-        description: status === 'reserved' ? '' : (m.marcacaoSecretaria?.descricao || ''),
+        patientNIF: status === 'reserved' ? '' : (isBalneario ? 'Anónimo (Balneário)' : (utente?.nif || 'N/A')),
+        patientName: determinePatientName(),
+        patientContact: status === 'reserved' ? '' : (isBalneario ? '' : (utente?.telefone || 'N/A')),
+        patientEmail: status === 'reserved' ? '' : (isBalneario ? '' : (utente?.email || 'Email não disponível')),
+        subject: status === 'reserved' ? 'reserved' : (isBalneario ? 'Balneário Social' : (m.marcacaoSecretaria?.assunto || 'Sem assunto')),
+        description: status === 'reserved' ? '' : (isBalneario ? 'Serviços Logísticos' : (m.marcacaoSecretaria?.descricao || '')),
         status: status,
         cancellationReason: status === 'cancelled' ? (m.motivoCancelamento || m.marcacaoSecretaria?.motivoCancelamento || 'Motivo não especificado') : undefined,
         attendantName: m.atendenteNome,
+        balnearioDetails: isBalneario ? {
+            produtosHigiene: m.marcacaoBalneario.produtosHigiene,
+            lavagemRoupa: m.marcacaoBalneario.lavagemRoupa,
+            roupas: m.marcacaoBalneario.roupas || []
+        } : undefined
     };
 };
 
