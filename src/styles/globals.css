@@ -241,3 +241,28 @@ html {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Custom CSS for native select dropdowns */
+select option {
+  padding: 8px;
+}
+
+/* Scrollbar styles for pure select dropdowns on webkit */
+select::-webkit-scrollbar {
+  width: 6px;
+}
+
+select::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+select::-webkit-scrollbar-thumb {
+  background-color: rgb(216 180 254);
+  /* purple-200 */
+  border-radius: 10px;
+}
+
+.dark select::-webkit-scrollbar-thumb {
+  background-color: rgb(107 33 168);
+  /* purple-800 */
+}
