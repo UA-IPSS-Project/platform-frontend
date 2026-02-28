@@ -133,14 +133,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             Object.entries(selectedOptions).forEach(([option, isSelected]) => {
                 if (!isSelected) return;
 
-                if (option === 'Produtos de higiene' || option === 'Gel de banho' || option === 'Shampoo/Amaciador') {
+                if (HYGIENE_OPTIONS.includes(option)) {
                     hasHygiene = true;
-                } else if (option === 'Lavar a roupa') {
+                } else if (LAUNDRY_OPTIONS.includes(option)) {
                     hasLaundry = true;
-                } else if (option === 'Peças de vestuário' || option === 'Roupa interior') {
-                    // This is grouped, but for tracking let's record the category
-                    roupasVal.push({ categoria: option, quantidade: 1 });
-                } else if (option === 'Calças' || option === 'Sapatos' || option === 'T-shirts/Casacos') {
+                } else if (CLOTHING_OPTIONS.includes(option)) {
                     roupasVal.push({ categoria: option, quantidade: 1 });
                 }
             });

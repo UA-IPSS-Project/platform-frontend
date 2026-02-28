@@ -105,7 +105,7 @@ export function BalnearioAppointmentDetailsDialog({
             );
 
             onUpdate(appointment.id, { status: 'in-progress' });
-            toast.success('Atendimento iniciado!');
+            toast.success('Presença registada!');
             onClose();
         } catch (error: any) {
             const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível iniciar o atendimento';
@@ -216,21 +216,21 @@ export function BalnearioAppointmentDetailsDialog({
                             ) : (
                                 <>
                                     {appointment.balnearioDetails?.produtosHigiene && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                                             Produtos de higiene (Gel de banho / Shampoo)
                                         </div>
                                     )}
 
                                     {appointment.balnearioDetails?.lavagemRoupa && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                                             Lavar a roupa
                                         </div>
                                     )}
 
                                     {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
-                                        <div key={index} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                                        <div key={index} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                                             Fornecimento: {roupa.categoria} {roupa.tamanho ? `(Tam: ${roupa.tamanho})` : ''} x{roupa.quantidade}
                                         </div>
@@ -260,7 +260,7 @@ export function BalnearioAppointmentDetailsDialog({
                                 >
                                     <div className="flex flex-col items-center gap-1">
                                         <CheckCircleIcon className="w-5 h-5 mb-1" />
-                                        Iniciar Banho
+                                        Compareceu
                                     </div>
                                 </Button>
 
