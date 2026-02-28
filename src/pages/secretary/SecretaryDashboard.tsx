@@ -339,6 +339,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       isLoading={isCurrentWeekLoading}
                       appointmentType="SECRETARIA"
                       highlightedSlot={highlightedSlot}
+                      onBlockSchedule={() => setShowBlockedDialog(true)}
                     />
                   </div>
                   <div className="space-y-6 lg:sticky lg:top-24">

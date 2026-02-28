@@ -257,6 +257,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                             isLoading={isCurrentWeekLoading}
                                             appointmentType="BALNEARIO"
                                             highlightedSlot={highlightedSlot}
+                                            onBlockSchedule={() => setShowBlockedDialog(true)}
                                         />
                                     </div>
                                     <div className="space-y-6 lg:sticky lg:top-24">
