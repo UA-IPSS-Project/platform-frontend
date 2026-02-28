@@ -3,7 +3,7 @@ import { useWebSocket } from './useWebSocket';
 import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
 
-export function useNotifications(userEmail: string | undefined) {
+export function useNotifications(userEmail: string | undefined, onRefreshNeeded?: () => void) {
     const [notifications, setNotifications] = useState<Notificacao[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -25,16 +25,17 @@ export function useNotifications(userEmail: string | undefined) {
         toast.info(notificacao.titulo, {
             description: notificacao.mensagem,
             duration: 5000,
-            action: {
-                label: 'Ver',
-                onClick: () => {
-                    console.log('Toast Action Clicked:', notificacao.id);
-                }
-            }
         });
-    }, []);
 
-    const topic = userEmail ? `/user/${userEmail}/queue/notifications` : null;
+        // Refresh appointments after a small delay to allow backend transaction to commit
+        if (onRefreshNeeded) {
+            setTimeout(() => onRefreshNeeded(), 500);
+        }
+    }, [onRefreshNeeded]);
+
+    // In Spring, the client should always subscribe to /user/queue/... 
+    // and Spring will automatically route it using the authenticated Principal.
+    const topic = userEmail ? `/user/queue/notifications` : null;
     useWebSocket('ws://localhost:8080/ws', topic, onNotificationReceived);
 
     useEffect(() => {

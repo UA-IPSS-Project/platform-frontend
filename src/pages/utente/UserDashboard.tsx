@@ -54,7 +54,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     handleMarkAllAsRead,
     handleDeleteNotification,
     handleDeleteAllNotifications
-  } = useNotifications(authUser?.email);
+  } = useNotifications(authUser?.email, refreshAppointments);
 
   // States managed locally
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -65,7 +65,15 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    const saved = sessionStorage.getItem('utente_currentDate');
+    return saved ? new Date(saved) : new Date();
+  });
+
+  // Persist current week view across reloads
+  useEffect(() => {
+    sessionStorage.setItem('utente_currentDate', currentDate.toISOString());
+  }, [currentDate]);
 
   // Navigation Logic
   const getCurrentView = () => {

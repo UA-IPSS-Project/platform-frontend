@@ -40,6 +40,20 @@ interface SecretaryDashboardProps {
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
 
+  const {
+    appointments,
+    loadingWeeks,
+    loadWeekAppointments,
+    refreshCurrentWeek,
+    updateAppointmentOptimistically,
+    getWeekKeyByDate
+  } = useSlidingWindowAppointments('SECRETARIA');
+
+  // Stable wrapper for refreshCurrentWeek (it takes a Date, but onRefreshNeeded takes no args)
+  const handleRefreshFromNotification = useCallback(() => {
+    refreshCurrentWeek(new Date());
+  }, [refreshCurrentWeek]);
+
   // Custom Hooks
   const {
     notifications,
@@ -49,16 +63,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     handleMarkAllAsRead,
     handleDeleteNotification,
     handleDeleteAllNotifications
-  } = useNotifications(authUser?.email);
-
-  const {
-    appointments,
-    loadingWeeks,
-    loadWeekAppointments,
-    refreshCurrentWeek,
-    updateAppointmentOptimistically,
-    getWeekKeyByDate
-  } = useSlidingWindowAppointments('SECRETARIA');
+  } = useNotifications(authUser?.email, handleRefreshFromNotification);
 
   // Component States
   const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
@@ -77,7 +82,15 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
 
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    const saved = sessionStorage.getItem('secretary_currentDate');
+    return saved ? new Date(saved) : new Date();
+  });
+
+  // Persist current week view across reloads
+  useEffect(() => {
+    sessionStorage.setItem('secretary_currentDate', currentDate.toISOString());
+  }, [currentDate]);
   const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
     const saved = localStorage.getItem('secretaryDashboardView');
     return saved ? [saved as ViewType] : ['home'];

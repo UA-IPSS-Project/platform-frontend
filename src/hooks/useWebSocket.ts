@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
+import { getCookie } from '../services/api/core/client';
 
 export function useWebSocket(
     url: string,
@@ -13,15 +14,23 @@ export function useWebSocket(
     useEffect(() => {
         if (!topic) return;
 
+        // Read JWT from cookie so the STOMP CONNECT frame is authenticated
+        const jwt = getCookie('jwt');
+        const connectHeaders: Record<string, string> = {};
+        if (jwt) {
+            connectHeaders['Authorization'] = `Bearer ${jwt}`;
+        }
+
         stompClient.current = new Client({
             brokerURL: url,
+            connectHeaders,
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
         });
 
         stompClient.current.onConnect = () => {
-            console.log('Conectado ao WebSocket');
+            console.log('Conectado ao WebSocket (autenticado)');
             if (onConnect) onConnect();
 
             stompClient.current?.subscribe(topic, (message) => {
@@ -30,7 +39,6 @@ export function useWebSocket(
                     onMessage(parsedMessage);
                 } catch (error) {
                     console.error('Erro ao processar mensagem WS:', error);
-                    // Retornar a mensagem não formatada se não for JSON
                     onMessage(message.body);
                 }
             });
