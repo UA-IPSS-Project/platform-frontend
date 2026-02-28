@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
@@ -6,10 +6,20 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { NotificationsPage } from '../NotificationsPage';
 import { ProfilePage } from '../ProfilePage';
 import BalnearioHome from '../../components/balneario/BalnearioHome';
+import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
+import { TodayAppointments } from '../../components/secretary/TodayAppointments';
+import { DayScheduleDialog } from '../../components/secretary/DayScheduleDialog';
+import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleDialog';
+import { BalnearioAppointmentDialog } from '../../components/balneario/BalnearioAppointmentDialog';
+import { BalnearioAppointmentDetailsDialog } from '../../components/balneario/BalnearioAppointmentDetailsDialog';
+import { ClockIcon } from '../../components/shared/CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { ViewType } from '../../types';
+import { marcacoesApi } from '../../services/api';
+import { Appointment, ViewType } from '../../types';
+import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 
 interface BalnearioDashboardProps {
     onLogout: () => void;
@@ -36,6 +46,23 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         handleDeleteAllNotifications
     } = useNotifications(authUser?.email);
 
+    const {
+        appointments,
+        loadingWeeks,
+        loadWeekAppointments,
+        refreshCurrentWeek,
+        updateAppointmentOptimistically,
+        getWeekKeyByDate
+    } = useSlidingWindowAppointments();
+
+    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
+    const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+    const [showBlockedDialog, setShowBlockedDialog] = useState(false);
+    const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
+    const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
+    const [currentDate, setCurrentDate] = useState(new Date());
+
     const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
         const saved = localStorage.getItem('balnearioDashboardView');
         return saved ? [saved as ViewType] : ['home'];
@@ -45,6 +72,10 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
+    const [highlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+
+    const currentWeekKey = getWeekKeyByDate(currentDate);
+    const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
 
     const navigateTo = (view: ViewType) => {
         setViewHistory(prev => [...prev, view]);
@@ -55,11 +86,65 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     };
 
     useEffect(() => {
+        if (!authUser?.id) return;
+        loadWeekAppointments(currentDate, { setCurrent: true });
+
+        const preDate = new Date(currentDate);
+        const nextDate = new Date(currentDate);
+        preDate.setDate(preDate.getDate() - 7);
+        nextDate.setDate(nextDate.getDate() + 7);
+        loadWeekAppointments(preDate);
+        loadWeekAppointments(nextDate);
+    }, [authUser?.id, currentDate, loadWeekAppointments]);
+
+    useEffect(() => {
+        if (currentView === 'appointments') refreshCurrentWeek(currentDate);
+    }, [currentView, refreshCurrentWeek, currentDate]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (currentView === 'appointments') refreshCurrentWeek(currentDate);
+        }, 60000);
+        return () => clearInterval(interval);
+    }, [currentView, refreshCurrentWeek, currentDate]);
+
+    useEffect(() => {
         localStorage.setItem('balnearioDashboardView', currentView);
     }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);
+    };
+
+    const handleRefreshCurrentWeek = useCallback(async () => {
+        await refreshCurrentWeek(currentDate);
+    }, [refreshCurrentWeek, currentDate]);
+
+    const handleCreateAppointment = async (date: Date, time: string) => {
+        await refreshCurrentWeek(currentDate);
+        setEditingAppointment({ date, time });
+        setShowAppointmentDialog(true);
+    };
+
+    const handleViewAppointment = async (appointment: Appointment) => {
+        if (appointment.status === 'reserved') return;
+
+        try {
+            const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
+            const freshAppointment = mapApiToAppointment(latestData);
+            updateAppointmentOptimistically(freshAppointment.id, freshAppointment);
+            setSelectedAppointment(freshAppointment);
+            setShowDetailsDialog(true);
+        } catch (error) {
+            toast.error('Não foi possível carregar os dados mais recentes da marcação.');
+            refreshCurrentWeek(currentDate);
+        }
+    };
+
+    const handleCancelAppointment = (id: string, reason: string) => {
+        updateAppointmentOptimistically(id, { status: 'cancelled', cancellationReason: reason });
+        toast.success('Marcação cancelada com sucesso');
+        refreshCurrentWeek(currentDate);
     };
 
     const renderPlaceholder = (view: ViewType) => (
@@ -153,6 +238,44 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
                             />
+                        ) : currentView === 'appointments' ? (
+                            <>
+                                <div className="grid lg:grid-cols-[1fr_380px] gap-6 max-w-[1600px] mx-auto items-start">
+                                    <div className="space-y-6">
+                                        <WeeklySchedule
+                                            appointments={appointments}
+                                            allAppointments={appointments}
+                                            currentUserNif=""
+                                            isClient={false}
+                                            onCreateAppointment={handleCreateAppointment}
+                                            onViewAppointment={handleViewAppointment}
+                                            onToggleView={() => { }}
+                                            isDarkMode={isDarkMode}
+                                            onRefresh={handleRefreshCurrentWeek}
+                                            onDateChange={setCurrentDate}
+                                            currentDate={currentDate}
+                                            isLoading={isCurrentWeekLoading}
+                                            highlightedSlot={highlightedSlot}
+                                        />
+                                    </div>
+                                    <div className="space-y-6 lg:sticky lg:top-24">
+                                        <TodayAppointments
+                                            appointments={appointments}
+                                            onViewAppointment={handleViewAppointment}
+                                            onShowHistory={() => navigateTo('reports')}
+                                            isDarkMode={isDarkMode}
+                                            isBalneario={true}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                                    <div className="flex items-center gap-3">
+                                        <ClockIcon className="w-5 h-5 text-purple-600" />
+                                        <p className="text-gray-800 dark:text-gray-200">{getCurrentActivity(appointments, true)}</p>
+                                    </div>
+                                </div>
+                            </>
                         ) : currentView === 'profile' ? (
                             <ProfilePage
                                 user={{ id: authUser?.id || 0, ...userData }}
@@ -215,6 +338,60 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 isDarkMode={isDarkMode}
                 mode="balneario"
             />
+
+            {showAppointmentDialog && editingAppointment && authUser?.id && (
+                <BalnearioAppointmentDialog
+                    open={showAppointmentDialog}
+                    onClose={() => {
+                        setShowAppointmentDialog(false);
+                        setEditingAppointment(null);
+                    }}
+                    date={editingAppointment.date}
+                    time={editingAppointment.time}
+                    funcionarioId={authUser.id}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        carregarNotificacoes();
+                    }}
+                />
+            )}
+
+            {showDetailsDialog && selectedAppointment && (
+                <BalnearioAppointmentDetailsDialog
+                    open={showDetailsDialog}
+                    onClose={() => {
+                        setShowDetailsDialog(false);
+                        setSelectedAppointment(null);
+                        refreshCurrentWeek(currentDate);
+                    }}
+                    appointment={selectedAppointment}
+                    onUpdate={(id, updates) => {
+                        updateAppointmentOptimistically(id, updates);
+                        refreshCurrentWeek(currentDate);
+                    }}
+                    onCancel={handleCancelAppointment}
+                />
+            )}
+
+            {showDaySchedule && (
+                <DayScheduleDialog
+                    open={true}
+                    onClose={() => setShowDaySchedule(null)}
+                    date={showDaySchedule}
+                    appointments={appointments}
+                    onCreateAppointment={handleCreateAppointment}
+                    onViewAppointment={handleViewAppointment}
+                />
+            )}
+
+            {showBlockedDialog && (
+                <BlockedScheduleDialog
+                    open={showBlockedDialog}
+                    onOpenChange={setShowBlockedDialog}
+                    appointments={appointments}
+                    onSuccess={() => refreshCurrentWeek(currentDate)}
+                />
+            )}
         </>
     );
 }

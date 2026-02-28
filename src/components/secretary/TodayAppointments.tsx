@@ -16,9 +16,10 @@ interface TodayAppointmentsProps {
   isDarkMode: boolean;
   /** show filter button and controls (secretary only) */
   showFilter?: boolean;
+  isBalneario?: boolean;
 }
 
-export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, isDarkMode, showFilter = false }: TodayAppointmentsProps) {
+export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -122,19 +123,21 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                     </SelectContent>
                   </Select>
 
-                  <Select value={tempSubject} onValueChange={(v: string | 'all') => setTempSubject(v)}>
-                    <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Todos os assuntos" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os assuntos</SelectItem>
-                      {uniqueSubjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {!isBalneario && (
+                    <Select value={tempSubject} onValueChange={(v: string | 'all') => setTempSubject(v)}>
+                      <SelectTrigger className="w-full text-sm">
+                        <SelectValue placeholder="Todos os assuntos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os assuntos</SelectItem>
+                        {uniqueSubjects.map((subject) => (
+                          <SelectItem key={subject} value={subject}>
+                            {subject}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
 
                   <div className="flex gap-2 mt-2">
                     <Button
