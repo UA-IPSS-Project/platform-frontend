@@ -22,7 +22,7 @@ export function useNotifications(userEmail: string | undefined) {
         setNotifications(prev => [notificacao, ...prev]);
         setUnreadCount(prev => prev + 1);
 
-        toast(notificacao.titulo, {
+        toast.info(notificacao.titulo, {
             description: notificacao.mensagem,
             duration: 5000,
             action: {
