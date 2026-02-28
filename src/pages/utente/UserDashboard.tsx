@@ -253,6 +253,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                         highlightedSlot={highlightedSlot}
                         currentDate={currentDate}
                         onDateChange={setCurrentDate}
+                        appointmentType="SECRETARIA"
                       />
                     </div>
                     <div>

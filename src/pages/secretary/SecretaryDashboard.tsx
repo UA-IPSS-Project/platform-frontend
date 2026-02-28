@@ -337,6 +337,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       onDateChange={setCurrentDate}
                       currentDate={currentDate}
                       isLoading={isCurrentWeekLoading}
+                      appointmentType="SECRETARIA"
                       highlightedSlot={highlightedSlot}
                     />
                   </div>

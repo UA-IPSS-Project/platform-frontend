@@ -59,7 +59,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             }
 
             const dateStr = date.toISOString().split('T')[0];
-            const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+            const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'BALNEARIO');
             if (isBlocked) {
                 toast.error('Horário indisponível');
                 onClose();

@@ -255,6 +255,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                             onDateChange={setCurrentDate}
                                             currentDate={currentDate}
                                             isLoading={isCurrentWeekLoading}
+                                            appointmentType="BALNEARIO"
                                             highlightedSlot={highlightedSlot}
                                         />
                                     </div>

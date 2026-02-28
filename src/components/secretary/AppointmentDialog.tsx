@@ -84,7 +84,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
       // Verificar se o slot está bloqueado
       const dateStr = date.toISOString().split('T')[0];
-      const isBlocked = await calendarioApi.verificarSlot(dateStr, time);
+      const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
       if (isBlocked) {
         toast.error('Horário indisponível');
         onClose();
