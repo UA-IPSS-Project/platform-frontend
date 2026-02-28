@@ -37,16 +37,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     });
 
     const {
-        notifications,
-        unreadCount,
-        carregarNotificacoes,
-        handleMarkAsRead,
-        handleMarkAllAsRead,
-        handleDeleteNotification,
-        handleDeleteAllNotifications
-    } = useNotifications(authUser?.email);
-
-    const {
         appointments,
         loadingWeeks,
         loadWeekAppointments,
@@ -55,13 +45,36 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         getWeekKeyByDate
     } = useSlidingWindowAppointments('BALNEARIO');
 
+    // Stable wrapper for refreshCurrentWeek
+    const handleRefreshFromNotification = useCallback(() => {
+        refreshCurrentWeek(new Date());
+    }, [refreshCurrentWeek]);
+
+    const {
+        notifications,
+        unreadCount,
+        carregarNotificacoes,
+        handleMarkAsRead,
+        handleMarkAllAsRead,
+        handleDeleteNotification,
+        handleDeleteAllNotifications
+    } = useNotifications(authUser?.email, handleRefreshFromNotification);
+
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
     const [showDetailsDialog, setShowDetailsDialog] = useState(false);
     const [showBlockedDialog, setShowBlockedDialog] = useState(false);
     const [showDaySchedule, setShowDaySchedule] = useState<Date | null>(null);
     const [editingAppointment, setEditingAppointment] = useState<{ date: Date; time: string } | null>(null);
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(() => {
+        const saved = sessionStorage.getItem('balneario_currentDate');
+        return saved ? new Date(saved) : new Date();
+    });
+
+    // Persist current week view across reloads
+    useEffect(() => {
+        sessionStorage.setItem('balneario_currentDate', currentDate.toISOString());
+    }, [currentDate]);
 
     const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
         const saved = localStorage.getItem('balnearioDashboardView');
