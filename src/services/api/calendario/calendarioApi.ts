@@ -8,9 +8,9 @@ export const calendarioApi = {
             method: 'GET',
         }),
 
-    // Listar bloqueios de um mês
-    listarBloqueios: (ano: number, mes: number) =>
-        apiRequest<BloqueioAgenda[]>(`/api/calendario/bloqueios?ano=${ano}&mes=${mes}`, {
+    // Listar bloqueios de um mês, opcionalmente filtrados por tipo
+    listarBloqueios: (ano: number, mes: number, tipo?: string) =>
+        apiRequest<BloqueioAgenda[]>(`/api/calendario/bloqueios?ano=${ano}&mes=${mes}${tipo ? `&tipo=${tipo}` : ''}`, {
             method: 'GET',
         }),
 

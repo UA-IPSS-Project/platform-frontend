@@ -252,7 +252,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     try {
       // Buscar bloqueios da semana
-      const blocks = await bloqueiosApi.listar();
+      const blocks = await bloqueiosApi.listar(appointmentType);
 
       const weekBlockedSlots = new Set<string>();
 
@@ -890,7 +890,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   useEffect(() => {
     const loadQuickMonthBlocks = async () => {
       try {
-        const bloqueios = await calendarioApi.listarBloqueios(quickYear, quickMonth + 1);
+        const bloqueios = await calendarioApi.listarBloqueios(quickYear, quickMonth + 1, appointmentType);
         const newBlocks = new Set<string>();
 
         bloqueios.forEach((bloqueio: BloqueioAgenda) => {

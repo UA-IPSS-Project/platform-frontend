@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Calendar } from '../ui/calendar';
 import { useAuth } from '../../contexts/AuthContext';
 import { bloqueiosApi } from '../../services/api';
 import { toast } from 'sonner';
-import { Trash2, Lock } from 'lucide-react';
+import { Trash2, Lock, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { Appointment } from '../../types';
@@ -17,6 +19,7 @@ interface BlockedScheduleDialogProps {
     onOpenChange: (open: boolean) => void;
     appointments: Appointment[];
     onSuccess?: () => void;
+    tipo?: 'SECRETARIA' | 'BALNEARIO';
 }
 
 const generateTimeSlots = () => {
@@ -31,7 +34,7 @@ const generateTimeSlots = () => {
     return slots;
 };
 
-export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess }: BlockedScheduleDialogProps) {
+export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess, tipo = 'SECRETARIA' }: BlockedScheduleDialogProps) {
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
@@ -56,7 +59,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
     const fetchBloqueios = async () => {
         try {
-            const data = await bloqueiosApi.listar();
+            const data = await bloqueiosApi.listar(tipo);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -193,7 +196,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             //   - Last day: 09:00 to endTime
 
             const isSameDay = startDate.getTime() === endDate.getTime();
-            
+
             if (isSameDay) {
                 // Single day block
                 await bloqueiosApi.criar({
@@ -201,7 +204,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     dataFim: format(startDate, 'yyyy-MM-dd'),
                     horaInicio: startTime,
                     horaFim: endTime
-                }, user?.id || 0);
+                }, user?.id || 0, tipo);
                 toast.success('Bloqueio criado com sucesso');
             } else {
                 // Multiple day blocks
@@ -239,7 +242,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                 // Create each block and wait for completion
                 for (const block of blocks) {
-                    await bloqueiosApi.criar(block, user?.id || 0);
+                    await bloqueiosApi.criar(block, user?.id || 0, tipo);
                     // Reload blocks after each creation to show updates
                     await fetchBloqueios();
                 }
@@ -293,18 +296,31 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-gray-500 font-semibold">Início</Label>
                                 <div className="flex gap-2">
-                                    <input
-                                        type="date"
-                                        value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                const date = new Date(e.target.value + 'T00:00:00');
-                                                setStartDate(date);
-                                                setEndDate(date);
-                                            }
-                                        }}
-                                        className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
-                                    />
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
+                                                {startDate ? format(startDate, 'dd/MM/yyyy') : 'Escolher data'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={startDate}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        setStartDate(date);
+                                                        setEndDate(date);
+                                                    }
+                                                }}
+                                                locale={pt}
+                                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
 
                                     <Select value={startTime} onValueChange={(val) => {
                                         setStartTime(val);
@@ -336,17 +352,36 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-gray-500 font-semibold">Fim</Label>
                                 <div className="flex gap-2">
-                                    <input
-                                        type="date"
-                                        value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                const date = new Date(e.target.value + 'T00:00:00');
-                                                setEndDate(date);
-                                            }
-                                        }}
-                                        className="flex-1 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
-                                    />
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
+                                                {endDate ? format(endDate, 'dd/MM/yyyy') : 'Escolher data'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={endDate}
+                                                onSelect={(date) => {
+                                                    if (date) {
+                                                        setEndDate(date);
+                                                    }
+                                                }}
+                                                locale={pt}
+                                                disabled={(date) => {
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+                                                    if (date < today) return true;
+                                                    if (startDate && date < startDate) return true;
+                                                    return false;
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
 
                                     <Select value={endTime} onValueChange={setEndTime}>
                                         <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">

@@ -4,6 +4,7 @@ export interface BloqueioAgenda {
     horaInicio: string;
     horaFim: string;
     motivo: string;
+    tipo?: string;
 }
 
 // Re-export BloqueioAgenda as Bloqueio type for compatibility

@@ -125,4 +125,15 @@ export const marcacoesApi = {
         apiRequest<void>(`/api/marcacoes/libertar-slot/${id}`, {
             method: 'DELETE',
         }),
+
+    // Atualizar detalhes de uma marcação de balneário (serviços, roupa)
+    atualizarDetalhesBalneario: (marcacaoId: number, data: {
+        produtosHigiene: boolean;
+        lavagemRoupa: boolean;
+        roupas: { categoria: string; quantidade: number }[];
+    }) =>
+        apiRequest<MarcacaoResponse>(`/api/marcacoes/balneario/${marcacaoId}/detalhes`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
 };

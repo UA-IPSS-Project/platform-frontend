@@ -1,11 +1,13 @@
+import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
 import { XIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon } from '../shared/CustomIcons';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Save } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -20,6 +22,10 @@ interface BalnearioAppointmentDetailsDialogProps {
 
 const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
+const HYGIENE_OPTIONS = ['Shampoo', 'Gel de Banho', 'Toalha', 'Sabonete/Creme'];
+const LAUNDRY_OPTIONS = ['Lavar Roupa Seca', 'Lavar Roupa Molhada'];
+const CLOTHING_OPTIONS = ['T-shirt/Camisola', 'Calças', 'Sapatos/Sapatilhas', 'Roupa Interior', 'Meias', 'Agasalho/Casaco'];
+
 export function BalnearioAppointmentDetailsDialog({
     open,
     onClose,
@@ -28,6 +34,80 @@ export function BalnearioAppointmentDetailsDialog({
     onCancel
 }: BalnearioAppointmentDetailsDialogProps) {
     const { user: authUser } = useAuth();
+
+    // Editable state for the checklist
+    const [selectedOptions, setSelectedOptions] = useState<Record<string, boolean>>({});
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+
+    // Initialize editable state from appointment data whenever dialog opens or appointment changes
+    useEffect(() => {
+        if (!open) return;
+
+        const initial: Record<string, boolean> = {};
+        const details = appointment.balnearioDetails;
+
+        // Restore individual items from roupas array (all items stored there)
+        if (details?.roupas) {
+            details.roupas.forEach(roupa => {
+                const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS];
+                if (allOptions.includes(roupa.categoria)) {
+                    initial[roupa.categoria] = true;
+                }
+            });
+        }
+
+        // Fallback: if booleans are set but no matching roupas found (old data),
+        // don't auto-check all options — leave them unchecked so the user can pick
+
+        setSelectedOptions(initial);
+        setHasChanges(false);
+    }, [open, appointment]);
+
+    const toggleOption = (option: string) => {
+        setSelectedOptions(prev => {
+            const updated = { ...prev, [option]: !prev[option] };
+            setHasChanges(true);
+            return updated;
+        });
+    };
+
+    const handleSaveDetails = async () => {
+        setIsSaving(true);
+        try {
+            const hasHygiene = HYGIENE_OPTIONS.some(opt => selectedOptions[opt]);
+            const hasLaundry = LAUNDRY_OPTIONS.some(opt => selectedOptions[opt]);
+
+            // Store ALL selected items (hygiene + laundry + clothing) in roupas
+            const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS];
+            const roupasVal = allOptions
+                .filter(opt => selectedOptions[opt])
+                .map(opt => ({ categoria: opt, quantidade: 1 }));
+
+            await marcacoesApi.atualizarDetalhesBalneario(parseInt(appointment.id), {
+                produtosHigiene: hasHygiene,
+                lavagemRoupa: hasLaundry,
+                roupas: roupasVal,
+            });
+
+            // Update local state
+            onUpdate(appointment.id, {
+                balnearioDetails: {
+                    produtosHigiene: hasHygiene,
+                    lavagemRoupa: hasLaundry,
+                    roupas: roupasVal.map((r, i) => ({ id: i, categoria: r.categoria, tamanho: '', quantidade: r.quantidade })),
+                }
+            });
+
+            toast.success('Detalhes atualizados com sucesso');
+            setHasChanges(false);
+        } catch (error: any) {
+            const msg = error.message || 'Erro ao guardar alterações';
+            toast.error(msg);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleCancelAppointment = async () => {
         const reason = 'Cancelado pelo funcionário do Balneário';
@@ -105,7 +185,7 @@ export function BalnearioAppointmentDetailsDialog({
             );
 
             onUpdate(appointment.id, { status: 'in-progress' });
-            toast.success('Atendimento iniciado!');
+            toast.success('Presença registada!');
             onClose();
         } catch (error: any) {
             const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível iniciar o atendimento';
@@ -145,6 +225,8 @@ export function BalnearioAppointmentDetailsDialog({
         }
     };
 
+    const isEditable = appointment.status === 'scheduled' || appointment.status === 'warning' || appointment.status === 'in-progress';
+
     const dateObj = new Date(appointment.date);
     const dayName = WEEKDAYS_LONG[dateObj.getDay()];
     const day = dateObj.getDate();
@@ -157,7 +239,7 @@ export function BalnearioAppointmentDetailsDialog({
             <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
                 <DialogTitle className="sr-only">Detalhes do Agendamento Balneário</DialogTitle>
                 <DialogPrimitive.Description className="sr-only">
-                    Consulte as necessidades e informações do utente.
+                    Consulte e edite as necessidades e informações do utente.
                 </DialogPrimitive.Description>
 
                 {/* Header - Fixed */}
@@ -201,43 +283,116 @@ export function BalnearioAppointmentDetailsDialog({
                         </div>
                     )}
 
-                    {/* Checklist */}
+                    {/* Editable Checklist */}
                     <div>
                         <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                             <ClipboardList className="w-4 h-4 text-purple-600" />
                             Necessidades Assinaladas
+                            {isEditable && <span className="text-xs font-normal text-gray-500">(editável)</span>}
                         </Label>
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Serviços Solicitados:</h4>
-                        <div className="space-y-2">
-                            {(!appointment.balnearioDetails?.produtosHigiene &&
-                                !appointment.balnearioDetails?.lavagemRoupa &&
-                                (!appointment.balnearioDetails?.roupas || appointment.balnearioDetails.roupas.length === 0)) ? (
-                                <p className="text-sm text-gray-500 italic">Nenhum serviço logístico específico registado.</p>
-                            ) : (
-                                <>
-                                    {appointment.balnearioDetails?.produtosHigiene && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                            Produtos de higiene (Gel de banho / Shampoo)
-                                        </div>
-                                    )}
 
-                                    {appointment.balnearioDetails?.lavagemRoupa && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                            Lavar a roupa
-                                        </div>
-                                    )}
+                        {isEditable ? (
+                            <div className="space-y-4">
+                                {/* Hygiene */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {HYGIENE_OPTIONS.map((opt) => (
+                                            <div key={opt} className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={`detail-${opt}`}
+                                                    checked={selectedOptions[opt] || false}
+                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                    {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
-                                        <div key={index} className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                            Fornecimento: {roupa.categoria} {roupa.tamanho ? `(Tam: ${roupa.tamanho})` : ''} x{roupa.quantidade}
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </div>
+                                {/* Laundry */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {LAUNDRY_OPTIONS.map((opt) => (
+                                            <div key={opt} className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={`detail-${opt}`}
+                                                    checked={selectedOptions[opt] || false}
+                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Clothing */}
+                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {CLOTHING_OPTIONS.map((opt) => (
+                                            <div key={opt} className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={`detail-${opt}`}
+                                                    checked={selectedOptions[opt] || false}
+                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Save Button */}
+                                {hasChanges && (
+                                    <Button
+                                        onClick={handleSaveDetails}
+                                        disabled={isSaving}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                                    >
+                                        <Save className="w-4 h-4 mr-2" />
+                                        {isSaving ? 'A guardar...' : 'Guardar Alterações'}
+                                    </Button>
+                                )}
+                            </div>
+                        ) : (
+                            /* Read-only view for completed/cancelled/no-show */
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">Serviços Solicitados:</h4>
+                                {(!appointment.balnearioDetails?.produtosHigiene &&
+                                    !appointment.balnearioDetails?.lavagemRoupa &&
+                                    (!appointment.balnearioDetails?.roupas || appointment.balnearioDetails.roupas.length === 0)) ? (
+                                    <p className="text-sm text-gray-500 italic">Nenhum serviço logístico específico registado.</p>
+                                ) : (
+                                    <>
+                                        {appointment.balnearioDetails?.produtosHigiene && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                Produtos de higiene (Gel de banho / Shampoo)
+                                            </div>
+                                        )}
+
+                                        {appointment.balnearioDetails?.lavagemRoupa && (
+                                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                Lavar a roupa
+                                            </div>
+                                        )}
+
+                                        {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
+                                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                                Fornecimento: {roupa.categoria} {roupa.tamanho ? `(Tam: ${roupa.tamanho})` : ''} x{roupa.quantidade}
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Additional Notes */}
@@ -260,7 +415,7 @@ export function BalnearioAppointmentDetailsDialog({
                                 >
                                     <div className="flex flex-col items-center gap-1">
                                         <CheckCircleIcon className="w-5 h-5 mb-1" />
-                                        Iniciar Banho
+                                        Compareceu
                                     </div>
                                 </Button>
 

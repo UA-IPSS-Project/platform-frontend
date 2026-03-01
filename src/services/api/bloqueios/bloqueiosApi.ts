@@ -2,7 +2,7 @@ import { apiRequest } from '../core/client';
 import { Bloqueio } from '../calendario/types';
 
 export const bloqueiosApi = {
-    criar: async (data: { dataInicio: string; dataFim: string; horaInicio: string; horaFim: string; motivo?: string }, funcionarioId: number) => {
+    criar: async (data: { dataInicio: string; dataFim: string; horaInicio: string; horaFim: string; motivo?: string }, funcionarioId: number, tipo: string = 'SECRETARIA') => {
         // Handle date range iteration
         const start = new Date(data.dataInicio);
         const end = new Date(data.dataFim);
@@ -18,7 +18,8 @@ export const bloqueiosApi = {
                 horaInicio: data.horaInicio,
                 horaFim: data.horaFim,
                 motivo: data.motivo || "Bloqueio Manual",
-                funcionarioId: funcionarioId
+                funcionarioId: funcionarioId,
+                tipo: tipo
             };
 
             promises.push(
@@ -35,8 +36,8 @@ export const bloqueiosApi = {
         return Promise.all(promises);
     },
 
-    listar: () =>
-        apiRequest<Bloqueio[]>('/api/calendario/bloqueios', {
+    listar: (tipo?: string) =>
+        apiRequest<Bloqueio[]>(`/api/calendario/bloqueios${tipo ? `?tipo=${tipo}` : ''}`, {
             method: 'GET',
         }),
 
