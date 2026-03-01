@@ -19,6 +19,7 @@ interface BlockedScheduleDialogProps {
     onOpenChange: (open: boolean) => void;
     appointments: Appointment[];
     onSuccess?: () => void;
+    tipo?: 'SECRETARIA' | 'BALNEARIO';
 }
 
 const generateTimeSlots = () => {
@@ -33,7 +34,7 @@ const generateTimeSlots = () => {
     return slots;
 };
 
-export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess }: BlockedScheduleDialogProps) {
+export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess, tipo = 'SECRETARIA' }: BlockedScheduleDialogProps) {
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
@@ -58,7 +59,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
     const fetchBloqueios = async () => {
         try {
-            const data = await bloqueiosApi.listar();
+            const data = await bloqueiosApi.listar(tipo);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -203,7 +204,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     dataFim: format(startDate, 'yyyy-MM-dd'),
                     horaInicio: startTime,
                     horaFim: endTime
-                }, user?.id || 0);
+                }, user?.id || 0, tipo);
                 toast.success('Bloqueio criado com sucesso');
             } else {
                 // Multiple day blocks
@@ -241,7 +242,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                 // Create each block and wait for completion
                 for (const block of blocks) {
-                    await bloqueiosApi.criar(block, user?.id || 0);
+                    await bloqueiosApi.criar(block, user?.id || 0, tipo);
                     // Reload blocks after each creation to show updates
                     await fetchBloqueios();
                 }

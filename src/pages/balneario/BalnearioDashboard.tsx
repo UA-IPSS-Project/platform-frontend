@@ -404,6 +404,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     open={showBlockedDialog}
                     onOpenChange={setShowBlockedDialog}
                     appointments={appointments}
+                    tipo="BALNEARIO"
                     onSuccess={() => refreshCurrentWeek(currentDate)}
                 />
             )}

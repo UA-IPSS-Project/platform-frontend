@@ -526,6 +526,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           open={showBlockedDialog}
           onOpenChange={setShowBlockedDialog}
           appointments={appointments}
+          tipo="SECRETARIA"
           onSuccess={() => {
             refreshCurrentWeek(currentDate);
             setBlockRefreshTrigger(prev => prev + 1);
