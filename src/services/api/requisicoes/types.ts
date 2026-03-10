@@ -10,11 +10,15 @@ export interface FuncionarioResumo {
 }
 
 export type TransporteCategoria = 'LIGEIRO' | 'PESADO' | 'PASSAGEIROS' | 'ADAPTADO';
+export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
 
 export interface MaterialCatalogo {
   id: number;
   nome: string;
   descricao?: string | null;
+  categoria: MaterialCategoria;
+  atributo: string;
+  valorAtributo: string;
 }
 
 export interface TransporteCatalogo {
@@ -43,6 +47,9 @@ export interface RequisicaoResponse {
   material?: {
     id: number;
     nome?: string;
+    categoria?: MaterialCategoria;
+    atributo?: string;
+    valorAtributo?: string;
   };
   quantidade?: number;
   itens?: Array<{
@@ -50,6 +57,9 @@ export interface RequisicaoResponse {
     material: {
       id: number;
       nome?: string;
+      categoria?: MaterialCategoria;
+      atributo?: string;
+      valorAtributo?: string;
     };
     quantidade: number;
   }>;
@@ -98,6 +108,9 @@ export interface AtualizarEstadoRequisicaoRequest {
 export interface CriarMaterialCatalogoRequest {
   nome: string;
   descricao?: string;
+  categoria: MaterialCategoria;
+  atributo: string;
+  valorAtributo: string;
 }
 
 export interface CriarTransporteCatalogoRequest {

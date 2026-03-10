@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/pop
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
 import {
+  MaterialCategoria,
   MaterialCatalogo,
   RequisicaoEstado,
   RequisicaoPrioridade,
@@ -54,9 +55,19 @@ const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: s
   { value: 'ADAPTADO', label: 'Adaptado' },
 ];
 
+const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
+  { value: 'ESCRITA', label: 'Escrita' },
+  { value: 'PAPEL_E_ARQUIVO', label: 'Papel e arquivo' },
+  { value: 'HIGIENE_E_LIMPEZA', label: 'Higiene e limpeza' },
+  { value: 'TECNOLOGIA', label: 'Tecnologia' },
+  { value: 'OUTROS', label: 'Outros' },
+];
+
 const formatTipo = (tipo: RequisicaoTipo) => TIPO_OPTIONS.find((option) => option.value === tipo)?.label ?? tipo;
 const formatPrioridade = (prioridade: RequisicaoPrioridade) => PRIORIDADE_OPTIONS.find((option) => option.value === prioridade)?.label ?? prioridade;
 const formatEstado = (estado: RequisicaoEstado) => ESTADO_OPTIONS.find((option) => option.value === estado)?.label ?? estado;
+const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
+  MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
 
 const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;
@@ -68,9 +79,16 @@ const formatDatePt = (date?: Date): string => {
   return new Intl.DateTimeFormat('pt-PT').format(date);
 };
 
-const formatMaterialItemLabel = (material?: { id: number; nome?: string }, quantidade?: number): string => {
+const formatMaterialItemLabel = (
+  material?: { id: number; nome?: string; categoria?: MaterialCategoria; atributo?: string; valorAtributo?: string },
+  quantidade?: number,
+): string => {
   const materialLabel = material?.nome ?? (material?.id ? `#${material.id}` : 'Material');
-  return `${materialLabel} (x${quantidade ?? 0})`;
+  const detalhe = material?.atributo && material?.valorAtributo
+    ? ` - ${material.atributo}: ${material.valorAtributo}`
+    : '';
+  const categoria = material?.categoria ? ` [${formatMaterialCategoria(material.categoria)}]` : '';
+  return `${materialLabel}${categoria}${detalhe} (x${quantidade ?? 0})`;
 };
 
 let materialLinhaCounter = 0;
@@ -79,6 +97,8 @@ const createEmptyMaterialLinha = () => ({
   materialId: '',
   quantidade: '1',
 });
+
+const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
 
 export function SecretaryRequisitionsPage({
   isDarkMode,
@@ -113,12 +133,17 @@ export function SecretaryRequisitionsPage({
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
-  const [materialAdicionarId, setMaterialAdicionarId] = useState('');
+  const [materialCategoriaAtiva, setMaterialCategoriaAtiva] = useState<MaterialCategoria | null>('ESCRITA');
+  const [materialAdicionarNome, setMaterialAdicionarNome] = useState('');
+  const [materialAdicionarVarianteId, setMaterialAdicionarVarianteId] = useState('');
   const [materialAdicionarQuantidade, setMaterialAdicionarQuantidade] = useState('1');
   const [transporteId, setTransporteId] = useState('');
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
+  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
+  const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
+  const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
   const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
   const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
   const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
@@ -196,9 +221,64 @@ export function SecretaryRequisitionsPage({
     }
   }, [createDialogOpen]);
 
+  const categoriasComMateriais = useMemo(
+    () => MATERIAL_CATEGORIA_OPTIONS.filter((option) => materiais.some((material) => material.categoria === option.value)),
+    [materiais],
+  );
+
+  useEffect(() => {
+    if (categoriasComMateriais.length === 0) {
+      setMaterialCategoriaAtiva(null);
+      return;
+    }
+
+    if (!materialCategoriaAtiva || !categoriasComMateriais.some((categoria) => categoria.value === materialCategoriaAtiva)) {
+      setMaterialCategoriaAtiva(categoriasComMateriais[0].value);
+    }
+  }, [categoriasComMateriais, materialCategoriaAtiva]);
+
+  const materiaisCategoriaAtiva = useMemo(
+    () => (materialCategoriaAtiva ? materiais.filter((material) => material.categoria === materialCategoriaAtiva) : []),
+    [materiais, materialCategoriaAtiva],
+  );
+
+  const opcoesNomeMaterial = useMemo(() => {
+    const nomes = materiaisCategoriaAtiva.map((material) => material.nome.trim()).filter(Boolean);
+    return Array.from(new Set(nomes));
+  }, [materiaisCategoriaAtiva]);
+
+  const variantesMaterialSelecionado = useMemo(
+    () => materiaisCategoriaAtiva.filter((material) => normalizarTexto(material.nome) === normalizarTexto(materialAdicionarNome)),
+    [materiaisCategoriaAtiva, materialAdicionarNome],
+  );
+
+  const materialAdicionarId = useMemo(() => {
+    if (!materialAdicionarNome) {
+      return '';
+    }
+    if (variantesMaterialSelecionado.length <= 1) {
+      return variantesMaterialSelecionado[0] ? String(variantesMaterialSelecionado[0].id) : '';
+    }
+    return materialAdicionarVarianteId;
+  }, [materialAdicionarNome, materialAdicionarVarianteId, variantesMaterialSelecionado]);
+
+  useEffect(() => {
+    setMaterialAdicionarNome('');
+    setMaterialAdicionarVarianteId('');
+    setMaterialAdicionarQuantidade('1');
+  }, [materialCategoriaAtiva]);
+
+  useEffect(() => {
+    setMaterialAdicionarVarianteId('');
+  }, [materialAdicionarNome]);
+
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
       toast.error('O nome do material é obrigatório.');
+      return;
+    }
+    if (!novoMaterialAtributo.trim() || !novoMaterialValorAtributo.trim()) {
+      toast.error('Atributo e valor do atributo são obrigatórios.');
       return;
     }
 
@@ -207,12 +287,20 @@ export function SecretaryRequisitionsPage({
       const novoMaterial = await requisicoesApi.criarMaterialCatalogo({
         nome: novoMaterialNome.trim(),
         descricao: novoMaterialDescricao.trim() || undefined,
+        categoria: novoMaterialCategoria,
+        atributo: novoMaterialAtributo.trim(),
+        valorAtributo: novoMaterialValorAtributo.trim(),
       });
       toast.success('Material criado com sucesso.');
       setMateriais((prev) => [...prev, novoMaterial]);
-      setMaterialAdicionarId(String(novoMaterial.id));
+      setMaterialCategoriaAtiva(novoMaterial.categoria);
+      setMaterialAdicionarNome(novoMaterial.nome);
+      setMaterialAdicionarVarianteId(String(novoMaterial.id));
       setNovoMaterialNome('');
       setNovoMaterialDescricao('');
+      setNovoMaterialCategoria('OUTROS');
+      setNovoMaterialAtributo('');
+      setNovoMaterialValorAtributo('');
       setCreateMaterialDialogOpen(false);
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao criar material.');
@@ -257,8 +345,18 @@ export function SecretaryRequisitionsPage({
   };
 
   const handleAddMaterialLinha = () => {
-    if (!materialAdicionarId || Number(materialAdicionarQuantidade) < 1) {
+    if (!materialAdicionarNome || Number(materialAdicionarQuantidade) < 1) {
       toast.error('Selecione um material e uma quantidade válida.');
+      return;
+    }
+
+    if (variantesMaterialSelecionado.length > 1 && !materialAdicionarVarianteId) {
+      toast.error('Selecione o atributo do material antes de adicionar.');
+      return;
+    }
+
+    if (!materialAdicionarId) {
+      toast.error('Selecione um material válido.');
       return;
     }
 
@@ -272,7 +370,8 @@ export function SecretaryRequisitionsPage({
         ),
       );
       toast.info('Quantidade do material atualizada.');
-      setMaterialAdicionarId('');
+      setMaterialAdicionarNome('');
+      setMaterialAdicionarVarianteId('');
       setMaterialAdicionarQuantidade('1');
       return;
     }
@@ -285,7 +384,8 @@ export function SecretaryRequisitionsPage({
         quantidade: materialAdicionarQuantidade,
       },
     ]);
-    setMaterialAdicionarId('');
+    setMaterialAdicionarNome('');
+    setMaterialAdicionarVarianteId('');
     setMaterialAdicionarQuantidade('1');
   };
 
@@ -355,7 +455,8 @@ export function SecretaryRequisitionsPage({
       setDescricao('');
       setTempoLimite(undefined);
       setMaterialLinhas([]);
-      setMaterialAdicionarId('');
+      setMaterialAdicionarNome('');
+      setMaterialAdicionarVarianteId('');
       setMaterialAdicionarQuantidade('1');
       setTransporteId('');
       setAssunto('');
@@ -735,38 +836,121 @@ export function SecretaryRequisitionsPage({
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-2 items-end">
-                        <div>
-                          <label htmlFor="req-create-material-add" className="text-sm text-gray-600 dark:text-gray-300">Material</label>
-                          <select
-                            id="req-create-material-add"
-                            value={materialAdicionarId}
-                            onChange={(e) => setMaterialAdicionarId(e.target.value)}
-                            disabled={loadingCatalogo}
-                            className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                          >
-                            <option value="">{loadingCatalogo ? 'A carregar materiais...' : 'Selecionar material'}</option>
-                            {materiais.map((material) => (
-                              <option key={material.id} value={material.id}>
-                                {material.nome}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label htmlFor="req-create-quantidade-add" className="text-sm text-gray-600 dark:text-gray-300">Quantidade</label>
-                          <Input
-                            id="req-create-quantidade-add"
-                            type="number"
-                            min="1"
-                            value={materialAdicionarQuantidade}
-                            onChange={(e) => setMaterialAdicionarQuantidade(e.target.value)}
-                          />
-                        </div>
-                        <Button type="button" variant="outline" className="h-10 px-3" onClick={handleAddMaterialLinha}>
-                          Adicionar
-                        </Button>
-                      </div>
+                                      <div className="space-y-2">
+                                        {MATERIAL_CATEGORIA_OPTIONS.map((categoria) => {
+                                          const materiaisDaCategoria = materiais.filter((item) => item.categoria === categoria.value);
+                                          const isActive = categoria.value === materialCategoriaAtiva;
+                                          const disabled = materiaisDaCategoria.length === 0;
+
+                                          return (
+                                            <div
+                                              key={categoria.value}
+                                              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60"
+                                            >
+                                              <button
+                                                type="button"
+                                                className="w-full px-3 py-2 flex items-center justify-between text-left"
+                                                disabled={disabled}
+                                                onClick={() => setMaterialCategoriaAtiva((prev) => (prev === categoria.value ? null : categoria.value))}
+                                              >
+                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                  {categoria.label}
+                                                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                                    ({materiaisDaCategoria.length})
+                                                  </span>
+                                                </span>
+                                                {isActive ? (
+                                                  <ChevronUp className="w-4 h-4 text-gray-500" />
+                                                ) : (
+                                                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                                                )}
+                                              </button>
+
+                                              {isActive && (
+                                                <div className="px-3 pb-3 space-y-3 border-t border-gray-200 dark:border-gray-700">
+                                                  <div className="rounded-md border border-dashed border-gray-200 dark:border-gray-700 p-3 mt-3">
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                                      Materiais de {categoria.label}
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                      {materiaisDaCategoria.length === 0 ? (
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400">Sem materiais nesta categoria.</span>
+                                                      ) : (
+                                                        materiaisDaCategoria.map((material) => (
+                                                          <span
+                                                            key={material.id}
+                                                            className="text-xs rounded-full border border-gray-200 dark:border-gray-700 px-2 py-1 text-gray-700 dark:text-gray-200"
+                                                          >
+                                                            {material.nome} - {material.atributo}: {material.valorAtributo}
+                                                          </span>
+                                                        ))
+                                                      )}
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_120px_auto] gap-2 items-end">
+                                                    <div>
+                                                      <label htmlFor="req-create-material-add" className="text-sm text-gray-600 dark:text-gray-300">Material</label>
+                                                      <select
+                                                        id="req-create-material-add"
+                                                        value={materialAdicionarNome}
+                                                        onChange={(e) => setMaterialAdicionarNome(e.target.value)}
+                                                        disabled={loadingCatalogo}
+                                                        className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                                                      >
+                                                        <option value="">{loadingCatalogo ? 'A carregar materiais...' : 'Selecionar material da categoria'}</option>
+                                                        {opcoesNomeMaterial.map((nome) => (
+                                                          <option key={nome} value={nome}>
+                                                            {nome}
+                                                          </option>
+                                                        ))}
+                                                      </select>
+                                                    </div>
+                                                    <div>
+                                                      <label htmlFor="req-create-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">
+                                                        Atributo
+                                                      </label>
+                                                      <select
+                                                        id="req-create-material-atributo"
+                                                        value={materialAdicionarVarianteId}
+                                                        onChange={(e) => setMaterialAdicionarVarianteId(e.target.value)}
+                                                        disabled={loadingCatalogo || variantesMaterialSelecionado.length <= 1}
+                                                        className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                                                      >
+                                                        <option value="">
+                                                          {variantesMaterialSelecionado.length <= 1
+                                                            ? 'Sem seleção necessária'
+                                                            : 'Selecionar atributo'}
+                                                        </option>
+                                                        {variantesMaterialSelecionado.map((material) => (
+                                                          <option key={material.id} value={material.id}>
+                                                            {material.atributo && material.valorAtributo
+                                                              ? `${material.atributo}: ${material.valorAtributo}`
+                                                              : `Variante #${material.id}`}
+                                                          </option>
+                                                        ))}
+                                                      </select>
+                                                    </div>
+                                                    <div>
+                                                      <label htmlFor="req-create-quantidade-add" className="text-sm text-gray-600 dark:text-gray-300">Quantidade</label>
+                                                      <Input
+                                                        id="req-create-quantidade-add"
+                                                        type="number"
+                                                        min="1"
+                                                        value={materialAdicionarQuantidade}
+                                                        onChange={(e) => setMaterialAdicionarQuantidade(e.target.value)}
+                                                      />
+                                                    </div>
+                                                    <Button type="button" variant="outline" className="h-10 px-3" onClick={handleAddMaterialLinha}>
+                                                      Adicionar
+                                                    </Button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                     </div>
 
                     <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
@@ -784,6 +968,11 @@ export function SecretaryRequisitionsPage({
                                 <p className="h-10 mt-1 flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
                                   {material?.nome || 'Material removido'}
                                 </p>
+                                {material && (
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {formatMaterialCategoria(material.categoria)} - {material.atributo}: {material.valorAtributo}
+                                  </p>
+                                )}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">Quantidade</p>
@@ -867,6 +1056,39 @@ export function SecretaryRequisitionsPage({
             <div>
               <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição (opcional)</label>
               <Textarea id="novo-material-descricao" value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
+            </div>
+            <div>
+              <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
+              <select
+                id="novo-material-categoria"
+                value={novoMaterialCategoria}
+                onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
+                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              >
+                {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">Atributo</label>
+                <Input
+                  id="novo-material-atributo"
+                  value={novoMaterialAtributo}
+                  onChange={(e) => setNovoMaterialAtributo(e.target.value)}
+                  placeholder="Ex: Cor, Tipo, Tamanho"
+                />
+              </div>
+              <div>
+                <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">Valor do atributo</label>
+                <Input
+                  id="novo-material-valor-atributo"
+                  value={novoMaterialValorAtributo}
+                  onChange={(e) => setNovoMaterialValorAtributo(e.target.value)}
+                  placeholder="Ex: Azul, A4, 100ml"
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCreateMaterialDialogOpen(false)} disabled={submittingMaterial}>
