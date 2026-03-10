@@ -85,7 +85,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
-    const [highlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+    const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
@@ -330,9 +330,13 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         setShowNotifications(false);
                                     },
                                     onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
-                                    onNavigateToCancelledSlot: () => {
+                                    onNavigateToCancelledSlot: (dateStr, time) => {
                                         navigateTo('appointments');
                                         setShowNotifications(false);
+                                        const slotDate = new Date(dateStr);
+                                        setCurrentDate(slotDate);
+                                        setHighlightedSlot({ date: slotDate, time });
+                                        setTimeout(() => setHighlightedSlot(null), 5000);
                                     },
                                 }}
                             />

@@ -361,6 +361,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       navigate('/dashboard');
                       setShowNotifications(false);
                       const slotDate = new Date(dateStr);
+                      setCurrentDate(slotDate);
                       setHighlightedSlot({ date: slotDate, time });
                       setTimeout(() => setHighlightedSlot(null), 5000);
                     },

@@ -22,10 +22,18 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         setNotifications(prev => [notificacao, ...prev]);
         setUnreadCount(prev => prev + 1);
 
-        toast.info(notificacao.titulo, {
-            description: notificacao.mensagem,
-            duration: 5000,
-        });
+        const isOneDayReminder = notificacao.tipo === 'LEMBRETE'
+            && notificacao.metadata?.notificationSubtype === 'REMINDER_1_DAY';
+
+        toast.info(
+            isOneDayReminder ? 'Lembrete de Marcação' : notificacao.titulo,
+            {
+                description: isOneDayReminder
+                    ? `Tem uma marcação em 1 dia. ${notificacao.mensagem}`
+                    : notificacao.mensagem,
+                duration: isOneDayReminder ? 7000 : 5000,
+            }
+        );
 
         // Refresh appointments after a small delay to allow backend transaction to commit
         if (onRefreshNeeded) {
