@@ -4,9 +4,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
-import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
+import { ArrowLeft, Check, X, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
+import { DatePickerField } from '../ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
@@ -20,7 +19,6 @@ import {
   validatePassword,
   isPasswordValid as checkPasswordValid,
   validateBirthDate,
-  formatDate,
   type PasswordValidation
 } from '../../lib/validations';
 
@@ -28,6 +26,20 @@ interface RegisterFormProps {
   onNavigateToLogin: () => void;
   initialAccountType?: 'user' | 'employee';
 }
+
+const toInputDate = (value: string): string => {
+  if (!value) return '';
+  const [day, month, year] = value.split('/');
+  if (!day || !month || !year) return '';
+  return `${year}-${month}-${day}`;
+};
+
+const toDisplayDate = (value: string): string => {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  if (!day || !month || !year) return '';
+  return `${day}/${month}/${year}`;
+};
 
 export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
   const [formData, setFormData] = useState({
@@ -45,9 +57,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
-  const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
-  const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
 
@@ -284,41 +293,11 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           <Label className="text-gray-700 dark:text-gray-300">
             Data de Nascimento *
           </Label>
-          <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
-            setBirthDatePickerOpen(open);
-            if (open) {
-              // when opening, focus calendar to existing birthDate or today
-              setCalendarMonth(birthDateValue ?? new Date());
-            }
-          }}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={`w-full justify-between bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''
-                  }`}
-              >
-                {formData.birthDate || 'Selecionar data'}
-                <CalendarIcon className="w-4 h-4 opacity-70" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-              <Calendar
-                mode="single"
-                selected={birthDateValue}
-                month={calendarMonth}
-                onMonthChange={(d) => setCalendarMonth(d)}
-                initialFocus
-                onSelect={(date) => {
-                  if (date) {
-                    setBirthDateValue(date);
-                    handleChange('birthDate', formatDate(date));
-                    setBirthDatePickerOpen(false);
-                  }
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePickerField
+            value={toInputDate(formData.birthDate)}
+            onChange={(value) => handleChange('birthDate', toDisplayDate(value))}
+            buttonClassName={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''}`}
+          />
           {errors.birthDate && <p className="text-red-500 text-sm">{errors.birthDate}</p>}
         </div>
 
