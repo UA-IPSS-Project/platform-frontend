@@ -75,6 +75,8 @@ const LIGHTHOUSE_FLAGS = {
  * Audit groups.
  * Each group shares a single browser session (one login → multiple page audits).
  * Set credentials to null for public pages that don't require authentication.
+ * Pages can optionally define localStorage overrides to force an internal
+ * dashboard view before the audit starts.
  *
  * Login types:
  *   'user'     → NIF identifier (Utilizador tab in LoginForm)
@@ -112,6 +114,27 @@ const AUDIT_GROUPS = [
     },
     pages: [
       { name: 'secretary-dashboard', path: '/dashboard' },
+      {
+        name: 'secretary-requisitions',
+        path: '/dashboard',
+        storage: { secretaryDashboardView: 'requisitions' },
+      },
+      {
+        name: 'secretary-management',
+        path: '/dashboard',
+        storage: { secretaryDashboardView: 'management' },
+      },
+    ],
+  },
+  {
+    role: 'BALNEARIO',
+    credentials: {
+      type:       'employee',
+      identifier: process.env.BALNEARIO_EMAIL,
+      password:   process.env.BALNEARIO_PASSWORD,
+    },
+    pages: [
+      { name: 'balneario-dashboard', path: '/dashboard' },
     ],
   },
   {
@@ -266,6 +289,23 @@ function credsMissing(cred) {
   return !cred.identifier || !cred.password;
 }
 
+/**
+ * Applies per-page localStorage state before navigating to the audit URL.
+ * This is used for dashboards that persist the current internal view.
+ *
+ * @param {import('puppeteer').Page} page
+ * @param {{ storage?: Record<string, string> }} pageConfig
+ */
+async function applyPageState(page, pageConfig) {
+  const storage = pageConfig.storage ?? {};
+
+  await page.evaluate((entries) => {
+    for (const [key, value] of Object.entries(entries)) {
+      window.localStorage.setItem(key, value);
+    }
+  }, storage);
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -314,6 +354,8 @@ async function main() {
       for (const pg of pages) {
         const url = `${BASE_URL}${pg.path}`;
         process.stdout.write(`  Auditing \x1b[1m${pg.name}\x1b[0m... `);
+
+        await applyPageState(page, pg);
 
         // Navigate first so the SPA mounts the correct view before Lighthouse audits.
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 30_000 });
