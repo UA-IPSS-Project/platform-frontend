@@ -64,6 +64,6 @@
       "scripts": {
             "dev": "vite",
             "build": "vite build",
-            "audit:a11y": "node scripts/lighthouse-audit.mjs"
+            "audit:lighthouse": "node scripts/lighthouse-audit.mjs"
       }
 }
