@@ -254,6 +254,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         utenteNome: formData.name,
         utenteEmail: formData.email,
         utenteTelefone: formData.contact,
+        utenteDataNasc: formData.dateOfBirth || undefined,
       };
 
       const response = await apiRequest<{ id: number }>('/api/marcacoes/presencial', {
