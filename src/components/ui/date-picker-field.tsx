@@ -44,8 +44,10 @@ export function DatePickerField({
   useEffect(() => {
     if (selectedDate) {
       setCalendarMonth(selectedDate);
+    } else {
+      setCalendarMonth(new Date());
     }
-  }, [value]);
+  }, [selectedDate]);
 
   return (
     <Popover
