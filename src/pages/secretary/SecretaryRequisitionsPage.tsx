@@ -333,8 +333,8 @@ export function SecretaryRequisitionsPage({
     setMaterialLinhas((prev) => prev.filter((item) => item.rowId !== rowId));
   };
 
-  const toggleItemExpansion = (itemKey: string) => {
-    setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: !prev[itemKey] }));
+  const toggleItemAttributesVisibility = (itemKey: string) => {
+    setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
   };
 
   const toggleCategoriaExpansion = (categoria: MaterialCategoria) => {
@@ -363,6 +363,12 @@ export function SecretaryRequisitionsPage({
       }
       return;
     }
+
+    setExpandedMaterialItems((prev) => {
+      const next = { ...prev };
+      delete next[item.itemKey];
+      return next;
+    });
 
     setMaterialLinhas((prev) => {
       const ids = new Set(item.variantes.map((variante) => String(variante.id)));
@@ -642,31 +648,46 @@ export function SecretaryRequisitionsPage({
                         ) : (
                           <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
                             {itemsCategoria.map((item) => {
+                              const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
                               const selectedCount = item.variantes.filter((variante) =>
                                 materialLinhas.some((linha) => linha.materialId === String(variante.id)),
                               ).length;
-                              const itemChecked = selectedCount > 0;
-                              const isExpanded = expandedMaterialItems[item.itemKey] || itemChecked;
+                              const itemChecked = selectedCount > 0 || hasPendingSelection;
+                              const isExpanded = itemChecked && expandedMaterialItems[item.itemKey] !== false;
 
                               return (
                                 <div key={item.itemKey} className="space-y-2 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
-                                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-1 -mx-1 text-sm text-gray-700 dark:text-gray-200 cursor-pointer text-left hover:bg-gray-100/60 dark:hover:bg-gray-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/40"
+                                      onClick={() => handleItemToggle(item, !itemChecked)}
+                                      onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                          event.preventDefault();
+                                          handleItemToggle(item, !itemChecked);
+                                        }
+                                      }}
+                                      aria-pressed={itemChecked}
+                                    >
                                       <Checkbox
                                         checked={itemChecked}
-                                        onCheckedChange={(checked) => handleItemToggle(item, !!checked)}
+                                        className="pointer-events-none"
                                       />
                                       <span className="truncate" title={item.nome}>{item.nome}</span>
-                                    </label>
+                                    </div>
 
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className="h-7 px-2 text-xs"
-                                      onClick={() => toggleItemExpansion(item.itemKey)}
-                                    >
-                                      {isExpanded ? 'Ocultar atributos' : 'Ver atributos'}
-                                    </Button>
+                                    {itemChecked && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={() => toggleItemAttributesVisibility(item.itemKey)}
+                                      >
+                                        {isExpanded ? 'Ocultar atributos' : 'Mostrar atributos'}
+                                      </Button>
+                                    )}
                                   </div>
 
                                   {isExpanded && (
