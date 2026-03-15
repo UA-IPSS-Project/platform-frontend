@@ -506,6 +506,42 @@ export function SecretaryRequisitionsPage({
     return `${total} requisição(ões) · ${urgentes} urgente(s)`;
   }, [requisicoes]);
 
+  const materiaisAdicionadosAgrupados = useMemo(() => {
+    const grupos = new Map<MaterialCategoria, Array<{
+      rowId: string;
+      descricao: string;
+      quantidade: string;
+    }>>();
+
+    materialLinhas.forEach((linha) => {
+      const material = materiais.find((item) => String(item.id) === linha.materialId);
+      const categoria = material?.categoria ?? 'OUTROS';
+      const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
+      const grupoAtual = grupos.get(categoria) ?? [];
+
+      grupoAtual.push({
+        rowId: linha.rowId,
+        descricao,
+        quantidade: linha.quantidade,
+      });
+
+      grupos.set(categoria, grupoAtual);
+    });
+
+    return MATERIAL_CATEGORIA_OPTIONS
+      .map((categoria) => ({
+        categoria: categoria.value,
+        label: categoria.label,
+        itens: grupos.get(categoria.value) ?? [],
+      }))
+      .filter((grupo) => grupo.itens.length > 0);
+  }, [materiais, materialLinhas]);
+
+  const materiaisAdicionadosTotal = useMemo(
+    () => materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
+    [materialLinhas],
+  );
+
   const selectedRequisicao = useMemo(
     () => requisicoes.find((item) => item.id === openedRequisicaoId) ?? null,
     [requisicoes, openedRequisicaoId],
@@ -742,38 +778,40 @@ export function SecretaryRequisitionsPage({
                 {materialLinhas.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não adicionaste materiais.</p>
                 ) : (
-                  materialLinhas.map((linha, index) => {
-                    const material = materiais.find((item) => String(item.id) === linha.materialId);
-                    return (
-                      <div key={linha.rowId} className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-2 items-end">
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Material {index + 1}</p>
-                          <p className="h-10 mt-1 flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-                            {material?.nome || 'Material removido'}
-                          </p>
-                          {material && (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              {formatMaterialCategoria(material.categoria)} - {material.atributo}: {material.valorAtributo}
-                            </p>
-                          )}
+                  <div className="space-y-4">
+                    {materiaisAdicionadosAgrupados.map((grupo) => (
+                      <div key={grupo.categoria} className="space-y-2">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{grupo.label}</p>
+
+                        <div className="space-y-2">
+                          {grupo.itens.map((item) => (
+                            <div
+                              key={item.rowId}
+                              className="grid grid-cols-[minmax(0,1fr)_88px_auto] gap-2 items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900"
+                            >
+                              <p className="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100" title={item.descricao}>
+                                {item.descricao}
+                              </p>
+                              <p className="text-sm text-center text-gray-700 dark:text-gray-300">{item.quantidade}</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-8 px-3"
+                                onClick={() => handleRemoveMaterialLinha(item.rowId)}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          ))}
                         </div>
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Quantidade</p>
-                          <p className="h-10 mt-1 flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-                            {linha.quantidade}
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-10 px-3"
-                          onClick={() => handleRemoveMaterialLinha(linha.rowId)}
-                        >
-                          Remover
-                        </Button>
                       </div>
-                    );
-                  })
+                    ))}
+
+                    <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span>Total de linhas: {materialLinhas.length}</span>
+                      <span>Total de unidades: {materiaisAdicionadosTotal}</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
