@@ -9,7 +9,7 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../shared/CustomIcons';
+import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
@@ -526,26 +526,24 @@ export function AppointmentDetailsDialog({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in-progress':
-        return <Badge className="bg-purple-600 text-white rounded-full px-3">Em Curso</Badge>;
+        return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">Em Curso</Badge>;
       case 'scheduled':
-        return <Badge className="bg-purple-500 text-white rounded-full px-3">Agendado</Badge>;
+        return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">Agendado</Badge>;
       case 'warning':
         return (
-          <Badge className="bg-yellow-500 text-gray-900 rounded-full px-3 flex items-center gap-1">
+          <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
             <AlertTriangleIcon className="w-3 h-3" />
             Agendado
           </Badge>
         );
       case 'completed':
-        return <Badge className="bg-green-600 text-white rounded-full px-3 flex items-center gap-1">
-          <CheckCircleIcon className="w-3 h-3" />
+        return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
           Concluído
         </Badge>;
       case 'no-show':
 
         return (
-          <Badge style={{ backgroundColor: '#f97316', color: 'white' }} className="rounded-full px-3 flex items-center gap-1">
-            <UserIcon className="w-3 h-3 text-white" />
+          <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
             Não compareceu
           </Badge>
         );
@@ -614,13 +612,13 @@ export function AppointmentDetailsDialog({
 
             {/* Appointment Info Grid: NIF and Contact side-by-side (Horário removed) */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2"># NIF</Label>
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm mb-2"># NIF</Label>
                 <p className="text-gray-900 dark:text-gray-100">{appointment.patientNIF}</p>
               </div>
 
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm flex items-center gap-2 mb-2">
                   <PhoneIcon className="w-4 h-4" />
                   Contacto
                 </Label>
@@ -629,8 +627,8 @@ export function AppointmentDetailsDialog({
             </div>
 
             {/* Patient Name */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm flex items-center gap-2 mb-2">
                 <UserIcon className="w-4 h-4" />
                 Nome
               </Label>
@@ -638,8 +636,8 @@ export function AppointmentDetailsDialog({
             </div>
 
             {/* Email (separate block, similar style to Nome) */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm flex items-center gap-2 mb-2">
                 <MailIcon className="w-4 h-4" />
                 Email
               </Label>
@@ -659,15 +657,15 @@ export function AppointmentDetailsDialog({
             )}
 
             {/* Subject */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2">Assunto</Label>
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm mb-2">Assunto</Label>
               <p className="text-gray-900 dark:text-gray-100">{appointment.subject}</p>
             </div>
 
             {/* Description */}
             {appointment.description && (
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2">Descrição</Label>
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm mb-2">Descrição</Label>
                 <p className="text-gray-900 dark:text-gray-100">{appointment.description}</p>
               </div>
             )}
@@ -675,7 +673,7 @@ export function AppointmentDetailsDialog({
             {/* Documentos com API real */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                <Label className="text-sm flex items-center gap-2">
                   <FileTextIcon className="w-4 h-4" />
                   Documentos Anexados
                 </Label>
@@ -741,7 +739,7 @@ export function AppointmentDetailsDialog({
             {/* Documents antigos (manter para compatibilidade se houver) */}
             {appointment.documents && appointment.documents.length > 0 && (
               <div>
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-3">
+                <Label className="text-sm flex items-center gap-2 mb-3">
                   <FileTextIcon className="w-4 h-4" />
                   Documentos Extra (Legacy)
                 </Label>
@@ -755,10 +753,10 @@ export function AppointmentDetailsDialog({
                           <Checkbox
                             checked={selectedDocs.includes(index)}
                             onCheckedChange={() => handleDocToggle(index)}
-                            className="border-purple-300 data-[state=checked]:bg-purple-600"
+                            className="border-slate-300 data-[state=checked]:bg-primary"
                           />
                         )}
-                        <FileTextIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <FileTextIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                         <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{doc.name}</span>
                         {isClient && (
                           <Button
@@ -808,9 +806,9 @@ export function AppointmentDetailsDialog({
                   </Button>
                   <Button
                     onClick={handleNoShowAppointment}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
+                    variant="warning"
+                    className="w-full"
                   >
-                    <AlertCircleIcon className="w-4 h-4" />
                     Não compareceu
                   </Button>
                 </>
@@ -819,9 +817,8 @@ export function AppointmentDetailsDialog({
               {!isClient && appointment.status === 'in-progress' && (
                 <Button
                   onClick={handleCompleteAppointment}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <CheckCircleIcon className="w-4 h-4" />
                   Concluir
                 </Button>
               )}
@@ -848,7 +845,8 @@ export function AppointmentDetailsDialog({
                     Adicionar Documentos
                   </Button>
                   <Button
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
+                    variant="warning"
+                    className="w-full gap-2"
                     onClick={() => {
                       const aptDate = new Date(appointment.date);
                       setRescheduleYear(aptDate.getFullYear());

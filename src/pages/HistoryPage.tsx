@@ -46,7 +46,7 @@ const getStatusLabel = (status: Appointment['status']) => {
 const getStatusBadge = (status: Appointment['status']) => {
   switch (status) {
     case 'completed':
-      return <Badge className="bg-green-600 text-white">Concluído</Badge>;
+      return <Badge className="bg-green-600 text-white dark:bg-green-600 dark:text-white">Concluído</Badge>;
     case 'warning':
       return <Badge className="bg-yellow-500 text-gray-900">Aviso</Badge>;
     case 'no-show':

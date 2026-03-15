@@ -42,11 +42,11 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           aria-label="Mês"
           value={displayMonth.getMonth()}
           onChange={(e) => handleMonthChange(e.target.value)}
-          className="flex h-9 w-[130px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-purple-600 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium scrollbar-thin scrollbar-thumb-purple-200 dark:scrollbar-thumb-purple-800"
+          className="flex h-9 w-[130px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
           style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
         >
           {months.map((month, index) => (
-            <option key={index} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 checked:bg-purple-100 dark:checked:bg-purple-900/50 cursor-pointer">
+            <option key={index} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 cursor-pointer">
               {month}
             </option>
           ))}
@@ -56,11 +56,11 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           aria-label="Ano"
           value={displayMonth.getFullYear()}
           onChange={(e) => handleYearChange(e.target.value)}
-          className="flex h-9 w-[90px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-purple-600 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium scrollbar-thin scrollbar-thumb-purple-200 dark:scrollbar-thumb-purple-800"
+          className="flex h-9 w-[90px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
           style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
         >
           {years.reverse().map((year) => (
-            <option key={year} value={year} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 checked:bg-purple-100 dark:checked:bg-purple-900/50 cursor-pointer">
+            <option key={year} value={year} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 cursor-pointer">
               {year}
             </option>
           ))}
@@ -100,15 +100,15 @@ function Calendar({
           ),
           day: cn(
             buttonVariants({ variant: "ghost" }),
-            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-purple-100 dark:hover:bg-purple-900/30",
+            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-violet-100 dark:hover:bg-violet-900/30",
           ),
           day_range_start:
             "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
           day_range_end:
             "day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
           day_selected:
-            "bg-purple-600 text-white hover:bg-purple-700 hover:text-white focus:bg-purple-600 focus:text-white",
-          day_today: "bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100 font-semibold border border-purple-200 dark:border-purple-800",
+            "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          day_today: "bg-violet-50 dark:bg-violet-900/20 text-violet-900 dark:text-violet-100 font-semibold border border-violet-200 dark:border-violet-800",
           day_outside:
             "day-outside text-muted-foreground aria-selected:text-muted-foreground opacity-30",
           day_disabled: "text-muted-foreground opacity-30",
