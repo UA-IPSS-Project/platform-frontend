@@ -144,6 +144,7 @@ export function SecretaryRequisitionsPage({
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
   const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
   const [tempoLimitePickerOpen, setTempoLimitePickerOpen] = useState(false);
+  const [tempoLimiteMonth, setTempoLimiteMonth] = useState<Date>(new Date());
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
@@ -609,7 +610,15 @@ export function SecretaryRequisitionsPage({
 
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
-            <Popover open={tempoLimitePickerOpen} onOpenChange={setTempoLimitePickerOpen}>
+            <Popover
+              open={tempoLimitePickerOpen}
+              onOpenChange={(open) => {
+                setTempoLimitePickerOpen(open);
+                if (open) {
+                  setTempoLimiteMonth(tempoLimite ?? new Date());
+                }
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button
                   type="button"
@@ -624,7 +633,8 @@ export function SecretaryRequisitionsPage({
                 <Calendar
                   mode="single"
                   selected={tempoLimite}
-                  month={tempoLimite ?? new Date()}
+                  month={tempoLimiteMonth}
+                  onMonthChange={setTempoLimiteMonth}
                   onSelect={(date) => {
                     setTempoLimite(date);
                     if (date) setTempoLimitePickerOpen(false);
