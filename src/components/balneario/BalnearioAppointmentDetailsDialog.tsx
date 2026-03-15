@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
-import { XIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon } from '../shared/CustomIcons';
+import { XIcon, AlertTriangleIcon, UserIcon } from '../shared/CustomIcons';
 import { ClipboardList, Save } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
@@ -406,24 +406,30 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-2 pt-4 pb-2 border-t border-gray-100 dark:border-gray-800">
                         {(appointment.status === 'scheduled' || appointment.status === 'warning') && (
-                            <div className="grid grid-cols-2 gap-3 mb-2">
+                            <div className="space-y-3 mb-2">
                                 <Button
                                     onClick={handleStartAppointment}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
                                 >
-                                    <div className="flex flex-col items-center gap-1">
-                                        <CheckCircleIcon className="w-5 h-5 mb-1" />
-                                        Compareceu
-                                    </div>
+                                    Compareceu
                                 </Button>
 
-                                <Button
-                                    onClick={handleNoShowAppointment}
-                                    variant="warning"
-                                    className="font-medium py-6 h-auto"
-                                >
-                                    Faltou
-                                </Button>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleCancelAppointment}
+                                        className="w-full h-11"
+                                    >
+                                        Cancelar Marcação
+                                    </Button>
+                                    <Button
+                                        onClick={handleNoShowAppointment}
+                                        variant="warning"
+                                        className="w-full h-11 font-medium"
+                                    >
+                                        Faltou
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -436,15 +442,6 @@ export function BalnearioAppointmentDetailsDialog({
                             </Button>
                         )}
 
-                        {(appointment.status === 'scheduled' || appointment.status === 'warning') && (
-                            <Button
-                                variant="destructive"
-                                onClick={handleCancelAppointment}
-                                className="w-full"
-                            >
-                                Cancelar Marcação
-                            </Button>
-                        )}
                     </div>
                 </div>
             </DialogContent>

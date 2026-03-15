@@ -9,7 +9,7 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../shared/CustomIcons';
+import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
@@ -799,18 +799,26 @@ export function AppointmentDetailsDialog({
                 <>
                   <Button
                     onClick={handleStartAppointment}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                   >
-                    <PlayIcon className="w-4 h-4" />
                     Iniciar atendimento
                   </Button>
-                  <Button
-                    onClick={handleNoShowAppointment}
-                    variant="warning"
-                    className="w-full"
-                  >
-                    Não compareceu
-                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowCancelDialog(true)}
+                      className="w-full"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleNoShowAppointment}
+                      variant="warning"
+                      className="w-full"
+                    >
+                      Não compareceu
+                    </Button>
+                  </div>
                 </>
               )}
 
@@ -863,7 +871,7 @@ export function AppointmentDetailsDialog({
               )}
 
               {/* Botão Cancelar (comum mas condicionado) */}
-              {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'no-show' && (
+              {!isClient && appointment.status !== 'scheduled' && appointment.status !== 'warning' && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'no-show' && (
                 <Button
                   variant="destructive"
                   onClick={() => setShowCancelDialog(true)}
