@@ -1,150 +1,76 @@
 import { apiRequest } from '../core/client';
+import {
+  AtualizarEstadoRequisicaoRequest,
+  CriarMaterialCatalogoRequest,
+  CriarRequisicaoManutencaoRequest,
+  CriarRequisicaoMaterialRequest,
+  CriarRequisicaoTransporteRequest,
+  CriarTransporteCatalogoRequest,
+  MaterialCatalogo,
+  RequisicaoFilters,
+  RequisicaoResponse,
+  TransporteCatalogo,
+} from './types';
 
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'CONCLUIDA' | 'CANCELADA';
-export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
-export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
-export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
-export type TransporteCategoria = 'LIGEIRO' | 'PESADO' | 'PASSAGEIROS' | 'ADAPTADO';
-
-export interface MaterialCatalogo {
-  id: number;
-  nome: string;
-  categoria: MaterialCategoria;
-  atributo?: string;
-  valorAtributo?: string;
-  descricao?: string;
-}
-
-export interface TransporteCatalogo {
-  id: number;
-  tipo?: string;
-  categoria?: TransporteCategoria;
-  matricula?: string;
-  marca?: string;
-  modelo?: string;
-  lotacao?: number;
-  dataMatricula?: string;
-}
-
-export interface RequisicaoResponse {
-  id: number;
-  tipo: RequisicaoTipo;
-  prioridade: RequisicaoPrioridade;
-  estado: RequisicaoEstado;
-  descricao: string;
-  criadoEm?: string;
-  ultimaAlteracaoEstadoEm?: string;
-  tempoLimite?: string;
-  criadoPor?: { id?: number; nome?: string };
-  geridoPor?: { id?: number; nome?: string };
-  itens?: Array<{ material?: MaterialCatalogo; quantidade?: number }>;
-  material?: { id?: number; nome?: string };
-  quantidade?: number;
-  transporte?: { id?: number; nome?: string };
-  assunto?: string;
-}
-
-interface ProcurarParams {
-  estado?: RequisicaoEstado;
-  tipo?: RequisicaoTipo;
-  prioridade?: RequisicaoPrioridade;
-  criadoPorNome?: string;
-  geridoPorNome?: string;
-}
-
-interface CriarRequisicaoBase {
-  descricao: string;
-  prioridade: RequisicaoPrioridade;
-  tempoLimite?: string;
-  criadoPorId: number;
-}
-
-interface CriarRequisicaoMaterial extends CriarRequisicaoBase {
-  itens: Array<{ materialId: number; quantidade: number }>;
-}
-
-interface CriarRequisicaoTransporte extends CriarRequisicaoBase {
-  transporteId: number;
-}
-
-interface CriarRequisicaoManutencao extends CriarRequisicaoBase {
-  assunto?: string;
-}
+const toQueryString = (filters: RequisicaoFilters = {}): string => {
+  const params = new URLSearchParams();
+  if (filters.estado) params.append('estado', filters.estado);
+  if (filters.tipo) params.append('tipo', filters.tipo);
+  if (filters.prioridade) params.append('prioridade', filters.prioridade);
+  if (filters.criadoPorNome) params.append('criadoPorNome', filters.criadoPorNome);
+  if (filters.geridoPorNome) params.append('geridoPorNome', filters.geridoPorNome);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+};
 
 export const requisicoesApi = {
-  procurar: async (params: ProcurarParams): Promise<RequisicaoResponse[]> => {
-    const query = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        query.set(key, String(value));
-      }
-    });
-
-    const suffix = query.toString() ? `?${query.toString()}` : '';
-    return apiRequest<RequisicaoResponse[]>(`/api/requisicoes/procurar${suffix}`, { method: 'GET' });
+  listar: (estado?: string) => {
+    const query = estado ? `?estado=${estado}` : '';
+    return apiRequest<RequisicaoResponse[]>(`/api/requisicoes${query}`);
   },
 
-  listarMateriais: async (): Promise<MaterialCatalogo[]> => {
-    return apiRequest<MaterialCatalogo[]>('/api/requisicoes/materiais', { method: 'GET' });
-  },
+  procurar: (filters: RequisicaoFilters = {}) =>
+    apiRequest<RequisicaoResponse[]>(`/api/requisicoes/procurar${toQueryString(filters)}`),
 
-  criarMaterialCatalogo: async (payload: {
-    nome: string;
-    descricao?: string;
-    categoria: MaterialCategoria;
-    atributo: string;
-    valorAtributo: string;
-  }): Promise<MaterialCatalogo> => {
-    return apiRequest<MaterialCatalogo>('/api/requisicoes/materiais', {
+  obterPorId: (id: number) => apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}`),
+
+  listarMateriais: () => apiRequest<MaterialCatalogo[]>('/api/requisicoes/materiais'),
+
+  criarMaterialCatalogo: (payload: CriarMaterialCatalogoRequest) =>
+    apiRequest<MaterialCatalogo>('/api/requisicoes/materiais', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 
-  listarTransportes: async (): Promise<TransporteCatalogo[]> => {
-    return apiRequest<TransporteCatalogo[]>('/api/requisicoes/transportes', { method: 'GET' });
-  },
+  listarTransportes: () => apiRequest<TransporteCatalogo[]>('/api/requisicoes/transportes'),
 
-  criarTransporteCatalogo: async (payload: {
-    tipo: string;
-    categoria: TransporteCategoria;
-    matricula: string;
-    marca?: string;
-    modelo?: string;
-    lotacao?: number;
-    dataMatricula?: string;
-  }): Promise<TransporteCatalogo> => {
-    return apiRequest<TransporteCatalogo>('/api/requisicoes/transportes', {
+  criarTransporteCatalogo: (payload: CriarTransporteCatalogoRequest) =>
+    apiRequest<TransporteCatalogo>('/api/requisicoes/transportes', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 
-  criarMaterial: async (payload: CriarRequisicaoMaterial): Promise<RequisicaoResponse> => {
-    return apiRequest<RequisicaoResponse>('/api/requisicoes/material', {
+  criarMaterial: (payload: CriarRequisicaoMaterialRequest) =>
+    apiRequest<RequisicaoResponse>('/api/requisicoes/material', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 
-  criarTransporte: async (payload: CriarRequisicaoTransporte): Promise<RequisicaoResponse> => {
-    return apiRequest<RequisicaoResponse>('/api/requisicoes/transporte', {
+  criarTransporte: (payload: CriarRequisicaoTransporteRequest) =>
+    apiRequest<RequisicaoResponse>('/api/requisicoes/transporte', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 
-  criarManutencao: async (payload: CriarRequisicaoManutencao): Promise<RequisicaoResponse> => {
-    return apiRequest<RequisicaoResponse>('/api/requisicoes/manutencao', {
+  criarManutencao: (payload: CriarRequisicaoManutencaoRequest) =>
+    apiRequest<RequisicaoResponse>('/api/requisicoes/manutencao', {
       method: 'POST',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 
-  atualizarEstado: async (id: number, payload: { estado: RequisicaoEstado }): Promise<RequisicaoResponse> => {
-    return apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}/estado`, {
+  atualizarEstado: (id: number, payload: AtualizarEstadoRequisicaoRequest) =>
+    apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}/estado`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    });
-  },
+    }),
 };

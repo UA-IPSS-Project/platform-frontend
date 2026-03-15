@@ -66,6 +66,12 @@ export async function apiRequest<T>(
         if (!response.ok) {
             let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
 
+            if (response.status === 401) {
+                errorMessage = 'Sessão expirada ou inválida. Inicie sessão novamente.';
+            } else if (response.status === 403) {
+                errorMessage = 'Acesso negado ou token de segurança inválido. Atualize a sessão.';
+            }
+
             try {
                 const text = await response.text();
 
@@ -92,12 +98,14 @@ export async function apiRequest<T>(
                     // If not JSON, try to use text content if it's short
                     if (text && text.length < 200) {
                         errorMessage = text;
-                    } else {
+                    } else if (![401, 403].includes(response.status)) {
                         errorMessage = `Erro ${response.status}: Não foi possível processar a resposta do servidor.`;
                     }
                 }
             } catch {
-                errorMessage = `Erro de conexão (${response.status})`;
+                if (![401, 403].includes(response.status)) {
+                    errorMessage = `Erro de conexão (${response.status})`;
+                }
             }
 
             console.error(`API Error: ${config.method || 'GET'} ${url} - ${errorMessage}`);

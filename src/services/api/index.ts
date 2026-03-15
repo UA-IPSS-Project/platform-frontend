@@ -23,3 +23,4 @@ export * from './notificacoes/notificationsApi';
 export * from './notificacoes/types';
 
 export * from './requisicoes/requisicoesApi';
+export * from './requisicoes/types';

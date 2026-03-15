@@ -19,7 +19,7 @@ import {
   TransporteCatalogo,
   TransporteCategoria,
   requisicoesApi,
-} from '../../services/api/requisicoes/requisicoesApi';
+} from '../../services/api';
 
 interface SecretaryRequisitionsPageProps {
   isDarkMode: boolean;
