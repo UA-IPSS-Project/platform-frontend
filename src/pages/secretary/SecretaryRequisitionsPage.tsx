@@ -143,7 +143,7 @@ export function SecretaryRequisitionsPage({
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
   const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
-  const [materialCategoriaAtiva, setMaterialCategoriaAtiva] = useState<MaterialCategoria | null>('ESCRITA');
+  const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
   const [transporteId, setTransporteId] = useState('');
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
@@ -234,22 +234,6 @@ export function SecretaryRequisitionsPage({
     };
   }, []);
 
-  const categoriasComMateriais = useMemo(
-    () => MATERIAL_CATEGORIA_OPTIONS.filter((option) => materiais.some((material) => material.categoria === option.value)),
-    [materiais],
-  );
-
-  useEffect(() => {
-    if (categoriasComMateriais.length === 0) {
-      setMaterialCategoriaAtiva(null);
-      return;
-    }
-
-    if (!materialCategoriaAtiva || !categoriasComMateriais.some((categoria) => categoria.value === materialCategoriaAtiva)) {
-      setMaterialCategoriaAtiva(categoriasComMateriais[0].value);
-    }
-  }, [categoriasComMateriais, materialCategoriaAtiva]);
-
   const materiaisPorCategoria = useMemo(() => {
     const map = new Map<MaterialCategoria, MaterialItemGroup[]>();
 
@@ -297,7 +281,6 @@ export function SecretaryRequisitionsPage({
       });
       toast.success('Material criado com sucesso.');
       setMateriais((prev) => [...prev, novoMaterial]);
-      setMaterialCategoriaAtiva(novoMaterial.categoria);
       setNovoMaterialNome('');
       setNovoMaterialDescricao('');
       setNovoMaterialCategoria('OUTROS');
@@ -352,6 +335,10 @@ export function SecretaryRequisitionsPage({
 
   const toggleItemExpansion = (itemKey: string) => {
     setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: !prev[itemKey] }));
+  };
+
+  const toggleCategoriaExpansion = (categoria: MaterialCategoria) => {
+    setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
   };
 
   const toggleVariante = (materialId: number, checked: boolean) => {
@@ -625,21 +612,33 @@ export function SecretaryRequisitionsPage({
                 <div className="space-y-2">
                   {MATERIAL_CATEGORIA_OPTIONS.map((categoria) => {
                     const itemsCategoria = materiaisPorCategoria.get(categoria.value) ?? [];
+                    const isCategoriaExpanded = expandedMaterialCategorias[categoria.value] ?? false;
 
                     return (
                       <div
                         key={categoria.value}
                         className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60"
                       >
-                        <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                        <button
+                          type="button"
+                          onClick={() => toggleCategoriaExpansion(categoria.value)}
+                          className="w-full px-3 py-2 flex items-center justify-between text-left"
+                        >
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                             {categoria.label}
                             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({itemsCategoria.length})</span>
                           </p>
-                        </div>
+                          {isCategoriaExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
 
-                        {itemsCategoria.length === 0 ? (
-                          <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">Sem itens nesta categoria.</p>
+                        {isCategoriaExpanded && (itemsCategoria.length === 0 ? (
+                          <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                            Sem itens nesta categoria.
+                          </p>
                         ) : (
                           <div className="p-3 space-y-3">
                             {itemsCategoria.map((item) => {
@@ -709,7 +708,7 @@ export function SecretaryRequisitionsPage({
                               );
                             })}
                           </div>
-                        )}
+                        ))}
                       </div>
                     );
                   })}
