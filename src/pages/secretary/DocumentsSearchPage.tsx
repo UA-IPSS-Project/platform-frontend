@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { DatePickerField } from '../../components/ui/date-picker-field';
 import { GlassCard } from '../../components/ui/glass-card';
 import { ChevronLeftIcon, DownloadIcon, FileTextIcon } from '../../components/shared/CustomIcons';
 import { documentosApi, DocumentoDTO } from '../../services/api';
@@ -175,20 +176,12 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
 
           <div>
             <label className="text-sm text-gray-600 dark:text-gray-300">Desde</label>
-            <Input
-              type="date"
-              value={desde}
-              onChange={(e) => setDesde(e.target.value)}
-            />
+            <DatePickerField value={desde} onChange={setDesde} buttonClassName="mt-1" />
           </div>
 
           <div>
             <label className="text-sm text-gray-600 dark:text-gray-300">Até</label>
-            <Input
-              type="date"
-              value={ate}
-              onChange={(e) => setAte(e.target.value)}
-            />
+            <DatePickerField value={ate} onChange={setAte} buttonClassName="mt-1" />
           </div>
         </div>
 

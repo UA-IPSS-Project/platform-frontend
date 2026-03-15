@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { DatePickerField, formatDateInput, parseDateInput } from '../components/ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
@@ -383,23 +384,10 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="md:col-span-1">
             <label className="text-xs text-gray-500 mb-1 ml-1 block">A partir de</label>
-            <Input
-              type="date"
-              value={startDate ? startDate.toISOString().split('T')[0] : ''}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (!val) {
-                  onDateChange(null, endDate);
-                  return;
-                }
-                const d = new Date(val);
-                if (!isNaN(d.getTime())) {
-                  onDateChange(d, endDate);
-                } else {
-                  console.warn('[HistoryPage] Invalid start date:', val);
-                }
-              }}
-              className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+            <DatePickerField
+              value={startDate ? formatDateInput(startDate) : ''}
+              onChange={(value) => onDateChange(parseDateInput(value) ?? null, endDate)}
+              buttonClassName={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
             />
           </div>
 

@@ -8,6 +8,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
+import { DatePickerField } from '../ui/date-picker-field';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -209,9 +210,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         if (!formData.birthDate) {
             newErrors.birthDate = 'Data de nascimento é obrigatória';
         } else {
-            const birthVal = validateBirthDate(formData.birthDate); // Expects dd/mm/yyyy usually, but input date is yyyy-mm-dd
-            // The input type="date" gives YYYY-MM-DD. functional validation expects dd/mm/yyyy
-            // Let's adapt or ensure we pass what it expects.
+            // O calendário guarda YYYY-MM-DD, mas a validação funcional espera dd/mm/yyyy.
             // validateBirthDate expects dd/mm/yyyy.
             const [y, m, d] = formData.birthDate.split('-');
             const formattedDate = `${d}/${m}/${y}`;
@@ -470,14 +469,13 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                                     <div className="space-y-2">
                                         <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Data de Nascimento *</Label>
-                                        <Input
-                                            type="date"
-                                            className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
+                                        <DatePickerField
                                             value={formData.birthDate}
-                                            onChange={e => {
-                                                setFormData({ ...formData, birthDate: e.target.value });
+                                            onChange={(value) => {
+                                                setFormData({ ...formData, birthDate: value });
                                                 if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
                                             }}
+                                            buttonClassName={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
                                         />
                                         {errors.birthDate && <p className="text-red-500 text-xs">{errors.birthDate}</p>}
                                     </div>

@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
+import { DatePickerField } from '../../components/ui/date-picker-field';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -1237,7 +1238,12 @@ export function SecretaryRequisitionsPage({
 
               <div>
                 <label htmlFor="novo-transporte-data-matricula" className="text-sm text-gray-600 dark:text-gray-300">Data matrícula (opcional)</label>
-                <Input id="novo-transporte-data-matricula" type="date" value={novoTransporteDataMatricula} onChange={(e) => setNovoTransporteDataMatricula(e.target.value)} />
+                <DatePickerField
+                  id="novo-transporte-data-matricula"
+                  value={novoTransporteDataMatricula}
+                  onChange={setNovoTransporteDataMatricula}
+                  buttonClassName="mt-1"
+                />
               </div>
             </div>
 
