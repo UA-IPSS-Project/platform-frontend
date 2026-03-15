@@ -247,6 +247,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('requisitions')}
       />
 
       <NavDropdown

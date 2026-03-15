@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
@@ -91,14 +92,25 @@ const formatMaterialItemLabel = (
   return `${materialLabel}${categoria}${detalhe} (x${quantidade ?? 0})`;
 };
 
-let materialLinhaCounter = 0;
+type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
+
 const createEmptyMaterialLinha = () => ({
-  rowId: `material-row-${++materialLinhaCounter}`,
+  rowId:
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? `material-row-${crypto.randomUUID()}`
+      : `material-row-${Math.random().toString(36).slice(2)}`,
   materialId: '',
   quantidade: '1',
 });
 
 const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
+
+type MaterialItemGroup = {
+  itemKey: string;
+  nome: string;
+  categoria: MaterialCategoria;
+  variantes: MaterialCatalogo[];
+};
 
 export function SecretaryRequisitionsPage({
   isDarkMode,
@@ -109,10 +121,11 @@ export function SecretaryRequisitionsPage({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
+  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
+  const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('ENVIADA');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [createTransporteDialogOpen, setCreateTransporteDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
@@ -133,10 +146,8 @@ export function SecretaryRequisitionsPage({
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
-  const [materialCategoriaAtiva, setMaterialCategoriaAtiva] = useState<MaterialCategoria | null>('ESCRITA');
-  const [materialAdicionarNome, setMaterialAdicionarNome] = useState('');
-  const [materialAdicionarVarianteId, setMaterialAdicionarVarianteId] = useState('');
-  const [materialAdicionarQuantidade, setMaterialAdicionarQuantidade] = useState('1');
+  const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
+  const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
   const [transporteId, setTransporteId] = useState('');
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
@@ -216,61 +227,42 @@ export function SecretaryRequisitionsPage({
   };
 
   useEffect(() => {
-    if (createDialogOpen) {
-      fetchCatalogo();
-    }
-  }, [createDialogOpen]);
-
-  const categoriasComMateriais = useMemo(
-    () => MATERIAL_CATEGORIA_OPTIONS.filter((option) => materiais.some((material) => material.categoria === option.value)),
-    [materiais],
-  );
+    fetchCatalogo();
+  }, []);
 
   useEffect(() => {
-    if (categoriasComMateriais.length === 0) {
-      setMaterialCategoriaAtiva(null);
-      return;
-    }
+    return () => {
+      if (sectionSwitchTimeoutRef.current) {
+        window.clearTimeout(sectionSwitchTimeoutRef.current);
+      }
+    };
+  }, []);
 
-    if (!materialCategoriaAtiva || !categoriasComMateriais.some((categoria) => categoria.value === materialCategoriaAtiva)) {
-      setMaterialCategoriaAtiva(categoriasComMateriais[0].value);
-    }
-  }, [categoriasComMateriais, materialCategoriaAtiva]);
+  const materiaisPorCategoria = useMemo(() => {
+    const map = new Map<MaterialCategoria, MaterialItemGroup[]>();
 
-  const materiaisCategoriaAtiva = useMemo(
-    () => (materialCategoriaAtiva ? materiais.filter((material) => material.categoria === materialCategoriaAtiva) : []),
-    [materiais, materialCategoriaAtiva],
-  );
+    MATERIAL_CATEGORIA_OPTIONS.forEach((categoria) => {
+      const materiaisCategoria = materiais.filter((material) => material.categoria === categoria.value);
+      const byNome = new Map<string, MaterialCatalogo[]>();
 
-  const opcoesNomeMaterial = useMemo(() => {
-    const nomes = materiaisCategoriaAtiva.map((material) => material.nome.trim()).filter(Boolean);
-    return Array.from(new Set(nomes));
-  }, [materiaisCategoriaAtiva]);
+      materiaisCategoria.forEach((material) => {
+        const nomeKey = normalizarTexto(material.nome) || String(material.id);
+        const existentes = byNome.get(nomeKey) ?? [];
+        byNome.set(nomeKey, [...existentes, material]);
+      });
 
-  const variantesMaterialSelecionado = useMemo(
-    () => materiaisCategoriaAtiva.filter((material) => normalizarTexto(material.nome) === normalizarTexto(materialAdicionarNome)),
-    [materiaisCategoriaAtiva, materialAdicionarNome],
-  );
+      const grupos = Array.from(byNome.entries()).map(([nomeKey, variantes]) => ({
+        itemKey: `${categoria.value}:${nomeKey}`,
+        nome: variantes[0]?.nome ?? 'Material',
+        categoria: categoria.value,
+        variantes,
+      }));
 
-  const materialAdicionarId = useMemo(() => {
-    if (!materialAdicionarNome) {
-      return '';
-    }
-    if (variantesMaterialSelecionado.length <= 1) {
-      return variantesMaterialSelecionado[0] ? String(variantesMaterialSelecionado[0].id) : '';
-    }
-    return materialAdicionarVarianteId;
-  }, [materialAdicionarNome, materialAdicionarVarianteId, variantesMaterialSelecionado]);
+      map.set(categoria.value, grupos);
+    });
 
-  useEffect(() => {
-    setMaterialAdicionarNome('');
-    setMaterialAdicionarVarianteId('');
-    setMaterialAdicionarQuantidade('1');
-  }, [materialCategoriaAtiva]);
-
-  useEffect(() => {
-    setMaterialAdicionarVarianteId('');
-  }, [materialAdicionarNome]);
+    return map;
+  }, [materiais]);
 
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
@@ -293,9 +285,6 @@ export function SecretaryRequisitionsPage({
       });
       toast.success('Material criado com sucesso.');
       setMateriais((prev) => [...prev, novoMaterial]);
-      setMaterialCategoriaAtiva(novoMaterial.categoria);
-      setMaterialAdicionarNome(novoMaterial.nome);
-      setMaterialAdicionarVarianteId(String(novoMaterial.id));
       setNovoMaterialNome('');
       setNovoMaterialDescricao('');
       setNovoMaterialCategoria('OUTROS');
@@ -344,53 +333,77 @@ export function SecretaryRequisitionsPage({
     }
   };
 
-  const handleAddMaterialLinha = () => {
-    if (!materialAdicionarNome || Number(materialAdicionarQuantidade) < 1) {
-      toast.error('Selecione um material e uma quantidade válida.');
-      return;
-    }
-
-    if (variantesMaterialSelecionado.length > 1 && !materialAdicionarVarianteId) {
-      toast.error('Selecione o atributo do material antes de adicionar.');
-      return;
-    }
-
-    if (!materialAdicionarId) {
-      toast.error('Selecione um material válido.');
-      return;
-    }
-
-    const existing = materialLinhas.find((item) => item.materialId === materialAdicionarId);
-    if (existing) {
-      setMaterialLinhas((prev) =>
-        prev.map((item) =>
-          item.materialId === materialAdicionarId
-            ? { ...item, quantidade: materialAdicionarQuantidade }
-            : item,
-        ),
-      );
-      toast.info('Quantidade do material atualizada.');
-      setMaterialAdicionarNome('');
-      setMaterialAdicionarVarianteId('');
-      setMaterialAdicionarQuantidade('1');
-      return;
-    }
-
-    setMaterialLinhas((prev) => [
-      ...prev,
-      {
-        ...createEmptyMaterialLinha(),
-        materialId: materialAdicionarId,
-        quantidade: materialAdicionarQuantidade,
-      },
-    ]);
-    setMaterialAdicionarNome('');
-    setMaterialAdicionarVarianteId('');
-    setMaterialAdicionarQuantidade('1');
-  };
-
   const handleRemoveMaterialLinha = (rowId: string) => {
     setMaterialLinhas((prev) => prev.filter((item) => item.rowId !== rowId));
+  };
+
+  const toggleItemAttributesVisibility = (itemKey: string) => {
+    setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+  };
+
+  const toggleCategoriaExpansion = (categoria: MaterialCategoria) => {
+    setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  };
+
+  const toggleVariante = (materialId: number, checked: boolean) => {
+    setMaterialLinhas((prev) => {
+      const materialIdStr = String(materialId);
+      const existing = prev.find((item) => item.materialId === materialIdStr);
+
+      if (checked) {
+        if (existing) return prev;
+        return [...prev, { ...createEmptyMaterialLinha(), materialId: materialIdStr, quantidade: '1' }];
+      }
+
+      return prev.filter((item) => item.materialId !== materialIdStr);
+    });
+  };
+
+  const handleItemToggle = (item: MaterialItemGroup, checked: boolean) => {
+    if (checked) {
+      setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
+      if (item.variantes.length === 1) {
+        toggleVariante(item.variantes[0].id, true);
+      }
+      return;
+    }
+
+    setExpandedMaterialItems((prev) => {
+      const next = { ...prev };
+      delete next[item.itemKey];
+      return next;
+    });
+
+    setMaterialLinhas((prev) => {
+      const ids = new Set(item.variantes.map((variante) => String(variante.id)));
+      return prev.filter((linha) => !ids.has(linha.materialId));
+    });
+  };
+
+  const updateVarianteQuantidade = (materialId: number, quantidade: string) => {
+    if (!quantidade) return;
+
+    const valor = Number(quantidade);
+    if (!Number.isFinite(valor) || valor < 1) return;
+
+    setMaterialLinhas((prev) =>
+      prev.map((linha) =>
+        linha.materialId === String(materialId)
+          ? { ...linha, quantidade }
+          : linha,
+      ),
+    );
+  };
+
+  const handleResetCreateForm = () => {
+    setDescricao('');
+    setTempoLimite(undefined);
+    setMaterialLinhas([]);
+    setTransporteId('');
+    setAssunto('');
+    setExpandedMaterialItems({});
+    setTipo(initialTipo ?? 'MANUTENCAO');
+    setPrioridade(initialPrioridade ?? 'MEDIA');
   };
 
   const handleCreate = async () => {
@@ -452,15 +465,8 @@ export function SecretaryRequisitionsPage({
       if (tipo !== 'MATERIAL') {
         toast.success('Requisição criada com sucesso.');
       }
-      setDescricao('');
-      setTempoLimite(undefined);
-      setMaterialLinhas([]);
-      setMaterialAdicionarNome('');
-      setMaterialAdicionarVarianteId('');
-      setMaterialAdicionarQuantidade('1');
-      setTransporteId('');
-      setAssunto('');
-      setCreateDialogOpen(false);
+      handleResetCreateForm();
+      setActiveSection('list');
       await fetchRequisicoes();
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao criar requisição.');
@@ -504,6 +510,42 @@ export function SecretaryRequisitionsPage({
     return `${total} requisição(ões) · ${urgentes} urgente(s)`;
   }, [requisicoes]);
 
+  const materiaisAdicionadosAgrupados = useMemo(() => {
+    const grupos = new Map<MaterialCategoria, Array<{
+      rowId: string;
+      descricao: string;
+      quantidade: string;
+    }>>();
+
+    materialLinhas.forEach((linha) => {
+      const material = materiais.find((item) => String(item.id) === linha.materialId);
+      const categoria = material?.categoria ?? 'OUTROS';
+      const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
+      const grupoAtual = grupos.get(categoria) ?? [];
+
+      grupoAtual.push({
+        rowId: linha.rowId,
+        descricao,
+        quantidade: linha.quantidade,
+      });
+
+      grupos.set(categoria, grupoAtual);
+    });
+
+    return MATERIAL_CATEGORIA_OPTIONS
+      .map((categoria) => ({
+        categoria: categoria.value,
+        label: categoria.label,
+        itens: grupos.get(categoria.value) ?? [],
+      }))
+      .filter((grupo) => grupo.itens.length > 0);
+  }, [materiais, materialLinhas]);
+
+  const materiaisAdicionadosTotal = useMemo(
+    () => materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
+    [materialLinhas],
+  );
+
   const selectedRequisicao = useMemo(
     () => requisicoes.find((item) => item.id === openedRequisicaoId) ?? null,
     [requisicoes, openedRequisicaoId],
@@ -511,22 +553,361 @@ export function SecretaryRequisitionsPage({
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
 
+  const toggleSection = (targetSection: 'create' | 'list') => {
+    if (sectionSwitchTimeoutRef.current) {
+      window.clearTimeout(sectionSwitchTimeoutRef.current);
+      sectionSwitchTimeoutRef.current = null;
+    }
+
+    if (activeSection === targetSection) {
+      const oppositeSection = targetSection === 'create' ? 'list' : 'create';
+      setActiveSection(null);
+      sectionSwitchTimeoutRef.current = window.setTimeout(() => {
+        setActiveSection(oppositeSection);
+        sectionSwitchTimeoutRef.current = null;
+      }, 140);
+      return;
+    }
+
+    setActiveSection(targetSection);
+  };
+
+  const createFormContent = (
+    <div className="space-y-5">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Dados principais</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
+            <select
+              id="req-create-tipo"
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
+              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+            >
+              {TIPO_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <select
+              id="req-create-prioridade"
+              value={prioridade}
+              onChange={(e) => setPrioridade(e.target.value as RequisicaoPrioridade)}
+              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+            >
+              {PRIORIDADE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
+            <Popover open={tempoLimitePickerOpen} onOpenChange={setTempoLimitePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full mt-1 justify-between"
+                >
+                  {tempoLimite ? formatDatePt(tempoLimite) : 'Selecionar data'}
+                  <CalendarIcon className="w-4 h-4 opacity-70" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
+                <Calendar
+                  mode="single"
+                  selected={tempoLimite}
+                  month={tempoLimite ?? new Date()}
+                  onSelect={(date) => {
+                    setTempoLimite(date);
+                    if (date) setTempoLimitePickerOpen(false);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
+          <Textarea id="req-create-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalhes por tipo</h3>
+
+        <div>
+          {tipo === 'MATERIAL' && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Selecionar materiais</p>
+                  <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
+                    Novo material
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {MATERIAL_CATEGORIA_OPTIONS.map((categoria) => {
+                    const itemsCategoria = materiaisPorCategoria.get(categoria.value) ?? [];
+                    const isCategoriaExpanded = expandedMaterialCategorias[categoria.value] ?? false;
+
+                    return (
+                      <div
+                        key={categoria.value}
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => toggleCategoriaExpansion(categoria.value)}
+                          className="w-full px-3 py-2 flex items-center justify-between text-left"
+                        >
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            {categoria.label}
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({itemsCategoria.length})</span>
+                          </p>
+                          {isCategoriaExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
+
+                        {isCategoriaExpanded && (itemsCategoria.length === 0 ? (
+                          <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+                            Sem itens nesta categoria.
+                          </p>
+                        ) : (
+                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
+                            {itemsCategoria.map((item) => {
+                              const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
+                              const selectedCount = item.variantes.filter((variante) =>
+                                materialLinhas.some((linha) => linha.materialId === String(variante.id)),
+                              ).length;
+                              const itemChecked = selectedCount > 0 || hasPendingSelection;
+                              const isExpanded = itemChecked && expandedMaterialItems[item.itemKey] !== false;
+
+                              return (
+                                <div key={item.itemKey} className="space-y-2 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div
+                                      role="button"
+                                      tabIndex={0}
+                                      className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-1 -mx-1 text-sm text-gray-700 dark:text-gray-200 cursor-pointer text-left hover:bg-gray-100/60 dark:hover:bg-gray-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/40"
+                                      onClick={() => handleItemToggle(item, !itemChecked)}
+                                      onKeyDown={(event) => {
+                                        if (event.key === 'Enter' || event.key === ' ') {
+                                          event.preventDefault();
+                                          handleItemToggle(item, !itemChecked);
+                                        }
+                                      }}
+                                      aria-pressed={itemChecked}
+                                    >
+                                      <Checkbox
+                                        checked={itemChecked}
+                                        className="pointer-events-none"
+                                      />
+                                      <span className="truncate" title={item.nome}>{item.nome}</span>
+                                    </div>
+
+                                    {itemChecked && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="h-7 px-2 text-xs"
+                                        onClick={() => toggleItemAttributesVisibility(item.itemKey)}
+                                      >
+                                        {isExpanded ? 'Ocultar atributos' : 'Mostrar atributos'}
+                                      </Button>
+                                    )}
+                                  </div>
+
+                                  {isExpanded && (
+                                    <div className="pl-6 space-y-2 rounded-md border border-gray-200/70 dark:border-gray-700/70 bg-gray-50/70 dark:bg-gray-800/40 p-2">
+                                      {item.variantes.map((variante) => {
+                                        const checked = materialLinhas.some((linha) => linha.materialId === String(variante.id));
+                                        const linhaSelecionada = materialLinhas.find((linha) => linha.materialId === String(variante.id));
+                                        const atributoLabel = variante.atributo && variante.valorAtributo
+                                          ? `${variante.atributo}: ${variante.valorAtributo}`
+                                          : `Variante #${variante.id}`;
+
+                                        return (
+                                          <div key={variante.id} className="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-2 items-center">
+                                            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
+                                              <Checkbox
+                                                checked={checked}
+                                                onCheckedChange={(nextChecked) => toggleVariante(variante.id, !!nextChecked)}
+                                              />
+                                              <span>{atributoLabel}</span>
+                                            </label>
+
+                                            {checked && (
+                                              <div>
+                                                <label className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
+                                                <Input
+                                                  type="number"
+                                                  min="1"
+                                                  value={linhaSelecionada?.quantidade ?? '1'}
+                                                  onChange={(event) => updateVarianteQuantidade(variante.id, event.target.value)}
+                                                />
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Materiais adicionados</p>
+
+                {materialLinhas.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não adicionaste materiais.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {materiaisAdicionadosAgrupados.map((grupo) => (
+                      <div key={grupo.categoria} className="space-y-2">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{grupo.label}</p>
+
+                        <div className="space-y-2">
+                          {grupo.itens.map((item) => (
+                            <div
+                              key={item.rowId}
+                              className="grid grid-cols-[minmax(0,1fr)_88px_auto] gap-2 items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900"
+                            >
+                              <p className="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100" title={item.descricao}>
+                                {item.descricao}
+                              </p>
+                              <p className="text-sm text-center text-gray-700 dark:text-gray-300">{item.quantidade}</p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-8 px-3"
+                                onClick={() => handleRemoveMaterialLinha(item.rowId)}
+                              >
+                                Remover
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span>Total de linhas: {materialLinhas.length}</span>
+                      <span>Total de unidades: {materiaisAdicionadosTotal}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {tipo === 'TRANSPORTE' && (
+            <div>
+              <div className="flex items-center justify-between">
+                <label htmlFor="req-create-transporte-id" className="text-sm text-gray-600 dark:text-gray-300">Transporte</label>
+                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
+                  Novo transporte
+                </Button>
+              </div>
+              <select
+                id="req-create-transporte-id"
+                value={transporteId}
+                onChange={(e) => setTransporteId(e.target.value)}
+                disabled={loadingCatalogo}
+                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              >
+                <option value="">{loadingCatalogo ? 'A carregar transportes...' : 'Selecionar transporte'}</option>
+                {transportes.map((transporte) => (
+                  <option key={transporte.id} value={transporte.id}>
+                    {(transporte.tipo || 'Transporte')} · {transporte.matricula || 'sem matrícula'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {tipo === 'MANUTENCAO' && (
+            <div>
+              <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">Assunto (opcional)</label>
+              <Input id="req-create-assunto" type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            handleResetCreateForm();
+            setActiveSection('list');
+          }}
+          disabled={submitting}
+        >
+          Fechar
+        </Button>
+        <Button onClick={handleCreate} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+          {submitting ? 'A criar...' : 'Criar requisição'}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <GlassCard className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className={`text-xl font-semibold ${headingClass}`}>Nova Requisição</h2>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700 text-white">
-            Nova requisição
-          </Button>
-        </div>
+      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
+        <button
+          onClick={() => toggleSection('create')}
+          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+        >
+          <div className="text-left">
+            <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
+            {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+          </div>
+          {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+        </button>
+
+        {activeSection === 'create' && (
+          <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
+            {createFormContent}
+          </div>
+        )}
       </GlassCard>
 
-      <GlassCard className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{summaryText}</p>
-        </div>
+      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'list' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
+        <button
+          onClick={() => toggleSection('list')}
+          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+        >
+          <div className="text-left">
+            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+          </div>
+          {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+        </button>
+
+        {activeSection === 'list' && (
+          <div className="px-5 pb-5 space-y-4">
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           <div>
@@ -627,7 +1008,7 @@ export function SecretaryRequisitionsPage({
                       Materiais:{' '}
                       {req.itens && req.itens.length > 0
                         ? req.itens
-                            .map((item) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
                             .join(', ')
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
@@ -638,6 +1019,8 @@ export function SecretaryRequisitionsPage({
 
               </div>
             ))}
+          </div>
+        )}
           </div>
         )}
       </GlassCard>
@@ -685,7 +1068,7 @@ export function SecretaryRequisitionsPage({
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
                           ? selectedRequisicao.itens
-                              .map((item) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
                               .join(', ')
                           : selectedRequisicao.material?.nome || '—'}
                       </p>
@@ -693,7 +1076,7 @@ export function SecretaryRequisitionsPage({
                       <p className="text-gray-500 dark:text-gray-400">Quantidade</p>
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                          ? selectedRequisicao.itens.reduce((sum, item) => sum + (item.quantidade || 0), 0)
+                          ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
                           : selectedRequisicao.quantidade || '—'}
                       </p>
                     </>
@@ -745,300 +1128,6 @@ export function SecretaryRequisitionsPage({
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Nova Requisição</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-5">
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Dados principais</h3>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-                <select
-                  id="req-create-tipo"
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                >
-                  {TIPO_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
-                <select
-                  id="req-create-prioridade"
-                  value={prioridade}
-                  onChange={(e) => setPrioridade(e.target.value as RequisicaoPrioridade)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                >
-                  {PRIORIDADE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
-                <Popover open={tempoLimitePickerOpen} onOpenChange={setTempoLimitePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full mt-1 justify-between"
-                    >
-                      {tempoLimite ? formatDatePt(tempoLimite) : 'Selecionar data'}
-                      <CalendarIcon className="w-4 h-4 opacity-70" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={tempoLimite}
-                      month={tempoLimite ?? new Date()}
-                      onSelect={(date) => {
-                        setTempoLimite(date);
-                        if (date) setTempoLimitePickerOpen(false);
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-              <div>
-                <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
-                <Textarea id="req-create-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalhes por tipo</h3>
-
-              <div>
-                {tipo === 'MATERIAL' && (
-                  <div className="space-y-3">
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Adicionar material</p>
-                        <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
-                          Novo material
-                        </Button>
-                      </div>
-
-                                      <div className="space-y-2">
-                                        {MATERIAL_CATEGORIA_OPTIONS.map((categoria) => {
-                                          const materiaisDaCategoria = materiais.filter((item) => item.categoria === categoria.value);
-                                          const isActive = categoria.value === materialCategoriaAtiva;
-                                          const disabled = materiaisDaCategoria.length === 0;
-
-                                          return (
-                                            <div
-                                              key={categoria.value}
-                                              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60"
-                                            >
-                                              <button
-                                                type="button"
-                                                className="w-full px-3 py-2 flex items-center justify-between text-left"
-                                                disabled={disabled}
-                                                onClick={() => setMaterialCategoriaAtiva((prev) => (prev === categoria.value ? null : categoria.value))}
-                                              >
-                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                  {categoria.label}
-                                                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                                                    ({materiaisDaCategoria.length})
-                                                  </span>
-                                                </span>
-                                                {isActive ? (
-                                                  <ChevronUp className="w-4 h-4 text-gray-500" />
-                                                ) : (
-                                                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                                                )}
-                                              </button>
-
-                                              {isActive && (
-                                                <div className="px-3 pb-3 space-y-3 border-t border-gray-200 dark:border-gray-700">
-                                                  <div className="rounded-md border border-dashed border-gray-200 dark:border-gray-700 p-3 mt-3">
-                                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                                      Materiais de {categoria.label}
-                                                    </p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                      {materiaisDaCategoria.length === 0 ? (
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">Sem materiais nesta categoria.</span>
-                                                      ) : (
-                                                        materiaisDaCategoria.map((material) => (
-                                                          <span
-                                                            key={material.id}
-                                                            className="text-xs rounded-full border border-gray-200 dark:border-gray-700 px-2 py-1 text-gray-700 dark:text-gray-200"
-                                                          >
-                                                            {material.nome} - {material.atributo}: {material.valorAtributo}
-                                                          </span>
-                                                        ))
-                                                      )}
-                                                    </div>
-                                                  </div>
-
-                                                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_120px_auto] gap-2 items-end">
-                                                    <div>
-                                                      <label htmlFor="req-create-material-add" className="text-sm text-gray-600 dark:text-gray-300">Material</label>
-                                                      <select
-                                                        id="req-create-material-add"
-                                                        value={materialAdicionarNome}
-                                                        onChange={(e) => setMaterialAdicionarNome(e.target.value)}
-                                                        disabled={loadingCatalogo}
-                                                        className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                                                      >
-                                                        <option value="">{loadingCatalogo ? 'A carregar materiais...' : 'Selecionar material da categoria'}</option>
-                                                        {opcoesNomeMaterial.map((nome) => (
-                                                          <option key={nome} value={nome}>
-                                                            {nome}
-                                                          </option>
-                                                        ))}
-                                                      </select>
-                                                    </div>
-                                                    <div>
-                                                      <label htmlFor="req-create-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">
-                                                        Atributo
-                                                      </label>
-                                                      <select
-                                                        id="req-create-material-atributo"
-                                                        value={materialAdicionarVarianteId}
-                                                        onChange={(e) => setMaterialAdicionarVarianteId(e.target.value)}
-                                                        disabled={loadingCatalogo || variantesMaterialSelecionado.length <= 1}
-                                                        className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                                                      >
-                                                        <option value="">
-                                                          {variantesMaterialSelecionado.length <= 1
-                                                            ? 'Sem seleção necessária'
-                                                            : 'Selecionar atributo'}
-                                                        </option>
-                                                        {variantesMaterialSelecionado.map((material) => (
-                                                          <option key={material.id} value={material.id}>
-                                                            {material.atributo && material.valorAtributo
-                                                              ? `${material.atributo}: ${material.valorAtributo}`
-                                                              : `Variante #${material.id}`}
-                                                          </option>
-                                                        ))}
-                                                      </select>
-                                                    </div>
-                                                    <div>
-                                                      <label htmlFor="req-create-quantidade-add" className="text-sm text-gray-600 dark:text-gray-300">Quantidade</label>
-                                                      <Input
-                                                        id="req-create-quantidade-add"
-                                                        type="number"
-                                                        min="1"
-                                                        value={materialAdicionarQuantidade}
-                                                        onChange={(e) => setMaterialAdicionarQuantidade(e.target.value)}
-                                                      />
-                                                    </div>
-                                                    <Button type="button" variant="outline" className="h-10 px-3" onClick={handleAddMaterialLinha}>
-                                                      Adicionar
-                                                    </Button>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Materiais adicionados</p>
-
-                      {materialLinhas.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não adicionaste materiais.</p>
-                      ) : (
-                        materialLinhas.map((linha, index) => {
-                          const material = materiais.find((item) => String(item.id) === linha.materialId);
-                          return (
-                            <div key={linha.rowId} className="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-2 items-end">
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Material {index + 1}</p>
-                                <p className="h-10 mt-1 flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-                                  {material?.nome || 'Material removido'}
-                                </p>
-                                {material && (
-                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    {formatMaterialCategoria(material.categoria)} - {material.atributo}: {material.valorAtributo}
-                                  </p>
-                                )}
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">Quantidade</p>
-                                <p className="h-10 mt-1 flex items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900">
-                                  {linha.quantidade}
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-10 px-3"
-                                onClick={() => handleRemoveMaterialLinha(linha.rowId)}
-                              >
-                                Remover
-                              </Button>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {tipo === 'TRANSPORTE' && (
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="req-create-transporte-id" className="text-sm text-gray-600 dark:text-gray-300">Transporte</label>
-                      <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
-                        Novo transporte
-                      </Button>
-                    </div>
-                    <select
-                      id="req-create-transporte-id"
-                      value={transporteId}
-                      onChange={(e) => setTransporteId(e.target.value)}
-                      disabled={loadingCatalogo}
-                      className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-                    >
-                      <option value="">{loadingCatalogo ? 'A carregar transportes...' : 'Selecionar transporte'}</option>
-                      {transportes.map((transporte) => (
-                        <option key={transporte.id} value={transporte.id}>
-                          {(transporte.tipo || 'Transporte')} · {transporte.matricula || 'sem matrícula'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {tipo === 'MANUTENCAO' && (
-                  <div>
-                    <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">Assunto (opcional)</label>
-                    <Input id="req-create-assunto" type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={submitting}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreate} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {submitting ? 'A criar...' : 'Criar requisição'}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

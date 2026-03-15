@@ -64,6 +64,7 @@ export async function apiRequest<T>(
 
         // Check if response is ok
         if (!response.ok) {
+            const isAuthError = response.status === 401 || response.status === 403;
             let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
 
             if (response.status === 401) {
@@ -79,7 +80,7 @@ export async function apiRequest<T>(
                     // Try to parse as JSON
                     const errorData = JSON.parse(text);
 
-                    if (errorData.message) {
+                    if (errorData.message && !isAuthError) {
                         errorMessage = errorData.message;
 
                         // Handle validation errors specifically
@@ -90,20 +91,20 @@ export async function apiRequest<T>(
                             }
                         }
                     }
-                    else if (errorData.error) {
+                    else if (errorData.error && !isAuthError) {
                         // Legacy/Fallback error field
                         errorMessage = errorData.error;
                     }
                 } catch {
                     // If not JSON, try to use text content if it's short
-                    if (text && text.length < 200) {
+                    if (text && text.length < 200 && !isAuthError) {
                         errorMessage = text;
-                    } else if (![401, 403].includes(response.status)) {
+                    } else if (!isAuthError) {
                         errorMessage = `Erro ${response.status}: Não foi possível processar a resposta do servidor.`;
                     }
                 }
             } catch {
-                if (![401, 403].includes(response.status)) {
+                if (!isAuthError) {
                     errorMessage = `Erro de conexão (${response.status})`;
                 }
             }

@@ -7,6 +7,7 @@ import {
   CriarRequisicaoTransporteRequest,
   CriarTransporteCatalogoRequest,
   MaterialCatalogo,
+  RequisicaoEstado,
   RequisicaoFilters,
   RequisicaoResponse,
   TransporteCatalogo,
@@ -24,8 +25,8 @@ const toQueryString = (filters: RequisicaoFilters = {}): string => {
 };
 
 export const requisicoesApi = {
-  listar: (estado?: string) => {
-    const query = estado ? `?estado=${estado}` : '';
+  listar: (estado?: RequisicaoEstado) => {
+    const query = toQueryString(estado ? { estado } : {});
     return apiRequest<RequisicaoResponse[]>(`/api/requisicoes${query}`);
   },
 
