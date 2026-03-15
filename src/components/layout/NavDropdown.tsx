@@ -61,16 +61,19 @@ export function NavDropdown({ label, items, isActive, onSelect, onLabelClick, cl
           ? 'bg-purple-600 hover:bg-purple-700 text-white'
           : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
-        onClick={() => {
-          if (onLabelClick) {
+        onClick={() => setIsOpen((prev) => !prev)}
+      >
+        <span
+          className={onLabelClick ? 'cursor-pointer' : undefined}
+          onClick={(event) => {
+            if (!onLabelClick) return;
+            event.stopPropagation();
             onLabelClick();
             setIsOpen(false);
-            return;
-          }
-          setIsOpen(!isOpen);
-        }}
-      >
-        {label}
+          }}
+        >
+          {label}
+        </span>
         <ChevronDownIcon
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />

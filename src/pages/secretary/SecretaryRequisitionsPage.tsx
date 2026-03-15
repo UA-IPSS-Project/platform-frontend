@@ -92,9 +92,13 @@ const formatMaterialItemLabel = (
   return `${materialLabel}${categoria}${detalhe} (x${quantidade ?? 0})`;
 };
 
-let materialLinhaCounter = 0;
+type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
+
 const createEmptyMaterialLinha = () => ({
-  rowId: `material-row-${++materialLinhaCounter}`,
+  rowId:
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? `material-row-${crypto.randomUUID()}`
+      : `material-row-${Math.random().toString(36).slice(2)}`,
   materialId: '',
   quantidade: '1',
 });
@@ -1004,7 +1008,7 @@ export function SecretaryRequisitionsPage({
                       Materiais:{' '}
                       {req.itens && req.itens.length > 0
                         ? req.itens
-                            .map((item: any) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
                             .join(', ')
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
@@ -1064,7 +1068,7 @@ export function SecretaryRequisitionsPage({
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
                           ? selectedRequisicao.itens
-                            .map((item: any) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
                               .join(', ')
                           : selectedRequisicao.material?.nome || '—'}
                       </p>
@@ -1072,7 +1076,7 @@ export function SecretaryRequisitionsPage({
                       <p className="text-gray-500 dark:text-gray-400">Quantidade</p>
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                          ? selectedRequisicao.itens.reduce((sum: number, item: any) => sum + (item.quantidade || 0), 0)
+                          ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
                           : selectedRequisicao.quantidade || '—'}
                       </p>
                     </>
