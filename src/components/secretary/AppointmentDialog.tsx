@@ -413,6 +413,17 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   maxLength={9}
                   value={formData.nif}
                   onChange={(e) => handleNifChange(e.target.value)}
+                  onBlur={() => {
+                    if (!formData.nif) {
+                      setNifError('NIF é obrigatório');
+                      return;
+                    }
+                    if (!validateNIF(formData.nif)) {
+                      setNifError('NIF inválido');
+                      return;
+                    }
+                    setNifError(undefined);
+                  }}
                   className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
                 />
                 {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
