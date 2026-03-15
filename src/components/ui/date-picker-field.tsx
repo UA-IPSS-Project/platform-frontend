@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from './button';
 import { Calendar } from './calendar';
@@ -39,9 +39,25 @@ export function DatePickerField({
 }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false);
   const selectedDate = parseDateInput(value);
+  const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate ?? new Date());
+
+  useEffect(() => {
+    if (selectedDate) {
+      setCalendarMonth(selectedDate);
+    }
+  }, [value]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+          // Keep current date focused when opening, preserving month/year navigation UX.
+          setCalendarMonth(selectedDate ?? new Date());
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button id={id} type="button" variant="outline" className={`w-full justify-between ${buttonClassName ?? ''}`} disabled={disabled}>
           {selectedDate ? selectedDate.toLocaleDateString('pt-PT') : placeholder}
@@ -52,7 +68,8 @@ export function DatePickerField({
         <Calendar
           mode="single"
           selected={selectedDate}
-          month={selectedDate ?? new Date()}
+          month={calendarMonth}
+          onMonthChange={setCalendarMonth}
           initialFocus
           onSelect={(date) => {
             if (!date) return;
