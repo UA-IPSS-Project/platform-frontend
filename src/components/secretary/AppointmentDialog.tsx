@@ -42,6 +42,37 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
+  const setNifError = (message?: string) => {
+    setErrors((prev) => {
+      if (!message) {
+        if (!prev.nif) return prev;
+        const { nif, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, nif: message };
+    });
+  };
+
+  const handleNifChange = (rawValue: string) => {
+    const nif = rawValue.replace(/\D/g, '');
+    setFormData((prev) => ({ ...prev, nif }));
+
+    // While typing, clear previous lookup data and only show hard error when 9 digits are present and invalid.
+    if (nif.length < 9) {
+      setOriginalUser(null);
+      setNifError(undefined);
+      return;
+    }
+
+    if (!validateNIF(nif)) {
+      setOriginalUser(null);
+      setNifError('NIF inválido');
+      return;
+    }
+
+    setNifError(undefined);
+  };
+
   // Reservar slot ao abrir o dialog
   useEffect(() => {
     if (open) {
@@ -131,6 +162,13 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     console.log('NIF changed:', formData.nif, 'Length:', formData.nif.length);
     const checkNif = async () => {
       if (formData.nif.length === 9) {
+        if (!validateNIF(formData.nif)) {
+          setOriginalUser(null);
+          setNifError('NIF inválido');
+          return;
+        }
+
+        setNifError(undefined);
         console.log('NIF reached 9 digits. Triggering search for:', formData.nif);
         try {
           const user = await utilizadoresApi.buscarPorNif(formData.nif);
@@ -374,7 +412,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   placeholder="123456789"
                   maxLength={9}
                   value={formData.nif}
-                  onChange={(e) => setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') })}
+                  onChange={(e) => handleNifChange(e.target.value)}
                   className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
                 />
                 {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
