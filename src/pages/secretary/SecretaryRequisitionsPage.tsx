@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -117,7 +117,8 @@ export function SecretaryRequisitionsPage({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'create' | 'list'>('list');
+  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
+  const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('ENVIADA');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
@@ -223,6 +224,14 @@ export function SecretaryRequisitionsPage({
 
   useEffect(() => {
     fetchCatalogo();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (sectionSwitchTimeoutRef.current) {
+        window.clearTimeout(sectionSwitchTimeoutRef.current);
+      }
+    };
   }, []);
 
   const categoriasComMateriais = useMemo(
@@ -511,6 +520,25 @@ export function SecretaryRequisitionsPage({
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
 
+  const toggleSection = (targetSection: 'create' | 'list') => {
+    if (sectionSwitchTimeoutRef.current) {
+      window.clearTimeout(sectionSwitchTimeoutRef.current);
+      sectionSwitchTimeoutRef.current = null;
+    }
+
+    if (activeSection === targetSection) {
+      const oppositeSection = targetSection === 'create' ? 'list' : 'create';
+      setActiveSection(null);
+      sectionSwitchTimeoutRef.current = window.setTimeout(() => {
+        setActiveSection(oppositeSection);
+        sectionSwitchTimeoutRef.current = null;
+      }, 140);
+      return;
+    }
+
+    setActiveSection(targetSection);
+  };
+
   const createFormContent = (
     <div className="space-y-5">
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
@@ -787,7 +815,7 @@ export function SecretaryRequisitionsPage({
     <div className="max-w-[1600px] mx-auto space-y-6">
       <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
         <button
-          onClick={() => setActiveSection('create')}
+          onClick={() => toggleSection('create')}
           className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
         >
           <div className="text-left">
@@ -806,7 +834,7 @@ export function SecretaryRequisitionsPage({
 
       <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'list' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
         <button
-          onClick={() => setActiveSection('list')}
+          onClick={() => toggleSection('list')}
           className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
         >
           <div className="text-left">
