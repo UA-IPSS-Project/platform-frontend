@@ -157,6 +157,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   ];
 
   const secretaryGeneralItems = [
+    { id: 'requisitions', label: 'Home Requisições', icon: ClipboardListIcon },
     { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
     { id: 'administrative', label: 'Área Administrativa', icon: ShieldCheckIcon },
     { id: 'profile', label: 'Perfil', icon: UserIcon },

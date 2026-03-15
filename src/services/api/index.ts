@@ -21,3 +21,5 @@ export * from './documentos/types';
 
 export * from './notificacoes/notificationsApi';
 export * from './notificacoes/types';
+
+export * from './requisicoes/requisicoesApi';

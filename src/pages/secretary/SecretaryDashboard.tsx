@@ -7,6 +7,7 @@ import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
 import { DocumentsSearchPage } from './DocumentsSearchPage';
+import { SecretaryRequisitionsPage } from './SecretaryRequisitionsPage';
 import SecretaryHome from '../../components/secretary/SecretaryHome';
 import { AppointmentDialog } from '../../components/secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
@@ -246,6 +247,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('requisitions')}
       />
 
       <NavDropdown
@@ -393,6 +395,21 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               <DocumentsSearchPage
                 onBack={navigateBack}
                 isDarkMode={isDarkMode}
+              />
+            ) : ['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
+              <SecretaryRequisitionsPage
+                isDarkMode={isDarkMode}
+                currentUserId={authUser?.id || 0}
+                initialTipo={
+                  currentView === 'material'
+                    ? 'MATERIAL'
+                    : currentView === 'manutencao'
+                      ? 'MANUTENCAO'
+                      : currentView === 'transportes'
+                        ? 'TRANSPORTE'
+                        : undefined
+                }
+                initialPrioridade={currentView === 'urgente' ? 'URGENTE' : undefined}
               />
             ) : currentView === 'management' ? (
               <UserManagement
