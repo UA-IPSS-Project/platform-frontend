@@ -640,7 +640,7 @@ export function SecretaryRequisitionsPage({
                             Sem itens nesta categoria.
                           </p>
                         ) : (
-                          <div className="p-3 space-y-3">
+                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
                             {itemsCategoria.map((item) => {
                               const selectedCount = item.variantes.filter((variante) =>
                                 materialLinhas.some((linha) => linha.materialId === String(variante.id)),
@@ -649,14 +649,14 @@ export function SecretaryRequisitionsPage({
                               const isExpanded = expandedMaterialItems[item.itemKey] || itemChecked;
 
                               return (
-                                <div key={item.itemKey} className="rounded-md border border-gray-200 dark:border-gray-700 p-2 space-y-2">
+                                <div key={item.itemKey} className="space-y-2 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
                                     <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 cursor-pointer">
                                       <Checkbox
                                         checked={itemChecked}
                                         onCheckedChange={(checked) => handleItemToggle(item, !!checked)}
                                       />
-                                      <span>{item.nome}</span>
+                                      <span className="truncate" title={item.nome}>{item.nome}</span>
                                     </label>
 
                                     <Button
@@ -670,7 +670,7 @@ export function SecretaryRequisitionsPage({
                                   </div>
 
                                   {isExpanded && (
-                                    <div className="pl-6 space-y-2">
+                                    <div className="pl-6 space-y-2 rounded-md border border-gray-200/70 dark:border-gray-700/70 bg-gray-50/70 dark:bg-gray-800/40 p-2">
                                       {item.variantes.map((variante) => {
                                         const checked = materialLinhas.some((linha) => linha.materialId === String(variante.id));
                                         const linhaSelecionada = materialLinhas.find((linha) => linha.materialId === String(variante.id));
