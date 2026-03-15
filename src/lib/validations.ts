@@ -68,7 +68,21 @@ export const validateName = (name: string): ValidationResult => {
  * Validates Portuguese NIF (9 digits)
  */
 export const validateNIF = (nif: string): boolean => {
-    return /^\d{9}$/.test(nif);
+    if (!/^\d{9}$/.test(nif)) return false;
+
+    // Reject clearly invalid repeated sequences.
+    if (/^(\d)\1{8}$/.test(nif)) return false;
+
+    const digits = nif.split('').map(Number);
+    const checkDigit = digits[8];
+    const sum = digits
+        .slice(0, 8)
+        .reduce((acc, digit, index) => acc + digit * (9 - index), 0);
+
+    const mod11 = sum % 11;
+    const expected = mod11 < 2 ? 0 : 11 - mod11;
+
+    return checkDigit === expected;
 };
 
 /**

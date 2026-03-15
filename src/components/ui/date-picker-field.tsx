@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Button } from './button';
 import { Calendar } from './calendar';
@@ -38,7 +38,7 @@ export function DatePickerField({
   disabled = false,
 }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false);
-  const selectedDate = parseDateInput(value);
+  const selectedDate = useMemo(() => parseDateInput(value), [value]);
   const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate ?? new Date());
 
   useEffect(() => {
