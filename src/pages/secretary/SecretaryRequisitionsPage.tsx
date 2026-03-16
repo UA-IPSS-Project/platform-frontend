@@ -125,6 +125,7 @@ export function SecretaryRequisitionsPage({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
+  const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
@@ -215,6 +216,16 @@ export function SecretaryRequisitionsPage({
     }
   };
 
+  const fetchMonthlyOverview = async () => {
+    try {
+      const data = await requisicoesApi.procurar({});
+      setMonthlyRequisicoes(Array.isArray(data) ? data : []);
+    } catch {
+      // Keep cards resilient; list fetch already reports errors.
+      setMonthlyRequisicoes([]);
+    }
+  };
+
   useEffect(() => {
     fetchRequisicoes({
       estado: '',
@@ -223,6 +234,7 @@ export function SecretaryRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
+    fetchMonthlyOverview();
   }, [initialTipo, initialPrioridade]);
 
   const fetchCatalogo = async () => {
@@ -483,6 +495,7 @@ export function SecretaryRequisitionsPage({
       handleResetCreateForm();
       setActiveSection('list');
       await fetchRequisicoes();
+      await fetchMonthlyOverview();
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao criar requisição.');
     } finally {
@@ -542,6 +555,7 @@ export function SecretaryRequisitionsPage({
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
       toast.success('Estado da requisição atualizado com sucesso.');
       await fetchRequisicoes();
+      await fetchMonthlyOverview();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao atualizar estado da requisição.');
@@ -556,17 +570,30 @@ export function SecretaryRequisitionsPage({
     return `${total} requisição(ões) · ${urgentes} urgente(s)`;
   }, [requisicoes]);
 
+  const monthlyRequisicoesAtual = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return monthlyRequisicoes.filter((item) => {
+      if (!item.criadoEm) return false;
+      const createdAt = new Date(item.criadoEm);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
+    });
+  }, [monthlyRequisicoes]);
+
   const stats = useMemo(() => {
-    const total = requisicoes.length;
-    const urgentes = requisicoes.filter((item) => item.prioridade === 'URGENTE').length;
-    const emAnalise = requisicoes.filter((item) => item.estado === 'EM_ANALISE').length;
-    const concluidas = requisicoes.filter((item) => item.estado === 'CONCLUIDA').length;
-    const material = requisicoes.filter((item) => item.tipo === 'MATERIAL').length;
-    const manutencao = requisicoes.filter((item) => item.tipo === 'MANUTENCAO').length;
-    const transporte = requisicoes.filter((item) => item.tipo === 'TRANSPORTE').length;
+    const total = monthlyRequisicoesAtual.length;
+    const urgentes = monthlyRequisicoesAtual.filter((item) => item.prioridade === 'URGENTE').length;
+    const emAnalise = monthlyRequisicoesAtual.filter((item) => item.estado === 'EM_ANALISE').length;
+    const concluidas = monthlyRequisicoesAtual.filter((item) => item.estado === 'CONCLUIDA').length;
+    const material = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MATERIAL').length;
+    const manutencao = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MANUTENCAO').length;
+    const transporte = monthlyRequisicoesAtual.filter((item) => item.tipo === 'TRANSPORTE').length;
 
     return { total, urgentes, emAnalise, concluidas, material, manutencao, transporte };
-  }, [requisicoes]);
+  }, [monthlyRequisicoesAtual]);
 
   const materiaisAdicionadosAgrupados = useMemo(() => {
     const grupos = new Map<MaterialCategoria, Array<{
