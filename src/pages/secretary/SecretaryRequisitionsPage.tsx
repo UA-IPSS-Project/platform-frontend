@@ -1185,7 +1185,7 @@ export function SecretaryRequisitionsPage({
               buttonClassName="mt-1"
             />
             {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preenchida automaticamente para o dia anterior a saida.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preenchida automaticamente para o dia anterior a saída.</p>
             )}
           </div>
         </div>
