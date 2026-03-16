@@ -1083,7 +1083,7 @@ export function SecretaryRequisitionsPage({
 
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
-          <div className="inline-flex flex-wrap rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" role="tablist" aria-label="Separadores de tipo de requisição">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
             {REQUISICOES_TABS.map((tab) => {
               const isActive = activeTab === tab.value;
               return (
@@ -1094,9 +1094,9 @@ export function SecretaryRequisitionsPage({
                   onClick={() => {
                     void handleSelectTab(tab.value);
                   }}
-                  className={`rounded-none border-r last:border-r-0 border-gray-200 dark:border-gray-700 px-4 h-10 ${isActive
-                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
+                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
+                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
                   aria-pressed={isActive}
                   aria-label={`Selecionar ${tab.label}`}
@@ -1221,7 +1221,7 @@ export function SecretaryRequisitionsPage({
 
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
-          <div className="inline-flex flex-wrap rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" role="tablist" aria-label="Separadores de tipo de requisição">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
             {REQUISICOES_TABS.map((tab) => {
               const isActive = activeTab === tab.value;
               return (
@@ -1232,9 +1232,9 @@ export function SecretaryRequisitionsPage({
                   onClick={() => {
                     void handleSelectTab(tab.value);
                   }}
-                  className={`rounded-none border-r last:border-r-0 border-gray-200 dark:border-gray-700 px-4 h-10 ${isActive
-                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
+                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
+                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
                   aria-pressed={isActive}
                   aria-label={`Selecionar ${tab.label}`}
