@@ -41,6 +41,12 @@ export interface TransporteCatalogo {
   dataMatricula?: string;
 }
 
+export interface TipoManutencaoCatalogo {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+}
+
 export interface RequisicaoResponse {
   id: number;
   version?: number;
@@ -164,4 +170,9 @@ export interface CriarTransporteCatalogoRequest {
   modelo?: string;
   lotacao?: number;
   dataMatricula?: string;
+}
+
+export interface CriarTipoManutencaoCatalogoRequest {
+  nome: string;
+  descricao?: string;
 }

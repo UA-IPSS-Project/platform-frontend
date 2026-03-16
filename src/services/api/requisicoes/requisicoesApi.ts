@@ -5,11 +5,13 @@ import {
   CriarRequisicaoManutencaoRequest,
   CriarRequisicaoMaterialRequest,
   CriarRequisicaoTransporteRequest,
+  CriarTipoManutencaoCatalogoRequest,
   CriarTransporteCatalogoRequest,
   MaterialCatalogo,
   RequisicaoEstado,
   RequisicaoFilters,
   RequisicaoResponse,
+  TipoManutencaoCatalogo,
   TransporteCatalogo,
 } from './types';
 
@@ -43,12 +45,53 @@ export const requisicoesApi = {
       body: JSON.stringify(payload),
     }),
 
+  atualizarMaterialCatalogo: (id: number, payload: CriarMaterialCatalogoRequest) =>
+    apiRequest<MaterialCatalogo>(`/api/requisicoes/materiais/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  apagarMaterialCatalogo: (id: number) =>
+    apiRequest<void>(`/api/requisicoes/materiais/${id}`, {
+      method: 'DELETE',
+    }),
+
   listarTransportes: () => apiRequest<TransporteCatalogo[]>('/api/requisicoes/transportes'),
+
+  listarTiposManutencao: () => apiRequest<TipoManutencaoCatalogo[]>('/api/requisicoes/tipos-manutencao'),
 
   criarTransporteCatalogo: (payload: CriarTransporteCatalogoRequest) =>
     apiRequest<TransporteCatalogo>('/api/requisicoes/transportes', {
       method: 'POST',
       body: JSON.stringify(payload),
+    }),
+
+  atualizarTransporteCatalogo: (id: number, payload: CriarTransporteCatalogoRequest) =>
+    apiRequest<TransporteCatalogo>(`/api/requisicoes/transportes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  apagarTransporteCatalogo: (id: number) =>
+    apiRequest<void>(`/api/requisicoes/transportes/${id}`, {
+      method: 'DELETE',
+    }),
+
+  criarTipoManutencao: (payload: CriarTipoManutencaoCatalogoRequest) =>
+    apiRequest<TipoManutencaoCatalogo>('/api/requisicoes/tipos-manutencao', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  atualizarTipoManutencao: (id: number, payload: CriarTipoManutencaoCatalogoRequest) =>
+    apiRequest<TipoManutencaoCatalogo>(`/api/requisicoes/tipos-manutencao/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  apagarTipoManutencao: (id: number) =>
+    apiRequest<void>(`/api/requisicoes/tipos-manutencao/${id}`, {
+      method: 'DELETE',
     }),
 
   criarMaterial: (payload: CriarRequisicaoMaterialRequest) =>
