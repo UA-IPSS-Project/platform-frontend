@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
 import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
+import { ApiRequestError } from '../../services/api/core/client';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -107,6 +108,16 @@ type RequisicaoTransporteItem = NonNullable<RequisicaoResponse['transportes']>[n
 type TransporteResumo = RequisicaoTransporteItem['transporte'];
 type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo | TransporteCatalogo | null | undefined;
 type TransporteSelectionMode = 'auto' | 'manual';
+type CreateField =
+  | 'descricao'
+  | 'materialItens'
+  | 'destino'
+  | 'dataSaida'
+  | 'horaSaida'
+  | 'dataRegresso'
+  | 'horaRegresso'
+  | 'numeroPassageiros'
+  | 'transporteIds';
 
 const createEmptyMaterialLinha = () => ({
   rowId:
@@ -119,17 +130,30 @@ const createEmptyMaterialLinha = () => ({
 
 const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
 
+const getPassengerCapacity = (lotacao?: number): number => {
+  if (!lotacao || lotacao <= 0) return 0;
+  return Math.max(0, lotacao - 1);
+};
+
+const composeDateTime = (date?: string, time?: string): string | undefined => {
+  if (!date || !time) return undefined;
+  return `${date}T${time}`;
+};
+
+const previousDateInput = (dateInput?: string): string | undefined => {
+  const parsed = parseDateInput(dateInput);
+  if (!parsed) return undefined;
+  const prev = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate() - 1);
+  return formatDateInput(prev);
+};
+
 const formatLotacao = (lotacao?: number): string => {
   if (!lotacao || lotacao <= 0) return 'Lotação não definida';
   return `${lotacao} ${lotacao === 1 ? 'lugar' : 'lugares'}`;
 };
 
 const formatVehicleTitle = (transporte?: TransporteLike): string => {
-  const nome = [transporte?.tipo || transporte?.nome || 'Viatura', transporte?.marca, transporte?.modelo]
-    .filter(Boolean)
-    .join(' ')
-    .trim();
-  return nome || 'Viatura';
+  return (transporte?.nome || transporte?.tipo || 'Viatura').trim();
 };
 
 const formatTransporteDisplay = (transporte?: TransporteLike): string => {
@@ -220,13 +244,20 @@ export function SecretaryRequisitionsPage({
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
   const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
   const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
+  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<TransporteCategoria, boolean>>>({});
+  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
   const [destinoTransporte, setDestinoTransporte] = useState('');
-  const [dataHoraSaida, setDataHoraSaida] = useState('');
-  const [dataHoraRegresso, setDataHoraRegresso] = useState('');
+  const [dataSaida, setDataSaida] = useState('');
+  const [horaSaida, setHoraSaida] = useState('');
+  const [dataRegresso, setDataRegresso] = useState('');
+  const [horaRegresso, setHoraRegresso] = useState('');
   const [numeroPassageiros, setNumeroPassageiros] = useState('');
   const [condutorTransporte, setCondutorTransporte] = useState('');
   const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
   const [transportSelectionMode, setTransportSelectionMode] = useState<TransporteSelectionMode>('auto');
+  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
+  const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
+  const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
@@ -328,6 +359,11 @@ export function SecretaryRequisitionsPage({
   }, []);
 
   useEffect(() => {
+    setCreateErrors({});
+    setCreateTouched({});
+  }, [tipo]);
+
+  useEffect(() => {
     return () => {
       if (sectionSwitchTimeoutRef.current) {
         window.clearTimeout(sectionSwitchTimeoutRef.current);
@@ -388,30 +424,34 @@ export function SecretaryRequisitionsPage({
     [transportesOrdenados],
   );
 
-  const passageirosSolicitados = useMemo(() => Number(numeroPassageiros || 0), [numeroPassageiros]);
+  const passageirosSolicitados = useMemo(() => {
+    const value = Number(numeroPassageiros || 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [numeroPassageiros]);
 
   const recommendedTransportIds = useMemo(() => {
     if (passageirosSolicitados <= 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenados.filter((transporte) => (transporte.lotacao ?? 0) > 0);
+    const viaturasComLotacao = transportesOrdenados.filter((transporte) => getPassengerCapacity(transporte.lotacao) > 0);
     if (viaturasComLotacao.length === 0) return [] as number[];
 
     const singleVehicle = [...viaturasComLotacao]
-      .filter((transporte) => (transporte.lotacao ?? 0) >= passageirosSolicitados)
-      .sort((a, b) => (a.lotacao ?? 0) - (b.lotacao ?? 0))[0];
+      .filter((transporte) => getPassengerCapacity(transporte.lotacao) >= passageirosSolicitados)
+      .sort((a, b) => getPassengerCapacity(a.lotacao) - getPassengerCapacity(b.lotacao))[0];
 
     if (singleVehicle?.id) {
       return [singleVehicle.id];
     }
 
-    const orderedByCapacity = [...viaturasComLotacao].sort((a, b) => (b.lotacao ?? 0) - (a.lotacao ?? 0));
+    const orderedByCapacity = [...viaturasComLotacao]
+      .sort((a, b) => getPassengerCapacity(b.lotacao) - getPassengerCapacity(a.lotacao));
     const recomendados: number[] = [];
     let capacidadeAcumulada = 0;
 
     orderedByCapacity.forEach((transporte) => {
       if (capacidadeAcumulada >= passageirosSolicitados || !transporte.id) return;
       recomendados.push(transporte.id);
-      capacidadeAcumulada += transporte.lotacao ?? 0;
+      capacidadeAcumulada += getPassengerCapacity(transporte.lotacao);
     });
 
     return capacidadeAcumulada >= passageirosSolicitados ? recomendados : [];
@@ -430,7 +470,7 @@ export function SecretaryRequisitionsPage({
   );
 
   const selectedTransportesCapacidade = useMemo(
-    () => selectedTransportes.reduce((sum, transporte) => sum + (transporte.lotacao ?? 0), 0),
+    () => selectedTransportes.reduce((sum, transporte) => sum + getPassengerCapacity(transporte.lotacao), 0),
     [selectedTransportes],
   );
 
@@ -438,6 +478,110 @@ export function SecretaryRequisitionsPage({
     () => Math.max(0, passageirosSolicitados - selectedTransportesCapacidade),
     [passageirosSolicitados, selectedTransportesCapacidade],
   );
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || !dataSaida) return;
+
+    if (!dataRegresso) {
+      setDataRegresso(dataSaida);
+    }
+
+    if (!tempoLimiteManuallyEdited) {
+      const previousDate = previousDateInput(dataSaida);
+      setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
+    }
+  }, [tipo, dataSaida, dataRegresso, tempoLimiteManuallyEdited]);
+
+  useEffect(() => {
+    if (createTouched.materialItens) {
+      validateAndSetField('materialItens');
+    }
+  }, [materialLinhas, createTouched.materialItens]);
+
+  const setFieldTouched = (field: CreateField) => {
+    setCreateTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const validateCreateField = (field: CreateField): string | undefined => {
+    if (field === 'descricao') {
+      if (!descricao.trim()) return 'Campo obrigatório.';
+      return undefined;
+    }
+
+    if (tipo === 'MATERIAL' && field === 'materialItens') {
+      const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
+      if (linhasValidas.length === 0) return 'Adicione pelo menos um material com quantidade válida.';
+      return undefined;
+    }
+
+    if (tipo !== 'TRANSPORTE') return undefined;
+
+    if (field === 'destino' && !destinoTransporte.trim()) return 'Campo obrigatório.';
+    if (field === 'dataSaida' && !dataSaida) return 'Campo obrigatório.';
+    if (field === 'horaSaida' && !horaSaida) return 'Campo obrigatório.';
+    if (field === 'dataRegresso' && !dataRegresso) return 'Campo obrigatório.';
+    if (field === 'horaRegresso' && !horaRegresso) return 'Campo obrigatório.';
+
+    if (field === 'numeroPassageiros') {
+      if (!numeroPassageiros) return 'Campo obrigatório.';
+      if (passageirosSolicitados < 1) return 'Indique um número de passageiros válido.';
+      return undefined;
+    }
+
+    if (field === 'transporteIds' && selectedTransportIds.length === 0) {
+      return 'Selecione pelo menos uma viatura.';
+    }
+
+    const saida = composeDateTime(dataSaida, horaSaida);
+    const regresso = composeDateTime(dataRegresso, horaRegresso);
+    if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
+      const saidaDate = new Date(saida);
+      const regressoDate = new Date(regresso);
+      if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
+        return 'A data/hora de regresso deve ser posterior à data/hora de saída.';
+      }
+    }
+
+    return undefined;
+  };
+
+  const validateAndSetField = (field: CreateField, markTouched = false): string | undefined => {
+    const error = validateCreateField(field);
+    if (markTouched) {
+      setFieldTouched(field);
+    }
+    setCreateErrors((prev) => {
+      if (error) return { ...prev, [field]: error };
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+    return error;
+  };
+
+  const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
+    if (!error.fieldErrors) return {};
+
+    const mapped: Partial<Record<CreateField, string>> = {};
+    Object.entries(error.fieldErrors).forEach(([key, value]) => {
+      if (key === 'descricao') mapped.descricao = value;
+      if (key === 'itens') mapped.materialItens = value;
+      if (key === 'destino') mapped.destino = value;
+      if (key === 'dataHoraSaida') {
+        mapped.dataSaida = value;
+        mapped.horaSaida = value;
+      }
+      if (key === 'dataHoraRegresso') {
+        mapped.dataRegresso = value;
+        mapped.horaRegresso = value;
+      }
+      if (key === 'numeroPassageiros') mapped.numeroPassageiros = value;
+      if (key === 'transporteIds') mapped.transporteIds = value;
+    });
+
+    return mapped;
+  };
 
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
@@ -523,6 +667,14 @@ export function SecretaryRequisitionsPage({
     setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
   };
 
+  const toggleTransporteCategoriaExpansion = (categoria: TransporteCategoria) => {
+    setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  };
+
+  const toggleTransporteDetalhes = (transporteId: number) => {
+    setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
+  };
+
   const toggleVariante = (materialId: number, checked: boolean) => {
     setMaterialLinhas((prev) => {
       const materialIdStr = String(materialId);
@@ -576,16 +728,23 @@ export function SecretaryRequisitionsPage({
   const handleResetCreateForm = () => {
     setDescricao('');
     setTempoLimite(undefined);
+    setTempoLimiteManuallyEdited(false);
     setMaterialLinhas([]);
     setDestinoTransporte('');
-    setDataHoraSaida('');
-    setDataHoraRegresso('');
+    setDataSaida('');
+    setHoraSaida('');
+    setDataRegresso('');
+    setHoraRegresso('');
     setNumeroPassageiros('');
     setCondutorTransporte('');
     setSelectedTransportIds([]);
     setTransportSelectionMode('auto');
     setAssunto('');
     setExpandedMaterialItems({});
+    setExpandedTransporteCategorias({});
+    setExpandedTransporteDetalhes({});
+    setCreateErrors({});
+    setCreateTouched({});
     setTipo(initialTipo ?? 'MANUTENCAO');
     setPrioridade(initialPrioridade ?? 'MEDIA');
   };
@@ -599,11 +758,17 @@ export function SecretaryRequisitionsPage({
       }
       return prev.filter((item) => item !== transporteIdStr);
     });
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
   };
 
   const handleAplicarSugestaoTransporte = () => {
     setTransportSelectionMode('auto');
     setSelectedTransportIds(recommendedTransportIds.map(String));
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
   };
 
   const handleCreate = async () => {
@@ -612,10 +777,32 @@ export function SecretaryRequisitionsPage({
       return;
     }
 
-    if (!descricao.trim()) {
-      toast.error('A descrição é obrigatória.');
+    const fieldsToValidate: CreateField[] = ['descricao'];
+    if (tipo === 'MATERIAL') {
+      fieldsToValidate.push('materialItens');
+    }
+    if (tipo === 'TRANSPORTE') {
+      fieldsToValidate.push(
+        'destino',
+        'dataSaida',
+        'horaSaida',
+        'dataRegresso',
+        'horaRegresso',
+        'numeroPassageiros',
+        'transporteIds',
+      );
+    }
+
+    const validationErrors = fieldsToValidate
+      .map((field) => ({ field, error: validateAndSetField(field, true) }))
+      .filter((item) => Boolean(item.error));
+
+    if (validationErrors.length > 0) {
       return;
     }
+
+    const dataHoraSaida = composeDateTime(dataSaida, horaSaida);
+    const dataHoraRegresso = composeDateTime(dataRegresso, horaRegresso);
 
     try {
       setSubmitting(true);
@@ -629,10 +816,6 @@ export function SecretaryRequisitionsPage({
 
       if (tipo === 'MATERIAL') {
         const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-        if (linhasValidas.length === 0) {
-          toast.error('Adicione pelo menos um material com quantidade válida.');
-          return;
-        }
 
         const itensDedupe = Array.from(
           linhasValidas.reduce<Map<number, number>>((acc, linha) => {
@@ -647,28 +830,12 @@ export function SecretaryRequisitionsPage({
         });
         toast.success('Requisição de material criada com sucesso.');
       } else if (tipo === 'TRANSPORTE') {
-        if (!destinoTransporte.trim()) {
-          toast.error('O destino é obrigatório.');
-          return;
-        }
-        if (!dataHoraSaida || !dataHoraRegresso) {
-          toast.error('Indique a data/hora de saída e de regresso.');
-          return;
-        }
-        if (Number(numeroPassageiros) < 1) {
-          toast.error('Indique um número de passageiros válido.');
-          return;
-        }
-        if (selectedTransportIds.length === 0) {
-          toast.error('Selecione pelo menos uma viatura.');
-          return;
-        }
         await requisicoesApi.criarTransporte({
           ...payloadBase,
           destino: destinoTransporte.trim(),
-          dataHoraSaida,
-          dataHoraRegresso,
-          numeroPassageiros: Number(numeroPassageiros),
+          dataHoraSaida: dataHoraSaida!,
+          dataHoraRegresso: dataHoraRegresso!,
+          numeroPassageiros: passageirosSolicitados,
           condutor: condutorTransporte.trim() || undefined,
           transporteIds: selectedTransportIds.map(Number),
         });
@@ -687,7 +854,20 @@ export function SecretaryRequisitionsPage({
       await fetchRequisicoes();
       await fetchMonthlyOverview();
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao criar requisição.');
+      const apiError = error as ApiRequestError;
+      const mappedErrors = toCreateFieldErrors(apiError);
+      if (Object.keys(mappedErrors).length > 0) {
+        setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
+        setCreateTouched((prev) => {
+          const next = { ...prev };
+          Object.keys(mappedErrors).forEach((field) => {
+            next[field as CreateField] = true;
+          });
+          return next;
+        });
+      } else {
+        toast.error(error?.message || 'Erro ao criar requisição.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -831,6 +1011,11 @@ export function SecretaryRequisitionsPage({
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const getFieldClassName = (baseClass: string, field: CreateField) => (
+    createErrors[field]
+      ? `${baseClass} border-red-500 focus-visible:border-red-500 focus-visible:ring-red-200`
+      : baseClass
+  );
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -890,16 +1075,35 @@ export function SecretaryRequisitionsPage({
             <DatePickerField
               id="req-create-tempo-limite"
               value={formatDateInput(tempoLimite)}
-              onChange={(value) => setTempoLimite(parseDateInput(value))}
+              onChange={(value) => {
+                setTempoLimite(parseDateInput(value));
+                setTempoLimiteManuallyEdited(true);
+              }}
               placeholder="Selecionar data"
               buttonClassName="mt-1"
             />
+            {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preenchida automaticamente para o dia anterior a saida.</p>
+            )}
           </div>
         </div>
 
         <div>
           <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
-          <Textarea id="req-create-descricao" className={textareaFieldClassName} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
+          <Textarea
+            id="req-create-descricao"
+            className={getFieldClassName(textareaFieldClassName, 'descricao')}
+            value={descricao}
+            onChange={(e) => {
+              setDescricao(e.target.value);
+              if (createTouched.descricao) {
+                validateAndSetField('descricao');
+              }
+            }}
+            onBlur={() => validateAndSetField('descricao', true)}
+            placeholder="Descreva a requisição"
+          />
+          {createErrors.descricao && <p className="text-red-500 text-xs mt-1">{createErrors.descricao}</p>}
         </div>
       </div>
 
@@ -1078,6 +1282,10 @@ export function SecretaryRequisitionsPage({
                   </div>
                 )}
               </div>
+
+              {createErrors.materialItens && (
+                <p className="text-red-500 text-xs">{createErrors.materialItens}</p>
+              )}
             </div>
           )}
 
@@ -1094,11 +1302,18 @@ export function SecretaryRequisitionsPage({
                     <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">Destino</label>
                     <Input
                       id="req-create-transporte-destino"
-                      className={inputFieldClassName}
+                      className={getFieldClassName(inputFieldClassName, 'destino')}
                       value={destinoTransporte}
-                      onChange={(e) => setDestinoTransporte(e.target.value)}
+                      onChange={(e) => {
+                        setDestinoTransporte(e.target.value);
+                        if (createTouched.destino) {
+                          validateAndSetField('destino');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('destino', true)}
                       placeholder="Ex: Porto, Casa da Música"
                     />
+                    {createErrors.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
                   </div>
 
                   <div>
@@ -1112,26 +1327,81 @@ export function SecretaryRequisitionsPage({
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="req-create-transporte-saida" className="text-sm text-gray-600 dark:text-gray-300">Data e hora de saída</label>
-                    <Input
-                      id="req-create-transporte-saida"
-                      type="datetime-local"
-                      className={inputFieldClassName}
-                      value={dataHoraSaida}
-                      onChange={(e) => setDataHoraSaida(e.target.value)}
+                  <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
+                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">Data de saida</label>
+                    <DatePickerField
+                      id="req-create-transporte-data-saida"
+                      value={dataSaida}
+                      onChange={(value) => {
+                        setDataSaida(value);
+                        if (!dataRegresso) {
+                          setDataRegresso(value);
+                        }
+                        if (createTouched.dataSaida) {
+                          validateAndSetField('dataSaida');
+                        }
+                        if (createTouched.dataRegresso) {
+                          validateAndSetField('dataRegresso');
+                        }
+                      }}
+                      buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
                     />
+                    {createErrors.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-regresso" className="text-sm text-gray-600 dark:text-gray-300">Data e hora de regresso</label>
+                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">Hora de saida</label>
                     <Input
-                      id="req-create-transporte-regresso"
-                      type="datetime-local"
-                      className={inputFieldClassName}
-                      value={dataHoraRegresso}
-                      onChange={(e) => setDataHoraRegresso(e.target.value)}
+                      id="req-create-transporte-hora-saida"
+                      type="time"
+                      className={getFieldClassName(inputFieldClassName, 'horaSaida')}
+                      value={horaSaida}
+                      onChange={(e) => {
+                        setHoraSaida(e.target.value);
+                        if (createTouched.horaSaida) {
+                          validateAndSetField('horaSaida');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('horaSaida', true)}
                     />
+                    {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
+                  </div>
+
+                  <div onBlurCapture={() => validateAndSetField('dataRegresso', true)}>
+                    <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">Data de regresso</label>
+                    <DatePickerField
+                      id="req-create-transporte-data-regresso"
+                      value={dataRegresso}
+                      onChange={(value) => {
+                        setDataRegresso(value);
+                        if (createTouched.dataRegresso) {
+                          validateAndSetField('dataRegresso');
+                        }
+                        if (createTouched.horaRegresso) {
+                          validateAndSetField('horaRegresso');
+                        }
+                      }}
+                      buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
+                    />
+                    {createErrors.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">Hora de regresso</label>
+                    <Input
+                      id="req-create-transporte-hora-regresso"
+                      type="time"
+                      className={getFieldClassName(inputFieldClassName, 'horaRegresso')}
+                      value={horaRegresso}
+                      onChange={(e) => {
+                        setHoraRegresso(e.target.value);
+                        if (createTouched.horaRegresso) {
+                          validateAndSetField('horaRegresso');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('horaRegresso', true)}
+                    />
+                    {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
                   </div>
 
                   <div>
@@ -1140,11 +1410,18 @@ export function SecretaryRequisitionsPage({
                       id="req-create-transporte-passageiros"
                       type="number"
                       min="1"
-                      className={inputFieldClassName}
+                      className={getFieldClassName(inputFieldClassName, 'numeroPassageiros')}
                       value={numeroPassageiros}
-                      onChange={(e) => setNumeroPassageiros(e.target.value)}
+                      onChange={(e) => {
+                        setNumeroPassageiros(e.target.value);
+                        if (createTouched.numeroPassageiros) {
+                          validateAndSetField('numeroPassageiros');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('numeroPassageiros', true)}
                       placeholder="Ex: 14"
                     />
+                    {createErrors.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
                   </div>
                 </div>
               </div>
@@ -1171,7 +1448,7 @@ export function SecretaryRequisitionsPage({
                     <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? 'Automático' : 'Manual'}</p>
                   </div>
                   <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capacidade selecionada</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capacidade para passageiros</p>
                     <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedTransportesCapacidade} lugares</p>
                   </div>
                   <div className={`rounded-lg border px-3 py-3 ${lugaresEmFalta > 0
@@ -1188,6 +1465,11 @@ export function SecretaryRequisitionsPage({
                     </p>
                   </div>
                 </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">A lotacao util considera 1 lugar para o condutor em cada viatura.</p>
+
+                {createErrors.transporteIds && (
+                  <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
+                )}
 
                 {selectedTransportIds.length > 0 && (
                   <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
@@ -1196,8 +1478,8 @@ export function SecretaryRequisitionsPage({
                       {selectedTransportes.map((transporte) => (
                         <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
                           </div>
                           <Button
                             type="button"
@@ -1224,59 +1506,89 @@ export function SecretaryRequisitionsPage({
                 ) : (
                   <div className="space-y-4">
                     {transportesPorCategoria.map((grupo) => (
-                      <div key={grupo.categoria} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{grupo.label}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</p>
-                        </div>
+                      <div key={grupo.categoria} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                        <button
+                          type="button"
+                          onClick={() => toggleTransporteCategoriaExpansion(grupo.categoria)}
+                          className="w-full px-4 py-3 flex items-center justify-between text-left"
+                        >
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            {grupo.label}
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</span>
+                          </p>
+                          {expandedTransporteCategorias[grupo.categoria] ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
 
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                          {grupo.items.map((transporte) => {
-                            const isSelected = selectedTransportIds.includes(String(transporte.id));
-                            const isRecommended = recommendedTransportIds.includes(transporte.id);
+                        {expandedTransporteCategorias[grupo.categoria] && (
+                          <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
+                            {grupo.items.map((transporte) => {
+                              const isSelected = selectedTransportIds.includes(String(transporte.id));
+                              const isRecommended = recommendedTransportIds.includes(transporte.id);
+                              const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
 
-                            return (
-                              <div
-                                key={transporte.id}
-                                className={`rounded-xl border p-4 transition-all ${isSelected
-                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
-                                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
-                                  }`}
-                              >
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0 space-y-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                                        }`}>
-                                        {transporte.codigo ?? `#${transporte.id}`}
-                                      </span>
-                                      {isRecommended && (
-                                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                                          Sugerida
+                              return (
+                                <div
+                                  key={transporte.id}
+                                  className={`rounded-xl border p-4 transition-all ${isSelected
+                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                                    }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 space-y-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                          }`}>
+                                          {transporte.codigo ?? `#${transporte.id}`}
                                         </span>
-                                      )}
+                                        {isRecommended && (
+                                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                                            Sugerida
+                                          </span>
+                                        )}
+                                      </div>
                                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteCategoria(transporte.categoria)}</p>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        toggleSelectedTransport(transporte.id, !!checked);
+                                        validateAndSetField('transporteIds', true);
+                                      }}
+                                    />
                                   </div>
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onCheckedChange={(checked) => toggleSelectedTransport(transporte.id, !!checked)}
-                                  />
-                                </div>
 
-                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
-                                  <p>Matrícula: {transporte.matricula ?? 'Sem matrícula'}</p>
-                                  <p>Lotação: {formatLotacao(transporte.lotacao)}</p>
-                                  <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
-                                  <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                  <div className="mt-3">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-8 px-3 text-xs"
+                                      onClick={() => toggleTransporteDetalhes(transporte.id)}
+                                    >
+                                      {detailsOpen ? 'Ocultar detalhes' : 'Detalhes'}
+                                    </Button>
+                                  </div>
+
+                                  {detailsOpen && (
+                                    <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                                      <p>{formatTransporteCategoria(transporte.categoria)}</p>
+                                      <p>Matricula: {transporte.matricula ?? 'Sem matricula'}</p>
+                                      <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Nao definido'}</p>
+                                      <p>Data matricula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Nao definida'}</p>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
