@@ -619,6 +619,9 @@ export function SecretaryRequisitionsPage({
   );
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
+  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -641,7 +644,7 @@ export function SecretaryRequisitionsPage({
 
   const createFormContent = (
     <div className="space-y-5">
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Dados principais</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -651,7 +654,7 @@ export function SecretaryRequisitionsPage({
               id="req-create-tipo"
               value={tipo}
               onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {TIPO_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -665,7 +668,7 @@ export function SecretaryRequisitionsPage({
               id="req-create-prioridade"
               value={prioridade}
               onChange={(e) => setPrioridade(e.target.value as RequisicaoPrioridade)}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {PRIORIDADE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -713,11 +716,11 @@ export function SecretaryRequisitionsPage({
 
         <div>
           <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
-          <Textarea id="req-create-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
+          <Textarea id="req-create-descricao" className={textareaFieldClassName} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalhes por tipo</h3>
 
         <div>
@@ -921,7 +924,7 @@ export function SecretaryRequisitionsPage({
           {tipo === 'MANUTENCAO' && (
             <div>
               <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">Assunto (opcional)</label>
-              <Input id="req-create-assunto" type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
+              <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
             </div>
           )}
         </div>
@@ -1040,7 +1043,7 @@ export function SecretaryRequisitionsPage({
       </div>
 
       <div className="lg:hidden space-y-6">
-        <GlassCard className="w-full p-0 overflow-hidden">
+        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
           <button
             type="button"
             onClick={() => toggleSection('create')}
@@ -1061,7 +1064,7 @@ export function SecretaryRequisitionsPage({
           )}
         </GlassCard>
 
-        <GlassCard className="w-full p-0 overflow-hidden">
+        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
           <button
             type="button"
             onClick={() => toggleSection('list')}
@@ -1112,7 +1115,7 @@ export function SecretaryRequisitionsPage({
               id="req-filter-estado"
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {ESTADO_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{option.label}</option>
@@ -1126,7 +1129,7 @@ export function SecretaryRequisitionsPage({
               id="req-filter-prioridade"
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               <option value="">Todas as prioridades</option>
               {PRIORIDADE_OPTIONS.map((option) => (
@@ -1137,12 +1140,12 @@ export function SecretaryRequisitionsPage({
 
           <div>
             <label htmlFor="req-filter-criado-por" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
-            <Input id="req-filter-criado-por" type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+            <Input id="req-filter-criado-por" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
           </div>
 
           <div>
             <label htmlFor="req-filter-gerido-por" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
-            <Input id="req-filter-gerido-por" type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+            <Input id="req-filter-gerido-por" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
           </div>
         </div>
 
@@ -1160,7 +1163,7 @@ export function SecretaryRequisitionsPage({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {requisicoes.map((req) => (
-              <div key={req.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
+              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
                   <div className="flex items-center gap-2">
@@ -1208,7 +1211,7 @@ export function SecretaryRequisitionsPage({
       </div>
 
       <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-2/3' : 'w-full'}`}>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-2/3' : 'w-full'}`}>
           <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
             <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
@@ -1250,7 +1253,7 @@ export function SecretaryRequisitionsPage({
               id="req-filter-estado-desktop"
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {ESTADO_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{option.label}</option>
@@ -1264,7 +1267,7 @@ export function SecretaryRequisitionsPage({
               id="req-filter-prioridade-desktop"
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               <option value="">Todas as prioridades</option>
               {PRIORIDADE_OPTIONS.map((option) => (
@@ -1275,12 +1278,12 @@ export function SecretaryRequisitionsPage({
 
           <div>
             <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
-            <Input id="req-filter-criado-por-desktop" type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+            <Input id="req-filter-criado-por-desktop" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
           </div>
 
           <div>
             <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
-            <Input id="req-filter-gerido-por-desktop" type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+            <Input id="req-filter-gerido-por-desktop" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
           </div>
         </div>
 
@@ -1298,7 +1301,7 @@ export function SecretaryRequisitionsPage({
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
             {requisicoes.map((req) => (
-              <div key={req.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
+              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
                   <div className="flex items-center gap-2">
@@ -1343,7 +1346,7 @@ export function SecretaryRequisitionsPage({
           </div>
         </GlassCard>
 
-        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[140px] opacity-100'}`}>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[140px] opacity-100'}`}>
           <button
             type="button"
             onClick={() => toggleSection('create')}
@@ -1454,7 +1457,7 @@ export function SecretaryRequisitionsPage({
                   id="req-estado-modal"
                   value={estadoEdicao}
                   onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                  className={selectFieldClassName}
                 >
                   {ESTADO_OPTIONS.filter((option) => option.value).map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -1492,11 +1495,11 @@ export function SecretaryRequisitionsPage({
           <div className="space-y-3">
             <div>
               <label htmlFor="novo-material-nome" className="text-sm text-gray-600 dark:text-gray-300">Nome</label>
-              <Input id="novo-material-nome" value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder="Ex: Luvas" />
+              <Input id="novo-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder="Ex: Luvas" />
             </div>
             <div>
               <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição (opcional)</label>
-              <Textarea id="novo-material-descricao" value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
+              <Textarea id="novo-material-descricao" className={textareaFieldClassName} value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
             </div>
             <div>
               <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
@@ -1504,7 +1507,7 @@ export function SecretaryRequisitionsPage({
                 id="novo-material-categoria"
                 value={novoMaterialCategoria}
                 onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
-                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                className={selectFieldClassName}
               >
                 {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -1516,6 +1519,7 @@ export function SecretaryRequisitionsPage({
                 <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">Atributo</label>
                 <Input
                   id="novo-material-atributo"
+                  className={inputFieldClassName}
                   value={novoMaterialAtributo}
                   onChange={(e) => setNovoMaterialAtributo(e.target.value)}
                   placeholder="Ex: Cor, Tipo, Tamanho"
@@ -1525,6 +1529,7 @@ export function SecretaryRequisitionsPage({
                 <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">Valor do atributo</label>
                 <Input
                   id="novo-material-valor-atributo"
+                  className={inputFieldClassName}
                   value={novoMaterialValorAtributo}
                   onChange={(e) => setNovoMaterialValorAtributo(e.target.value)}
                   placeholder="Ex: Azul, A4, 100ml"
@@ -1553,7 +1558,7 @@ export function SecretaryRequisitionsPage({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="novo-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-                <Input id="novo-transporte-tipo" value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
+                <Input id="novo-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
@@ -1561,7 +1566,7 @@ export function SecretaryRequisitionsPage({
                   id="novo-transporte-categoria"
                   value={novoTransporteCategoria}
                   onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                  className={selectFieldClassName}
                 >
                   {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -1571,20 +1576,20 @@ export function SecretaryRequisitionsPage({
 
               <div>
                 <label htmlFor="novo-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">Matrícula</label>
-                <Input id="novo-transporte-matricula" value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
+                <Input id="novo-transporte-matricula" className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-lotacao" className="text-sm text-gray-600 dark:text-gray-300">Lotação (opcional)</label>
-                <Input id="novo-transporte-lotacao" type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
+                <Input id="novo-transporte-lotacao" className={inputFieldClassName} type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
               </div>
 
               <div>
                 <label htmlFor="novo-transporte-marca" className="text-sm text-gray-600 dark:text-gray-300">Marca (opcional)</label>
-                <Input id="novo-transporte-marca" value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
+                <Input id="novo-transporte-marca" className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-modelo" className="text-sm text-gray-600 dark:text-gray-300">Modelo (opcional)</label>
-                <Input id="novo-transporte-modelo" value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
+                <Input id="novo-transporte-modelo" className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
               </div>
 
               <div>
