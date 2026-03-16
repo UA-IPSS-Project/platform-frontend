@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangleIcon, CalendarIcon, ChevronDown, ChevronLeft, ChevronUp, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
+import { AlertTriangleIcon, ChevronDown, ChevronLeft, ChevronUp, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { Calendar } from '../../components/ui/calendar';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
-import { DatePickerField } from '../../components/ui/date-picker-field';
+import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -86,11 +84,6 @@ const toIsoFromDateOnly = (date?: Date): string | undefined => {
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)).toISOString();
 };
 
-const formatDatePt = (date?: Date): string => {
-  if (!date) return '';
-  return new Intl.DateTimeFormat('pt-PT').format(date);
-};
-
 const formatMaterialItemLabel = (
   material?: { id: number; nome?: string; categoria?: MaterialCategoria; atributo?: string; valorAtributo?: string },
   quantidade?: number,
@@ -158,8 +151,6 @@ export function SecretaryRequisitionsPage({
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
   const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [tempoLimitePickerOpen, setTempoLimitePickerOpen] = useState(false);
-  const [tempoLimiteMonth, setTempoLimiteMonth] = useState<Date>(new Date());
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
@@ -679,39 +670,13 @@ export function SecretaryRequisitionsPage({
 
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
-            <Popover
-              open={tempoLimitePickerOpen}
-              onOpenChange={(open) => {
-                setTempoLimitePickerOpen(open);
-                if (open) {
-                  setTempoLimiteMonth(tempoLimite ?? new Date());
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full mt-1 justify-between"
-                >
-                  {tempoLimite ? formatDatePt(tempoLimite) : 'Selecionar data'}
-                  <CalendarIcon className="w-4 h-4 opacity-70" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-                <Calendar
-                  mode="single"
-                  selected={tempoLimite}
-                  month={tempoLimiteMonth}
-                  onMonthChange={setTempoLimiteMonth}
-                  onSelect={(date) => {
-                    setTempoLimite(date);
-                    if (date) setTempoLimitePickerOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePickerField
+              id="req-create-tempo-limite"
+              value={formatDateInput(tempoLimite)}
+              onChange={(value) => setTempoLimite(parseDateInput(value))}
+              placeholder="Selecionar data"
+              buttonClassName="mt-1"
+            />
           </div>
         </div>
 
