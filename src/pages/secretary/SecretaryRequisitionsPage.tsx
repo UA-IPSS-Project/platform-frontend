@@ -503,6 +503,8 @@ export function SecretaryRequisitionsPage({
     }
   };
 
+  const requisicoesRequestChainRef = useRef<Promise<void>>(Promise.resolve());
+
   const handleClearFilters = () => {
     setFilterEstado('');
     if (activeTab === 'URGENTE') {
@@ -519,7 +521,7 @@ export function SecretaryRequisitionsPage({
     setFilterGeridoPorNome('');
   };
 
-  const handleSelectTab = async (tab: RequisicoesTab) => {
+  const handleSelectTab = (tab: RequisicoesTab) => {
     setActiveTab(tab);
 
     const nextTipo: RequisicaoTipo | '' = tab === 'GERAL' || tab === 'URGENTE' ? '' : tab;
@@ -528,13 +530,19 @@ export function SecretaryRequisitionsPage({
     setFilterTipo(nextTipo);
     setFilterPrioridade(nextPrioridade);
 
-    await fetchRequisicoes({
-      estado: filterEstado,
-      tipo: nextTipo,
-      prioridade: nextPrioridade,
-      criadoPorNome: filterCriadoPorNome,
-      geridoPorNome: filterGeridoPorNome,
-    });
+    requisicoesRequestChainRef.current = requisicoesRequestChainRef.current
+      .catch(() => {
+        // Swallow errors from previous requests to keep the chain alive
+      })
+      .then(() =>
+        fetchRequisicoes({
+          estado: filterEstado,
+          tipo: nextTipo,
+          prioridade: nextPrioridade,
+          criadoPorNome: filterCriadoPorNome,
+          geridoPorNome: filterGeridoPorNome,
+        }),
+      );
   };
 
   const handleCardShortcut = (tab: RequisicoesTab) => {
