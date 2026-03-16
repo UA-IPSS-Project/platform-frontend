@@ -438,7 +438,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   onChange={(value) => setFormData({ ...formData, dateOfBirth: value })}
                   buttonClassName={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
                 />
-                {errors.dateOfBirth && <p id="dob-error" className="text-sm text-red-500">{errors.dateOfBirth}</p>}
+                {errors.dateOfBirth && <p className="text-sm text-red-500">{errors.dateOfBirth}</p>}
               </div>
             </div>
 
