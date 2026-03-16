@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ShieldCheck, Settings2, Save, Package2 } from 'lucide-react';
+import { ShieldCheck, Settings2, Save, Package2, CalendarDays, Package, Truck, Wrench, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { calendarioApi } from '../../services/api';
+import { calendarioApi, requisicoesApi } from '../../services/api';
 
 type AdminView = 'overview' | 'slots' | 'catalogs';
 
@@ -36,7 +36,7 @@ function AdminOverview({
     onOpenSlots,
     onOpenCatalogs,
 }: Readonly<{
-    summaryCards: Array<{ title: string; value: number; description: string }>;
+    summaryCards: Array<{ title: string; value: number | string; description: string; icon: LucideIcon; iconClassName: string }>;
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
 }>) {
@@ -59,12 +59,17 @@ function AdminOverview({
 
     return (
         <>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {summaryCards.map((card) => (
-                    <GlassCard key={card.title} className="p-6">
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
-                        <p className="mt-3 text-4xl font-bold text-gray-900 dark:text-white">{card.value}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                    <GlassCard key={card.title} className="p-6 flex items-start justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
+                            <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
+                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                        </div>
+                        <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
+                            <card.icon className="w-6 h-6" />
+                        </div>
                     </GlassCard>
                 ))}
             </div>
@@ -174,6 +179,11 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         SECRETARIA: 1,
         BALNEARIO: 2,
     });
+    const [catalogCounts, setCatalogCounts] = useState({
+        materiais: 0,
+        transportes: 0,
+        tiposManutencao: 0,
+    });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
 
@@ -195,6 +205,28 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
 
     useEffect(() => {
         loadSlotCapacities();
+    }, []);
+
+    useEffect(() => {
+        const loadCatalogCounts = async () => {
+            try {
+                const [materiais, transportes, tiposManutencao] = await Promise.all([
+                    requisicoesApi.listarMateriais(),
+                    requisicoesApi.listarTransportes(),
+                    requisicoesApi.listarTiposManutencao(),
+                ]);
+
+                setCatalogCounts({
+                    materiais: Array.isArray(materiais) ? materiais.length : 0,
+                    transportes: Array.isArray(transportes) ? transportes.length : 0,
+                    tiposManutencao: Array.isArray(tiposManutencao) ? tiposManutencao.length : 0,
+                });
+            } catch (error) {
+                console.error('Erro ao carregar métricas de catálogos:', error);
+            }
+        };
+
+        loadCatalogCounts();
     }, []);
 
     const handleSlotCapacityChange = (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => {
@@ -222,16 +254,34 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
 
     const summaryCards = useMemo(() => [
         {
-            title: 'Slots Secretaria',
-            value: slotCapacities.SECRETARIA,
-            description: 'marcações por horário',
+            title: 'Slots (Secretaria/Balneário)',
+            value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
+            description: 'capacidade por horário',
+            icon: CalendarDays,
+            iconClassName: 'bg-violet-500/20 text-violet-300',
         },
         {
-            title: 'Slots Balneário',
-            value: slotCapacities.BALNEARIO,
-            description: 'marcações por horário',
+            title: 'Materiais',
+            value: catalogCounts.materiais,
+            description: 'itens no catálogo',
+            icon: Package,
+            iconClassName: 'bg-blue-500/20 text-blue-300',
         },
-    ], [slotCapacities]);
+        {
+            title: 'Transportes',
+            value: catalogCounts.transportes,
+            description: 'transportes no catálogo',
+            icon: Truck,
+            iconClassName: 'bg-emerald-500/20 text-emerald-300',
+        },
+        {
+            title: 'Tipos de manutenção',
+            value: catalogCounts.tiposManutencao,
+            description: 'tipos disponíveis',
+            icon: Wrench,
+            iconClassName: 'bg-fuchsia-500/20 text-fuchsia-300',
+        },
+    ], [slotCapacities, catalogCounts]);
 
     const AdminNavigation = (
         <>
