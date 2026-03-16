@@ -103,7 +103,10 @@ const formatMaterialItemLabel = (
 };
 
 type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
-type TransporteLike = RequisicaoResponse['transporte'] | TransporteCatalogo | null | undefined;
+type RequisicaoTransporteItem = NonNullable<RequisicaoResponse['transportes']>[number];
+type TransporteResumo = RequisicaoTransporteItem['transporte'];
+type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo | TransporteCatalogo | null | undefined;
+type TransporteSelectionMode = 'auto' | 'manual';
 
 const createEmptyMaterialLinha = () => ({
   rowId:
@@ -155,6 +158,20 @@ const formatTransporteMeta = (transporte?: TransporteLike): string => {
   ].filter(Boolean).join(' · ');
 };
 
+const getRequisicaoTransportes = (requisicao?: RequisicaoResponse | null): TransporteResumo[] => {
+  if (!requisicao) return [];
+  if (requisicao.transportes && requisicao.transportes.length > 0) {
+    return requisicao.transportes.map((item) => item.transporte).filter(Boolean);
+  }
+  return requisicao.transporte ? [requisicao.transporte] : [];
+};
+
+const formatTransporteCollection = (requisicao?: RequisicaoResponse | null): string => {
+  const transportesRequisicao = getRequisicaoTransportes(requisicao);
+  if (transportesRequisicao.length === 0) return '—';
+  return transportesRequisicao.map((transporte) => formatTransporteDisplay(transporte)).join(', ');
+};
+
 type MaterialItemGroup = {
   itemKey: string;
   nome: string;
@@ -203,7 +220,13 @@ export function SecretaryRequisitionsPage({
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
   const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
   const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
-  const [transporteId, setTransporteId] = useState('');
+  const [destinoTransporte, setDestinoTransporte] = useState('');
+  const [dataHoraSaida, setDataHoraSaida] = useState('');
+  const [dataHoraRegresso, setDataHoraRegresso] = useState('');
+  const [numeroPassageiros, setNumeroPassageiros] = useState('');
+  const [condutorTransporte, setCondutorTransporte] = useState('');
+  const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
+  const [transportSelectionMode, setTransportSelectionMode] = useState<TransporteSelectionMode>('auto');
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
@@ -365,9 +388,55 @@ export function SecretaryRequisitionsPage({
     [transportesOrdenados],
   );
 
-  const selectedTransporte = useMemo(
-    () => transportesOrdenados.find((item) => String(item.id) === transporteId) ?? null,
-    [transportesOrdenados, transporteId],
+  const passageirosSolicitados = useMemo(() => Number(numeroPassageiros || 0), [numeroPassageiros]);
+
+  const recommendedTransportIds = useMemo(() => {
+    if (passageirosSolicitados <= 0) return [] as number[];
+
+    const viaturasComLotacao = transportesOrdenados.filter((transporte) => (transporte.lotacao ?? 0) > 0);
+    if (viaturasComLotacao.length === 0) return [] as number[];
+
+    const singleVehicle = [...viaturasComLotacao]
+      .filter((transporte) => (transporte.lotacao ?? 0) >= passageirosSolicitados)
+      .sort((a, b) => (a.lotacao ?? 0) - (b.lotacao ?? 0))[0];
+
+    if (singleVehicle?.id) {
+      return [singleVehicle.id];
+    }
+
+    const orderedByCapacity = [...viaturasComLotacao].sort((a, b) => (b.lotacao ?? 0) - (a.lotacao ?? 0));
+    const recomendados: number[] = [];
+    let capacidadeAcumulada = 0;
+
+    orderedByCapacity.forEach((transporte) => {
+      if (capacidadeAcumulada >= passageirosSolicitados || !transporte.id) return;
+      recomendados.push(transporte.id);
+      capacidadeAcumulada += transporte.lotacao ?? 0;
+    });
+
+    return capacidadeAcumulada >= passageirosSolicitados ? recomendados : [];
+  }, [passageirosSolicitados, transportesOrdenados]);
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || transportSelectionMode !== 'auto') {
+      return;
+    }
+    setSelectedTransportIds(recommendedTransportIds.map(String));
+  }, [recommendedTransportIds, transportSelectionMode, tipo]);
+
+  const selectedTransportes = useMemo(
+    () => transportesOrdenados.filter((item) => selectedTransportIds.includes(String(item.id))),
+    [selectedTransportIds, transportesOrdenados],
+  );
+
+  const selectedTransportesCapacidade = useMemo(
+    () => selectedTransportes.reduce((sum, transporte) => sum + (transporte.lotacao ?? 0), 0),
+    [selectedTransportes],
+  );
+
+  const lugaresEmFalta = useMemo(
+    () => Math.max(0, passageirosSolicitados - selectedTransportesCapacidade),
+    [passageirosSolicitados, selectedTransportesCapacidade],
   );
 
   const handleCriarMaterialCatalogo = async () => {
@@ -424,7 +493,8 @@ export function SecretaryRequisitionsPage({
       });
       toast.success('Transporte criado com sucesso.');
       setTransportes((prev) => [...prev, novoTransporte]);
-      setTransporteId(String(novoTransporte.id));
+      setSelectedTransportIds([String(novoTransporte.id)]);
+      setTransportSelectionMode('manual');
       setNovoTransporteCodigo('');
       setNovoTransporteTipo('');
       setNovoTransporteCategoria('LIGEIRO_DE_PASSAGEIROS');
@@ -507,11 +577,33 @@ export function SecretaryRequisitionsPage({
     setDescricao('');
     setTempoLimite(undefined);
     setMaterialLinhas([]);
-    setTransporteId('');
+    setDestinoTransporte('');
+    setDataHoraSaida('');
+    setDataHoraRegresso('');
+    setNumeroPassageiros('');
+    setCondutorTransporte('');
+    setSelectedTransportIds([]);
+    setTransportSelectionMode('auto');
     setAssunto('');
     setExpandedMaterialItems({});
     setTipo(initialTipo ?? 'MANUTENCAO');
     setPrioridade(initialPrioridade ?? 'MEDIA');
+  };
+
+  const toggleSelectedTransport = (transporteId: number, checked: boolean) => {
+    const transporteIdStr = String(transporteId);
+    setTransportSelectionMode('manual');
+    setSelectedTransportIds((prev) => {
+      if (checked) {
+        return prev.includes(transporteIdStr) ? prev : [...prev, transporteIdStr];
+      }
+      return prev.filter((item) => item !== transporteIdStr);
+    });
+  };
+
+  const handleAplicarSugestaoTransporte = () => {
+    setTransportSelectionMode('auto');
+    setSelectedTransportIds(recommendedTransportIds.map(String));
   };
 
   const handleCreate = async () => {
@@ -555,13 +647,30 @@ export function SecretaryRequisitionsPage({
         });
         toast.success('Requisição de material criada com sucesso.');
       } else if (tipo === 'TRANSPORTE') {
-        if (!transporteId) {
-          toast.error('Selecione um transporte.');
+        if (!destinoTransporte.trim()) {
+          toast.error('O destino é obrigatório.');
+          return;
+        }
+        if (!dataHoraSaida || !dataHoraRegresso) {
+          toast.error('Indique a data/hora de saída e de regresso.');
+          return;
+        }
+        if (Number(numeroPassageiros) < 1) {
+          toast.error('Indique um número de passageiros válido.');
+          return;
+        }
+        if (selectedTransportIds.length === 0) {
+          toast.error('Selecione pelo menos uma viatura.');
           return;
         }
         await requisicoesApi.criarTransporte({
           ...payloadBase,
-          transporteId: Number(transporteId),
+          destino: destinoTransporte.trim(),
+          dataHoraSaida,
+          dataHoraRegresso,
+          numeroPassageiros: Number(numeroPassageiros),
+          condutor: condutorTransporte.trim() || undefined,
+          transporteIds: selectedTransportIds.map(Number),
         });
       } else {
         await requisicoesApi.criarManutencao({
@@ -973,89 +1082,206 @@ export function SecretaryRequisitionsPage({
           )}
 
           {tipo === 'TRANSPORTE' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Selecionar viatura</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Escolhe a viatura institucional que melhor responde à lotação e ao tipo de deslocação.</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Planeamento da deslocação</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Preenche o percurso e a ocupação prevista para sugerir automaticamente a frota mais adequada.</p>
                 </div>
-                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
-                  Novo transporte
-                </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">Destino</label>
+                    <Input
+                      id="req-create-transporte-destino"
+                      className={inputFieldClassName}
+                      value={destinoTransporte}
+                      onChange={(e) => setDestinoTransporte(e.target.value)}
+                      placeholder="Ex: Porto, Casa da Música"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">Condutor (opcional)</label>
+                    <Input
+                      id="req-create-transporte-condutor"
+                      className={inputFieldClassName}
+                      value={condutorTransporte}
+                      onChange={(e) => setCondutorTransporte(e.target.value)}
+                      placeholder="Ex: Motorista interno ou a definir"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-saida" className="text-sm text-gray-600 dark:text-gray-300">Data e hora de saída</label>
+                    <Input
+                      id="req-create-transporte-saida"
+                      type="datetime-local"
+                      className={inputFieldClassName}
+                      value={dataHoraSaida}
+                      onChange={(e) => setDataHoraSaida(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-regresso" className="text-sm text-gray-600 dark:text-gray-300">Data e hora de regresso</label>
+                    <Input
+                      id="req-create-transporte-regresso"
+                      type="datetime-local"
+                      className={inputFieldClassName}
+                      value={dataHoraRegresso}
+                      onChange={(e) => setDataHoraRegresso(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">Número de passageiros</label>
+                    <Input
+                      id="req-create-transporte-passageiros"
+                      type="number"
+                      min="1"
+                      className={inputFieldClassName}
+                      value={numeroPassageiros}
+                      onChange={(e) => setNumeroPassageiros(e.target.value)}
+                      placeholder="Ex: 14"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {selectedTransporte && (
-                <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/20 p-4 space-y-1">
-                  <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Viatura escolhida</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedTransporte)}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">{formatTransporteMeta(selectedTransporte)}</p>
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Viaturas sugeridas e selecionadas</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Podes manter a sugestão automática ou ajustar manualmente a combinação de viaturas.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={handleAplicarSugestaoTransporte}>
+                      Aplicar sugestão
+                    </Button>
+                    <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
+                      Nova viatura
+                    </Button>
+                  </div>
                 </div>
-              )}
 
-              {loadingCatalogo ? (
-                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                  A carregar viaturas disponíveis...
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Modo de seleção</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? 'Automático' : 'Manual'}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capacidade selecionada</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedTransportesCapacidade} lugares</p>
+                  </div>
+                  <div className={`rounded-lg border px-3 py-3 ${lugaresEmFalta > 0
+                    ? 'border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20'
+                    : 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20'
+                    }`}>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Cobertura</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                      {passageirosSolicitados > 0
+                        ? lugaresEmFalta > 0
+                          ? `Faltam ${lugaresEmFalta} lugar(es)`
+                          : 'Lotação suficiente'
+                        : 'Indica os passageiros'}
+                    </p>
+                  </div>
                 </div>
-              ) : transportesPorCategoria.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                  Ainda não existem viaturas em catálogo.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {transportesPorCategoria.map((grupo) => (
-                    <div key={grupo.categoria} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{grupo.label}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</p>
-                      </div>
 
-                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                        {grupo.items.map((transporte) => {
-                          const isSelected = String(transporte.id) === transporteId;
-
-                          return (
-                            <button
-                              key={transporte.id}
-                              type="button"
-                              onClick={() => setTransporteId(String(transporte.id))}
-                              className={`rounded-xl border p-4 text-left transition-all ${isSelected
-                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
-                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-emerald-300 dark:hover:border-emerald-800'
-                                }`}
-                              aria-pressed={isSelected}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                                      }`}>
-                                      {transporte.codigo ?? `#${transporte.id}`}
-                                    </span>
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                                  </div>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteCategoria(transporte.categoria)}</p>
-                                </div>
-                                <span className={`text-xs font-medium ${isSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'}`}>
-                                  {transporte.matricula ?? 'Sem matrícula'}
-                                </span>
-                              </div>
-
-                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
-                                <p>Lotação: {formatLotacao(transporte.lotacao)}</p>
-                                <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
-                                <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
-                                <p>{isSelected ? 'Selecionado para a requisição' : 'Clique para selecionar'}</p>
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                {selectedTransportIds.length > 0 && (
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Seleção atual</p>
+                    <div className="space-y-2">
+                      {selectedTransportes.map((transporte) => (
+                        <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 px-3"
+                            onClick={() => toggleSelectedTransport(transporte.id, false)}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+
+                {loadingCatalogo ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                    A carregar viaturas disponíveis...
+                  </div>
+                ) : transportesPorCategoria.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                    Ainda não existem viaturas em catálogo.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {transportesPorCategoria.map((grupo) => (
+                      <div key={grupo.categoria} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{grupo.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                          {grupo.items.map((transporte) => {
+                            const isSelected = selectedTransportIds.includes(String(transporte.id));
+                            const isRecommended = recommendedTransportIds.includes(transporte.id);
+
+                            return (
+                              <div
+                                key={transporte.id}
+                                className={`rounded-xl border p-4 transition-all ${isSelected
+                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                                  }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 space-y-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                        }`}>
+                                        {transporte.codigo ?? `#${transporte.id}`}
+                                      </span>
+                                      {isRecommended && (
+                                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                                          Sugerida
+                                        </span>
+                                      )}
+                                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteCategoria(transporte.categoria)}</p>
+                                  </div>
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => toggleSelectedTransport(transporte.id, !!checked)}
+                                  />
+                                </div>
+
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                  <p>Matrícula: {transporte.matricula ?? 'Sem matrícula'}</p>
+                                  <p>Lotação: {formatLotacao(transporte.lotacao)}</p>
+                                  <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
+                                  <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1335,7 +1561,13 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
+                  {req.tipo === 'TRANSPORTE' && (
+                    <>
+                      <p>Destino: {req.destino || '—'}</p>
+                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
+                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                    </>
+                  )}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
 
@@ -1473,7 +1705,13 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
+                  {req.tipo === 'TRANSPORTE' && (
+                    <>
+                      <p>Destino: {req.destino || '—'}</p>
+                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
+                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                    </>
+                  )}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
               </div>
@@ -1576,10 +1814,31 @@ export function SecretaryRequisitionsPage({
                   )}
                   {selectedRequisicao.tipo === 'TRANSPORTE' && (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">Transporte</p>
-                      <div className="space-y-1">
-                        <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedRequisicao.transporte)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(selectedRequisicao.transporte)}</p>
+                      <p className="text-gray-500 dark:text-gray-400">Destino</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.destino || '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Saída</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraSaida ? new Date(selectedRequisicao.dataHoraSaida).toLocaleString('pt-PT') : '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Regresso</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraRegresso ? new Date(selectedRequisicao.dataHoraRegresso).toLocaleString('pt-PT') : '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Passageiros</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.numeroPassageiros || '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Condutor</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || 'A definir'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Viaturas</p>
+                      <div className="space-y-2">
+                        {getRequisicaoTransportes(selectedRequisicao).length > 0 ? getRequisicaoTransportes(selectedRequisicao).map((transporte) => (
+                          <div key={`${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`} className="space-y-1">
+                            <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
+                          </div>
+                        )) : (
+                          <p className="text-gray-900 dark:text-gray-100">—</p>
+                        )}
                       </div>
                     </>
                   )}

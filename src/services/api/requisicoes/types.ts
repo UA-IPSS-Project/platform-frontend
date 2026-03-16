@@ -84,6 +84,26 @@ export interface RequisicaoResponse {
     dataMatricula?: string;
     nome?: string;
   };
+  transportes?: Array<{
+    id?: number;
+    transporte: {
+      id: number;
+      codigo?: string;
+      tipo?: string;
+      categoria?: TransporteCategoria;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
+      lotacao?: number;
+      dataMatricula?: string;
+      nome?: string;
+    };
+  }>;
+  destino?: string;
+  dataHoraSaida?: string;
+  dataHoraRegresso?: string;
+  numeroPassageiros?: number;
+  condutor?: string | null;
   assunto?: string;
 }
 
@@ -111,7 +131,12 @@ export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseReque
 }
 
 export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseRequest {
-  transporteId: number;
+  destino: string;
+  dataHoraSaida: string;
+  dataHoraRegresso: string;
+  numeroPassageiros: number;
+  condutor?: string;
+  transporteIds: number[];
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
