@@ -8,7 +8,9 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { ProfilePage } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
 
@@ -174,7 +176,14 @@ function SlotsManagement({
 }
 
 export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Readonly<AdminDashboardProps>) {
+    const { user: authUser } = useAuth();
     const [currentView, setCurrentView] = useState<AdminView>('overview');
+    const [userData, setUserData] = useState({
+        name: authUser?.nome || '',
+        nif: authUser?.nif || '',
+        contact: authUser?.telefone || '',
+        email: authUser?.email || '',
+    });
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
         BALNEARIO: 2,
@@ -250,6 +259,19 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         } finally {
             setIsSavingSlots(false);
         }
+    };
+
+    useEffect(() => {
+        setUserData({
+            name: authUser?.nome || '',
+            nif: authUser?.nif || '',
+            contact: authUser?.telefone || '',
+            email: authUser?.email || '',
+        });
+    }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
+
+    const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
+        setUserData(updatedUser);
     };
 
     const summaryCards = useMemo(() => [
@@ -355,18 +377,25 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                     />
                 ) : null}
 
-                {currentView === 'profile' || currentView === 'settings' ? (
-            <div className="flex items-center justify-center h-[400px]">
-                <div className="text-center">
-                    <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">
-                        {currentView === 'profile' ? 'Perfil' : 'Definições'}
-                    </h2>
-                    <p className="text-gray-500">Em desenvolvimento</p>
-                </div>
-            </div>
-        ) : null}
+                {currentView === 'profile' ? (
+                    <ProfilePage
+                        user={{ id: authUser?.id || 0, ...userData }}
+                        onBack={() => setCurrentView('overview')}
+                        onUpdateUser={handleUpdateUser}
+                        isDarkMode={isDarkMode}
+                    />
+                ) : null}
 
-        {currentView === 'catalogs' ? (
+                {currentView === 'settings' ? (
+                    <div className="flex items-center justify-center h-[400px]">
+                        <div className="text-center">
+                            <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">Definições</h2>
+                            <p className="text-gray-500">Em desenvolvimento</p>
+                        </div>
+                    </div>
+                ) : null}
+
+                {currentView === 'catalogs' ? (
                     <RequisitionsCatalogManagement />
                 ) : null}
             </div>

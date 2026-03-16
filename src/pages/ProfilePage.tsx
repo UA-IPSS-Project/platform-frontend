@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -24,6 +24,21 @@ interface ProfilePageProps {
   isEmployee?: boolean;
 }
 
+interface ProfileFormData {
+  fullName: string;
+  address: string;
+  postalCode: string;
+  dateOfBirth: string;
+  parish: string;
+  phonePersonal: string;
+  nif: string;
+  email: string;
+  profession: string;
+  workLocation: string;
+  workAddress: string;
+  workPhone: string;
+}
+
 // Função para formatar data no formato português
 const formatDateToPT = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -35,6 +50,49 @@ const formatDateToPT = (dateString: string | undefined): string => {
   }
 };
 
+const createEmptyFormData = (): ProfileFormData => ({
+  fullName: '',
+  address: '',
+  postalCode: '',
+  dateOfBirth: '',
+  parish: '',
+  phonePersonal: '',
+  nif: '',
+  email: '',
+  profession: '',
+  workLocation: '',
+  workAddress: '',
+  workPhone: '',
+});
+
+const mapApiUserToFormData = (data: {
+  nome: string;
+  morada?: string;
+  codigoPostal?: string;
+  dataNascimento?: string;
+  freguesia?: string;
+  telefone?: string;
+  nif: string;
+  email: string;
+  profissao?: string;
+  localEmprego?: string;
+  moradaEmprego?: string;
+  telefoneEmprego?: string;
+}): ProfileFormData => ({
+  fullName: data.nome,
+  address: data.morada || '',
+  postalCode: data.codigoPostal || '',
+  dateOfBirth: formatDateToPT(data.dataNascimento),
+  parish: data.freguesia || '',
+  phonePersonal: data.telefone || '',
+  nif: data.nif,
+  email: data.email,
+  profession: data.profissao || '',
+  workLocation: data.localEmprego || '',
+  workAddress: data.moradaEmprego || '',
+  workPhone: data.telefoneEmprego || '',
+});
+
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
@@ -42,55 +100,31 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [expanded, setExpanded] = useState({
     personal: true,
-    address: true, // User wanted to "hide fields", maybe default false? Keeping true for better UX unless specified "start hidden".
-    professional: true
+    address: false,
+    professional: false
   });
 
-  const [formData, setFormData] = useState({
-    fullName: user.name,
-    address: 'Rua das Flores, 123',
-    postalCode: '1000-001',
-    dateOfBirth: user?.birthDate || '15/01/1990',
-    parish: 'São Pedro',
-    phonePersonal: user.contact,
-    nif: user.nif,
-    email: user.email,
-    profession: 'Engenheiro',
-    workLocation: 'Tech Company',
-    workAddress: 'Av. Principal, 456',
-    workPhone: '217654321',
-  });
+  const [formData, setFormData] = useState<ProfileFormData>(createEmptyFormData());
+
+  const loadUserData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await utilizadoresApi.obterPorId(user.id);
+      setFormData(mapApiUserToFormData(data));
+      return data;
+    } catch (error) {
+      console.error('Erro ao carregar dados do utilizador:', error);
+      toast.error('Erro ao carregar dados do perfil');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [user.id]);
 
   // Carregar dados do utilizador da API
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        setLoading(true);
-        const data = await utilizadoresApi.obterPorId(user.id);
-        setFormData({
-          fullName: data.nome,
-          address: data.morada || '',
-          postalCode: data.codigoPostal || '',
-          dateOfBirth: formatDateToPT(data.dataNascimento),
-          parish: data.freguesia || '',
-          phonePersonal: data.telefone || '',
-          nif: data.nif,
-          email: data.email,
-          profession: data.profissao || '',
-          workLocation: data.localEmprego || '',
-          workAddress: data.moradaEmprego || '',
-          workPhone: data.telefoneEmprego || '',
-        });
-      } catch (error) {
-        console.error('Erro ao carregar dados do utilizador:', error);
-        toast.error('Erro ao carregar dados do perfil');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    carregarDados();
-  }, [user.id]);
+    void loadUserData();
+  }, [loadUserData]);
 
   const handleSave = async () => {
     try {
@@ -108,26 +142,16 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       });
 
       // Recarregar dados da API após salvar
-      const dadosAtualizados = await utilizadoresApi.obterPorId(user.id);
-      setFormData({
-        fullName: dadosAtualizados.nome,
-        address: dadosAtualizados.morada || '',
-        postalCode: dadosAtualizados.codigoPostal || '',
-        dateOfBirth: formatDateToPT(dadosAtualizados.dataNascimento),
-        parish: dadosAtualizados.freguesia || '',
-        phonePersonal: dadosAtualizados.telefone || '',
-        nif: dadosAtualizados.nif,
-        email: dadosAtualizados.email,
-        profession: dadosAtualizados.profissao || '',
-        workLocation: dadosAtualizados.localEmprego || '',
-        workAddress: dadosAtualizados.moradaEmprego || '',
-        workPhone: dadosAtualizados.telefoneEmprego || '',
-      });
+      const dadosAtualizados = await loadUserData();
+
+      if (!dadosAtualizados) {
+        return;
+      }
 
       onUpdateUser({
         name: dadosAtualizados.nome,
         nif: dadosAtualizados.nif,
-        contact: dadosAtualizados.telefone,
+        contact: dadosAtualizados.telefone || '',
         email: dadosAtualizados.email,
       });
 
@@ -141,21 +165,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      fullName: user.name,
-      address: 'Rua das Flores, 123',
-      postalCode: '1000-001',
-      dateOfBirth: user?.birthDate || '15/01/1990',
-      parish: 'São Pedro',
-      phonePersonal: user.contact,
-      nif: user.nif,
-      email: user.email,
-      profession: 'Engenheiro',
-      workLocation: 'Tech Company',
-      workAddress: 'Av. Principal, 456',
-      workPhone: '217654321',
-    });
+  const handleCancel = async () => {
+    await loadUserData();
     setIsEditing(false);
   };
 
@@ -311,7 +322,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
                     {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
                     {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
-                    {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
+                    {renderField('Freguesia de Emprego', formData.workAddress, 'workAddress', true, 'Adicione freguesia de emprego')}
                     {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
                   </div>
                 )}

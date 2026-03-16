@@ -37,6 +37,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [userData, setUserData] = useState(user);
 
   const {
     allAppointments,
@@ -118,11 +119,24 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (getCurrentView() === 'history') carregarHistorico();
   }, [location.pathname, historyStartDate, historyEndDate, authUser?.id]);
 
+  useEffect(() => {
+    setUserData({
+      name: authUser?.nome || user.name,
+      nif: authUser?.nif || user.nif,
+      contact: authUser?.telefone || user.contact,
+      email: authUser?.email || user.email,
+    });
+  }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone, user]);
+
 
   const visibleAppointments = useMemo(
-    () => allAppointments.filter((apt) => apt.patientNIF === user.nif),
-    [allAppointments, user.nif]
+    () => allAppointments.filter((apt) => apt.patientNIF === userData.nif),
+    [allAppointments, userData.nif]
   );
+
+  const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
+    setUserData(updatedUser);
+  };
 
   const handleNavigate = (view: string) => {
     if (view === 'appointments') navigate('/dashboard');
@@ -143,7 +157,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
-      const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
+      const isOwn = utente?.nif === userData.nif || appointment.patientNIF === userData.nif;
 
       const status = mapStatusFromApiToUi(latestData.estado);
 
@@ -306,13 +320,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 <ProfilePage
                   user={{
                     id: authUser?.id || 0,
-                    name: authUser?.nome || user.name,
-                    nif: authUser?.nif || user.nif,
-                    contact: authUser?.telefone || user.contact,
-                    email: authUser?.email || user.email,
+                    ...userData,
                   }}
                   onBack={() => navigate('/dashboard')}
-                  onUpdateUser={() => { }}
+                  onUpdateUser={handleUpdateUser}
                   isDarkMode={isDarkMode}
                 />
               } />
