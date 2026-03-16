@@ -1,4 +1,3 @@
-import React from 'react';
 import { Badge } from '../ui/badge';
 import { AlertTriangleIcon } from './CustomIcons';
 import { cn } from '../ui/utils';
@@ -12,24 +11,24 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className }: StatusBadgeProps) {
     switch (status) {
         case 'in-progress':
-            return <Badge className={cn("bg-purple-600 hover:bg-purple-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Em Curso</Badge>;
+            return <Badge className={cn("rounded-full px-2 py-0.5 text-xs bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]", className)}>Em Curso</Badge>;
         case 'scheduled':
-            return <Badge className={cn("bg-pink-600 hover:bg-pink-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Agendado</Badge>;
+            return <Badge className={cn("rounded-full px-2 py-0.5 text-xs bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200", className)}>Agendado</Badge>;
         case 'warning':
             return (
-                <Badge className={cn("bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-full px-2 py-0.5 text-xs flex items-center gap-1", className)}>
+                <Badge className={cn("rounded-full border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 px-2 py-0.5 text-xs flex items-center gap-1", className)}>
                     <AlertTriangleIcon className="w-3 h-3" />
                     Agendado
                 </Badge>
             );
         case 'completed':
-            return <Badge className={cn("bg-green-600 hover:bg-green-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Concluído</Badge>;
+            return <Badge className={cn("rounded-full px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200", className)}>Concluído</Badge>;
         case 'cancelled':
-            return <Badge className={cn("bg-red-600 hover:bg-red-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Cancelado</Badge>;
+            return <Badge className={cn("rounded-full border border-red-300 bg-transparent text-red-600 dark:border-red-500 dark:text-red-500 px-2 py-0.5 text-xs", className)}>Cancelado</Badge>;
         case 'no-show':
-            return <Badge className={cn("bg-red-500 hover:bg-red-600 text-white rounded-full px-2 py-0.5 text-xs", className)}>Não Compareceu</Badge>;
+            return <Badge variant="outline" className={cn("rounded-full border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent px-2 py-0.5 text-xs", className)}>Não Compareceu</Badge>;
         case 'reserved':
-            return <Badge className={cn("bg-gray-400 hover:bg-gray-500 text-white rounded-full px-2 py-0.5 text-xs", className)}>Reservado</Badge>;
+            return <Badge className={cn("rounded-full px-2 py-0.5 text-xs bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200", className)}>Reservado</Badge>;
         default:
             return null;
     }

@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
-import { XIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon } from '../shared/CustomIcons';
+import { XIcon, AlertTriangleIcon, UserIcon } from '../shared/CustomIcons';
 import { ClipboardList, Save } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
@@ -196,25 +196,23 @@ export function BalnearioAppointmentDetailsDialog({
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'in-progress':
-                return <Badge className="bg-purple-600 text-white rounded-full px-3">Em Curso</Badge>;
+                return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">Em Curso</Badge>;
             case 'scheduled':
-                return <Badge className="bg-purple-500 text-white rounded-full px-3">Agendado</Badge>;
+                return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">Agendado</Badge>;
             case 'warning':
                 return (
-                    <Badge className="bg-yellow-500 text-gray-900 rounded-full px-3 flex items-center gap-1">
+                    <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
                         <AlertTriangleIcon className="w-3 h-3" />
                         Agendado
                     </Badge>
                 );
             case 'completed':
-                return <Badge className="bg-green-600 text-white rounded-full px-3 flex items-center gap-1">
-                    <CheckCircleIcon className="w-3 h-3" />
+                return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
                     Concluído
                 </Badge>;
             case 'no-show':
                 return (
-                    <Badge style={{ backgroundColor: '#f97316', color: 'white' }} className="rounded-full px-3 flex items-center gap-1">
-                        <UserIcon className="w-3 h-3 text-white" />
+                    <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
                         Não compareceu
                     </Badge>
                 );
@@ -263,8 +261,8 @@ export function BalnearioAppointmentDetailsDialog({
                 {/* Scrollable Content */}
                 <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     {/* Patient Name */}
-                    <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-5 border border-purple-100 dark:border-purple-800">
-                        <Label className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                        <Label className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 mb-2">
                             <UserIcon className="w-4 h-4" />
                             Nome do Utente
                         </Label>
@@ -408,27 +406,30 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Action Buttons */}
                     <div className="flex flex-col gap-2 pt-4 pb-2 border-t border-gray-100 dark:border-gray-800">
                         {(appointment.status === 'scheduled' || appointment.status === 'warning') && (
-                            <div className="grid grid-cols-2 gap-3 mb-2">
+                            <div className="space-y-3 mb-2">
                                 <Button
                                     onClick={handleStartAppointment}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
                                 >
-                                    <div className="flex flex-col items-center gap-1">
-                                        <CheckCircleIcon className="w-5 h-5 mb-1" />
-                                        Compareceu
-                                    </div>
+                                    Compareceu
                                 </Button>
 
-                                <Button
-                                    onClick={handleNoShowAppointment}
-                                    variant="outline"
-                                    className="border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-800/50 dark:text-orange-400 dark:hover:bg-orange-900/20 font-medium py-6 h-auto"
-                                >
-                                    <div className="flex flex-col items-center gap-1">
-                                        <UserIcon className="w-5 h-5 mb-1" />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleCancelAppointment}
+                                        className="w-full h-11"
+                                    >
+                                        Cancelar Marcação
+                                    </Button>
+                                    <Button
+                                        onClick={handleNoShowAppointment}
+                                        variant="warning"
+                                        className="w-full h-11 font-medium"
+                                    >
                                         Faltou
-                                    </div>
-                                </Button>
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -437,22 +438,10 @@ export function BalnearioAppointmentDetailsDialog({
                                 onClick={handleCompleteAppointment}
                                 className="bg-green-600 hover:bg-green-700 text-white font-medium w-full py-6 h-auto mb-2"
                             >
-                                <div className="flex flex-col items-center gap-1">
-                                    <CheckCircleIcon className="w-5 h-5 mb-1" />
-                                    Concluir Atendimento
-                                </div>
+                                Concluir Atendimento
                             </Button>
                         )}
 
-                        {(appointment.status === 'scheduled' || appointment.status === 'warning') && (
-                            <Button
-                                variant="ghost"
-                                onClick={handleCancelAppointment}
-                                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20 w-full"
-                            >
-                                Cancelar Marcação
-                            </Button>
-                        )}
                     </div>
                 </div>
             </DialogContent>

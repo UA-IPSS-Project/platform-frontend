@@ -46,13 +46,13 @@ export function DayScheduleDialog({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'in-progress':
-        return 'bg-purple-500 text-white';
+        return 'border-l-4 border-violet-600 bg-violet-50 text-violet-900 dark:border-violet-400 dark:bg-violet-900/30 dark:text-violet-200';
       case 'scheduled':
-        return 'bg-gray-700 text-white dark:bg-gray-600';
+        return 'border-l-4 border-violet-500 bg-violet-50/80 text-violet-800 dark:border-violet-400 dark:bg-violet-900/20 dark:text-violet-200';
       case 'warning':
-        return 'bg-yellow-500 text-gray-900';
+        return 'border-l-4 border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-500 dark:bg-amber-500/10 dark:text-amber-300';
       default:
-        return 'bg-gray-300 text-gray-700';
+        return 'border-l-4 border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/70 dark:text-slate-200';
     }
   };
 
@@ -105,7 +105,7 @@ export function DayScheduleDialog({
                       {time}
                     </div>
                     <div
-                      className="min-h-[50px] relative cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                      className="min-h-[50px] relative cursor-pointer hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors"
                       onClick={async () => {
                         if (appointment) {
                           onViewAppointment(appointment);
@@ -147,7 +147,7 @@ export function DayScheduleDialog({
           <div className="px-6 py-4 border-t dark:border-gray-700 flex-shrink-0">
             <Button
               onClick={handleViewWeek}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+              className="w-full gap-2"
             >
               Ver Semana
               <ChevronRight className="w-4 h-4" />

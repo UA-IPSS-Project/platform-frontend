@@ -7,7 +7,7 @@ import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../shared/CustomIcons';
+import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, FileTextIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
 import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
@@ -1143,25 +1143,35 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
                     // Helper function to get status-based styles
                     const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
+                      const normalizedStatus = (status || '').toLowerCase();
                       const statusStyles: Record<string, string> = {
                         'completed': isInteractive
-                          ? 'bg-green-600 text-white border-green-700 hover:bg-green-700'
-                          : 'bg-green-600 text-white border-green-700',
+                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+                        'concluded': isInteractive
+                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+                        'done': isInteractive
+                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
                         'cancelled': isInteractive
-                          ? 'bg-red-600 text-white border-red-700 hover:bg-red-700'
-                          : 'bg-red-600 text-white border-red-700',
+                          ? 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 hover:bg-red-200 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700 dark:hover:bg-red-900/50'
+                          : 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700',
                         'in-progress': isInteractive
-                          ? 'bg-purple-600 text-white border-purple-700 hover:bg-purple-700'
-                          : 'bg-purple-600 text-white border-purple-700',
+                          ? 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 hover:bg-violet-200 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700 dark:hover:bg-violet-900/50'
+                          : 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700',
+                        'scheduled': isInteractive
+                          ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+                          : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700',
                         'warning': isInteractive
-                          ? 'bg-yellow-600 text-white border-yellow-700 hover:bg-yellow-700'
-                          : 'bg-yellow-600 text-white border-yellow-700',
-                        'no-show': 'bg-[#f97316] text-white border-[#ea580c] cursor-not-allowed',
+                          ? 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/50'
+                          : 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+                        'no-show': 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 cursor-not-allowed dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
                       };
                       const defaultStyle = isInteractive
-                        ? 'bg-pink-600 text-white border-pink-700 hover:bg-pink-700'
-                        : 'bg-pink-600 text-white border-pink-700';
-                      return statusStyles[status || ''] || defaultStyle;
+                        ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+                        : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
+                      return statusStyles[normalizedStatus] || defaultStyle;
                     };
 
                     // Determine appointment styles based on state
@@ -1210,7 +1220,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         id={slotId}
                         onClick={() => handleSlotClick(day, time)}
                         disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
-                        style={appointment?.status === 'no-show' ? { backgroundColor: '#f97316', borderColor: '#ea580c', color: 'white' } : {}}
                         title={getSlotTooltip()}
                         className={`${base} ${inPast && !appointment
                           ? pastSlot
@@ -1253,8 +1262,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               : (isClient && isOwn ? 'Sua marcação' : appointment.patientName);
 
                             return (
-                              <div className="flex items-center gap-1 text-left truncate font-semibold text-sm leading-tight">
-                                <UserIcon className="w-3.5 h-3.5 text-white" />
+                              <div className="text-left truncate font-semibold text-sm leading-tight">
                                 <span className="truncate">{displayText}</span>
                               </div>
                             );

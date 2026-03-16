@@ -13,6 +13,7 @@ import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleD
 import { BalnearioAppointmentDialog } from '../../components/balneario/BalnearioAppointmentDialog';
 import { BalnearioAppointmentDetailsDialog } from '../../components/balneario/BalnearioAppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
+import { HistoryPage } from '../HistoryPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -60,6 +61,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         handleDeleteAllNotifications
     } = useNotifications(authUser?.email, handleRefreshFromNotification);
 
+    const [historyAppointments, setHistoryAppointments] = useState<Appointment[]>([]);
+    const [historyStartDate, setHistoryStartDate] = useState<Date | null>(null);
+    const [historyEndDate, setHistoryEndDate] = useState<Date>(() => {
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+        return futureDate;
+    });
+
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [showAppointmentDialog, setShowAppointmentDialog] = useState(false);
     const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -97,6 +106,29 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const navigateBack = () => {
         setViewHistory(prev => (prev.length > 1 ? prev.slice(0, -1) : ['home']));
     };
+
+    const carregarHistorico = async () => {
+        try {
+            const end = historyEndDate;
+            const endOfDay = new Date(end);
+            endOfDay.setHours(23, 59, 59, 999);
+            const startOfDay = historyStartDate ? new Date(historyStartDate) : new Date('2000-01-01');
+            startOfDay.setHours(0, 0, 0, 0);
+
+            const data = await marcacoesApi.obterPassadas(
+                startOfDay.toISOString(),
+                endOfDay.toISOString()
+            );
+            const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
+            setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
+        } catch {
+            toast.error('Erro ao carregar histórico');
+        }
+    };
+
+    useEffect(() => {
+        if (currentView === 'history') carregarHistorico();
+    }, [currentView, historyStartDate, historyEndDate]);
 
     useEffect(() => {
         if (!authUser?.id) return;
@@ -277,7 +309,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         <TodayAppointments
                                             appointments={appointments}
                                             onViewAppointment={handleViewAppointment}
-                                            onShowHistory={() => navigateTo('reports')}
+                                            onShowHistory={() => navigateTo('history')}
                                             isDarkMode={isDarkMode}
                                             isBalneario={true}
                                         />
@@ -326,7 +358,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         setShowNotifications(false);
                                     },
                                     onNavigateToHistory: async () => {
-                                        navigateTo('reports'); // ou um de histórico
+                                        navigateTo('history');
                                         setShowNotifications(false);
                                     },
                                     onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
@@ -338,6 +370,19 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         setHighlightedSlot({ date: slotDate, time });
                                         setTimeout(() => setHighlightedSlot(null), 5000);
                                     },
+                                }}
+                            />
+                        ) : currentView === 'history' ? (
+                            <HistoryPage
+                                appointments={historyAppointments}
+                                onBack={navigateBack}
+                                onViewAppointment={handleViewAppointment}
+                                isDarkMode={isDarkMode}
+                                startDate={historyStartDate}
+                                endDate={historyEndDate}
+                                onDateChange={(start, end) => {
+                                    setHistoryStartDate(start);
+                                    setHistoryEndDate(end);
                                 }}
                             />
                         ) : (
