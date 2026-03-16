@@ -423,29 +423,57 @@ export function SecretaryRequisitionsPage({
   const recommendedTransportIds = useMemo(() => {
     if (passageirosSolicitados <= 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenados.filter((transporte) => getPassengerCapacity(transporte.lotacao) > 0);
+    const viaturasComLotacao = transportesOrdenados
+      .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
+      .map((transporte) => ({
+        id: transporte.id as number,
+        capacidade: getPassengerCapacity(transporte.lotacao),
+      }));
     if (viaturasComLotacao.length === 0) return [] as number[];
 
-    const singleVehicle = [...viaturasComLotacao]
-      .filter((transporte) => getPassengerCapacity(transporte.lotacao) >= passageirosSolicitados)
-      .sort((a, b) => getPassengerCapacity(a.lotacao) - getPassengerCapacity(b.lotacao))[0];
+    const capacidadeMaxima = viaturasComLotacao.reduce((sum, item) => sum + item.capacidade, 0);
+    if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
 
-    if (singleVehicle?.id) {
-      return [singleVehicle.id];
+    // Custo combinado: nº_viaturas × K + lugares_vazios
+    // K ≈ 25% dos passageiros — cada viatura extra custa tanto como desperdiçar 1/4 da ocupação.
+    // Exemplos: 9 pass (K=3): 2 carros (1 vazio) = 7 < bus (20 vazios) = 23 → carros ganham
+    //           27 pass (K=7): bus (3 vazios) = 10 < 5 carros (0 vazios) = 35 → bus ganha
+    const penalizacaoViatura = Math.max(2, Math.ceil(passageirosSolicitados / 4));
+
+    // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
+    const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
+      new Array(capacidadeMaxima + 1).fill(undefined);
+    dp[0] = { ids: [], custoViaturas: 0 };
+
+    for (const viatura of viaturasComLotacao) {
+      for (let cap = capacidadeMaxima - viatura.capacidade; cap >= 0; cap -= 1) {
+        const base = dp[cap];
+        if (!base) continue;
+
+        const novaCap = cap + viatura.capacidade;
+        const novoCusto = base.custoViaturas + penalizacaoViatura;
+        const existente = dp[novaCap];
+
+        if (!existente || novoCusto < existente.custoViaturas) {
+          dp[novaCap] = { ids: [...base.ids, viatura.id], custoViaturas: novoCusto };
+        }
+      }
     }
 
-    const orderedByCapacity = [...viaturasComLotacao]
-      .sort((a, b) => getPassengerCapacity(b.lotacao) - getPassengerCapacity(a.lotacao));
-    const recomendados: number[] = [];
-    let capacidadeAcumulada = 0;
+    // Escolhe a capacidade cujo custo total (viaturas + lugares vazios) é mínimo
+    let melhor: { ids: number[]; custoTotal: number } | undefined;
 
-    orderedByCapacity.forEach((transporte) => {
-      if (capacidadeAcumulada >= passageirosSolicitados || !transporte.id) return;
-      recomendados.push(transporte.id);
-      capacidadeAcumulada += getPassengerCapacity(transporte.lotacao);
-    });
+    for (let cap = passageirosSolicitados; cap <= capacidadeMaxima; cap += 1) {
+      const entrada = dp[cap];
+      if (!entrada) continue;
 
-    return capacidadeAcumulada >= passageirosSolicitados ? recomendados : [];
+      const custoTotal = entrada.custoViaturas + (cap - passageirosSolicitados);
+      if (!melhor || custoTotal < melhor.custoTotal) {
+        melhor = { ids: entrada.ids, custoTotal };
+      }
+    }
+
+    return melhor?.ids ?? [];
   }, [passageirosSolicitados, transportesOrdenados]);
 
   useEffect(() => {
