@@ -208,7 +208,11 @@ export function SecretaryRequisitionsPage({
         criadoPorNome: criadoPor || undefined,
         geridoPorNome: geridoPor || undefined,
       });
-      setRequisicoes(Array.isArray(data) ? data : []);
+      const lista = Array.isArray(data) ? data : [];
+      setRequisicoes(lista);
+      // Reutiliza o resultado já carregado para alimentar o overview mensal,
+      // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
+      setMonthlyRequisicoes(lista);
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao carregar requisições.');
     } finally {
@@ -216,15 +220,9 @@ export function SecretaryRequisitionsPage({
     }
   };
 
-  const fetchMonthlyOverview = async () => {
-    try {
-      const data = await requisicoesApi.procurar({});
-      setMonthlyRequisicoes(Array.isArray(data) ? data : []);
-    } catch {
-      // Keep cards resilient; list fetch already reports errors.
-      setMonthlyRequisicoes([]);
-    }
-  };
+  // Nota: o overview mensal agora reutiliza os dados já carregados em
+  // fetchRequisicoes (via setMonthlyRequisicoes(lista)), evitando uma
+  // chamada adicional não filtrada a requisicoesApi.procurar({}).
 
   useEffect(() => {
     fetchRequisicoes({
@@ -234,7 +232,6 @@ export function SecretaryRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
-    fetchMonthlyOverview();
   }, [initialTipo, initialPrioridade]);
 
   const fetchCatalogo = async () => {
