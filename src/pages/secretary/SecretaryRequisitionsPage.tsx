@@ -705,19 +705,20 @@ export function SecretaryRequisitionsPage({
                               ).length;
                               const itemChecked = selectedCount > 0 || hasPendingSelection;
                               const isExpanded = itemChecked && expandedMaterialItems[item.itemKey] !== false;
+                              const safeItemKey = encodeURIComponent(item.itemKey);
 
                               return (
                                 <div key={item.itemKey} className="space-y-2 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
                                       <div className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-1 -mx-1">
                                         <Checkbox
-                                          id={`item-toggle-${item.itemKey}`}
+                                          id={`item-toggle-${safeItemKey}`}
                                           checked={itemChecked}
                                           onCheckedChange={(checked) => handleItemToggle(item, !!checked)}
                                           aria-label={item.nome}
                                         />
                                         <label
-                                          htmlFor={`item-toggle-${item.itemKey}`}
+                                          htmlFor={`item-toggle-${safeItemKey}`}
                                           className="truncate text-sm text-gray-700 dark:text-gray-200 cursor-pointer select-none"
                                           title={item.nome}
                                         >
