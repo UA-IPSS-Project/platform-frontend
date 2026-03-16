@@ -288,6 +288,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             <Button
                 variant={currentView === 'overview' ? 'default' : 'ghost'}
                 onClick={() => setCurrentView('overview')}
+                aria-label="Ir para Dashboard"
+                aria-current={currentView === 'overview' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'overview' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 Dashboard
@@ -295,6 +297,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             <Button
                 variant={currentView === 'slots' ? 'default' : 'ghost'}
                 onClick={() => setCurrentView('slots')}
+                aria-label="Ir para Slots"
+                aria-current={currentView === 'slots' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'slots' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 Slots
@@ -302,6 +306,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             <Button
                 variant={currentView === 'catalogs' ? 'default' : 'ghost'}
                 onClick={() => setCurrentView('catalogs')}
+                aria-label="Ir para Catálogos"
+                aria-current={currentView === 'catalogs' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'catalogs' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 Catálogos
