@@ -30,12 +30,9 @@ interface SecretaryRequisitionsPageProps {
 
 const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: '', label: 'Todos os estados' },
-  { value: 'ENVIADA', label: 'Enviada' },
   { value: 'EM_ANALISE', label: 'Em análise' },
   { value: 'ACEITE', label: 'Aceite' },
   { value: 'RECUSADA', label: 'Recusada' },
-  { value: 'CONCLUIDA', label: 'Concluída' },
-  { value: 'CANCELADA', label: 'Cancelada' },
 ];
 
 const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
@@ -43,6 +40,8 @@ const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string 
   { value: 'ACEITE', label: 'Aceite' },
   { value: 'RECUSADA', label: 'Recusada' },
 ];
+
+const ESTADO_FINAL_OPTIONS: RequisicaoEstado[] = ['ACEITE', 'RECUSADA'];
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
   { value: 'BAIXA', label: 'Baixa' },
@@ -984,7 +983,6 @@ export function SecretaryRequisitionsPage({
 
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
     setOpenedRequisicaoId(req.id);
-    // Pré-seleciona o estado atual se for um dos estados geridos pela secretaria, caso contrário EM_ANALISE
     const estadoSecretaria = ESTADO_SECRETARIA_OPTIONS.some((opt) => opt.value === req.estado)
       ? req.estado
       : 'EM_ANALISE';
@@ -992,7 +990,22 @@ export function SecretaryRequisitionsPage({
   };
 
   const handleAtualizarEstado = async () => {
-    if (!openedRequisicaoId) return;
+    if (!openedRequisicaoId || !selectedRequisicao) return;
+
+    if (selectedRequisicao.estado !== 'EM_ANALISE') {
+      toast.error('Só é possível decidir requisições que estejam em Em análise.');
+      return;
+    }
+
+    if (estadoEdicao === 'EM_ANALISE') {
+      toast.error('Escolhe um estado final: Aceite ou Recusada.');
+      return;
+    }
+
+    if (!ESTADO_FINAL_OPTIONS.includes(estadoEdicao)) {
+      toast.error('Estado inválido. Escolhe Aceite ou Recusada.');
+      return;
+    }
 
     try {
       setUpdatingEstadoId(openedRequisicaoId);
@@ -1078,6 +1091,11 @@ export function SecretaryRequisitionsPage({
   const selectedRequisicao = useMemo(
     () => requisicoes.find((item) => item.id === openedRequisicaoId) ?? null,
     [requisicoes, openedRequisicaoId],
+  );
+
+  const podeAtualizarEstado = useMemo(
+    () => selectedRequisicao?.estado === 'EM_ANALISE',
+    [selectedRequisicao],
   );
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
@@ -2258,12 +2276,18 @@ export function SecretaryRequisitionsPage({
                   id="req-estado-modal"
                   value={estadoEdicao}
                   onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
+                  disabled={!podeAtualizarEstado}
                   className={selectFieldClassName}
                 >
                   {ESTADO_SECRETARIA_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
+                {!podeAtualizarEstado && (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas.
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -2276,7 +2300,7 @@ export function SecretaryRequisitionsPage({
                 </Button>
                 <Button
                   onClick={handleAtualizarEstado}
-                  disabled={updatingEstadoId === selectedRequisicao.id}
+                  disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {updatingEstadoId === selectedRequisicao.id ? 'A guardar...' : 'Guardar estado'}
