@@ -1097,7 +1097,7 @@ export function SecretaryRequisitionsPage({
 
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="group" aria-label="Separadores de tipo de requisição">
             {REQUISICOES_TABS.map((tab) => {
               const isActive = activeTab === tab.value;
               return (
