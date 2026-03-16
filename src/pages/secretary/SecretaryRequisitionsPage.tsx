@@ -59,10 +59,14 @@ const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
 ];
 
 const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
+  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
+  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
+  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
+  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
+  { value: 'ADAPTADO', label: 'Adaptado' },
   { value: 'LIGEIRO', label: 'Ligeiro' },
   { value: 'PESADO', label: 'Pesado' },
   { value: 'PASSAGEIROS', label: 'Passageiros' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
 ];
 
 const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
@@ -78,6 +82,8 @@ const formatPrioridade = (prioridade: RequisicaoPrioridade) => PRIORIDADE_OPTION
 const formatEstado = (estado: RequisicaoEstado) => ESTADO_OPTIONS.find((option) => option.value === estado)?.label ?? estado;
 const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
   MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
+const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
+  TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
 
 const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;
@@ -97,6 +103,7 @@ const formatMaterialItemLabel = (
 };
 
 type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
+type TransporteLike = RequisicaoResponse['transporte'] | TransporteCatalogo | null | undefined;
 
 const createEmptyMaterialLinha = () => ({
   rowId:
@@ -108,6 +115,45 @@ const createEmptyMaterialLinha = () => ({
 });
 
 const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
+
+const formatLotacao = (lotacao?: number): string => {
+  if (!lotacao || lotacao <= 0) return 'Lotação não definida';
+  return `${lotacao} ${lotacao === 1 ? 'lugar' : 'lugares'}`;
+};
+
+const formatVehicleTitle = (transporte?: TransporteLike): string => {
+  const nome = [transporte?.tipo || transporte?.nome || 'Viatura', transporte?.marca, transporte?.modelo]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  return nome || 'Viatura';
+};
+
+const formatTransporteDisplay = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem transporte associado';
+
+  const parts = [
+    transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
+    formatVehicleTitle(transporte),
+    transporte.matricula,
+  ].filter(Boolean);
+
+  return parts.join(' · ');
+};
+
+const formatTransporteMeta = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem detalhes';
+
+  const dataMatricula = transporte.dataMatricula
+    ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT')
+    : undefined;
+
+  return [
+    transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
+    formatLotacao(transporte.lotacao),
+    dataMatricula ? `Matriculado em ${dataMatricula}` : undefined,
+  ].filter(Boolean).join(' · ');
+};
 
 type MaterialItemGroup = {
   itemKey: string;
@@ -164,8 +210,9 @@ export function SecretaryRequisitionsPage({
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
+  const [novoTransporteCodigo, setNovoTransporteCodigo] = useState('');
   const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
-  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
+  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO_DE_PASSAGEIROS');
   const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
   const [novoTransporteMarca, setNovoTransporteMarca] = useState('');
   const [novoTransporteModelo, setNovoTransporteModelo] = useState('');
@@ -291,6 +338,38 @@ export function SecretaryRequisitionsPage({
     return map;
   }, [materiais]);
 
+  const transportesOrdenados = useMemo(
+    () => [...transportes].sort((a, b) => {
+      const codigoA = a.codigo ?? '';
+      const codigoB = b.codigo ?? '';
+      if (codigoA && codigoB && codigoA !== codigoB) {
+        return codigoA.localeCompare(codigoB, 'pt-PT', { numeric: true });
+      }
+      if (codigoA && !codigoB) return -1;
+      if (!codigoA && codigoB) return 1;
+
+      const tipoDiff = (a.tipo ?? '').localeCompare(b.tipo ?? '', 'pt-PT');
+      if (tipoDiff !== 0) return tipoDiff;
+
+      return (a.matricula ?? '').localeCompare(b.matricula ?? '', 'pt-PT');
+    }),
+    [transportes],
+  );
+
+  const transportesPorCategoria = useMemo(
+    () => TRANSPORTE_CATEGORIA_OPTIONS.map((categoria) => ({
+      categoria: categoria.value,
+      label: categoria.label,
+      items: transportesOrdenados.filter((transporte) => transporte.categoria === categoria.value),
+    })).filter((grupo) => grupo.items.length > 0),
+    [transportesOrdenados],
+  );
+
+  const selectedTransporte = useMemo(
+    () => transportesOrdenados.find((item) => String(item.id) === transporteId) ?? null,
+    [transportesOrdenados, transporteId],
+  );
+
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
       toast.error('O nome do material é obrigatório.');
@@ -334,6 +413,7 @@ export function SecretaryRequisitionsPage({
     try {
       setSubmittingTransporte(true);
       const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
+        codigo: novoTransporteCodigo.trim().toUpperCase() || undefined,
         tipo: novoTransporteTipo.trim(),
         categoria: novoTransporteCategoria,
         matricula: novoTransporteMatricula.trim().toUpperCase(),
@@ -345,8 +425,9 @@ export function SecretaryRequisitionsPage({
       toast.success('Transporte criado com sucesso.');
       setTransportes((prev) => [...prev, novoTransporte]);
       setTransporteId(String(novoTransporte.id));
+      setNovoTransporteCodigo('');
       setNovoTransporteTipo('');
-      setNovoTransporteCategoria('LIGEIRO');
+      setNovoTransporteCategoria('LIGEIRO_DE_PASSAGEIROS');
       setNovoTransporteMatricula('');
       setNovoTransporteMarca('');
       setNovoTransporteModelo('');
@@ -892,27 +973,89 @@ export function SecretaryRequisitionsPage({
           )}
 
           {tipo === 'TRANSPORTE' && (
-            <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="req-create-transporte-id" className="text-sm text-gray-600 dark:text-gray-300">Transporte</label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Selecionar viatura</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Escolhe a viatura institucional que melhor responde à lotação e ao tipo de deslocação.</p>
+                </div>
                 <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
                   Novo transporte
                 </Button>
               </div>
-              <select
-                id="req-create-transporte-id"
-                value={transporteId}
-                onChange={(e) => setTransporteId(e.target.value)}
-                disabled={loadingCatalogo}
-                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-              >
-                <option value="">{loadingCatalogo ? 'A carregar transportes...' : 'Selecionar transporte'}</option>
-                {transportes.map((transporte) => (
-                  <option key={transporte.id} value={transporte.id}>
-                    {(transporte.tipo || 'Transporte')} · {transporte.matricula || 'sem matrícula'}
-                  </option>
-                ))}
-              </select>
+
+              {selectedTransporte && (
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/20 p-4 space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Viatura escolhida</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedTransporte)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{formatTransporteMeta(selectedTransporte)}</p>
+                </div>
+              )}
+
+              {loadingCatalogo ? (
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                  A carregar viaturas disponíveis...
+                </div>
+              ) : transportesPorCategoria.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                  Ainda não existem viaturas em catálogo.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transportesPorCategoria.map((grupo) => (
+                    <div key={grupo.categoria} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{grupo.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                        {grupo.items.map((transporte) => {
+                          const isSelected = String(transporte.id) === transporteId;
+
+                          return (
+                            <button
+                              key={transporte.id}
+                              type="button"
+                              onClick={() => setTransporteId(String(transporte.id))}
+                              className={`rounded-xl border p-4 text-left transition-all ${isSelected
+                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-emerald-300 dark:hover:border-emerald-800'
+                                }`}
+                              aria-pressed={isSelected}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                      }`}>
+                                      {transporte.codigo ?? `#${transporte.id}`}
+                                    </span>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteCategoria(transporte.categoria)}</p>
+                                </div>
+                                <span className={`text-xs font-medium ${isSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                                  {transporte.matricula ?? 'Sem matrícula'}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                <p>Lotação: {formatLotacao(transporte.lotacao)}</p>
+                                <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
+                                <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                <p>{isSelected ? 'Selecionado para a requisição' : 'Clique para selecionar'}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -1192,7 +1335,7 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
 
@@ -1330,7 +1473,7 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
               </div>
@@ -1434,7 +1577,10 @@ export function SecretaryRequisitionsPage({
                   {selectedRequisicao.tipo === 'TRANSPORTE' && (
                     <>
                       <p className="text-gray-500 dark:text-gray-400">Transporte</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.transporte?.nome || 'Associado'}</p>
+                      <div className="space-y-1">
+                        <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedRequisicao.transporte)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(selectedRequisicao.transporte)}</p>
+                      </div>
                     </>
                   )}
                   {selectedRequisicao.tipo === 'MANUTENCAO' && (
@@ -1551,6 +1697,10 @@ export function SecretaryRequisitionsPage({
 
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="novo-transporte-codigo" className="text-sm text-gray-600 dark:text-gray-300">Código interno (opcional)</label>
+                <Input id="novo-transporte-codigo" className={inputFieldClassName} value={novoTransporteCodigo} onChange={(e) => setNovoTransporteCodigo(e.target.value)} placeholder="Ex: V10" />
+              </div>
               <div>
                 <label htmlFor="novo-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
                 <Input id="novo-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
