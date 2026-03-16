@@ -21,6 +21,7 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { useTranslation } from 'react-i18next';
 
 interface BalnearioDashboardProps {
     onLogout: () => void;
@@ -29,6 +30,7 @@ interface BalnearioDashboardProps {
 }
 
 export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: BalnearioDashboardProps) {
+    const { t } = useTranslation();
     const { user: authUser } = useAuth();
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
@@ -122,7 +124,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
             setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
         } catch {
-            toast.error('Erro ao carregar histórico');
+            toast.error(t('dashboard.errors.loadHistory'));
         }
     };
 
@@ -181,14 +183,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             setSelectedAppointment(freshAppointment);
             setShowDetailsDialog(true);
         } catch (error) {
-            toast.error('Não foi possível carregar os dados mais recentes da marcação.');
+            toast.error(t('dashboard.errors.loadLatestAppointment'));
             refreshCurrentWeek(currentDate);
         }
     };
 
     const handleCancelAppointment = (id: string, reason: string) => {
         updateAppointmentOptimistically(id, { status: 'cancelled', cancellationReason: reason });
-        toast.success('Marcação cancelada com sucesso');
+        toast.success(t('dashboard.messages.appointmentCancelledSimple'));
         refreshCurrentWeek(currentDate);
     };
 
@@ -196,15 +198,15 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         <div className="flex items-center justify-center h-[600px]">
             <div className="text-center">
                 <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
-                    {view === 'requisitions' && 'Requisições'}
-                    {view === 'appointments' && 'Marcações'}
-                    {view === 'consumos' && 'Consumos'}
-                    {view === 'reports' && 'Relatórios'}
-                    {view === 'settings' && 'Definições'}
-                    {view === 'administrative' && 'Área Administrativa'}
+                    {view === 'requisitions' && t('dashboard.requisitions')}
+                    {view === 'appointments' && t('dashboard.appointments')}
+                    {view === 'consumos' && t('dashboard.consumption')}
+                    {view === 'reports' && t('dashboard.reports')}
+                    {view === 'settings' && t('dashboard.settings')}
+                    {view === 'administrative' && t('dashboard.administrativeArea')}
                     {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-500">Página em desenvolvimento</p>
+                <p className="text-gray-500 dark:text-gray-500">{t('dashboard.pageInDevelopment')}</p>
             </div>
         </div>
     );
@@ -216,7 +218,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('appointments')}
                 className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Marcações
+                {t('dashboard.appointments')}
             </Button>
 
             <Button
@@ -224,7 +226,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('consumos')}
                 className={`text-sm ${currentView === 'consumos' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Consumos
+                {t('dashboard.consumption')}
             </Button>
 
             <Button
@@ -232,7 +234,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('requisitions')}
                 className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Requisições
+                {t('dashboard.requisitions')}
             </Button>
 
             <Button
@@ -240,7 +242,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('reports')}
                 className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Relatórios
+                {t('dashboard.reports')}
             </Button>
         </>
     );
@@ -252,7 +254,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onToggleDarkMode={onToggleDarkMode}
                 onLogout={onLogout}
                 onMenuToggle={() => setSidebarOpen(true)}
-                roleTitle="Balneário"
+                roleTitle={t('dashboard.balneario')}
                 navigationContent={BalnearioNavigation}
                 notifications={notifications}
                 unreadCount={unreadCount}
@@ -361,7 +363,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         navigateTo('history');
                                         setShowNotifications(false);
                                     },
-                                    onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
+                                    onNavigateToDocument: () => toast.info(t('dashboard.messages.documentsViewInDevelopment')),
                                     onNavigateToCancelledSlot: (dateStr, time) => {
                                         navigateTo('appointments');
                                         setShowNotifications(false);

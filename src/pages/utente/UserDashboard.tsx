@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 interface UserDashboardProps {
   user: {
@@ -33,7 +34,8 @@ interface UserDashboardProps {
   onToggleDarkMode: () => void;
 }
 
-export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
+export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: Readonly<UserDashboardProps>) {
+  const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,7 +112,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const data = await marcacoesApi.obterPassadas(startIsoString, endOfDay.toISOString(), authUser.id);
       setHistoryAppointments(data.map(mapApiToAppointment));
     } catch (error) {
-      toast.error('Erro ao carregar histórico');
+      console.error('Erro ao carregar histórico do utente:', error);
+      toast.error(t('dashboard.errors.loadHistory'));
     }
   };
 
@@ -140,12 +143,18 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const handleViewAppointment = async (appointment: Appointment) => {
     try {
-      const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
+      const latestData = await marcacoesApi.obterPorId(Number.parseInt(appointment.id, 10));
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
       const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
 
       const status = mapStatusFromApiToUi(latestData.estado);
+      const genericLabel = status === 'reserved'
+        ? t('dashboard.userHome.labels.reserved')
+        : t('dashboard.userHome.labels.occupied');
+      const genericSubject = status === 'reserved'
+        ? t('dashboard.userHome.labels.unavailableTime')
+        : t('dashboard.userHome.labels.occupied');
 
       const fresh: Appointment = {
         id: latestData.id.toString(),
@@ -154,10 +163,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         time: dateTime.toTimeString().slice(0, 5),
         duration: 15,
         patientNIF: isOwn ? utente?.nif || '' : '',
-        patientName: isOwn ? utente?.nome || '' : (status === 'reserved' ? 'Reservado' : 'Ocupado'),
+        patientName: isOwn ? utente?.nome || '' : genericLabel,
         patientContact: isOwn ? utente?.telefone || '' : '',
         patientEmail: isOwn ? utente?.email || '' : '',
-        subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : (status === 'reserved' ? 'Horário Indisponível' : 'Ocupado'),
+        subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : genericSubject,
         description: isOwn ? latestData.marcacaoSecretaria?.descricao || '' : '',
         status: status,
         cancellationReason: latestData.motivoCancelamento,
@@ -169,17 +178,24 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       }
       setSelectedAppointment(fresh);
       setShowDetailsDialog(true);
-    } catch (e) {
-      toast.error('Erro ao carregar detalhes');
+    } catch (error) {
+      console.error('Erro ao abrir detalhes da marcação no dashboard do utente:', error);
+      toast.error(t('dashboard.errors.loadDetails'));
       refreshAppointments();
     }
+  };
+
+  const getNotificationIcon = (tipo?: string): 'calendar' | 'document' | 'alert' => {
+    if (tipo === 'LEMBRETE') return 'calendar';
+    if (tipo === 'FICHEIRO') return 'document';
+    return 'alert';
   };
 
   const renderPlaceholder = (title: string) => (
     <div className="flex items-center justify-center h-[500px]">
       <div className="text-center">
         <h2 className="text-xl text-gray-600 dark:text-gray-300 mb-2">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <p className="text-gray-500 dark:text-gray-500">{t('dashboard.inDevelopment')}</p>
       </div>
     </div>
   );
@@ -193,13 +209,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onClick={() => navigate('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Secretaria
+        {t('dashboard.secretary')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('dashboard.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('dashboard.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -216,7 +232,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Utente"
+        roleTitle={t('dashboard.user')}
         navigationContent={UserNavigation}
         notifications={notifications}
         unreadCount={unreadCount}
@@ -324,7 +340,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     message: n.mensagem,
                     timestamp: n.dataCriacao,
                     isRead: n.lida,
-                    icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
+                    icon: getNotificationIcon(n.tipo),
                     type: n.tipo,
                     metadata: n.metadata,
                   }))}
@@ -332,31 +348,35 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     navigate('/dashboard');
                     setHighlightedNotificationId(null);
                   }}
-                  onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
+                  onMarkAsRead={(id) => handleMarkAsRead(Number.parseInt(id, 10))}
                   onMarkAllAsRead={handleMarkAllAsRead}
-                  onDelete={(id) => handleDeleteNotification(parseInt(id))}
+                  onDelete={(id) => handleDeleteNotification(Number.parseInt(id, 10))}
                   onDeleteAll={handleDeleteAllNotifications}
                   isDarkMode={isDarkMode}
                   highlightedNotificationId={highlightedNotificationId || undefined}
                   actionCallbacks={{
-                    onNavigateToAppointment: async (appointmentId) => {
+                    onNavigateToAppointment: (appointmentId) => {
                       navigate('/dashboard');
                       setShowNotifications(false);
-                      try {
-                        const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
-                        const response = await marcacoesApi.obterPorId(id);
-                        const appointment = mapApiToAppointment(response);
-                        setSelectedAppointment(appointment);
-                        setShowDetailsDialog(true);
-                      } catch (e) {
-                        toast.error('Não foi possível encontrar a marcação');
-                      }
+                      const go = async () => {
+                        try {
+                          const id = typeof appointmentId === 'string' ? Number.parseInt(appointmentId, 10) : appointmentId;
+                          const response = await marcacoesApi.obterPorId(id);
+                          const appointment = mapApiToAppointment(response);
+                          setSelectedAppointment(appointment);
+                          setShowDetailsDialog(true);
+                        } catch (error) {
+                          console.error('Erro ao navegar para marcação por notificação (utente):', error);
+                          toast.error(t('dashboard.errors.findAppointment'));
+                        }
+                      };
+                      void go();
                     },
-                    onNavigateToHistory: async () => {
+                    onNavigateToHistory: () => {
                       navigate('/dashboard/history');
                       setShowNotifications(false);
                     },
-                    onNavigateToDocument: () => toast.info('Em desenvolvimento'),
+                    onNavigateToDocument: () => toast.info(t('dashboard.userHome.messages.documentViewInDevelopment')),
                     onNavigateToCancelledSlot: (dateStr, time) => {
                       navigate('/dashboard');
                       setShowNotifications(false);
@@ -370,12 +390,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               } />
 
               {/* Placeholders */}
-              <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
-              <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
-              <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
-              <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
-              <Route path="/settings" element={renderPlaceholder('Definições')} />
-              <Route path="*" element={renderPlaceholder('Página não encontrada')} />
+              <Route path="/balneario" element={renderPlaceholder(t('dashboard.userHome.placeholders.balnearioAppointments'))} />
+              <Route path="/balneario-sobre" element={renderPlaceholder(t('dashboard.userHome.placeholders.balnearioAbout'))} />
+              <Route path="/voluntariado" element={renderPlaceholder(t('dashboard.userHome.placeholders.volunteeringSignup'))} />
+              <Route path="/voluntariado-sobre" element={renderPlaceholder(t('dashboard.userHome.placeholders.volunteeringAbout'))} />
+              <Route path="/settings" element={renderPlaceholder(t('dashboard.userHome.placeholders.settings'))} />
+              <Route path="*" element={renderPlaceholder(t('dashboard.userHome.placeholders.notFound'))} />
             </Routes>
           </motion.div>
         </AnimatePresence>

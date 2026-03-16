@@ -1,8 +1,10 @@
 import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
+import { LanguageToggle } from '../shared/LanguageToggle';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -43,6 +45,7 @@ export function DashboardLayout({
     onDeleteAllNotifications,
     onNavigateToNotifications,
 }: DashboardLayoutProps) {
+    const { t } = useTranslation();
     const notificationsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -119,12 +122,13 @@ export function DashboardLayout({
                                         />
                                     )}
                                 </div>
+                                <LanguageToggle />
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={onToggleDarkMode}
                                     className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    aria-label="Alternar Tema"
+                                    aria-label={t('header.toggleTheme')}
                                 >
                                     {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                                 </Button>
@@ -133,7 +137,7 @@ export function DashboardLayout({
                                     size="icon"
                                     onClick={onLogout}
                                     className="text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                    aria-label="Terminar Sessão"
+                                    aria-label={t('header.logout')}
                                 >
                                     <LogOutIcon className="w-5 h-5" />
                                 </Button>

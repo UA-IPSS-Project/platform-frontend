@@ -21,8 +21,10 @@ interface ClientAppointmentDialogProps {
 
 import SUBJECTS from '../../lib/subjects';
 import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
+  const { t, i18n } = useTranslation();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -53,7 +55,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       // Validar se a data/hora não é no passado
       const now = new Date();
       if (dateTime <= now) {
-        toast.error('Não é possível marcar para uma data/hora no passado');
+        toast.error(t('appointmentDialog.errors.pastDate'));
         onClose();
         return;
       }
@@ -62,7 +64,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const dateStr = date.toISOString().split('T')[0];
       const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
       if (isBlocked) {
-        toast.error('Este horário está bloqueado (fim de semana ou feriado)');
+        toast.error(t('appointmentDialog.errors.slotUnavailable'));
         onClose();
         return;
       }
@@ -80,7 +82,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
     } catch (error) {
       console.error('Erro ao reservar slot:', error);
-      toast.error('Erro ao verificar disponibilidade ou horário ocupado');
+      toast.error(t('appointmentDialog.errors.slotOccupied'));
       onClose();
     }
   };
@@ -105,7 +107,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!subject) newErrors.subject = 'Selecione um assunto';
+    if (!subject) newErrors.subject = t('appointmentDialog.errors.subjectRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -113,7 +115,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      toast.error('Preencha o assunto da marcação');
+      toast.error(t('appointmentDialog.errors.subjectRequired'));
       return;
     }
 
@@ -148,16 +150,16 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       // Guardar o ID da marcação criada para upload de documentos
       const marcacaoId = response.id;
 
-      toast.success('Marcação criada com sucesso!');
+      toast.success(t('appointmentDialog.messages.appointmentCreated'));
 
       // Se houver ficheiros selecionados, fazer upload
       if (selectedFiles.length > 0) {
         try {
           await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
-          toast.success(`${selectedFiles.length} documento(s) enviado(s) com sucesso!`);
+          toast.success(t('appointmentDialog.messages.documentsUploaded', { count: selectedFiles.length }));
         } catch (uploadError) {
           console.error('Erro ao enviar documentos:', uploadError);
-          toast.error('Marcação criada, mas houve erro ao enviar documentos');
+          toast.error(t('appointmentDialog.messages.documentsUploadError'));
         }
       }
 
@@ -165,7 +167,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       onClose();
     } catch (error) {
       console.error('Erro ao criar marcação:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao criar marcação');
+      toast.error(error instanceof Error ? error.message : t('auth.errorCreatingAccount'));
     } finally {
       setIsLoading(false);
     }
@@ -177,18 +179,18 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">Novo Agendamento</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} às {time}
+            {date.toLocaleDateString(i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
           </p>
         </DialogHeader>
         <DialogPrimitive.Description className="sr-only">
-          Preencha os dados do agendamento
+          {t('appointmentDialog.description')}
         </DialogPrimitive.Description>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="client-subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
+            <Label htmlFor="client-subject" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.subject')}</Label>
             <Select value={subject} onValueChange={(value) => setSubject(value)}>
               <SelectTrigger
                 id="client-subject"
@@ -196,7 +198,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
                 aria-describedby={errors.subject ? 'client-subject-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
               >
-                <SelectValue placeholder="Selecione o assunto" />
+                <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 {SUBJECTS.map((option) => (
@@ -210,10 +212,10 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Descrição</Label>
+            <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">{t('requisitions.ui.description')}</Label>
             <Textarea
               id="description"
-              placeholder="Descreva brevemente o motivo da marcação"
+              placeholder={t('appointmentDialog.fields.shortDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
@@ -221,7 +223,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">Documentos (opcional)</Label>
+            <Label htmlFor="client-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
             <FileUpload
               inputId="client-upload"
               describedById="client-upload-help"
@@ -233,10 +235,10 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
-              {isLoading ? 'A processar...' : 'Marcar'}
+              {isLoading ? t('todayAppointments.processing') : t('appointmentDialog.actions.book')}
             </Button>
           </div>
         </form>

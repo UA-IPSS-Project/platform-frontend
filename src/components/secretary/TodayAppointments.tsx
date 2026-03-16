@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon, FileTextIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
 import { StatusBadge } from '../shared/status-badge';
+import { useTranslation } from 'react-i18next';
 
 interface TodayAppointmentsProps {
   appointments: Appointment[];
@@ -21,6 +22,7 @@ interface TodayAppointmentsProps {
 }
 
 export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, onShowDocumentSearch, isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
+  const { t } = useTranslation();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -39,7 +41,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     });
 
   const handleExport = () => {
-    toast.success('Lista diária exportada com sucesso');
+    toast.success(t('todayAppointments.exportSuccess'));
   };
 
   const headerTextClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
@@ -89,19 +91,19 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     <div className="flex flex-col h-full">
       {/* Header - Title top, buttons below right */}
       <div className="flex flex-col mb-4 gap-2">
-        <h2 className={`text-2xl font-bold ml-1 ${headerTextClass}`}>Agendamentos de Hoje</h2>
+        <h2 className={`text-2xl font-bold ml-1 ${headerTextClass}`}>{t(isBalneario ? 'todayAppointments.titleBalneario' : 'todayAppointments.titleSecretary')}</h2>
         <div className="flex items-center gap-2 self-end">
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
-                  Filtrar
+                  {t('todayAppointments.filter')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-72 p-3">
                 <div className="flex flex-col gap-2">
                   <Input
-                    placeholder="Pesquisar..."
+                    placeholder={t('history.filters.searchPlaceholder')}
                     value={tempSearch}
                     onChange={(e) => setTempSearch(e.target.value)}
                     className="text-sm"
@@ -109,16 +111,16 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
                   <Select value={tempStatus} onValueChange={(v: Appointment['status'] | 'all') => setTempStatus(v)}>
                     <SelectTrigger className="w-full text-sm">
-                      <SelectValue placeholder="Todos os estados" />
+                      <SelectValue placeholder={t('history.filters.allStatuses')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos os estados</SelectItem>
-                      <SelectItem value="in-progress">Em Curso</SelectItem>
-                      <SelectItem value="scheduled">Agendado</SelectItem>
+                      <SelectItem value="all">{t('history.filters.allStatuses')}</SelectItem>
+                      <SelectItem value="in-progress">{t('statusBadge.inProgress')}</SelectItem>
+                      <SelectItem value="scheduled">{t('statusBadge.scheduled')}</SelectItem>
                       <SelectItem value="warning">
                         <div className="flex items-center gap-2">
                           <AlertTriangleIcon className="w-3 h-3 text-yellow-500" />
-                          <span>Agendado</span>
+                          <span>{t('statusBadge.warning')}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -127,10 +129,10 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                   {!isBalneario && (
                     <Select value={tempSubject} onValueChange={(v: string | 'all') => setTempSubject(v)}>
                       <SelectTrigger className="w-full text-sm">
-                        <SelectValue placeholder="Todos os assuntos" />
+                        <SelectValue placeholder={t('history.filters.allSubjects')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos os assuntos</SelectItem>
+                        <SelectItem value="all">{t('history.filters.allSubjects')}</SelectItem>
                         {uniqueSubjects.map((subject) => (
                           <SelectItem key={subject} value={subject}>
                             {subject}
@@ -151,7 +153,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                         setPopoverOpen(false);
                       }}
                     >
-                      Aplicar
+                      {t('todayAppointments.applyFilters')}
                     </Button>
                     <Button
                       variant="outline"
@@ -166,7 +168,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                         setSubjectFilter('all');
                       }}
                     >
-                      Limpar
+                      {t('todayAppointments.clearFilters')}
                     </Button>
                   </div>
                 </div>
@@ -176,7 +178,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
           <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
             <HistoryIcon className="w-3.5 h-3.5" />
-            Histórico
+            {t('sidebar.history')}
           </Button>
 
           {onShowDocumentSearch && (
@@ -187,7 +189,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
               className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <FileTextIcon className="w-3.5 h-3.5" />
-              Pesquisa de Documentos
+              {t('documents.title')}
             </Button>
           )}
         </div>
@@ -204,7 +206,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                 : 'border-gray-200 bg-gray-50/50'
                 }`}>
                 <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600 opacity-50" />
-                <p className="text-sm text-gray-500 dark:text-gray-500">Sem agendamentos para hoje</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500">{t(isBalneario ? 'todayAppointments.emptyBalneario' : 'todayAppointments.emptySecretary')}</p>
               </div>
             ) : (
               filteredTodayAppointments.map((apt) => (
@@ -236,7 +238,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       {filteredTodayAppointments.length > 0 && (
         <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
-          Exportar Lista Diária
+          {t('todayAppointments.exportAction')}
         </Button>
       )}
     </div>

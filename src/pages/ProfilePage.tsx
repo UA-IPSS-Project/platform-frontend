@@ -8,6 +8,7 @@ import { utilizadoresApi } from '../services/api';
 import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { ChangePasswordDialog } from '../components/auth/ChangePasswordDialog';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { useTranslation } from 'react-i18next';
 
 interface ProfilePageProps {
   user: {
@@ -36,6 +37,7 @@ const formatDateToPT = (dateString: string | undefined): string => {
 };
 
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         });
       } catch (error) {
         console.error('Erro ao carregar dados do utilizador:', error);
-        toast.error('Erro ao carregar dados do perfil');
+        toast.error(t('profile.errors.loadProfile'));
       } finally {
         setLoading(false);
       }
@@ -132,10 +134,10 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       });
 
       setIsEditing(false);
-      toast.success('Perfil atualizado com sucesso');
+      toast.success(t('profile.messages.updatedSuccess'));
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      toast.error('Erro ao atualizar perfil');
+      toast.error(t('profile.errors.updateProfile'));
     } finally {
       setLoading(false);
     }
@@ -204,7 +206,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="text-gray-600 dark:text-gray-400">A carregar...</div>
+        <div className="text-gray-600 dark:text-gray-400">{t('profile.loading')}</div>
       </div>
     );
   }
@@ -218,7 +220,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
           className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
-          <span>Voltar</span>
+          <span>{t('common.back')}</span>
         </button>
 
         {/* Profile Card */}
@@ -242,14 +244,14 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
-                  {isMobile ? 'Palavra-passe' : 'Mudar Palavra-passe'}
+                  {isMobile ? t('profile.passwordShort') : t('profile.changePassword')}
                 </Button>
                 <Button
                   onClick={() => setIsEditing(true)}
                   className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
-                  Editar
+                  {t('common.edit')}
                 </Button>
               </div>
             ) : (
@@ -260,14 +262,14 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
-                  Cancelar
+                  {t('appointmentDialog.actions.cancel')}
                 </Button>
                 <Button
                   onClick={handleSave}
                   className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
-                  {loading ? 'A guardar...' : 'Guardar'}
+                  {loading ? t('common.saving') : t('common.save')}
                 </Button>
               </div>
             )}
@@ -276,28 +278,28 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
           <div className="space-y-12">
             {/* Personal Information */}
             <div>
-              {renderSectionHeader('Informação Pessoal', 'personal')}
+              {renderSectionHeader(t('profile.sections.personal'), 'personal')}
 
               {expanded.personal && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Nome Completo', formData.fullName, 'fullName', false, 'Nome indisponível', 'md:col-span-2')}
-                  {renderField('NIF', formData.nif, 'nif', false)}
-                  {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
-                  {renderField('Email', formData.email, 'email', false, 'Email indisponível', 'md:col-span-2')}
-                  {renderField('Telemóvel', formData.phonePersonal, 'phonePersonal', true, 'Adicione contacto')}
+                  {renderField(t('auth.fullName'), formData.fullName, 'fullName', false, t('profile.placeholders.nameUnavailable'), 'md:col-span-2')}
+                  {renderField(t('auth.nif'), formData.nif, 'nif', false)}
+                  {renderField(t('appointmentDialog.fields.birthDate'), formData.dateOfBirth, 'dateOfBirth', false)}
+                  {renderField(t('appointmentDialog.fields.email'), formData.email, 'email', false, t('profile.placeholders.emailUnavailable'), 'md:col-span-2')}
+                  {renderField(t('profile.phone'), formData.phonePersonal, 'phonePersonal', true, t('profile.placeholders.addContact'))}
                 </div>
               )}
             </div>
 
             {/* Address Information (New Subdivision) */}
             <div>
-              {renderSectionHeader('Morada', 'address')}
+              {renderSectionHeader(t('profile.sections.address'), 'address')}
 
               {expanded.address && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Morada', formData.address, 'address', true, 'Adicione morada', 'md:col-span-2')}
-                  {renderField('Freguesia', formData.parish, 'parish', true, 'Adicione freguesia')}
-                  {renderField('Código Postal', formData.postalCode, 'postalCode', true, 'Adicione código postal')}
+                  {renderField(t('profile.address'), formData.address, 'address', true, t('profile.placeholders.addAddress'), 'md:col-span-2')}
+                  {renderField(t('profile.parish'), formData.parish, 'parish', true, t('profile.placeholders.addParish'))}
+                  {renderField(t('profile.postalCode'), formData.postalCode, 'postalCode', true, t('profile.placeholders.addPostalCode'))}
                 </div>
               )}
             </div>
@@ -305,14 +307,14 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             {/* Professional Information - Hidden for employees */}
             {!isEmployee && (
               <div>
-                {renderSectionHeader('Informação Profissional', 'professional')}
+                {renderSectionHeader(t('profile.sections.professional'), 'professional')}
 
                 {expanded.professional && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                    {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
-                    {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
-                    {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
-                    {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
+                    {renderField(t('profile.profession'), formData.profession, 'profession', true, t('profile.placeholders.addProfession'))}
+                    {renderField(t('profile.workLocation'), formData.workLocation, 'workLocation', true, t('profile.placeholders.addWorkLocation'))}
+                    {renderField(t('profile.workAddress'), formData.workAddress, 'workAddress', true, t('profile.placeholders.addWorkAddress'))}
+                    {renderField(t('profile.workPhone'), formData.workPhone, 'workPhone', true, t('profile.placeholders.addWorkPhone'))}
                   </div>
                 )}
               </div>

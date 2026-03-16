@@ -1,0 +1,1036 @@
+{
+  "header": {
+    "toggleTheme": "Toggle Theme",
+    "logout": "Log Out",
+    "language": "Language",
+    "switchLanguage": "Switch language",
+    "pt": "PT",
+    "en": "EN"
+  },
+  "appointmentDialog": {
+    "title": "New Appointment",
+    "description": "Fill in the user's details to create a new appointment",
+    "at": "at",
+    "errors": {
+      "pastDate": "You cannot book a date/time in the past",
+      "slotUnavailable": "Time slot unavailable",
+      "slotOccupied": "This time slot is already taken",
+      "nifInvalid": "Invalid NIF",
+      "nifMustHave9Digits": "NIF must have 9 digits",
+      "nifRequired": "NIF is required",
+      "nameInvalid": "Invalid name",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email",
+      "contactInvalid": "Contact must have 9 digits",
+      "birthDateRequired": "Date of birth is required",
+      "dateInvalid": "Invalid date",
+      "subjectRequired": "Please select a subject",
+      "fixForm": "Please fix the form errors",
+      "updateUserFailed": "Failed to update user data",
+      "creationFailed": "Error: {{message}}"
+    },
+    "messages": {
+      "slotReserved": "Slot temporarily reserved:",
+      "slotReleased": "Slot released:",
+      "userLoaded": "User data loaded",
+      "userNotFound": "User not found with this NIF.",
+      "userNotFoundOrNetwork": "User not found in the database (or network error).",
+      "userUpdated": "User data updated",
+      "appointmentCreated": "Appointment created successfully!",
+      "documentsUploaded": "{{count}} file(s) uploaded successfully!",
+      "documentsUploadError": "Appointment created, but file upload failed"
+    },
+    "confirm": {
+      "title": "Changes detected",
+      "body": "User data has changed. Do you want to update the user record with the new information before creating the appointment?",
+      "nameChanged": "Name changed",
+      "emailChanged": "Email changed",
+      "contactChanged": "Contact changed",
+      "birthDateChanged": "Date of birth changed",
+      "back": "Back / Fix",
+      "confirmAndBook": "Confirm and Book"
+    },
+    "fields": {
+      "nif": "NIF *",
+      "nifPlaceholder": "123456789",
+      "birthDate": "Date of Birth *",
+      "name": "Name *",
+      "email": "Email *",
+      "emailPlaceholder": "example@email.com",
+      "contact": "Contact *",
+      "contactPlaceholder": "912345678",
+      "subject": "Subject *",
+      "subjectPlaceholder": "Select subject",
+      "shortDescription": "Short description",
+      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
+      "attachDocs": "Attach documents (optional)"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "booking": "Booking...",
+      "book": "Book"
+    }
+  },
+  "termsModal": {
+    "title": "Terms and Privacy",
+    "description": "Please read the terms carefully before accepting.",
+    "acceptButton": "I have read and accept",
+    "officialLink": {
+      "label": "For complete information, visit the official website:",
+      "url": "https://www.florinhasdovouga.pt/7ca6c-terms-and-privacy/"
+    },
+    "sections": [
+      {
+        "title": "Data Controller Identification",
+        "paragraphs": [
+          "This Privacy Policy governs the processing of personal data carried out by IPSS Florinhas do Vouga, legal entity no. 501156577, headquartered at Praceta Florinhas do Vouga, no. 10, 3810-064 Aveiro.",
+          "Contacts: Phone +351 234 377 330 | Email secretaria@florinhasdovouga.pt",
+          "The Institution is a diocesan non-profit social institution (IPSS), acting within its social and community mission."
+        ]
+      },
+      {
+        "title": "Commitment to Data Protection",
+        "paragraphs": [
+          "IPSS Florinhas do Vouga is committed to protecting the personal data of its users, beneficiaries, volunteers, patrons, donors, benefactors, collaborators, partners, and other entities interacting with it.",
+          "Personal data processing is carried out in compliance with the General Data Protection Regulation (GDPR) and applicable national legislation, ensuring lawfulness, fairness, transparency, minimization, accuracy, integrity, and confidentiality."
+        ]
+      },
+      {
+        "title": "Personal Data Collected",
+        "paragraphs": [
+          "The following data may be collected, among others:",
+          "Data is collected only when necessary and under an appropriate legal basis."
+        ],
+        "bullets": [
+          "Name",
+          "Tax identification number",
+          "Phone contacts",
+          "Email address",
+          "Address",
+          "Data required for receipt issuance",
+          "Data voluntarily provided through forms"
+        ]
+      },
+      {
+        "title": "Purpose of Data Processing",
+        "paragraphs": [
+          "Personal data is processed for the following purposes:",
+          "Data will not be used for purposes incompatible with those that justified its collection."
+        ],
+        "bullets": [
+          "Administrative and institutional management",
+          "Donation processing",
+          "Institutional communication",
+          "Volunteer management",
+          "Compliance with legal obligations",
+          "Response to contact requests"
+        ]
+      },
+      {
+        "title": "Data Retention",
+        "paragraphs": [
+          "Personal data will be retained only for the period necessary to fulfill the purposes that determined its collection or for the period required by legal obligations."
+        ]
+      },
+      {
+        "title": "Data Subject Rights",
+        "paragraphs": [
+          "Under the law, data subjects may exercise the following rights:",
+          "These rights can be exercised via email at secretaria@florinhasdovouga.pt",
+          "If you believe your rights were not respected, you may lodge a complaint with the Portuguese Data Protection Authority (CNPD)."
+        ],
+        "bullets": [
+          "Right of access",
+          "Right to rectification",
+          "Right to erasure",
+          "Right to restriction of processing",
+          "Right to object",
+          "Right to data portability, where applicable"
+        ]
+      },
+      {
+        "title": "What Cookies Are",
+        "paragraphs": [
+          "Cookies are small text files stored on the user's device when visiting a website, helping improve browsing experience."
+        ]
+      },
+      {
+        "title": "Types of Cookies Used",
+        "paragraphs": [
+          "The website may use:",
+          "No invasive commercial-purpose cookies are used."
+        ],
+        "bullets": [
+          "Strictly necessary cookies for site operation",
+          "Performance and statistical analysis cookies (when applicable)",
+          "Functionality cookies"
+        ]
+      },
+      {
+        "title": "Cookie Management",
+        "paragraphs": [
+          "Users may configure their browser at any time to block or delete cookies.",
+          "Disabling certain cookies may affect website functionality."
+        ]
+      },
+      {
+        "title": "Policy Changes",
+        "paragraphs": [
+          "IPSS Florinhas do Vouga reserves the right to update this Policy whenever necessary, and changes will be published on the website."
+        ]
+      }
+    ]
+  },
+  "sidebar": {
+    "home": "Home",
+    "menu": "Menu",
+    "closeSidebar": "Close sidebar",
+    "secretary": "Secretary",
+    "appointments": "Appointments",
+    "history": "History",
+    "about": "About",
+    "volunteering": "Volunteering",
+    "signup": "Signup",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "settings": "Settings",
+    "services": "Services",
+    "balneario": "Bathhouse",
+    "school": "School",
+    "requisitions": "Requests",
+    "material": "Material",
+    "maintenance": "Maintenance",
+    "transport": "Transport",
+    "highPriority": "High Priority",
+    "applications": "Applications",
+    "creche": "Nursery",
+    "reports": "Reports",
+    "management": "Management",
+    "consumption": "Consumption",
+    "administrativeArea": "Administrative Area",
+    "general": "General"
+  },
+  "dashboard": {
+    "secretary": "Secretary",
+    "user": "User",
+    "balneario": "Bathhouse",
+    "appointments": "Appointments",
+    "requisitions": "Requests",
+    "material": "Material",
+    "maintenance": "Maintenance",
+    "transport": "Transport",
+    "highPriority": "High Priority",
+    "services": "Services",
+    "school": "School",
+    "applications": "Applications",
+    "creche": "Nursery",
+    "reports": "Reports",
+    "management": "Management",
+    "sections": "Sections",
+    "more": "More",
+    "settings": "Settings",
+    "administrativeArea": "Administrative Area",
+    "requisitionsMaterial": "Requests - Material",
+    "requisitionsMaintenance": "Requests - Maintenance",
+    "requisitionsTransport": "Requests - Transport",
+    "requisitionsHighPriority": "Requests - High Priority",
+    "servicesBalneario": "Services - Bathhouse",
+    "servicesSchool": "Services - School",
+    "applicationsCreche": "Applications - Nursery",
+    "applicationsCatl": "Applications - CATL",
+    "applicationsErpi": "Applications - ERPI",
+    "consumption": "Consumption",
+    "menuInDevelopment": "Menu In Development",
+    "schoolPanel": "School Panel",
+    "internalTeam": "Internal Team",
+    "internalPanel": "Internal Panel",
+    "inDevelopment": "In development",
+    "pageInDevelopment": "Page in development",
+    "messages": {
+      "appointmentCancelled": "Appointment cancelled and user notified with the reason",
+      "appointmentCancelledSimple": "Appointment cancelled successfully",
+      "documentsViewInDevelopment": "Document viewing feature is in development."
+    },
+    "errors": {
+      "loadHistory": "Failed to load history",
+      "loadDetails": "Failed to load details",
+      "loadLatestAppointment": "Could not load the latest appointment data.",
+      "findAppointment": "Could not find the appointment"
+    },
+    "admin": {
+      "roleTitle": "Administrator",
+      "title": "Administration Panel",
+      "administrationOnlyArea": "Administration-only area",
+      "navigation": {
+        "dashboard": "Dashboard",
+        "slots": "Slots",
+        "catalogs": "Catalogs"
+      },
+      "viewDescriptions": {
+        "overview": "This panel is for operational administration only. Admin manages slots, materials, transports and maintenance types.",
+        "slots": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
+        "catalogs": "Create, edit and remove materials, transports and maintenance types used in requests."
+      },
+      "overview": {
+        "managementAreas": {
+          "slots": {
+            "title": "Slots per appointment",
+            "description": "Define capacity per schedule and time slot and control operational occupancy.",
+            "actionLabel": "Manage slots"
+          },
+          "catalogs": {
+            "title": "Administrative catalogs",
+            "description": "Create, edit and remove materials, transports and maintenance types without access to requests.",
+            "actionLabel": "Open catalog"
+          }
+        }
+      },
+      "slots": {
+        "operationalConfiguration": "Operational configuration",
+        "title": "Appointments capacity per slot",
+        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
+        "secretaryScheduleTitle": "Secretary schedule",
+        "balnearioScheduleTitle": "Bathhouse schedule",
+        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot.",
+        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots.",
+        "maxPerSlot": "Maximum per slot",
+        "saving": "Saving...",
+        "saveConfiguration": "Save configuration"
+      },
+      "summary": {
+        "slots": {
+          "title": "Slots (Secretary/Bathhouse)",
+          "description": "capacity per time slot"
+        },
+        "materials": {
+          "title": "Materials",
+          "description": "catalog items"
+        },
+        "transports": {
+          "title": "Transport",
+          "description": "transport items in catalog"
+        },
+        "maintenanceTypes": {
+          "title": "Maintenance types",
+          "description": "available types"
+        }
+      },
+      "messages": {
+        "slotConfigUpdated": "Slot configuration updated successfully"
+      },
+      "errors": {
+        "loadSlotConfig": "Could not load slot configuration",
+        "saveSlotConfig": "Could not save slot configuration"
+      }
+    },
+    "userHome": {
+      "labels": {
+        "reserved": "Reserved",
+        "occupied": "Occupied",
+        "unavailableTime": "Time slot unavailable"
+      },
+      "messages": {
+        "documentViewInDevelopment": "In development"
+      },
+      "placeholders": {
+        "balnearioAppointments": "Bathhouse - Appointments",
+        "balnearioAbout": "Bathhouse - About",
+        "volunteeringSignup": "Volunteering - Signup",
+        "volunteeringAbout": "Volunteering - About",
+        "settings": "Settings",
+        "notFound": "Page not found"
+      }
+    }
+  },
+  "common": {
+    "back": "Back",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount_one": "{{count}} unread notification",
+    "unreadCount_other": "{{count}} unread notifications",
+    "markAllRead": "Mark all as read",
+    "deleteAll": "Delete all",
+    "filterAll": "All ({{count}})",
+    "filterUnread": "Unread ({{count}})",
+    "noUnread": "No unread notifications",
+    "none": "No notifications",
+    "deleteOne": "Delete notification",
+    "agoMinutes": "{{count}} min ago",
+    "agoHours_one": "{{count}} hour ago",
+    "agoHours_other": "{{count}} hours ago",
+    "agoDays_one": "{{count}} day ago",
+    "agoDays_other": "{{count}} days ago"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "platformSubtitle": "Florinhas do Vouga Institutional Platform",
+    "nif": "NIF",
+    "institutionalEmail": "Institutional email",
+    "password": "Password",
+    "login": "Sign in",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create Account",
+    "requiredField": "Required field",
+    "onlyNumbersAllowed": "Only numbers are allowed",
+    "invalidInstitutionalEmail": "Invalid institutional email",
+    "fillAllFields": "Please fill in all fields",
+    "loginSuccess": "Login successful!",
+    "invalidCredentials": "Invalid credentials",
+    "invalidName": "Invalid name",
+    "nifRequired": "NIF is required",
+    "nifMustHave9Digits": "NIF must have 9 digits",
+    "contactRequired": "Contact is required",
+    "contactMustHave9Digits": "Contact must have 9 digits",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email",
+    "useInstitutionalEmail": "Use an institutional email (@florinhasdovouga.pt)",
+    "roleRequiredEmployee": "Role is required for employees",
+    "passwordRequired": "Password is required",
+    "passwordRequirementsNotMet": "Password does not meet requirements",
+    "confirmPasswordRequired": "Password confirmation is required",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
+    "fixFormErrors": "Please fix form errors",
+    "fixErrorsBeforeContinue": "Fix the errors before continuing",
+    "accountCreatedSuccess": "Account created successfully!",
+    "employeeAccountCreatedSuccess": "Account created successfully! Please wait for secretary approval.",
+    "errorCreatingAccount": "Error creating account",
+    "backToLogin": "Back to Login",
+    "registerInSystem": "Register in the system",
+    "fullName": "Full Name",
+    "setNewPassword": "Set New Password",
+    "setPasswordSubtitle": "Please set a secure password to access your account.",
+    "newPassword": "New Password",
+    "repeatPassword": "Repeat Password",
+    "passwordRuleMinLength": "Min. 8 characters",
+    "passwordRuleCases": "Uppercase and lowercase letters",
+    "passwordRuleNumbers": "Numbers",
+    "termsAndPrivacy": "terms of use and privacy policy",
+    "saveAndEnter": "Save and Enter Platform",
+    "passwordSetSuccess": "Password set successfully",
+    "errorSettingPassword": "Error setting password",
+    "changePasswordTitle": "Change Password",
+    "confirmPassword": "Confirm Password",
+    "changePasswordNewPlaceholder": "Enter the new password",
+    "changePasswordConfirmPlaceholder": "Confirm the new password",
+    "saveChanges": "Save Changes",
+    "passwordChangedSuccess": "Password changed successfully",
+    "passwordChangedError": "Error changing password",
+    "birthDate": "Date of Birth",
+    "contact": "Contact",
+    "institutionalEmailLabel": "Institutional Email",
+    "fillNameFirst": "(Fill in your name first)",
+    "other": "Other",
+    "role": "Role",
+    "selectRole": "Select role",
+    "roleSecretary": "Secretaria",
+    "roleSocialBath": "Balneário Social",
+    "roleSchool": "Escola",
+    "roleInternalServices": "Serviços Internos",
+    "acceptTermsPrefix": "I accept the"
+  },
+  "profile": {
+    "loading": "Loading...",
+    "changePassword": "Change Password",
+    "passwordShort": "Password",
+    "phone": "Phone",
+    "address": "Address",
+    "parish": "Parish",
+    "postalCode": "Postal Code",
+    "profession": "Profession",
+    "workLocation": "Work Location",
+    "workAddress": "Work Address",
+    "workPhone": "Work Phone",
+    "sections": {
+      "personal": "Personal Information",
+      "address": "Address",
+      "professional": "Professional Information"
+    },
+    "placeholders": {
+      "nameUnavailable": "Name unavailable",
+      "emailUnavailable": "Email unavailable",
+      "addContact": "Add contact",
+      "addAddress": "Add address",
+      "addParish": "Add parish",
+      "addPostalCode": "Add postal code",
+      "addProfession": "Add profession",
+      "addWorkLocation": "Add work location",
+      "addWorkAddress": "Add work address",
+      "addWorkPhone": "Add work phone"
+    },
+    "messages": {
+      "updatedSuccess": "Profile updated successfully"
+    },
+    "errors": {
+      "loadProfile": "Error loading profile data",
+      "updateProfile": "Error updating profile"
+    }
+  },
+  "history": {
+    "title": "Appointment History",
+    "backToAppointments": "Back to Appointments",
+    "status": {
+      "completed": "Completed",
+      "warning": "Warning",
+      "noShow": "No-show",
+      "cancelled": "Cancelled"
+    },
+    "filters": {
+      "fromDate": "From",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search...",
+      "allStatuses": "All statuses",
+      "allSubjects": "All subjects"
+    },
+    "table": {
+      "timeHeader": "Time",
+      "dayHeader": "Day",
+      "attendantHeader": "Attendant",
+      "patientHeader": "User",
+      "subjectHeader": "Subject",
+      "statusHeader": "Status",
+      "noResults": "No appointments found"
+    },
+    "pagination": {
+      "showingRange": "Showing {{start}}-{{end}} of {{total}} results",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "export": {
+      "action": "Export",
+      "dialogTitle": "Export History",
+      "dialogDescription": "Choose export format ({{count}} records)",
+      "csvDescription": "Text format compatible with Excel and other apps",
+      "excelDescription": "Formatted file for Microsoft Excel",
+      "pdfDescription": "Document for printing or viewing",
+      "recordsFound": "{{count}} records found",
+      "generatedAt": "Generated on {{date}} at {{time}}",
+      "headers": {
+        "time": "Time",
+        "date": "Date",
+        "attendant": "Attendant",
+        "patientName": "User Name",
+        "contact": "Contact",
+        "email": "Email",
+        "subject": "Subject",
+        "status": "Status"
+      }
+    },
+    "toast": {
+      "noAppointmentsToExport": "There are no appointments to export",
+      "csvSuccess": "History exported to CSV successfully",
+      "excelSuccess": "History exported to Excel successfully",
+      "preparingPdf": "Preparing PDF for printing..."
+    }
+  },
+  "documents": {
+    "title": "Document Search",
+    "metadataFilters": "Metadata filters",
+    "resultsTitle": "Results",
+    "resultsSummary": "{{count}} document(s) · {{size}} MB",
+    "noResults": "No results for current filters.",
+    "filters": {
+      "originalName": "Original document name",
+      "userName": "User name",
+      "userNif": "User NIF",
+      "type": "Type",
+      "from": "From",
+      "to": "To"
+    },
+    "actions": {
+      "search": "Search",
+      "searching": "Searching...",
+      "clear": "Clear",
+      "download": "Download"
+    },
+    "pagination": {
+      "pageOf": "Page {{page}} of {{total}}",
+      "perPage": "Per page"
+    },
+    "card": {
+      "appointmentRef": "Appointment #{{id}} · {{mime}} · {{size}} KB",
+      "userLine": "User: {{name}} ({{nif}})",
+      "uploadAt": "Upload: {{date}}"
+    },
+    "messages": {
+      "searchDone": "Search completed: {{count}} document(s).",
+      "downloadStarted": "Download started: {{name}}"
+    },
+    "errors": {
+      "search": "Error searching documents.",
+      "load": "Error loading documents.",
+      "download": "Error downloading document."
+    }
+  },
+  "requisitions": {
+    "summary": "{{total}} request(s) · {{urgent}} urgent",
+    "labels": {
+      "allStatuses": "All statuses",
+      "inAnalysis": "In analysis",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "material": "Material",
+      "transport": "Transport",
+      "maintenance": "Maintenance",
+      "general": "General",
+      "transportCategoryHeavyPassengers": "Heavy passenger vehicle",
+      "transportCategoryLightPassengers": "Light passenger vehicle",
+      "transportCategoryLightGoods": "Light goods vehicle",
+      "transportCategoryLightSpecial": "Special light vehicle",
+      "transportCategoryAdapted": "Adapted",
+      "transportCategoryLight": "Light vehicle",
+      "transportCategoryHeavy": "Heavy vehicle",
+      "passengers": "Passengers",
+      "materialCategoryWriting": "Writing supplies",
+      "materialCategoryPaperFiling": "Paper and filing",
+      "materialCategoryHygieneCleaning": "Hygiene and cleaning",
+      "materialCategoryTechnology": "Technology",
+      "materialCategoryOther": "Other",
+      "noCategory": "No category",
+      "capacityNotDefined": "Capacity not defined",
+      "seat": "seat",
+      "seats": "seats",
+      "vehicle": "Vehicle",
+      "noAssociatedTransport": "No associated transport",
+      "noDetails": "No details",
+      "registeredOn": "Registered on {{date}}",
+      "providePassengerCount": "Provide passenger count",
+      "missingSeats": "{{count}} seat(s) missing",
+      "capacitySufficient": "Sufficient capacity",
+      "status": "Status",
+      "createdBy": "Created by",
+      "managedBy": "Managed by",
+      "date": "Date",
+      "lastUpdate": "Last update",
+      "deadline": "Deadline",
+      "materials": "Materials",
+      "destination": "Destination",
+      "vehicles": "Vehicles",
+      "subject": "Subject",
+      "description": "Description",
+      "type": "Type",
+      "priority": "Priority",
+      "currentStatus": "Current status",
+      "creationDate": "Creation date",
+      "quantity": "Quantity",
+      "departure": "Departure",
+      "return": "Return",
+      "driver": "Driver",
+      "toBeDefined": "To be defined",
+      "newStatus": "New status",
+      "finalStateRuleHint": "This request has already been decided. Only transitions from In analysis to Accepted or Rejected are allowed."
+    },
+    "ui": {
+      "mainData": "Main data",
+      "type": "Type",
+      "priority": "Priority",
+      "deadlineDate": "Deadline date",
+      "selectDate": "Select date",
+      "transportAutoDeadlineHint": "Automatically filled for the day before departure.",
+      "description": "Description",
+      "describeRequest": "Describe the request",
+      "detailsByType": "Details by type",
+      "selectMaterials": "Select materials",
+      "newMaterial": "New material",
+      "noItemsInCategory": "No items in this category.",
+      "hideAttributes": "Hide attributes",
+      "showAttributes": "Show attributes",
+      "quantityShort": "Qty",
+      "addedMaterials": "Added materials",
+      "noMaterialsYet": "No materials added yet.",
+      "remove": "Remove",
+      "totalRows": "Total rows: {{count}}",
+      "totalUnits": "Total units: {{count}}",
+      "transportPlanningHint": "Fill route and expected occupancy to auto-suggest the most suitable fleet.",
+      "destination": "Destination",
+      "destinationPlaceholder": "Ex: Porto, Casa da Música",
+      "driverOptional": "Driver (optional)",
+      "driverPlaceholder": "Ex: Internal driver or to be defined",
+      "departureDate": "Departure date",
+      "departureTime": "Departure time",
+      "returnDate": "Return date",
+      "returnTime": "Return time",
+      "passengersCount": "Number of passengers",
+      "passengersPlaceholder": "Ex: 14",
+      "suggestedAndSelectedVehicles": "Suggested and selected vehicles",
+      "suggestionHint": "You can keep the automatic suggestion or manually adjust the vehicle combination.",
+      "applySuggestion": "Apply suggestion",
+      "selectionMode": "Selection mode",
+      "automatic": "Automatic",
+      "manual": "Manual",
+      "passengerCapacity": "Passenger capacity",
+      "seatsCount": "{{count}} seats",
+      "coverage": "Coverage",
+      "capacityHint": "Usable capacity reserves 1 seat for the driver in each vehicle.",
+      "unavailableVehiclesCount": "{{count}} vehicle(s) unavailable because they already have an accepted request in this time slot.",
+      "currentSelection": "Current selection",
+      "capacityLabel": "Capacity",
+      "loadingVehicles": "Loading available vehicles...",
+      "noVehiclesInCatalog": "No vehicles in catalog yet.",
+      "vehiclesCount": "{{count}} vehicle(s)",
+      "suggested": "Suggested",
+      "unavailable": "Unavailable",
+      "overlapWarning": "There is already an accepted request with an overlapping schedule.",
+      "hideDetails": "Hide details",
+      "details": "Details",
+      "licensePlate": "License plate",
+      "noLicensePlate": "No license plate",
+      "brandModel": "Brand/Model",
+      "notDefined": "Not defined",
+      "licenseDate": "License date",
+      "subjectOptional": "Subject (optional)",
+      "subjectPlaceholder": "Ex: Leaking tap",
+      "close": "Close",
+      "creatingRequest": "Creating...",
+      "createRequest": "Create request",
+      "goToGeneralRequests": "Go to general requests",
+      "requests": "Requests",
+      "goToUrgentRequests": "Go to urgent requests",
+      "urgent": "Urgent",
+      "goToMaterialRequests": "Go to material requests",
+      "material": "Material",
+      "goToMaintenanceRequests": "Go to maintenance requests",
+      "maintenance": "Maintenance",
+      "goToTransportRequests": "Go to transport requests",
+      "transport": "Transport",
+      "toggleNewRequestSection": "Toggle New request section",
+      "newRequest": "New request",
+      "clickToOpenForm": "Click to open the form",
+      "toggleRequestsSection": "Toggle Requests section",
+      "listType": "List type",
+      "requestTypeTabs": "Request type tabs",
+      "selectTab": "Select {{tab}}",
+      "status": "Status",
+      "allPriorities": "All priorities",
+      "createdByName": "Created by name",
+      "createdByPlaceholder": "Ex: Maria",
+      "managedByName": "Managed by name",
+      "managedByPlaceholder": "Ex: João",
+      "searching": "Searching...",
+      "search": "Search",
+      "clearFilters": "Clear filters",
+      "noRequestsForFilters": "No requests for current filters.",
+      "open": "Open",
+      "creationPanel": "Creation panel",
+      "create": "Create",
+      "requestDetails": "Request details",
+      "saveStatus": "Save status",
+      "name": "Name",
+      "materialNamePlaceholder": "Ex: Gloves",
+      "descriptionOptional": "Description (optional)",
+      "materialDescriptionPlaceholder": "Material description",
+      "category": "Category",
+      "attribute": "Attribute",
+      "attributePlaceholder": "Ex: Color, Type, Size",
+      "attributeValue": "Attribute value",
+      "attributeValuePlaceholder": "Ex: Blue, A4, 100ml",
+      "creating": "Creating...",
+      "createMaterial": "Create material"
+    },
+    "messages": {
+      "created": "Request created successfully.",
+      "materialCreated": "Material request created successfully.",
+      "statusUpdated": "Request status updated successfully."
+    },
+    "errors": {
+      "requiredField": "Required field.",
+      "addOneMaterial": "Add at least one material with a valid quantity.",
+      "invalidPassengers": "Provide a valid number of passengers.",
+      "selectOneVehicle": "Select at least one vehicle.",
+      "returnAfterDeparture": "Return date/time must be after departure date/time.",
+      "missingAuthenticatedUser": "Could not identify the authenticated user.",
+      "createFailed": "Error creating request.",
+      "onlyPendingDecision": "You can only decide requests that are In analysis.",
+      "chooseFinalState": "Choose a final status: Accepted or Rejected.",
+      "invalidFinalState": "Invalid status. Choose Accepted or Rejected.",
+      "updateStatusFailed": "Error updating request status.",
+      "loadFailed": "Error loading requests.",
+      "loadCatalogFailed": "Error loading materials and transport options."
+    },
+    "material": {
+      "messages": {
+        "created": "Material created successfully."
+      },
+      "errors": {
+        "nameRequired": "Material name is required.",
+        "attributeRequired": "Attribute and attribute value are required.",
+        "createFailed": "Error creating material."
+      }
+    }
+  },
+  "userManagement": {
+    "title": "User Management",
+    "subtitle": "Account creation and recovery",
+    "slotCapacityTitle": "Appointment Capacity per Slot",
+    "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
+    "secretarySlotsLabel": "Secretary (appointments per slot)",
+    "balnearioSlotsLabel": "Social bathhouse (appointments per slot)",
+    "secretarySlotsAria": "Number of appointments per slot for the secretary",
+    "balnearioSlotsAria": "Number of appointments per slot for the social bathhouse",
+    "saveSlotConfig": "Save slot configuration",
+    "createAccount": "Create Account",
+    "recoverAccount": "Account Recovery",
+    "clickToExpand": "Click to expand",
+    "namePlaceholder": "First and last name",
+    "nameShortPlaceholder": "name",
+    "emailPlaceholder": "email@example.com",
+    "fillNameFirst": "(Fill in the name)",
+    "other": "Other",
+    "userType": "User Type *",
+    "selectRole": "Select role",
+    "recoveryHint": "Search by NIF to identify the user and validate their identity.",
+    "searchNif": "Search NIF",
+    "userNifPlaceholder": "User NIF",
+    "identityFound": "Identity Found",
+    "contactEditable": "Contact (Editable)",
+    "emailEditable": "Email (Editable)",
+    "notifyRecovery": "Notify Recovery",
+    "registeredUsers": "Registered Users",
+    "pending": "Pending",
+    "active": "Active",
+    "searchByNameOrNif": "Search by name or NIF...",
+    "role": "Role",
+    "action": "Action",
+    "approve": "Approve",
+    "noUsersFound": "No users found",
+    "showingUsers": "Showing {{start}} to {{end}} of {{total}}",
+    "userAlreadyExistsTitle": "This user already exists!",
+    "userAlreadyExistsDescription": "A record already exists with NIF {{nif}}.",
+    "askUpdateContactData": "Would you like to update the user's contact data?",
+    "yesUpdateData": "Yes, update data",
+    "userNotFoundTitle": "User not found",
+    "userNotFoundDescription": "No record exists with NIF {{nif}}.",
+    "askCreateNewWithNif": "Would you like to create a new account with this NIF?",
+    "yesCreateNewAccount": "Yes, create new account",
+    "messages": {
+      "slotConfigSaved": "Slot capacity updated successfully",
+      "employeeApproved": "Employee approved successfully!",
+      "accountCreatedWithEmail": "Account created! Activation email sent to {{email}}",
+      "redirectToRecovery": "Redirected to recovery for the existing user account.",
+      "redirectToCreate": "Redirected to account creation with the NIF that was not found.",
+      "userFound": "User found!",
+      "recoveryStarted": "Recovery started! Code sent to {{email}}"
+    },
+    "errors": {
+      "loadSlotConfig": "Could not load slot appointment configuration",
+      "saveSlotConfig": "Could not save slot configuration",
+      "employeeApprove": "Error approving employee",
+      "enterNifToSearch": "Enter a NIF to search",
+      "invalidNif": "Invalid NIF (must have 9 digits)",
+      "invalidContact": "Invalid contact (must have 9 digits)",
+      "recoveryFailed": "Error recovering account"
+    },
+    "roles": {
+      "userCommon": "Regular User",
+      "secretary": "Secretary",
+      "balneario": "Social Bathhouse",
+      "internals": "Internal Services",
+      "admin": "Administrator",
+      "school": "School",
+      "other": "Other"
+    }
+  },
+  "appointmentDetails": {
+    "confirmRemoveDocument": "Are you sure you want to remove \"{{name}}\"?",
+    "documentRemoved": "Document removed",
+    "documentRemoveError": "Error removing document",
+    "selectAtLeastOneDocument": "Select at least one document",
+    "addReasonForEachDocument": "Add a reason for each selected document",
+    "userNotifiedInvalidDocuments": "User notified about invalid documents",
+    "cancelledByUser": "Cancelled by user",
+    "describeCancelReason": "Describe the reason for cancellation",
+    "authUserNotIdentified": "Authentication error: user not identified",
+    "appointmentCancelledAndUserNotified": "Appointment cancelled and user notified",
+    "cancelFailed": "Could not cancel the appointment",
+    "appointmentCompleted": "Appointment completed successfully!",
+    "completeFailed": "Could not complete the appointment",
+    "markedNoShow": "Appointment marked as no-show.",
+    "statusUpdateFailed": "Could not update status",
+    "appointmentStarted": "Appointment started successfully!",
+    "startFailed": "Could not start the appointment",
+    "enterDocumentName": "Enter the document name",
+    "documentAdded": "Document added successfully",
+    "enterNewDocumentName": "Enter the new document name",
+    "documentUpdated": "Document updated successfully",
+    "rescheduledSuccess": "Appointment rescheduled successfully",
+    "rescheduledFailed": "Failed to save reschedule.",
+    "scheduled": "Scheduled",
+    "completed": "Completed",
+    "noShow": "No-show",
+    "cancelled": "Cancelled",
+    "viewAppointment": "View Appointment",
+    "viewAndManage": "View and manage appointment details",
+    "closeDetails": "Close appointment details",
+    "invalidDocuments": "Invalid Documents",
+    "cancelledAppointment": "Appointment cancelled",
+    "reason": "Reason",
+    "attachedDocuments": "Attached Documents",
+    "add": "Add",
+    "loadingDocuments": "Loading documents...",
+    "noDocumentsAttached": "No documents attached",
+    "invalidReasonPlaceholder": "Reason why this document is invalid...",
+    "startAppointment": "Start appointment",
+    "complete": "Complete",
+    "notifyInvalidDocument": "Notify Invalid Document",
+    "addDocuments": "Add Documents",
+    "reschedule": "Reschedule",
+    "dateString": "{{dayName}}, {{day}} {{month}} {{year}} at {{time}}",
+    "inProgress": "In Progress",
+    "legacyDocuments": "Extra Documents (Legacy)",
+    "updateLegacyDoc": "Update",
+    "removeDocument": "Remove",
+    "cancelDialogTitle": "Cancel Appointment",
+    "cancelDialogDescClient": "Are you sure you want to cancel this appointment?",
+    "cancelDialogDescSecretary": "Briefly explain to the user why this appointment will be cancelled.",
+    "cancelReasonPlaceholder": "Ex.: User did not submit the required documents...",
+    "cancelReasonHint": "The reason will be sent to the user along with the cancellation notification.",
+    "cancelDialogNo": "No",
+    "cancelDialogForget": "Discard",
+    "cancelDialogConfirmClient": "Yes, cancel",
+    "cancelDialogConfirmSecretary": "Confirm",
+    "addDocTitle": "Add Document",
+    "addDocDesc": "Enter the name of the document you want to add.",
+    "addDocPlaceholder": "Ex.: Address proof...",
+    "updateDocTitle": "Update Document",
+    "updateDocDesc": "Enter the new name for the document.",
+    "updateDocPlaceholder": "New document name...",
+    "rescheduleDialogTitle": "Reschedule Appointment",
+    "rescheduleDialogDesc": "Choose the new date and time for your appointment.",
+    "rescheduleYear": "Year",
+    "rescheduleMonth": "Month",
+    "rescheduleDay": "Day",
+    "rescheduleHour": "Time",
+    "rescheduleSelectPlaceholder": "Select",
+    "rescheduleUnavailable": "Unavailable",
+    "rescheduleConfirm": "Confirm Reschedule"
+  },
+  "statusBadge": {
+    "inProgress": "In Progress",
+    "scheduled": "Scheduled",
+    "warning": "Warning",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "noShow": "No-show",
+    "reserved": "Reserved"
+  },
+  "appointmentActivity": {
+    "inProgress": "Appointment in progress",
+    "inProgressWithPatient": "Appointment in progress - {{name}}",
+    "nextAppointmentHours": "Next appointment in {{hours}} hour{{hoursSuffix}} and {{minutes}} minute{{minutesSuffix}}",
+    "nextAppointmentMinutes": "Next appointment in {{minutes}} minute{{minutesSuffix}}",
+    "noneToday": "There are no appointments for today yet"
+  },
+  "todayAppointments": {
+    "titleSecretary": "Today's Appointments",
+    "titleBalneario": "Today's Baths",
+    "filter": "Filter",
+    "applyFilters": "Apply",
+    "clearFilters": "Clear",
+    "emptySecretary": "No appointments for today",
+    "emptyBalneario": "No baths for today",
+    "exportAction": "Export Daily List",
+    "exportSuccess": "Daily list exported successfully",
+    "processing": "Processing..."
+  },
+  "blockedSchedule": {
+    "title": "Manage Time Slot Blocks",
+    "start": "Start",
+    "end": "End",
+    "chooseDate": "Choose date",
+    "occupied": "Occupied",
+    "unavailableShort": "N/A",
+    "processing": "Processing...",
+    "addBlock": "Add Block",
+    "activeBlocks": "Active Blocks",
+    "day": "Day",
+    "actions": "Actions",
+    "noRegisteredBlocks": "No registered blocks",
+    "messages": {
+      "blockCreated": "Block created successfully",
+      "blocksCreated": "{{count}} blocks created successfully",
+      "blockRemoved": "Block removed"
+    },
+    "errors": {
+      "loadBlocks": "Error loading blocks:",
+      "fillAllFields": "Fill in all fields",
+      "endDateAfterStart": "End date must be after or equal to start date",
+      "endTimeAfterStart": "End time must be later than start time",
+      "unknownCreateError": "Unknown error while creating block",
+      "removeFailed": "Error removing block"
+    }
+  },
+  "balnearioAppointment": {
+    "title": "Register Bath",
+    "description": "Form for scheduling quick baths.",
+    "patientName": "User Name",
+    "patientNamePlaceholder": "Ex: John Smith",
+    "patientNeeds": "User Needs",
+    "hygiene": "Hygiene",
+    "laundry": "Laundry",
+    "clothing": "Clothing",
+    "additionalNotes": "Additional Notes",
+    "notesPlaceholder": "Ex: Allergies, special care, clothing size...",
+    "anonymousName": "Anonymous",
+    "createdSuccess": "Bathhouse appointment registered!",
+    "creationFailed": "Error: {{message}}",
+    "creationFailedFallback": "Creation failed",
+    "saving": "Saving...",
+    "confirmBook": "Confirm and Book",
+    "errors": {
+      "pastDate": "It is not possible to book a date/time in the past",
+      "slotUnavailable": "Time slot unavailable",
+      "slotOccupied": "This time slot is already occupied"
+    },
+    "options": {
+      "shampoo": "Shampoo",
+      "showerGel": "Shower Gel",
+      "towel": "Towel",
+      "soapCream": "Soap/Cream",
+      "washDryClothes": "Wash Dry Clothes",
+      "washWetClothes": "Wash Wet Clothes",
+      "shirtSweater": "T-shirt/Sweater",
+      "pants": "Pants",
+      "shoesSneakers": "Shoes/Sneakers",
+      "underwear": "Underwear",
+      "socks": "Socks",
+      "coatJacket": "Coat/Jacket"
+    }
+  },
+  "balnearioAppointmentDetails": {
+    "dialogTitle": "Bathhouse Appointment Details",
+    "dialogDescription": "Review and edit the user's needs and information.",
+    "title": "Bath Details",
+    "patientName": "User Name",
+    "markedNeeds": "Marked Needs",
+    "editable": "editable",
+    "detailsUpdated": "Details updated successfully",
+    "saveError": "Error saving changes",
+    "cancelledByStaff": "Cancelled by bathhouse staff",
+    "cancelledSuccess": "Appointment cancelled",
+    "cancelError": "Could not cancel the appointment",
+    "completeSuccess": "Bath completed successfully!",
+    "completeError": "Could not complete the service",
+    "startedSuccess": "Presence registered!",
+    "saveChanges": "Save Changes",
+    "requestedServices": "Requested Services:",
+    "noSpecificServices": "No specific logistical service was recorded.",
+    "hygieneProducts": "Hygiene products (Shower gel / Shampoo)",
+    "laundryService": "Wash clothes",
+    "supplyItem": "Supply: {{category}}{{sizePart}} x{{quantity}}",
+    "size": "Size",
+    "markPresent": "Present",
+    "cancelAppointment": "Cancel Appointment",
+    "missedAppointment": "Missed",
+    "completeService": "Complete Service",
+    "dateString": "{{dayName}}, {{day}} {{month}} {{year}} at {{time}}"
+  }
+}
