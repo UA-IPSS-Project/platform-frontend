@@ -765,7 +765,7 @@ export function SecretaryRequisitionsPage({
                             Sem itens nesta categoria.
                           </p>
                         ) : (
-                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
+                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                             {itemsCategoria.map((item) => {
                               const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
                               const selectedCount = item.variantes.filter((variante) =>
