@@ -98,6 +98,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: 'Requisições',
       icon: ClipboardListIcon,
       subitems: [
+        { id: 'requisitions', label: 'Geral', icon: HomeIcon },
         { id: 'material', label: 'Material', icon: PackageIcon },
         { id: 'manutencao', label: 'Manutenção', icon: WrenchIcon },
         { id: 'transportes', label: 'Transporte', icon: TruckIcon },
@@ -129,11 +130,6 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   // Main menu structure for Client (User Dashboard)
   const clientMenuItems = [
     {
-      id: 'home',
-      label: 'Início',
-      icon: HomeIcon
-    },
-    {
       id: 'appointments',
       label: 'Secretaria',
       icon: CalendarIcon
@@ -157,7 +153,6 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   ];
 
   const secretaryGeneralItems = [
-    { id: 'requisitions', label: 'Home Requisições', icon: ClipboardListIcon },
     { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
     { id: 'administrative', label: 'Área Administrativa', icon: ShieldCheckIcon },
     { id: 'profile', label: 'Perfil', icon: UserIcon },
