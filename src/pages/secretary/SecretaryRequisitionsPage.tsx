@@ -200,9 +200,19 @@ const formatTransporteDisplay = (transporte?: TransporteLike): string => {
 const formatTransporteMeta = (transporte?: TransporteLike): string => {
   if (!transporte) return 'Sem detalhes';
 
-  const dataMatricula = transporte.dataMatricula
-    ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT')
-    : undefined;
+  let dataMatricula: string | undefined;
+  if (transporte.dataMatricula) {
+    let matriculaDate: Date | undefined;
+    if (transporte.dataMatricula instanceof Date) {
+      matriculaDate = transporte.dataMatricula;
+    } else if (typeof transporte.dataMatricula === 'string') {
+      matriculaDate = parseDateInput(transporte.dataMatricula) ?? undefined;
+    }
+
+    if (matriculaDate && !Number.isNaN(matriculaDate.getTime())) {
+      dataMatricula = matriculaDate.toLocaleDateString('pt-PT');
+    }
+  }
 
   return [
     transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
