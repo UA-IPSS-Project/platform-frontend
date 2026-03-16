@@ -1216,7 +1216,44 @@ export function SecretaryRequisitionsPage({
 
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2"
+            role="tablist"
+            aria-label="Separadores de tipo de requisição"
+            onKeyDown={(event) => {
+              const { key } = event;
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(key)) {
+                return;
+              }
+              event.preventDefault();
+              const tabs = Array.from(
+                event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+              );
+              if (tabs.length === 0) {
+                return;
+              }
+              const currentIndex = tabs.findIndex((tab) => tab === document.activeElement);
+              let nextIndex = currentIndex === -1 ? 0 : currentIndex;
+              if (key === 'ArrowRight') {
+                nextIndex = (currentIndex + 1 + tabs.length) % tabs.length;
+              } else if (key === 'ArrowLeft') {
+                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+              } else if (key === 'Home') {
+                nextIndex = 0;
+              } else if (key === 'End') {
+                nextIndex = tabs.length - 1;
+              }
+              const nextTab = tabs[nextIndex];
+              if (!nextTab) {
+                return;
+              }
+              const nextValue = nextTab.getAttribute('data-tab-value');
+              if (nextValue) {
+                void handleSelectTab(nextValue as any);
+              }
+              nextTab.focus();
+            }}
+          >
             {REQUISICOES_TABS.map((tab) => {
               const isActive = activeTab === tab.value;
               return (
@@ -1224,6 +1261,10 @@ export function SecretaryRequisitionsPage({
                   key={tab.value}
                   type="button"
                   variant="ghost"
+                  role="tab"
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}
+                  data-tab-value={tab.value}
                   onClick={() => {
                     void handleSelectTab(tab.value);
                   }}
@@ -1231,8 +1272,6 @@ export function SecretaryRequisitionsPage({
                     ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
                     : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
-                  aria-pressed={isActive}
-                  aria-label={`Selecionar ${tab.label}`}
                 >
                   {tab.label}
                 </Button>
