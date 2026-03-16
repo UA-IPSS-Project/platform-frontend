@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { utilizadoresApi } from '../../services/api';
+import { calendarioApi, utilizadoresApi } from '../../services/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -32,6 +32,12 @@ interface UserManagementProps {
 }
 
 export function UserManagement({ isDarkMode }: UserManagementProps) {
+    const [slotCapacities, setSlotCapacities] = useState({
+        SECRETARIA: 1,
+        BALNEARIO: 1,
+    });
+    const [isSavingSlotCapacity, setIsSavingSlotCapacity] = useState(false);
+
     // State for Create Account Form
     const [formData, setFormData] = useState({
         nif: '',
@@ -77,7 +83,43 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     useEffect(() => {
         fetchUsers();
+        loadSlotCapacities();
     }, []);
+
+    const loadSlotCapacities = async () => {
+        try {
+            const config = await calendarioApi.listarConfiguracaoSlots();
+            const secretaria = config.find(item => item.tipo === 'SECRETARIA')?.capacidadePorSlot ?? 1;
+            const balneario = config.find(item => item.tipo === 'BALNEARIO')?.capacidadePorSlot ?? 1;
+            setSlotCapacities({ SECRETARIA: secretaria, BALNEARIO: balneario });
+        } catch (error) {
+            console.error('Erro ao carregar configuração de slots:', error);
+            toast.error('Não foi possível carregar a configuração de marcações por slot');
+        }
+    };
+
+    const handleSlotCapacityChange = (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => {
+        const parsed = Number.parseInt(value, 10);
+        const safeValue = Number.isFinite(parsed) ? Math.min(20, Math.max(1, parsed)) : 1;
+        setSlotCapacities(prev => ({ ...prev, [tipo]: safeValue }));
+    };
+
+    const handleSaveSlotCapacities = async () => {
+        setIsSavingSlotCapacity(true);
+        try {
+            await Promise.all([
+                calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA),
+                calendarioApi.atualizarConfiguracaoSlot('BALNEARIO', slotCapacities.BALNEARIO),
+            ]);
+            toast.success('Capacidade por slot atualizada com sucesso');
+            await loadSlotCapacities();
+        } catch (error) {
+            console.error('Erro ao atualizar configuração de slots:', error);
+            toast.error('Não foi possível guardar a configuração de slots');
+        } finally {
+            setIsSavingSlotCapacity(false);
+        }
+    };
 
     const fetchUsers = async () => {
         setIsLoading(true);
@@ -393,6 +435,62 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gestão de Utilizadores</h1>
                 <p className="text-gray-500 dark:text-gray-400">Criação e recuperação de contas</p>
             </div>
+
+            <GlassCard className="p-6">
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Capacidade de Marcações por Slot</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Defina quantas marcações podem existir no mesmo horário para cada agenda.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="slot-capacidade-secretaria" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Secretaria (marcações por slot)
+                            </Label>
+                            <Input
+                                id="slot-capacidade-secretaria"
+                                type="number"
+                                min={1}
+                                max={20}
+                                value={slotCapacities.SECRETARIA}
+                                onChange={(e) => handleSlotCapacityChange('SECRETARIA', e.target.value)}
+                                aria-label="Número de marcações por slot para a secretaria"
+                                className="bg-white dark:bg-gray-900"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="slot-capacidade-balneario" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Balneário (marcações por slot)
+                            </Label>
+                            <Input
+                                id="slot-capacidade-balneario"
+                                type="number"
+                                min={1}
+                                max={20}
+                                value={slotCapacities.BALNEARIO}
+                                onChange={(e) => handleSlotCapacityChange('BALNEARIO', e.target.value)}
+                                aria-label="Número de marcações por slot para o balneário"
+                                className="bg-white dark:bg-gray-900"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                        <Button
+                            type="button"
+                            onClick={handleSaveSlotCapacities}
+                            disabled={isSavingSlotCapacity}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                        >
+                            {isSavingSlotCapacity ? 'A guardar...' : 'Guardar configuração de slots'}
+                        </Button>
+                    </div>
+                </div>
+            </GlassCard>
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
 

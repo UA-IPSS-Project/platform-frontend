@@ -32,6 +32,12 @@ interface WeeklyScheduleProps {
   appointmentType?: 'SECRETARIA' | 'BALNEARIO';
 }
 
+interface SlotNavigatorState {
+  date: Date;
+  time: string;
+  slots: Array<Appointment | null>;
+}
+
 const generateTimeSlots = () => {
   const slots = [];
   for (let hour = 9; hour < 17; hour++) {
@@ -65,6 +71,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
+  const [slotCapacity, setSlotCapacity] = useState<number>(1);
+  const [slotNavigatorOpen, setSlotNavigatorOpen] = useState(false);
+  const [slotNavigator, setSlotNavigator] = useState<SlotNavigatorState | null>(null);
+  const [slotNavigatorIndex, setSlotNavigatorIndex] = useState(0);
 
   // ===== SLIDING WINDOW CACHE: Holidays & Blocks =====
   // Cache de feriados por ano (mantém todos os anos carregados)
@@ -160,8 +170,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
   }, [highlightedSlot]);
 
-  const isSlotBooked = (date: Date, time: string) => {
-    return bookingSource.some(apt => {
+  const getSlotAppointments = (date: Date, time: string) => {
+    const slotAppointments = bookingSource.filter(apt => {
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
       const slotDate = new Date(date);
@@ -171,6 +181,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         apt.time === time &&
         apt.status !== 'cancelled';
     });
+
+    slotAppointments.sort((a, b) => {
+      if (a.status === 'reserved' && b.status !== 'reserved') return 1;
+      if (a.status !== 'reserved' && b.status === 'reserved') return -1;
+      return 0;
+    });
+
+    return slotAppointments;
   };
 
   const isSlotInPast = (date: Date, time: string) => {
@@ -183,6 +201,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // ===== LEGACY STATE: blockedSlots (unified view from cache) =====
   // Mantido para compatibilidade: agregado de todos os bloqueios das semanas em cache
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const loadSlotCapacity = async () => {
+      try {
+        const configs = await calendarioApi.listarConfiguracaoSlots();
+        const config = configs.find(item => item.tipo === appointmentType);
+        setSlotCapacity(Math.max(1, config?.capacidadePorSlot ?? 1));
+      } catch (error) {
+        console.error('Erro ao carregar capacidade por slot:', error);
+        setSlotCapacity(1);
+      }
+    };
+
+    loadSlotCapacity();
+  }, [appointmentType]);
 
   // ===== HELPER FUNCTIONS =====
   // Helper para minutos
@@ -394,7 +427,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       // Verificar tanto os bloqueios da semana quanto do mês do quick dialog
       const isBlockedInWeek = blockedSlots.has(key);
       const isBlockedInQuick = quickMonthBlocks.has(key);
-      return !isSlotBooked(date, slot) && !isSlotInPast(date, slot) && !isBlockedInWeek && !isBlockedInQuick;
+      return getSlotAppointments(date, slot).length < slotCapacity && !isSlotInPast(date, slot) && !isBlockedInWeek && !isBlockedInQuick;
     });
 
   const navigateWeek = (direction: 'prev' | 'next') => {
@@ -410,38 +443,93 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
   };
 
-  const getAppointmentForSlot = (date: Date, time: string) => {
-    const slotAppointments = bookingSource.filter(apt => {
-      const aptDate = new Date(apt.date);
-      aptDate.setHours(0, 0, 0, 0);
-      const slotDate = new Date(date);
-      slotDate.setHours(0, 0, 0, 0);
+  const getAppointmentForSlot = (date: Date, time: string) => getSlotAppointments(date, time)[0];
 
-      return aptDate.getTime() === slotDate.getTime() &&
-        apt.time === time &&
-        apt.status !== 'cancelled';
-    });
+  const openSlotNavigator = (date: Date, time: string) => {
+    const slotAppointments = getSlotAppointments(date, time);
+    const slots = Array.from({ length: slotCapacity }, (_, index) => slotAppointments[index] ?? null);
+    setSlotNavigator({ date, time, slots });
+    setSlotNavigatorIndex(0);
+    setSlotNavigatorOpen(true);
+  };
 
-    // Se houver mais do que uma (ex: Reservado + Agendado), dar prioridade à Agendada
-    // Ordenar: real (não-reserved) primeiro
-    slotAppointments.sort((a, b) => {
-      if (a.status === 'reserved' && b.status !== 'reserved') return 1;
-      if (a.status !== 'reserved' && b.status === 'reserved') return -1;
-      return 0;
-    });
+  const handleSlotNavigatorAction = async () => {
+    if (!slotNavigator) return;
 
-    return slotAppointments[0];
+    const selected = slotNavigator.slots[slotNavigatorIndex];
+    if (selected) {
+      if (selected.status === 'reserved') {
+        if (onRefresh) {
+          toast.info('A atualizar marcações...');
+          await onRefresh();
+          toast.success('Marcações atualizadas!');
+        }
+        return;
+      }
+
+      setSlotNavigatorOpen(false);
+      onViewAppointment(selected);
+      return;
+    }
+
+    if (isSlotInPast(slotNavigator.date, slotNavigator.time)) {
+      toast.error('Não é possível marcar para uma data/hora no passado');
+      return;
+    }
+
+    const blocked = await isSlotBlocked(slotNavigator.date, slotNavigator.time);
+    if (blocked) {
+      toast.error('Horário indisponível');
+      if (onRefresh) {
+        onRefresh();
+      }
+      return;
+    }
+
+    setSlotNavigatorOpen(false);
+    onCreateAppointment(slotNavigator.date, slotNavigator.time);
   };
 
   const handleSlotClick = async (date: Date, time: string) => {
+    const slotAppointments = getSlotAppointments(date, time);
+
+    // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
+    // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
+    if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
+      openSlotNavigator(date, time);
+      return;
+    }
+
     const appointment = getAppointmentForSlot(date, time);
+    const slotIsFull = slotAppointments.length >= slotCapacity;
+
+    // Se o slot ainda não estiver cheio, permitir criar nova marcação
+    // mesmo quando já existem marcações nesse horário.
+    if (!isClient && slotAppointments.length > 0 && !slotIsFull) {
+      if (isSlotInPast(date, time)) {
+        toast.error('Não é possível marcar para uma data/hora no passado');
+        return;
+      }
+
+      const blocked = await isSlotBlocked(date, time);
+      if (blocked) {
+        toast.error('Horário indisponível');
+        if (onRefresh) {
+          onRefresh();
+        }
+        return;
+      }
+
+      onCreateAppointment(date, time);
+      return;
+    }
 
     // Se já existe marcação, permitir visualizar (mesmo no passado)
     if (appointment) {
       // Verificar se é marcação própria
-      const isOwn = appointment && (
-        (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
-        appointments.some(a => a.id === appointment.id)
+      const isOwn = slotAppointments.some(item =>
+        (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
+        appointments.some(a => a.id === item.id)
       );
 
       // Se for slot reservado ou bloqueado, recarregar marcações
@@ -848,7 +936,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       for (const slot of timeSlots) {
         const blocked = await isSlotBlocked(testDate, slot);
-        const booked = isSlotBooked(testDate, slot);
+        const booked = getSlotAppointments(testDate, slot).length >= slotCapacity;
         const past = isSlotInPast(testDate, slot);
 
         if (!blocked && !booked && !past) {
@@ -931,7 +1019,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       }
       return slots[0];
     });
-  }, [quickDate, appointments, blockedSlots, quickMonthBlocks]);
+  }, [quickDate, appointments, blockedSlots, quickMonthBlocks, slotCapacity]);
 
   // ===== SLIDING WINDOW CACHE: Carregar feriados por ano =====
   // Carrega feriados de um ano se ainda não estiverem em cache
@@ -1113,9 +1201,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     {time}
                   </div>
                   {weekDays.map((day, idx) => {
-                    const booked = isSlotBooked(day, time);
+                    const slotAppointments = getSlotAppointments(day, time);
+                    const booked = slotAppointments.length >= slotCapacity;
                     const inPast = isSlotInPast(day, time);
-                    const appointment = getAppointmentForSlot(day, time);
+                    const appointment = slotAppointments[0];
                     // Verificar se é marcação própria: tem NIF preenchido E corresponde ao utente
                     // OU está no array appointments (que contém apenas marcações do utente)
                     const isOwn = appointment && (
@@ -1127,7 +1216,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     const isHolidayDay = isHoliday(day);
                     // Clientes só podem clicar nas suas próprias marcações
                     // Admin bloqueado também conta como blocked
-                    const blocked = (booked && isClient && !isOwn) || isBlockedAdmin;
+                    const blocked = ((slotAppointments.length > 0) && isClient && !isOwn) || isBlockedAdmin;
 
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                     const available = isDarkMode
@@ -1256,14 +1345,39 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           }
 
                           // Render appointment details if not blocked
-                          if (appointment && !blocked) {
-                            const displayText = appointment.status === 'no-show'
-                              ? 'Faltou'
-                              : (isClient && isOwn ? 'Sua marcação' : appointment.patientName);
-
+                          if (slotAppointments.length > 0 && !blocked) {
                             return (
-                              <div className="text-left truncate font-semibold text-sm leading-tight">
-                                <span className="truncate">{displayText}</span>
+                              <div className="w-full h-full grid gap-1" style={{ gridTemplateRows: `repeat(${slotCapacity}, minmax(0, 1fr))` }}>
+                                {Array.from({ length: slotCapacity }).map((_, splitIndex) => {
+                                  const splitAppointment = slotAppointments[splitIndex];
+
+                                  if (!splitAppointment) {
+                                    return (
+                                      <div
+                                        key={`empty-${splitIndex}`}
+                                        className="rounded border border-dashed border-gray-300/40 dark:border-gray-700/50"
+                                        aria-hidden="true"
+                                      />
+                                    );
+                                  }
+
+                                  const splitIsOwn =
+                                    (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
+                                    appointments.some(a => a.id === splitAppointment.id);
+                                  const displayText = splitAppointment.status === 'no-show'
+                                    ? 'Faltou'
+                                    : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
+
+                                  return (
+                                    <div
+                                      key={`${splitAppointment.id}-${splitIndex}`}
+                                      className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20"
+                                      aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
+                                    >
+                                      <span className="truncate block">{displayText}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             );
                           }
@@ -1285,6 +1399,73 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           Exportar Agenda
         </Button>
       </div>
+
+      <Dialog
+        open={slotNavigatorOpen}
+        onOpenChange={(open) => {
+          setSlotNavigatorOpen(open);
+          if (!open) {
+            setSlotNavigator(null);
+            setSlotNavigatorIndex(0);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>Navegar marcações do slot</DialogTitle>
+          </DialogHeader>
+
+          {slotNavigator && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {slotNavigator.date.toLocaleDateString('pt-PT')} às {slotNavigator.time}
+              </p>
+
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSlotNavigatorIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={slotNavigatorIndex === 0}
+                  aria-label="Ver sub-slot anterior"
+                >
+                  ←
+                </Button>
+
+                <div className="text-center flex-1">
+                  <p className="text-sm font-medium">
+                    Sub-slot {slotNavigatorIndex + 1} de {slotNavigator.slots.length}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {slotNavigator.slots[slotNavigatorIndex]
+                      ? `Marcado para ${slotNavigator.slots[slotNavigatorIndex]?.patientName}`
+                      : 'Disponível para nova marcação'}
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSlotNavigatorIndex((prev) => Math.min(slotNavigator.slots.length - 1, prev + 1))}
+                  disabled={slotNavigatorIndex === slotNavigator.slots.length - 1}
+                  aria-label="Ver sub-slot seguinte"
+                >
+                  →
+                </Button>
+              </div>
+
+              <Button
+                type="button"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={handleSlotNavigatorAction}
+                aria-label={slotNavigator.slots[slotNavigatorIndex] ? 'Abrir marcação selecionada' : 'Criar marcação no sub-slot selecionado'}
+              >
+                {slotNavigator.slots[slotNavigatorIndex] ? 'Abrir marcação' : 'Criar marcação neste sub-slot'}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de seleção de formato de exportação */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>

@@ -72,6 +72,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 body: JSON.stringify({
                     data: localDateTime,
                     criadoPorId: funcionarioId,
+                    tipoAgenda: 'BALNEARIO',
                 }),
             });
 

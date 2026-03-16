@@ -445,6 +445,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     appointments={appointments}
                     onCreateAppointment={handleCreateAppointment}
                     onViewAppointment={handleViewAppointment}
+                    appointmentType="BALNEARIO"
                 />
             )}
 

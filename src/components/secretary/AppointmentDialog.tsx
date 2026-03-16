@@ -118,6 +118,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         body: JSON.stringify({
           data: localDateTime,
           criadoPorId: funcionarioId,
+          tipoAgenda: 'SECRETARIA',
         }),
       });
 

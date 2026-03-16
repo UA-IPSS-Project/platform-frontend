@@ -7,5 +7,10 @@ export interface BloqueioAgenda {
     tipo?: string;
 }
 
+export interface ConfiguracaoSlot {
+    tipo: 'SECRETARIA' | 'BALNEARIO';
+    capacidadePorSlot: number;
+}
+
 // Re-export BloqueioAgenda as Bloqueio type for compatibility
 export type Bloqueio = BloqueioAgenda;

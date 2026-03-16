@@ -535,6 +535,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           appointments={appointments}
           onCreateAppointment={handleCreateAppointment}
           onViewAppointment={handleViewAppointment}
+          appointmentType="SECRETARIA"
         />
       )}
 
