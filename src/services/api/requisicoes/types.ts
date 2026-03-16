@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'CONCLUIDA' | 'CANCELADA';
+export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'RECUSADA' | 'CONCLUIDA' | 'CANCELADA';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 
@@ -9,7 +9,15 @@ export interface FuncionarioResumo {
   tipo?: string;
 }
 
-export type TransporteCategoria = 'LIGEIRO' | 'PESADO' | 'PASSAGEIROS' | 'ADAPTADO';
+export type TransporteCategoria =
+  | 'PESADO_DE_PASSAGEIROS'
+  | 'LIGEIRO_DE_PASSAGEIROS'
+  | 'LIGEIRO_DE_MERCADORIAS'
+  | 'LIGEIRO_ESPECIAL'
+  | 'LIGEIRO'
+  | 'PESADO'
+  | 'PASSAGEIROS'
+  | 'ADAPTADO';
 export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
 
 export interface MaterialCatalogo {
@@ -23,6 +31,7 @@ export interface MaterialCatalogo {
 
 export interface TransporteCatalogo {
   id: number;
+  codigo?: string;
   tipo?: string;
   categoria?: TransporteCategoria;
   matricula?: string;
@@ -65,8 +74,36 @@ export interface RequisicaoResponse {
   }>;
   transporte?: {
     id: number;
+    codigo?: string;
+    tipo?: string;
+    categoria?: TransporteCategoria;
+    matricula?: string;
+    marca?: string;
+    modelo?: string;
+    lotacao?: number;
+    dataMatricula?: string;
     nome?: string;
   };
+  transportes?: Array<{
+    id?: number;
+    transporte: {
+      id: number;
+      codigo?: string;
+      tipo?: string;
+      categoria?: TransporteCategoria;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
+      lotacao?: number;
+      dataMatricula?: string;
+      nome?: string;
+    };
+  }>;
+  destino?: string;
+  dataHoraSaida?: string;
+  dataHoraRegresso?: string;
+  numeroPassageiros?: number;
+  condutor?: string | null;
   assunto?: string;
 }
 
@@ -94,7 +131,12 @@ export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseReque
 }
 
 export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseRequest {
-  transporteId: number;
+  destino: string;
+  dataHoraSaida: string;
+  dataHoraRegresso: string;
+  numeroPassageiros: number;
+  condutor?: string;
+  transporteIds: number[];
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
@@ -114,6 +156,7 @@ export interface CriarMaterialCatalogoRequest {
 }
 
 export interface CriarTransporteCatalogoRequest {
+  codigo?: string;
   tipo: string;
   categoria: TransporteCategoria;
   matricula: string;

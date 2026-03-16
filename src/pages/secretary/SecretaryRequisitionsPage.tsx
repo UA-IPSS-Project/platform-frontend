@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
 import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
+import { ApiRequestError } from '../../services/api/core/client';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -29,11 +30,18 @@ interface SecretaryRequisitionsPageProps {
 
 const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: '', label: 'Todos os estados' },
-  { value: 'ENVIADA', label: 'Enviada' },
   { value: 'EM_ANALISE', label: 'Em análise' },
-  { value: 'CONCLUIDA', label: 'Concluída' },
-  { value: 'CANCELADA', label: 'Cancelada' },
+  { value: 'ACEITE', label: 'Aceite' },
+  { value: 'RECUSADA', label: 'Recusada' },
 ];
+
+const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
+  { value: 'EM_ANALISE', label: 'Em análise' },
+  { value: 'ACEITE', label: 'Aceite' },
+  { value: 'RECUSADA', label: 'Recusada' },
+];
+
+const ESTADO_FINAL_OPTIONS: RequisicaoEstado[] = ['ACEITE', 'RECUSADA'];
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
   { value: 'BAIXA', label: 'Baixa' },
@@ -59,10 +67,14 @@ const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
 ];
 
 const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
+  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
+  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
+  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
+  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
+  { value: 'ADAPTADO', label: 'Adaptado' },
   { value: 'LIGEIRO', label: 'Ligeiro' },
   { value: 'PESADO', label: 'Pesado' },
   { value: 'PASSAGEIROS', label: 'Passageiros' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
 ];
 
 const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
@@ -78,6 +90,8 @@ const formatPrioridade = (prioridade: RequisicaoPrioridade) => PRIORIDADE_OPTION
 const formatEstado = (estado: RequisicaoEstado) => ESTADO_OPTIONS.find((option) => option.value === estado)?.label ?? estado;
 const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
   MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
+const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
+  TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
 
 const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;
@@ -97,6 +111,20 @@ const formatMaterialItemLabel = (
 };
 
 type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
+type RequisicaoTransporteItem = NonNullable<RequisicaoResponse['transportes']>[number];
+type TransporteResumo = RequisicaoTransporteItem['transporte'];
+type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo | TransporteCatalogo | null | undefined;
+type TransporteSelectionMode = 'auto' | 'manual';
+type CreateField =
+  | 'descricao'
+  | 'materialItens'
+  | 'destino'
+  | 'dataSaida'
+  | 'horaSaida'
+  | 'dataRegresso'
+  | 'horaRegresso'
+  | 'numeroPassageiros'
+  | 'transporteIds';
 
 const createEmptyMaterialLinha = () => ({
   rowId:
@@ -108,6 +136,104 @@ const createEmptyMaterialLinha = () => ({
 });
 
 const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
+
+const getPassengerCapacity = (lotacao?: number): number => {
+  if (!lotacao || lotacao <= 0) return 0;
+  return Math.max(0, lotacao - 1);
+};
+
+const composeDateTime = (date?: string, time?: string): string | undefined => {
+  if (!date || !time) return undefined;
+  return `${date}T${time}`;
+};
+
+const toValidDate = (dateTime?: string): Date | undefined => {
+  if (!dateTime) return undefined;
+  const parsed = new Date(dateTime);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+};
+
+const periodsOverlap = (
+  startA?: string,
+  endA?: string,
+  startB?: string,
+  endB?: string,
+): boolean => {
+  const startADate = toValidDate(startA);
+  const endADate = toValidDate(endA);
+  const startBDate = toValidDate(startB);
+  const endBDate = toValidDate(endB);
+
+  if (!startADate || !endADate || !startBDate || !endBDate) return false;
+  return startADate < endBDate && endADate > startBDate;
+};
+
+const previousDateInput = (dateInput?: string): string | undefined => {
+  const parsed = parseDateInput(dateInput);
+  if (!parsed) return undefined;
+  const prev = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate() - 1);
+  return formatDateInput(prev);
+};
+
+const formatLotacao = (lotacao?: number): string => {
+  if (!lotacao || lotacao <= 0) return 'Lotação não definida';
+  return `${lotacao} ${lotacao === 1 ? 'lugar' : 'lugares'}`;
+};
+
+const formatVehicleTitle = (transporte?: TransporteLike): string => {
+  const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
+  return (nome || transporte?.tipo || 'Viatura').trim();
+};
+
+const formatTransporteDisplay = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem transporte associado';
+
+  const parts = [
+    transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
+    formatVehicleTitle(transporte),
+    transporte.matricula,
+  ].filter(Boolean);
+
+  return parts.join(' · ');
+};
+
+const formatTransporteMeta = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem detalhes';
+
+  let dataMatricula: string | undefined;
+  if (transporte.dataMatricula) {
+    let matriculaDate: Date | undefined;
+    if (transporte.dataMatricula instanceof Date) {
+      matriculaDate = transporte.dataMatricula;
+    } else if (typeof transporte.dataMatricula === 'string') {
+      matriculaDate = parseDateInput(transporte.dataMatricula) ?? undefined;
+    }
+
+    if (matriculaDate && !Number.isNaN(matriculaDate.getTime())) {
+      dataMatricula = matriculaDate.toLocaleDateString('pt-PT');
+    }
+  }
+
+  return [
+    transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
+    formatLotacao(transporte.lotacao),
+    dataMatricula ? `Matriculado em ${dataMatricula}` : undefined,
+  ].filter(Boolean).join(' · ');
+};
+
+const getRequisicaoTransportes = (requisicao?: RequisicaoResponse | null): TransporteResumo[] => {
+  if (!requisicao) return [];
+  if (requisicao.transportes && requisicao.transportes.length > 0) {
+    return requisicao.transportes.map((item) => item.transporte).filter(Boolean);
+  }
+  return requisicao.transporte ? [requisicao.transporte] : [];
+};
+
+const formatTransporteCollection = (requisicao?: RequisicaoResponse | null): string => {
+  const transportesRequisicao = getRequisicaoTransportes(requisicao);
+  if (transportesRequisicao.length === 0) return '—';
+  return transportesRequisicao.map((transporte) => formatTransporteDisplay(transporte)).join(', ');
+};
 
 type MaterialItemGroup = {
   itemKey: string;
@@ -129,13 +255,11 @@ export function SecretaryRequisitionsPage({
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
-  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('ENVIADA');
+  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
-  const [createTransporteDialogOpen, setCreateTransporteDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
-  const [submittingTransporte, setSubmittingTransporte] = useState(false);
 
   const [filterEstado, setFilterEstado] = useState<RequisicaoEstado | ''>('');
   const [filterTipo, setFilterTipo] = useState<RequisicaoTipo | ''>(initialTipo ?? '');
@@ -157,20 +281,26 @@ export function SecretaryRequisitionsPage({
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
   const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
   const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
-  const [transporteId, setTransporteId] = useState('');
+  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<TransporteCategoria, boolean>>>({});
+  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
+  const [destinoTransporte, setDestinoTransporte] = useState('');
+  const [dataSaida, setDataSaida] = useState('');
+  const [horaSaida, setHoraSaida] = useState('');
+  const [dataRegresso, setDataRegresso] = useState('');
+  const [horaRegresso, setHoraRegresso] = useState('');
+  const [numeroPassageiros, setNumeroPassageiros] = useState('');
+  const [condutorTransporte, setCondutorTransporte] = useState('');
+  const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
+  const [transportSelectionMode, setTransportSelectionMode] = useState<TransporteSelectionMode>('auto');
+  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
+  const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
+  const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
   const [assunto, setAssunto] = useState('');
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
-  const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
-  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
-  const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
-  const [novoTransporteMarca, setNovoTransporteMarca] = useState('');
-  const [novoTransporteModelo, setNovoTransporteModelo] = useState('');
-  const [novoTransporteLotacao, setNovoTransporteLotacao] = useState('');
-  const [novoTransporteDataMatricula, setNovoTransporteDataMatricula] = useState('');
 
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
@@ -255,6 +385,11 @@ export function SecretaryRequisitionsPage({
   }, []);
 
   useEffect(() => {
+    setCreateErrors({});
+    setCreateTouched({});
+  }, [tipo]);
+
+  useEffect(() => {
     return () => {
       if (sectionSwitchTimeoutRef.current) {
         window.clearTimeout(sectionSwitchTimeoutRef.current);
@@ -287,6 +422,276 @@ export function SecretaryRequisitionsPage({
 
     return map;
   }, [materiais]);
+
+  const transportesOrdenados = useMemo(
+    () => [...transportes].sort((a, b) => {
+      const codigoA = a.codigo ?? '';
+      const codigoB = b.codigo ?? '';
+      if (codigoA && codigoB && codigoA !== codigoB) {
+        return codigoA.localeCompare(codigoB, 'pt-PT', { numeric: true });
+      }
+      if (codigoA && !codigoB) return -1;
+      if (!codigoA && codigoB) return 1;
+
+      const tipoDiff = (a.tipo ?? '').localeCompare(b.tipo ?? '', 'pt-PT');
+      if (tipoDiff !== 0) return tipoDiff;
+
+      return (a.matricula ?? '').localeCompare(b.matricula ?? '', 'pt-PT');
+    }),
+    [transportes],
+  );
+
+  const dataHoraSaidaSelecionada = useMemo(
+    () => composeDateTime(dataSaida, horaSaida),
+    [dataSaida, horaSaida],
+  );
+
+  const dataHoraRegressoSelecionada = useMemo(
+    () => composeDateTime(dataRegresso, horaRegresso),
+    [dataRegresso, horaRegresso],
+  );
+
+  const transportesIndisponiveis = useMemo(() => {
+    if (tipo !== 'TRANSPORTE') return new Set<number>();
+
+    const ids = new Set<number>();
+    monthlyRequisicoes.forEach((requisicao) => {
+      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
+      if (!periodsOverlap(
+        dataHoraSaidaSelecionada,
+        dataHoraRegressoSelecionada,
+        requisicao.dataHoraSaida,
+        requisicao.dataHoraRegresso,
+      )) {
+        return;
+      }
+
+      getRequisicaoTransportes(requisicao).forEach((transporte) => {
+        if (typeof transporte.id === 'number') {
+          ids.add(transporte.id);
+        }
+      });
+    });
+
+    return ids;
+  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, tipo]);
+
+  const transportesOrdenadosDisponiveis = useMemo(
+    () => transportesOrdenados.filter((transporte) => !transportesIndisponiveis.has(transporte.id)),
+    [transportesIndisponiveis, transportesOrdenados],
+  );
+
+  const transportesPorCategoria = useMemo(
+    () => TRANSPORTE_CATEGORIA_OPTIONS.map((categoria) => ({
+      categoria: categoria.value,
+      label: categoria.label,
+      items: transportesOrdenados.filter((transporte) => transporte.categoria === categoria.value),
+    })).filter((grupo) => grupo.items.length > 0),
+    [transportesOrdenados],
+  );
+
+  const passageirosSolicitados = useMemo(() => {
+    const value = Number(numeroPassageiros || 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [numeroPassageiros]);
+
+  const recommendedTransportIds = useMemo(() => {
+    if (passageirosSolicitados <= 0) return [] as number[];
+
+    const viaturasComLotacao = transportesOrdenadosDisponiveis
+      .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
+      .map((transporte) => ({
+        id: transporte.id as number,
+        capacidade: getPassengerCapacity(transporte.lotacao),
+      }));
+    if (viaturasComLotacao.length === 0) return [] as number[];
+
+    const capacidadeMaxima = viaturasComLotacao.reduce((sum, item) => sum + item.capacidade, 0);
+    if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
+
+    // Custo combinado: nº_viaturas × K + lugares_vazios
+    // K ≈ 25% dos passageiros — cada viatura extra custa tanto como desperdiçar 1/4 da ocupação.
+    // Exemplos: 9 pass (K=3): 2 carros (1 vazio) = 7 < bus (20 vazios) = 23 → carros ganham
+    //           27 pass (K=7): bus (3 vazios) = 10 < 5 carros (0 vazios) = 35 → bus ganha
+    const penalizacaoViatura = Math.max(2, Math.ceil(passageirosSolicitados / 4));
+
+    // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
+    const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
+      new Array(capacidadeMaxima + 1).fill(undefined);
+    dp[0] = { ids: [], custoViaturas: 0 };
+
+    for (const viatura of viaturasComLotacao) {
+      for (let cap = capacidadeMaxima - viatura.capacidade; cap >= 0; cap -= 1) {
+        const base = dp[cap];
+        if (!base) continue;
+
+        const novaCap = cap + viatura.capacidade;
+        const novoCusto = base.custoViaturas + penalizacaoViatura;
+        const existente = dp[novaCap];
+
+        if (!existente || novoCusto < existente.custoViaturas) {
+          dp[novaCap] = { ids: [...base.ids, viatura.id], custoViaturas: novoCusto };
+        }
+      }
+    }
+
+    // Escolhe a capacidade cujo custo total (viaturas + lugares vazios) é mínimo
+    let melhor: { ids: number[]; custoTotal: number } | undefined;
+
+    for (let cap = passageirosSolicitados; cap <= capacidadeMaxima; cap += 1) {
+      const entrada = dp[cap];
+      if (!entrada) continue;
+
+      const custoTotal = entrada.custoViaturas + (cap - passageirosSolicitados);
+      if (!melhor || custoTotal < melhor.custoTotal) {
+        melhor = { ids: entrada.ids, custoTotal };
+      }
+    }
+
+    return melhor?.ids ?? [];
+  }, [passageirosSolicitados, transportesOrdenadosDisponiveis]);
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || transportSelectionMode !== 'auto') {
+      return;
+    }
+    setSelectedTransportIds(recommendedTransportIds.map(String));
+  }, [recommendedTransportIds, transportSelectionMode, tipo]);
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || selectedTransportIds.length === 0) {
+      return;
+    }
+
+    const selectedDisponiveis = selectedTransportIds.filter((id) => !transportesIndisponiveis.has(Number(id)));
+    if (selectedDisponiveis.length === selectedTransportIds.length) {
+      return;
+    }
+
+    setSelectedTransportIds(selectedDisponiveis);
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
+  }, [createTouched.transporteIds, selectedTransportIds, tipo, transportesIndisponiveis]);
+
+  const selectedTransportes = useMemo(
+    () => transportesOrdenados.filter((item) => selectedTransportIds.includes(String(item.id))),
+    [selectedTransportIds, transportesOrdenados],
+  );
+
+  const selectedTransportesCapacidade = useMemo(
+    () => selectedTransportes.reduce((sum, transporte) => sum + getPassengerCapacity(transporte.lotacao), 0),
+    [selectedTransportes],
+  );
+
+  const lugaresEmFalta = useMemo(
+    () => Math.max(0, passageirosSolicitados - selectedTransportesCapacidade),
+    [passageirosSolicitados, selectedTransportesCapacidade],
+  );
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || !dataSaida) return;
+
+    if (!dataRegresso) {
+      setDataRegresso(dataSaida);
+    }
+
+    if (!tempoLimiteManuallyEdited) {
+      const previousDate = previousDateInput(dataSaida);
+      setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
+    }
+  }, [tipo, dataSaida, dataRegresso, tempoLimiteManuallyEdited]);
+
+  useEffect(() => {
+    if (createTouched.materialItens) {
+      validateAndSetField('materialItens');
+    }
+  }, [materialLinhas, createTouched.materialItens]);
+
+  const setFieldTouched = (field: CreateField) => {
+    setCreateTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const validateCreateField = (field: CreateField): string | undefined => {
+    if (field === 'descricao') {
+      if (!descricao.trim()) return 'Campo obrigatório.';
+      return undefined;
+    }
+
+    if (tipo === 'MATERIAL' && field === 'materialItens') {
+      const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
+      if (linhasValidas.length === 0) return 'Adicione pelo menos um material com quantidade válida.';
+      return undefined;
+    }
+
+    if (tipo !== 'TRANSPORTE') return undefined;
+
+    if (field === 'destino' && !destinoTransporte.trim()) return 'Campo obrigatório.';
+    if (field === 'dataSaida' && !dataSaida) return 'Campo obrigatório.';
+    if (field === 'horaSaida' && !horaSaida) return 'Campo obrigatório.';
+    if (field === 'dataRegresso' && !dataRegresso) return 'Campo obrigatório.';
+    if (field === 'horaRegresso' && !horaRegresso) return 'Campo obrigatório.';
+
+    if (field === 'numeroPassageiros') {
+      if (!numeroPassageiros) return 'Campo obrigatório.';
+      if (passageirosSolicitados < 1) return 'Indique um número de passageiros válido.';
+      return undefined;
+    }
+
+    if (field === 'transporteIds' && selectedTransportIds.length === 0) {
+      return 'Selecione pelo menos uma viatura.';
+    }
+
+    const saida = composeDateTime(dataSaida, horaSaida);
+    const regresso = composeDateTime(dataRegresso, horaRegresso);
+    if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
+      const saidaDate = new Date(saida);
+      const regressoDate = new Date(regresso);
+      if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
+        return 'A data/hora de regresso deve ser posterior à data/hora de saída.';
+      }
+    }
+
+    return undefined;
+  };
+
+  const validateAndSetField = (field: CreateField, markTouched = false): string | undefined => {
+    const error = validateCreateField(field);
+    if (markTouched) {
+      setFieldTouched(field);
+    }
+    setCreateErrors((prev) => {
+      if (error) return { ...prev, [field]: error };
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+    return error;
+  };
+
+  const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
+    if (!error.fieldErrors) return {};
+
+    const mapped: Partial<Record<CreateField, string>> = {};
+    Object.entries(error.fieldErrors).forEach(([key, value]) => {
+      if (key === 'descricao') mapped.descricao = value;
+      if (key === 'itens') mapped.materialItens = value;
+      if (key === 'destino') mapped.destino = value;
+      if (key === 'dataHoraSaida') {
+        mapped.dataSaida = value;
+        mapped.horaSaida = value;
+      }
+      if (key === 'dataHoraRegresso') {
+        mapped.dataRegresso = value;
+        mapped.horaRegresso = value;
+      }
+      if (key === 'numeroPassageiros') mapped.numeroPassageiros = value;
+      if (key === 'transporteIds') mapped.transporteIds = value;
+    });
+
+    return mapped;
+  };
 
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
@@ -322,41 +727,6 @@ export function SecretaryRequisitionsPage({
     }
   };
 
-  const handleCriarTransporteCatalogo = async () => {
-    if (!novoTransporteTipo.trim() || !novoTransporteMatricula.trim()) {
-      toast.error('Tipo e matrícula do transporte são obrigatórios.');
-      return;
-    }
-
-    try {
-      setSubmittingTransporte(true);
-      const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
-        tipo: novoTransporteTipo.trim(),
-        categoria: novoTransporteCategoria,
-        matricula: novoTransporteMatricula.trim().toUpperCase(),
-        marca: novoTransporteMarca.trim() || undefined,
-        modelo: novoTransporteModelo.trim() || undefined,
-        lotacao: novoTransporteLotacao ? Number(novoTransporteLotacao) : undefined,
-        dataMatricula: novoTransporteDataMatricula || undefined,
-      });
-      toast.success('Transporte criado com sucesso.');
-      setTransportes((prev) => [...prev, novoTransporte]);
-      setTransporteId(String(novoTransporte.id));
-      setNovoTransporteTipo('');
-      setNovoTransporteCategoria('LIGEIRO');
-      setNovoTransporteMatricula('');
-      setNovoTransporteMarca('');
-      setNovoTransporteModelo('');
-      setNovoTransporteLotacao('');
-      setNovoTransporteDataMatricula('');
-      setCreateTransporteDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error?.message || 'Erro ao criar transporte.');
-    } finally {
-      setSubmittingTransporte(false);
-    }
-  };
-
   const handleRemoveMaterialLinha = (rowId: string) => {
     setMaterialLinhas((prev) => prev.filter((item) => item.rowId !== rowId));
   };
@@ -367,6 +737,14 @@ export function SecretaryRequisitionsPage({
 
   const toggleCategoriaExpansion = (categoria: MaterialCategoria) => {
     setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  };
+
+  const toggleTransporteCategoriaExpansion = (categoria: TransporteCategoria) => {
+    setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  };
+
+  const toggleTransporteDetalhes = (transporteId: number) => {
+    setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
   };
 
   const toggleVariante = (materialId: number, checked: boolean) => {
@@ -422,12 +800,51 @@ export function SecretaryRequisitionsPage({
   const handleResetCreateForm = () => {
     setDescricao('');
     setTempoLimite(undefined);
+    setTempoLimiteManuallyEdited(false);
     setMaterialLinhas([]);
-    setTransporteId('');
+    setDestinoTransporte('');
+    setDataSaida('');
+    setHoraSaida('');
+    setDataRegresso('');
+    setHoraRegresso('');
+    setNumeroPassageiros('');
+    setCondutorTransporte('');
+    setSelectedTransportIds([]);
+    setTransportSelectionMode('auto');
     setAssunto('');
     setExpandedMaterialItems({});
+    setExpandedTransporteCategorias({});
+    setExpandedTransporteDetalhes({});
+    setCreateErrors({});
+    setCreateTouched({});
     setTipo(initialTipo ?? 'MANUTENCAO');
     setPrioridade(initialPrioridade ?? 'MEDIA');
+  };
+
+  const toggleSelectedTransport = (transporteId: number, checked: boolean) => {
+    if (checked && transportesIndisponiveis.has(transporteId)) {
+      return;
+    }
+
+    const transporteIdStr = String(transporteId);
+    setTransportSelectionMode('manual');
+    setSelectedTransportIds((prev) => {
+      if (checked) {
+        return prev.includes(transporteIdStr) ? prev : [...prev, transporteIdStr];
+      }
+      return prev.filter((item) => item !== transporteIdStr);
+    });
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
+  };
+
+  const handleAplicarSugestaoTransporte = () => {
+    setTransportSelectionMode('auto');
+    setSelectedTransportIds(recommendedTransportIds.map(String));
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
   };
 
   const handleCreate = async () => {
@@ -436,10 +853,32 @@ export function SecretaryRequisitionsPage({
       return;
     }
 
-    if (!descricao.trim()) {
-      toast.error('A descrição é obrigatória.');
+    const fieldsToValidate: CreateField[] = ['descricao'];
+    if (tipo === 'MATERIAL') {
+      fieldsToValidate.push('materialItens');
+    }
+    if (tipo === 'TRANSPORTE') {
+      fieldsToValidate.push(
+        'destino',
+        'dataSaida',
+        'horaSaida',
+        'dataRegresso',
+        'horaRegresso',
+        'numeroPassageiros',
+        'transporteIds',
+      );
+    }
+
+    const validationErrors = fieldsToValidate
+      .map((field) => ({ field, error: validateAndSetField(field, true) }))
+      .filter((item) => Boolean(item.error));
+
+    if (validationErrors.length > 0) {
       return;
     }
+
+    const dataHoraSaida = composeDateTime(dataSaida, horaSaida);
+    const dataHoraRegresso = composeDateTime(dataRegresso, horaRegresso);
 
     try {
       setSubmitting(true);
@@ -453,10 +892,6 @@ export function SecretaryRequisitionsPage({
 
       if (tipo === 'MATERIAL') {
         const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-        if (linhasValidas.length === 0) {
-          toast.error('Adicione pelo menos um material com quantidade válida.');
-          return;
-        }
 
         const itensDedupe = Array.from(
           linhasValidas.reduce<Map<number, number>>((acc, linha) => {
@@ -471,13 +906,14 @@ export function SecretaryRequisitionsPage({
         });
         toast.success('Requisição de material criada com sucesso.');
       } else if (tipo === 'TRANSPORTE') {
-        if (!transporteId) {
-          toast.error('Selecione um transporte.');
-          return;
-        }
         await requisicoesApi.criarTransporte({
           ...payloadBase,
-          transporteId: Number(transporteId),
+          destino: destinoTransporte.trim(),
+          dataHoraSaida: dataHoraSaida!,
+          dataHoraRegresso: dataHoraRegresso!,
+          numeroPassageiros: passageirosSolicitados,
+          condutor: condutorTransporte.trim() || undefined,
+          transporteIds: selectedTransportIds.map(Number),
         });
       } else {
         await requisicoesApi.criarManutencao({
@@ -494,7 +930,20 @@ export function SecretaryRequisitionsPage({
       await fetchRequisicoes();
       await fetchMonthlyOverview();
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao criar requisição.');
+      const apiError = error as ApiRequestError;
+      const mappedErrors = toCreateFieldErrors(apiError);
+      if (Object.keys(mappedErrors).length > 0) {
+        setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
+        setCreateTouched((prev) => {
+          const next = { ...prev };
+          Object.keys(mappedErrors).forEach((field) => {
+            next[field as CreateField] = true;
+          });
+          return next;
+        });
+      } else {
+        toast.error(error?.message || 'Erro ao criar requisição.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -549,11 +998,29 @@ export function SecretaryRequisitionsPage({
 
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
     setOpenedRequisicaoId(req.id);
-    setEstadoEdicao(req.estado);
+    const estadoSecretaria = ESTADO_SECRETARIA_OPTIONS.some((opt) => opt.value === req.estado)
+      ? req.estado
+      : 'EM_ANALISE';
+    setEstadoEdicao(estadoSecretaria);
   };
 
   const handleAtualizarEstado = async () => {
-    if (!openedRequisicaoId) return;
+    if (!openedRequisicaoId || !selectedRequisicao) return;
+
+    if (selectedRequisicao.estado !== 'EM_ANALISE') {
+      toast.error('Só é possível decidir requisições que estejam em Em análise.');
+      return;
+    }
+
+    if (estadoEdicao === 'EM_ANALISE') {
+      toast.error('Escolhe um estado final: Aceite ou Recusada.');
+      return;
+    }
+
+    if (!ESTADO_FINAL_OPTIONS.includes(estadoEdicao)) {
+      toast.error('Estado inválido. Escolhe Aceite ou Recusada.');
+      return;
+    }
 
     try {
       setUpdatingEstadoId(openedRequisicaoId);
@@ -655,11 +1122,21 @@ export function SecretaryRequisitionsPage({
     [requisicoes, openedRequisicaoId],
   );
 
+  const podeAtualizarEstado = useMemo(
+    () => selectedRequisicao?.estado === 'EM_ANALISE',
+    [selectedRequisicao],
+  );
+
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
   const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const getFieldClassName = (baseClass: string, field: CreateField) => (
+    createErrors[field]
+      ? `${baseClass} border-red-500 focus-visible:border-red-500 focus-visible:ring-red-200`
+      : baseClass
+  );
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -719,16 +1196,35 @@ export function SecretaryRequisitionsPage({
             <DatePickerField
               id="req-create-tempo-limite"
               value={formatDateInput(tempoLimite)}
-              onChange={(value) => setTempoLimite(parseDateInput(value))}
+              onChange={(value) => {
+                setTempoLimite(parseDateInput(value));
+                setTempoLimiteManuallyEdited(true);
+              }}
               placeholder="Selecionar data"
               buttonClassName="mt-1"
             />
+            {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preenchida automaticamente para o dia anterior a saída.</p>
+            )}
           </div>
         </div>
 
         <div>
           <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
-          <Textarea id="req-create-descricao" className={textareaFieldClassName} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
+          <Textarea
+            id="req-create-descricao"
+            className={getFieldClassName(textareaFieldClassName, 'descricao')}
+            value={descricao}
+            onChange={(e) => {
+              setDescricao(e.target.value);
+              if (createTouched.descricao) {
+                validateAndSetField('descricao');
+              }
+            }}
+            onBlur={() => validateAndSetField('descricao', true)}
+            placeholder="Descreva a requisição"
+          />
+          {createErrors.descricao && <p className="text-red-500 text-xs mt-1">{createErrors.descricao}</p>}
         </div>
       </div>
 
@@ -907,31 +1403,333 @@ export function SecretaryRequisitionsPage({
                   </div>
                 )}
               </div>
+
+              {createErrors.materialItens && (
+                <p className="text-red-500 text-xs">{createErrors.materialItens}</p>
+              )}
             </div>
           )}
 
           {tipo === 'TRANSPORTE' && (
-            <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="req-create-transporte-id" className="text-sm text-gray-600 dark:text-gray-300">Transporte</label>
-                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
-                  Novo transporte
-                </Button>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Planeamento da deslocação</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Preenche o percurso e a ocupação prevista para sugerir automaticamente a frota mais adequada.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">Destino</label>
+                    <Input
+                      id="req-create-transporte-destino"
+                      className={getFieldClassName(inputFieldClassName, 'destino')}
+                      value={destinoTransporte}
+                      onChange={(e) => {
+                        setDestinoTransporte(e.target.value);
+                        if (createTouched.destino) {
+                          validateAndSetField('destino');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('destino', true)}
+                      placeholder="Ex: Porto, Casa da Música"
+                    />
+                    {createErrors.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">Condutor (opcional)</label>
+                    <Input
+                      id="req-create-transporte-condutor"
+                      className={inputFieldClassName}
+                      value={condutorTransporte}
+                      onChange={(e) => setCondutorTransporte(e.target.value)}
+                      placeholder="Ex: Motorista interno ou a definir"
+                    />
+                  </div>
+
+                  <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
+                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">Data de saída</label>
+                    <DatePickerField
+                      id="req-create-transporte-data-saida"
+                      value={dataSaida}
+                      onChange={(value) => {
+                        setDataSaida(value);
+                        if (!dataRegresso) {
+                          setDataRegresso(value);
+                        }
+                        if (createTouched.dataSaida) {
+                          validateAndSetField('dataSaida');
+                        }
+                        if (createTouched.dataRegresso) {
+                          validateAndSetField('dataRegresso');
+                        }
+                      }}
+                      buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
+                    />
+                    {createErrors.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">Hora de saída</label>
+                    <Input
+                      id="req-create-transporte-hora-saida"
+                      type="time"
+                      className={getFieldClassName(inputFieldClassName, 'horaSaida')}
+                      value={horaSaida}
+                      onChange={(e) => {
+                        setHoraSaida(e.target.value);
+                        if (createTouched.horaSaida) {
+                          validateAndSetField('horaSaida');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('horaSaida', true)}
+                    />
+                    {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
+                  </div>
+
+                  <div onBlurCapture={() => validateAndSetField('dataRegresso', true)}>
+                    <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">Data de regresso</label>
+                    <DatePickerField
+                      id="req-create-transporte-data-regresso"
+                      value={dataRegresso}
+                      onChange={(value) => {
+                        setDataRegresso(value);
+                        if (createTouched.dataRegresso) {
+                          validateAndSetField('dataRegresso');
+                        }
+                        if (createTouched.horaRegresso) {
+                          validateAndSetField('horaRegresso');
+                        }
+                      }}
+                      buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
+                    />
+                    {createErrors.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">Hora de regresso</label>
+                    <Input
+                      id="req-create-transporte-hora-regresso"
+                      type="time"
+                      className={getFieldClassName(inputFieldClassName, 'horaRegresso')}
+                      value={horaRegresso}
+                      onChange={(e) => {
+                        setHoraRegresso(e.target.value);
+                        if (createTouched.horaRegresso) {
+                          validateAndSetField('horaRegresso');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('horaRegresso', true)}
+                    />
+                    {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">Número de passageiros</label>
+                    <Input
+                      id="req-create-transporte-passageiros"
+                      type="number"
+                      min="1"
+                      className={getFieldClassName(inputFieldClassName, 'numeroPassageiros')}
+                      value={numeroPassageiros}
+                      onChange={(e) => {
+                        setNumeroPassageiros(e.target.value);
+                        if (createTouched.numeroPassageiros) {
+                          validateAndSetField('numeroPassageiros');
+                        }
+                      }}
+                      onBlur={() => validateAndSetField('numeroPassageiros', true)}
+                      placeholder="Ex: 14"
+                    />
+                    {createErrors.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
+                  </div>
+                </div>
               </div>
-              <select
-                id="req-create-transporte-id"
-                value={transporteId}
-                onChange={(e) => setTransporteId(e.target.value)}
-                disabled={loadingCatalogo}
-                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-              >
-                <option value="">{loadingCatalogo ? 'A carregar transportes...' : 'Selecionar transporte'}</option>
-                {transportes.map((transporte) => (
-                  <option key={transporte.id} value={transporte.id}>
-                    {(transporte.tipo || 'Transporte')} · {transporte.matricula || 'sem matrícula'}
-                  </option>
-                ))}
-              </select>
+
+              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Viaturas sugeridas e selecionadas</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Podes manter a sugestão automática ou ajustar manualmente a combinação de viaturas.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={handleAplicarSugestaoTransporte}>
+                      Aplicar sugestão
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Modo de seleção</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? 'Automático' : 'Manual'}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capacidade para passageiros</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedTransportesCapacidade} lugares</p>
+                  </div>
+                  <div className={`rounded-lg border px-3 py-3 ${lugaresEmFalta > 0
+                    ? 'border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20'
+                    : 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20'
+                    }`}>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Cobertura</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
+                      {passageirosSolicitados > 0
+                        ? lugaresEmFalta > 0
+                          ? `Faltam ${lugaresEmFalta} lugar(es)`
+                          : 'Lotação suficiente'
+                        : 'Indica os passageiros'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">A lotação útil considera 1 lugar para o condutor em cada viatura.</p>
+
+                {createErrors.transporteIds && (
+                  <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
+                )}
+
+                {transportesIndisponiveis.size > 0 && dataHoraSaidaSelecionada && dataHoraRegressoSelecionada && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {transportesIndisponiveis.size} viatura(s) indisponível(is) por já terem uma requisição aceite neste horário.
+                  </p>
+                )}
+
+                {selectedTransportIds.length > 0 && (
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Seleção atual</p>
+                    <div className="space-y-2">
+                      {selectedTransportes.map((transporte) => (
+                        <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Lotação: {formatLotacao(transporte.lotacao)}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 px-3"
+                            onClick={() => toggleSelectedTransport(transporte.id, false)}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {loadingCatalogo ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                    A carregar viaturas disponíveis...
+                  </div>
+                ) : transportesPorCategoria.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                    Ainda não existem viaturas em catálogo.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {transportesPorCategoria.map((grupo) => (
+                      <div key={grupo.categoria} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                        <button
+                          type="button"
+                          onClick={() => toggleTransporteCategoriaExpansion(grupo.categoria)}
+                          className="w-full px-4 py-3 flex items-center justify-between text-left"
+                        >
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            {grupo.label}
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</span>
+                          </p>
+                          {expandedTransporteCategorias[grupo.categoria] ? (
+                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-gray-500" />
+                          )}
+                        </button>
+
+                        {expandedTransporteCategorias[grupo.categoria] && (
+                          <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
+                            {grupo.items.map((transporte) => {
+                              const isSelected = selectedTransportIds.includes(String(transporte.id));
+                              const isRecommended = recommendedTransportIds.includes(transporte.id);
+                              const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
+                              const isUnavailable = transportesIndisponiveis.has(transporte.id);
+
+                              return (
+                                <div
+                                  key={transporte.id}
+                                  className={`rounded-xl border p-4 transition-all ${isSelected
+                                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                    : isUnavailable
+                                      ? 'border-amber-300 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/10'
+                                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                                    }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0 space-y-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                          }`}>
+                                          {transporte.codigo ?? `#${transporte.id}`}
+                                        </span>
+                                        {isRecommended && (
+                                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                                            Sugerida
+                                          </span>
+                                        )}
+                                        {isUnavailable && (
+                                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                            Indisponível
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
+                                      {isUnavailable && (
+                                        <p className="text-xs text-amber-700 dark:text-amber-300">Já existe uma requisição aceite com horário sobreposto.</p>
+                                      )}
+                                    </div>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      disabled={isUnavailable}
+                                      onCheckedChange={(checked) => {
+                                        toggleSelectedTransport(transporte.id, !!checked);
+                                        validateAndSetField('transporteIds', true);
+                                      }}
+                                    />
+                                  </div>
+
+                                  <div className="mt-3">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-8 px-3 text-xs"
+                                      onClick={() => toggleTransporteDetalhes(transporte.id)}
+                                    >
+                                      {detailsOpen ? 'Ocultar detalhes' : 'Detalhes'}
+                                    </Button>
+                                  </div>
+
+                                  {detailsOpen && (
+                                    <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                                      <p>{formatTransporteCategoria(transporte.categoria)}</p>
+                                      <p>Matrícula: {transporte.matricula ?? 'Sem matrícula'}</p>
+                                      <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
+                                      <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1211,7 +2009,13 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'TRANSPORTE' && (
+                    <>
+                      <p>Destino: {req.destino || '—'}</p>
+                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
+                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                    </>
+                  )}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
 
@@ -1388,7 +2192,13 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'TRANSPORTE' && (
+                    <>
+                      <p>Destino: {req.destino || '—'}</p>
+                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
+                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                    </>
+                  )}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
               </div>
@@ -1491,8 +2301,32 @@ export function SecretaryRequisitionsPage({
                   )}
                   {selectedRequisicao.tipo === 'TRANSPORTE' && (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">Transporte</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.transporte?.nome || 'Associado'}</p>
+                      <p className="text-gray-500 dark:text-gray-400">Destino</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.destino || '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Saída</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraSaida ? new Date(selectedRequisicao.dataHoraSaida).toLocaleString('pt-PT') : '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Regresso</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraRegresso ? new Date(selectedRequisicao.dataHoraRegresso).toLocaleString('pt-PT') : '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Passageiros</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.numeroPassageiros || '—'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Condutor</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || 'A definir'}</p>
+
+                      <p className="text-gray-500 dark:text-gray-400">Viaturas</p>
+                      <div className="space-y-2">
+                        {getRequisicaoTransportes(selectedRequisicao).length > 0 ? getRequisicaoTransportes(selectedRequisicao).map((transporte) => (
+                          <div key={`${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`} className="space-y-1">
+                            <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
+                          </div>
+                        )) : (
+                          <p className="text-gray-900 dark:text-gray-100">—</p>
+                        )}
+                      </div>
                     </>
                   )}
                   {selectedRequisicao.tipo === 'MANUTENCAO' && (
@@ -1510,12 +2344,18 @@ export function SecretaryRequisitionsPage({
                   id="req-estado-modal"
                   value={estadoEdicao}
                   onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
+                  disabled={!podeAtualizarEstado}
                   className={selectFieldClassName}
                 >
-                  {ESTADO_OPTIONS.filter((option) => option.value).map((option) => (
+                  {ESTADO_SECRETARIA_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
+                {!podeAtualizarEstado && (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas.
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2">
@@ -1528,7 +2368,7 @@ export function SecretaryRequisitionsPage({
                 </Button>
                 <Button
                   onClick={handleAtualizarEstado}
-                  disabled={updatingEstadoId === selectedRequisicao.id}
+                  disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
                   {updatingEstadoId === selectedRequisicao.id ? 'A guardar...' : 'Guardar estado'}
@@ -1595,73 +2435,6 @@ export function SecretaryRequisitionsPage({
               </Button>
               <Button onClick={handleCriarMaterialCatalogo} disabled={submittingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">
                 {submittingMaterial ? 'A criar...' : 'Criar material'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={createTransporteDialogOpen} onOpenChange={setCreateTransporteDialogOpen}>
-        <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Novo transporte</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="novo-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-                <Input id="novo-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
-                <select
-                  id="novo-transporte-categoria"
-                  value={novoTransporteCategoria}
-                  onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                  className={selectFieldClassName}
-                >
-                  {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">Matrícula</label>
-                <Input id="novo-transporte-matricula" className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-lotacao" className="text-sm text-gray-600 dark:text-gray-300">Lotação (opcional)</label>
-                <Input id="novo-transporte-lotacao" className={inputFieldClassName} type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-marca" className="text-sm text-gray-600 dark:text-gray-300">Marca (opcional)</label>
-                <Input id="novo-transporte-marca" className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-modelo" className="text-sm text-gray-600 dark:text-gray-300">Modelo (opcional)</label>
-                <Input id="novo-transporte-modelo" className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-data-matricula" className="text-sm text-gray-600 dark:text-gray-300">Data matrícula (opcional)</label>
-                <DatePickerField
-                  id="novo-transporte-data-matricula"
-                  value={novoTransporteDataMatricula}
-                  onChange={setNovoTransporteDataMatricula}
-                  buttonClassName="mt-1"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateTransporteDialogOpen(false)} disabled={submittingTransporte}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCriarTransporteCatalogo} disabled={submittingTransporte} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {submittingTransporte ? 'A criar...' : 'Criar transporte'}
               </Button>
             </div>
           </div>
