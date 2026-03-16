@@ -17,6 +17,13 @@ interface UserAvatarMenuProps {
 }
 
 export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout }: UserAvatarMenuProps) {
+    const handleLogout = () => {
+        const shouldLogout = window.confirm('Tem a certeza que quer sair?');
+        if (shouldLogout) {
+            onLogout();
+        }
+    };
+
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -64,7 +71,7 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
                     <DropdownMenu.Separator className="my-1 h-px bg-gray-100 dark:bg-gray-800" />
 
                     <DropdownMenu.Item
-                        onSelect={onLogout}
+                        onSelect={handleLogout}
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer select-none outline-none transition-colors"
                     >
                         <LogOutIcon className="w-4 h-4 shrink-0" />
