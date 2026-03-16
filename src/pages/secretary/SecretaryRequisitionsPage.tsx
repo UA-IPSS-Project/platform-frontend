@@ -219,10 +219,8 @@ export function SecretaryRequisitionsPage({
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('ENVIADA');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
-  const [createTransporteDialogOpen, setCreateTransporteDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
-  const [submittingTransporte, setSubmittingTransporte] = useState(false);
 
   const [filterEstado, setFilterEstado] = useState<RequisicaoEstado | ''>('');
   const [filterTipo, setFilterTipo] = useState<RequisicaoTipo | ''>(initialTipo ?? '');
@@ -264,14 +262,6 @@ export function SecretaryRequisitionsPage({
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
-  const [novoTransporteCodigo, setNovoTransporteCodigo] = useState('');
-  const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
-  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO_DE_PASSAGEIROS');
-  const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
-  const [novoTransporteMarca, setNovoTransporteMarca] = useState('');
-  const [novoTransporteModelo, setNovoTransporteModelo] = useState('');
-  const [novoTransporteLotacao, setNovoTransporteLotacao] = useState('');
-  const [novoTransporteDataMatricula, setNovoTransporteDataMatricula] = useState('');
 
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
@@ -614,44 +604,6 @@ export function SecretaryRequisitionsPage({
       toast.error(error?.message || 'Erro ao criar material.');
     } finally {
       setSubmittingMaterial(false);
-    }
-  };
-
-  const handleCriarTransporteCatalogo = async () => {
-    if (!novoTransporteTipo.trim() || !novoTransporteMatricula.trim()) {
-      toast.error('Tipo e matrícula do transporte são obrigatórios.');
-      return;
-    }
-
-    try {
-      setSubmittingTransporte(true);
-      const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
-        codigo: novoTransporteCodigo.trim().toUpperCase() || undefined,
-        tipo: novoTransporteTipo.trim(),
-        categoria: novoTransporteCategoria,
-        matricula: novoTransporteMatricula.trim().toUpperCase(),
-        marca: novoTransporteMarca.trim() || undefined,
-        modelo: novoTransporteModelo.trim() || undefined,
-        lotacao: novoTransporteLotacao ? Number(novoTransporteLotacao) : undefined,
-        dataMatricula: novoTransporteDataMatricula || undefined,
-      });
-      toast.success('Transporte criado com sucesso.');
-      setTransportes((prev) => [...prev, novoTransporte]);
-      setSelectedTransportIds([String(novoTransporte.id)]);
-      setTransportSelectionMode('manual');
-      setNovoTransporteCodigo('');
-      setNovoTransporteTipo('');
-      setNovoTransporteCategoria('LIGEIRO_DE_PASSAGEIROS');
-      setNovoTransporteMatricula('');
-      setNovoTransporteMarca('');
-      setNovoTransporteModelo('');
-      setNovoTransporteLotacao('');
-      setNovoTransporteDataMatricula('');
-      setCreateTransporteDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error?.message || 'Erro ao criar transporte.');
-    } finally {
-      setSubmittingTransporte(false);
     }
   };
 
@@ -1435,9 +1387,6 @@ export function SecretaryRequisitionsPage({
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={handleAplicarSugestaoTransporte}>
                       Aplicar sugestão
-                    </Button>
-                    <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
-                      Nova viatura
                     </Button>
                   </div>
                 </div>
@@ -2254,77 +2203,6 @@ export function SecretaryRequisitionsPage({
               </Button>
               <Button onClick={handleCriarMaterialCatalogo} disabled={submittingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">
                 {submittingMaterial ? 'A criar...' : 'Criar material'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={createTransporteDialogOpen} onOpenChange={setCreateTransporteDialogOpen}>
-        <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Novo transporte</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="novo-transporte-codigo" className="text-sm text-gray-600 dark:text-gray-300">Código interno (opcional)</label>
-                <Input id="novo-transporte-codigo" className={inputFieldClassName} value={novoTransporteCodigo} onChange={(e) => setNovoTransporteCodigo(e.target.value)} placeholder="Ex: V10" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-                <Input id="novo-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
-                <select
-                  id="novo-transporte-categoria"
-                  value={novoTransporteCategoria}
-                  onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                  className={selectFieldClassName}
-                >
-                  {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">Matrícula</label>
-                <Input id="novo-transporte-matricula" className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-lotacao" className="text-sm text-gray-600 dark:text-gray-300">Lotação (opcional)</label>
-                <Input id="novo-transporte-lotacao" className={inputFieldClassName} type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-marca" className="text-sm text-gray-600 dark:text-gray-300">Marca (opcional)</label>
-                <Input id="novo-transporte-marca" className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
-              </div>
-              <div>
-                <label htmlFor="novo-transporte-modelo" className="text-sm text-gray-600 dark:text-gray-300">Modelo (opcional)</label>
-                <Input id="novo-transporte-modelo" className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
-              </div>
-
-              <div>
-                <label htmlFor="novo-transporte-data-matricula" className="text-sm text-gray-600 dark:text-gray-300">Data matrícula (opcional)</label>
-                <DatePickerField
-                  id="novo-transporte-data-matricula"
-                  value={novoTransporteDataMatricula}
-                  onChange={setNovoTransporteDataMatricula}
-                  buttonClassName="mt-1"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateTransporteDialogOpen(false)} disabled={submittingTransporte}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCriarTransporteCatalogo} disabled={submittingTransporte} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {submittingTransporte ? 'A criar...' : 'Criar transporte'}
               </Button>
             </div>
           </div>
