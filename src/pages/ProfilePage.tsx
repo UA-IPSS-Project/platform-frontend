@@ -245,7 +245,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                 <p className="text-sm text-purple-600 dark:text-purple-400">{formData.email}</p>
               </div>
             </div>
-            {!isEditing ? (
+            {!isEditing && (
               <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
                 <Button
                   variant="outline"
@@ -261,24 +261,6 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   disabled={loading}
                 >
                   Editar
-                </Button>
-              </div>
-            ) : (
-              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
-                  disabled={loading}
-                >
-                  {loading ? 'A guardar...' : 'Guardar'}
                 </Button>
               </div>
             )}
@@ -326,6 +308,26 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                     {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
                   </div>
                 )}
+              </div>
+            )}
+
+            {isEditing && (
+              <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  disabled={loading}
+                >
+                  {loading ? 'A guardar...' : 'Guardar'}
+                </Button>
               </div>
             )}
           </div>
