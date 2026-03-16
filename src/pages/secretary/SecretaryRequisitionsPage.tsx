@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangleIcon, ChevronDown, ChevronLeft, ChevronUp, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { Calendar } from '../../components/ui/calendar';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
-import { DatePickerField } from '../../components/ui/date-picker-field';
+import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -50,11 +48,25 @@ const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
   { value: 'MANUTENCAO', label: 'Manutenção' },
 ];
 
+type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
+
+const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
+  { value: 'GERAL', label: 'Geral' },
+  { value: 'MATERIAL', label: 'Material' },
+  { value: 'MANUTENCAO', label: 'Manutenção' },
+  { value: 'TRANSPORTE', label: 'Transporte' },
+  { value: 'URGENTE', label: 'Urgente' },
+];
+
 const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
+  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
+  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
+  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
+  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
+  { value: 'ADAPTADO', label: 'Adaptado' },
   { value: 'LIGEIRO', label: 'Ligeiro' },
   { value: 'PESADO', label: 'Pesado' },
   { value: 'PASSAGEIROS', label: 'Passageiros' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
 ];
 
 const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
@@ -70,15 +82,12 @@ const formatPrioridade = (prioridade: RequisicaoPrioridade) => PRIORIDADE_OPTION
 const formatEstado = (estado: RequisicaoEstado) => ESTADO_OPTIONS.find((option) => option.value === estado)?.label ?? estado;
 const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
   MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
+const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
+  TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
 
 const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;
   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)).toISOString();
-};
-
-const formatDatePt = (date?: Date): string => {
-  if (!date) return '';
-  return new Intl.DateTimeFormat('pt-PT').format(date);
 };
 
 const formatMaterialItemLabel = (
@@ -94,6 +103,7 @@ const formatMaterialItemLabel = (
 };
 
 type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
+type TransporteLike = RequisicaoResponse['transporte'] | TransporteCatalogo | null | undefined;
 
 const createEmptyMaterialLinha = () => ({
   rowId:
@@ -105,6 +115,45 @@ const createEmptyMaterialLinha = () => ({
 });
 
 const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
+
+const formatLotacao = (lotacao?: number): string => {
+  if (!lotacao || lotacao <= 0) return 'Lotação não definida';
+  return `${lotacao} ${lotacao === 1 ? 'lugar' : 'lugares'}`;
+};
+
+const formatVehicleTitle = (transporte?: TransporteLike): string => {
+  const nome = [transporte?.tipo || transporte?.nome || 'Viatura', transporte?.marca, transporte?.modelo]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  return nome || 'Viatura';
+};
+
+const formatTransporteDisplay = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem transporte associado';
+
+  const parts = [
+    transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
+    formatVehicleTitle(transporte),
+    transporte.matricula,
+  ].filter(Boolean);
+
+  return parts.join(' · ');
+};
+
+const formatTransporteMeta = (transporte?: TransporteLike): string => {
+  if (!transporte) return 'Sem detalhes';
+
+  const dataMatricula = transporte.dataMatricula
+    ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT')
+    : undefined;
+
+  return [
+    transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
+    formatLotacao(transporte.lotacao),
+    dataMatricula ? `Matriculado em ${dataMatricula}` : undefined,
+  ].filter(Boolean).join(' · ');
+};
 
 type MaterialItemGroup = {
   itemKey: string;
@@ -122,6 +171,7 @@ export function SecretaryRequisitionsPage({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
+  const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
@@ -138,13 +188,16 @@ export function SecretaryRequisitionsPage({
   const [filterPrioridade, setFilterPrioridade] = useState<RequisicaoPrioridade | ''>(initialPrioridade ?? '');
   const [filterCriadoPorNome, setFilterCriadoPorNome] = useState('');
   const [filterGeridoPorNome, setFilterGeridoPorNome] = useState('');
+  const [activeTab, setActiveTab] = useState<RequisicoesTab>(() => {
+    if (initialPrioridade === 'URGENTE') return 'URGENTE';
+    if (initialTipo) return initialTipo;
+    return 'GERAL';
+  });
 
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MANUTENCAO');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
   const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [tempoLimitePickerOpen, setTempoLimitePickerOpen] = useState(false);
-  const [tempoLimiteMonth, setTempoLimiteMonth] = useState<Date>(new Date());
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
@@ -157,8 +210,9 @@ export function SecretaryRequisitionsPage({
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
+  const [novoTransporteCodigo, setNovoTransporteCodigo] = useState('');
   const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
-  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
+  const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO_DE_PASSAGEIROS');
   const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
   const [novoTransporteMarca, setNovoTransporteMarca] = useState('');
   const [novoTransporteModelo, setNovoTransporteModelo] = useState('');
@@ -168,6 +222,13 @@ export function SecretaryRequisitionsPage({
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
     setFilterPrioridade(initialPrioridade ?? '');
+    if (initialPrioridade === 'URGENTE') {
+      setActiveTab('URGENTE');
+    } else if (initialTipo) {
+      setActiveTab(initialTipo);
+    } else {
+      setActiveTab('GERAL');
+    }
     if (initialTipo) setTipo(initialTipo);
     if (initialPrioridade) setPrioridade(initialPrioridade);
   }, [initialTipo, initialPrioridade]);
@@ -202,6 +263,16 @@ export function SecretaryRequisitionsPage({
     }
   };
 
+  const fetchMonthlyOverview = async () => {
+    try {
+      const data = await requisicoesApi.procurar({});
+      setMonthlyRequisicoes(Array.isArray(data) ? data : []);
+    } catch {
+      // Keep cards resilient; list fetch already reports errors.
+      setMonthlyRequisicoes([]);
+    }
+  };
+
   useEffect(() => {
     fetchRequisicoes({
       estado: '',
@@ -210,6 +281,7 @@ export function SecretaryRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
+    fetchMonthlyOverview();
   }, [initialTipo, initialPrioridade]);
 
   const fetchCatalogo = async () => {
@@ -266,6 +338,38 @@ export function SecretaryRequisitionsPage({
     return map;
   }, [materiais]);
 
+  const transportesOrdenados = useMemo(
+    () => [...transportes].sort((a, b) => {
+      const codigoA = a.codigo ?? '';
+      const codigoB = b.codigo ?? '';
+      if (codigoA && codigoB && codigoA !== codigoB) {
+        return codigoA.localeCompare(codigoB, 'pt-PT', { numeric: true });
+      }
+      if (codigoA && !codigoB) return -1;
+      if (!codigoA && codigoB) return 1;
+
+      const tipoDiff = (a.tipo ?? '').localeCompare(b.tipo ?? '', 'pt-PT');
+      if (tipoDiff !== 0) return tipoDiff;
+
+      return (a.matricula ?? '').localeCompare(b.matricula ?? '', 'pt-PT');
+    }),
+    [transportes],
+  );
+
+  const transportesPorCategoria = useMemo(
+    () => TRANSPORTE_CATEGORIA_OPTIONS.map((categoria) => ({
+      categoria: categoria.value,
+      label: categoria.label,
+      items: transportesOrdenados.filter((transporte) => transporte.categoria === categoria.value),
+    })).filter((grupo) => grupo.items.length > 0),
+    [transportesOrdenados],
+  );
+
+  const selectedTransporte = useMemo(
+    () => transportesOrdenados.find((item) => String(item.id) === transporteId) ?? null,
+    [transportesOrdenados, transporteId],
+  );
+
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
       toast.error('O nome do material é obrigatório.');
@@ -309,6 +413,7 @@ export function SecretaryRequisitionsPage({
     try {
       setSubmittingTransporte(true);
       const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
+        codigo: novoTransporteCodigo.trim().toUpperCase() || undefined,
         tipo: novoTransporteTipo.trim(),
         categoria: novoTransporteCategoria,
         matricula: novoTransporteMatricula.trim().toUpperCase(),
@@ -320,8 +425,9 @@ export function SecretaryRequisitionsPage({
       toast.success('Transporte criado com sucesso.');
       setTransportes((prev) => [...prev, novoTransporte]);
       setTransporteId(String(novoTransporte.id));
+      setNovoTransporteCodigo('');
       setNovoTransporteTipo('');
-      setNovoTransporteCategoria('LIGEIRO');
+      setNovoTransporteCategoria('LIGEIRO_DE_PASSAGEIROS');
       setNovoTransporteMatricula('');
       setNovoTransporteMarca('');
       setNovoTransporteModelo('');
@@ -470,6 +576,7 @@ export function SecretaryRequisitionsPage({
       handleResetCreateForm();
       setActiveSection('list');
       await fetchRequisicoes();
+      await fetchMonthlyOverview();
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao criar requisição.');
     } finally {
@@ -479,10 +586,41 @@ export function SecretaryRequisitionsPage({
 
   const handleClearFilters = () => {
     setFilterEstado('');
-    setFilterTipo(initialTipo ?? '');
-    setFilterPrioridade(initialPrioridade ?? '');
+    if (activeTab === 'URGENTE') {
+      setFilterTipo('');
+      setFilterPrioridade('URGENTE');
+    } else if (activeTab === 'GERAL') {
+      setFilterTipo('');
+      setFilterPrioridade('');
+    } else {
+      setFilterTipo(activeTab);
+      setFilterPrioridade('');
+    }
     setFilterCriadoPorNome('');
     setFilterGeridoPorNome('');
+  };
+
+  const handleSelectTab = async (tab: RequisicoesTab) => {
+    setActiveTab(tab);
+
+    const nextTipo: RequisicaoTipo | '' = tab === 'GERAL' || tab === 'URGENTE' ? '' : tab;
+    const nextPrioridade: RequisicaoPrioridade | '' = tab === 'URGENTE' ? 'URGENTE' : '';
+
+    setFilterTipo(nextTipo);
+    setFilterPrioridade(nextPrioridade);
+
+    await fetchRequisicoes({
+      estado: filterEstado,
+      tipo: nextTipo,
+      prioridade: nextPrioridade,
+      criadoPorNome: filterCriadoPorNome,
+      geridoPorNome: filterGeridoPorNome,
+    });
+  };
+
+  const handleCardShortcut = (tab: RequisicoesTab) => {
+    setActiveSection('list');
+    void handleSelectTab(tab);
   };
 
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
@@ -498,6 +636,7 @@ export function SecretaryRequisitionsPage({
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
       toast.success('Estado da requisição atualizado com sucesso.');
       await fetchRequisicoes();
+      await fetchMonthlyOverview();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao atualizar estado da requisição.');
@@ -511,6 +650,31 @@ export function SecretaryRequisitionsPage({
     const urgentes = requisicoes.filter((item) => item.prioridade === 'URGENTE').length;
     return `${total} requisição(ões) · ${urgentes} urgente(s)`;
   }, [requisicoes]);
+
+  const monthlyRequisicoesAtual = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    return monthlyRequisicoes.filter((item) => {
+      if (!item.criadoEm) return false;
+      const createdAt = new Date(item.criadoEm);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt.getMonth() === currentMonth && createdAt.getFullYear() === currentYear;
+    });
+  }, [monthlyRequisicoes]);
+
+  const stats = useMemo(() => {
+    const total = monthlyRequisicoesAtual.length;
+    const urgentes = monthlyRequisicoesAtual.filter((item) => item.prioridade === 'URGENTE').length;
+    const emAnalise = monthlyRequisicoesAtual.filter((item) => item.estado === 'EM_ANALISE').length;
+    const concluidas = monthlyRequisicoesAtual.filter((item) => item.estado === 'CONCLUIDA').length;
+    const material = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MATERIAL').length;
+    const manutencao = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MANUTENCAO').length;
+    const transporte = monthlyRequisicoesAtual.filter((item) => item.tipo === 'TRANSPORTE').length;
+
+    return { total, urgentes, emAnalise, concluidas, material, manutencao, transporte };
+  }, [monthlyRequisicoesAtual]);
 
   const materiaisAdicionadosAgrupados = useMemo(() => {
     const grupos = new Map<MaterialCategoria, Array<{
@@ -554,6 +718,10 @@ export function SecretaryRequisitionsPage({
   );
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
+  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -576,7 +744,7 @@ export function SecretaryRequisitionsPage({
 
   const createFormContent = (
     <div className="space-y-5">
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Dados principais</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -586,7 +754,7 @@ export function SecretaryRequisitionsPage({
               id="req-create-tipo"
               value={tipo}
               onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {TIPO_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -600,7 +768,7 @@ export function SecretaryRequisitionsPage({
               id="req-create-prioridade"
               value={prioridade}
               onChange={(e) => setPrioridade(e.target.value as RequisicaoPrioridade)}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {PRIORIDADE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -609,50 +777,24 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
-            <Popover
-              open={tempoLimitePickerOpen}
-              onOpenChange={(open) => {
-                setTempoLimitePickerOpen(open);
-                if (open) {
-                  setTempoLimiteMonth(tempoLimite ?? new Date());
-                }
-              }}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full mt-1 justify-between"
-                >
-                  {tempoLimite ? formatDatePt(tempoLimite) : 'Selecionar data'}
-                  <CalendarIcon className="w-4 h-4 opacity-70" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-                <Calendar
-                  mode="single"
-                  selected={tempoLimite}
-                  month={tempoLimiteMonth}
-                  onMonthChange={setTempoLimiteMonth}
-                  onSelect={(date) => {
-                    setTempoLimite(date);
-                    if (date) setTempoLimitePickerOpen(false);
-                  }}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+            <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">Data limite</label>
+            <DatePickerField
+              id="req-create-tempo-limite"
+              value={formatDateInput(tempoLimite)}
+              onChange={(value) => setTempoLimite(parseDateInput(value))}
+              placeholder="Selecionar data"
+              buttonClassName="mt-1"
+            />
           </div>
         </div>
 
         <div>
           <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
-          <Textarea id="req-create-descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
+          <Textarea id="req-create-descricao" className={textareaFieldClassName} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descreva a requisição" />
         </div>
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalhes por tipo</h3>
 
         <div>
@@ -697,7 +839,7 @@ export function SecretaryRequisitionsPage({
                             Sem itens nesta categoria.
                           </p>
                         ) : (
-                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
+                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                             {itemsCategoria.map((item) => {
                               const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
                               const selectedCount = item.variantes.filter((variante) =>
@@ -758,10 +900,12 @@ export function SecretaryRequisitionsPage({
 
                                             {checked && (
                                               <div>
-                                                <label className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
+                                                <label htmlFor={`qtd-variante-${variante.id}`} className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
                                                 <Input
+                                                  id={`qtd-variante-${variante.id}`}
                                                   type="number"
                                                   min="1"
+                                                  className={quantityFieldClassName}
                                                   value={linhaSelecionada?.quantidade ?? '1'}
                                                   onChange={(event) => updateVarianteQuantidade(variante.id, event.target.value)}
                                                 />
@@ -829,34 +973,96 @@ export function SecretaryRequisitionsPage({
           )}
 
           {tipo === 'TRANSPORTE' && (
-            <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="req-create-transporte-id" className="text-sm text-gray-600 dark:text-gray-300">Transporte</label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Selecionar viatura</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Escolhe a viatura institucional que melhor responde à lotação e ao tipo de deslocação.</p>
+                </div>
                 <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateTransporteDialogOpen(true)}>
                   Novo transporte
                 </Button>
               </div>
-              <select
-                id="req-create-transporte-id"
-                value={transporteId}
-                onChange={(e) => setTransporteId(e.target.value)}
-                disabled={loadingCatalogo}
-                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-              >
-                <option value="">{loadingCatalogo ? 'A carregar transportes...' : 'Selecionar transporte'}</option>
-                {transportes.map((transporte) => (
-                  <option key={transporte.id} value={transporte.id}>
-                    {(transporte.tipo || 'Transporte')} · {transporte.matricula || 'sem matrícula'}
-                  </option>
-                ))}
-              </select>
+
+              {selectedTransporte && (
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/80 dark:bg-emerald-950/20 p-4 space-y-1">
+                  <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Viatura escolhida</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedTransporte)}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{formatTransporteMeta(selectedTransporte)}</p>
+                </div>
+              )}
+
+              {loadingCatalogo ? (
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                  A carregar viaturas disponíveis...
+                </div>
+              ) : transportesPorCategoria.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
+                  Ainda não existem viaturas em catálogo.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transportesPorCategoria.map((grupo) => (
+                    <div key={grupo.categoria} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{grupo.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                        {grupo.items.map((transporte) => {
+                          const isSelected = String(transporte.id) === transporteId;
+
+                          return (
+                            <button
+                              key={transporte.id}
+                              type="button"
+                              onClick={() => setTransporteId(String(transporte.id))}
+                              className={`rounded-xl border p-4 text-left transition-all ${isSelected
+                                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-emerald-300 dark:hover:border-emerald-800'
+                                }`}
+                              aria-pressed={isSelected}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                                      }`}>
+                                      {transporte.codigo ?? `#${transporte.id}`}
+                                    </span>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteCategoria(transporte.categoria)}</p>
+                                </div>
+                                <span className={`text-xs font-medium ${isSelected ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-500 dark:text-gray-400'}`}>
+                                  {transporte.matricula ?? 'Sem matrícula'}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                <p>Lotação: {formatLotacao(transporte.lotacao)}</p>
+                                <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
+                                <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                <p>{isSelected ? 'Selecionado para a requisição' : 'Clique para selecionar'}</p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {tipo === 'MANUTENCAO' && (
             <div>
               <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">Assunto (opcional)</label>
-              <Input id="req-create-assunto" type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
+              <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
             </div>
           )}
         </div>
@@ -882,66 +1088,175 @@ export function SecretaryRequisitionsPage({
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
-        <button
-          onClick={() => toggleSection('create')}
-          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-        >
-          <div className="text-left">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
-            {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <GlassCard className="hidden md:block p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('GERAL')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições gerais"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Requisições</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <ClipboardListIcon className="w-5 h-5 text-blue-700 dark:text-blue-300" />
+            </div>
+          </Button>
+        </GlassCard>
+
+        <GlassCard className="hidden md:block p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('URGENTE')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições urgentes"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Urgentes</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <AlertTriangleIcon className="w-5 h-5 text-red-700 dark:text-red-300" />
+            </div>
+          </Button>
+        </GlassCard>
+
+        <GlassCard className="hidden xl:block p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('MATERIAL')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de material"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Material</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <PackageIcon className="w-5 h-5 text-indigo-700 dark:text-indigo-300" />
+            </div>
+          </Button>
+        </GlassCard>
+
+        <GlassCard className="hidden xl:block p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('MANUTENCAO')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de manutenção"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Manutenção</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <WrenchIcon className="w-5 h-5 text-amber-700 dark:text-amber-300" />
+            </div>
+          </Button>
+        </GlassCard>
+
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('TRANSPORTE')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de transporte"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Transportes</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <TruckIcon className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
+            </div>
+          </Button>
+        </GlassCard>
+      </div>
+
+      <div className="lg:hidden space-y-6">
+        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => toggleSection('create')}
+            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+            aria-label="Alternar secção Nova requisição"
+          >
+            <div className="text-left">
+              <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
+              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+            </div>
+            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+          </button>
+
+          {activeSection === 'create' && (
+            <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
+              {createFormContent}
+            </div>
+          )}
+        </GlassCard>
+
+        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => toggleSection('list')}
+            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+            aria-label="Alternar secção Requisições"
+          >
+            <div className="text-left">
+              <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+            </div>
+            {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+          </button>
+
+          {activeSection === 'list' && (
+            <div className="px-5 pb-5 space-y-4">
+
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
+            {REQUISICOES_TABS.map((tab) => {
+              const isActive = activeTab === tab.value;
+              return (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void handleSelectTab(tab.value);
+                  }}
+                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
+                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
+                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
+                    }`}
+                  aria-pressed={isActive}
+                  aria-label={`Selecionar ${tab.label}`}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
           </div>
-          {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-        </button>
+        </div>
 
-        {activeSection === 'create' && (
-          <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
-            {createFormContent}
-          </div>
-        )}
-      </GlassCard>
-
-      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'list' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
-        <button
-          onClick={() => toggleSection('list')}
-          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-        >
-          <div className="text-left">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
-          </div>
-          {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-        </button>
-
-        {activeSection === 'list' && (
-          <div className="px-5 pb-5 space-y-4">
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label htmlFor="req-filter-estado" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
             <select
               id="req-filter-estado"
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               {ESTADO_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-            <select
-              id="req-filter-tipo"
-              value={filterTipo}
-              onChange={(e) => setFilterTipo(e.target.value as RequisicaoTipo | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-            >
-              <option value="">Todos os tipos</option>
-              {TIPO_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </div>
@@ -952,7 +1267,7 @@ export function SecretaryRequisitionsPage({
               id="req-filter-prioridade"
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+              className={selectFieldClassName}
             >
               <option value="">Todas as prioridades</option>
               {PRIORIDADE_OPTIONS.map((option) => (
@@ -963,12 +1278,12 @@ export function SecretaryRequisitionsPage({
 
           <div>
             <label htmlFor="req-filter-criado-por" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
-            <Input id="req-filter-criado-por" type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+            <Input id="req-filter-criado-por" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
           </div>
 
           <div>
             <label htmlFor="req-filter-gerido-por" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
-            <Input id="req-filter-gerido-por" type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+            <Input id="req-filter-gerido-por" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
           </div>
         </div>
 
@@ -986,7 +1301,7 @@ export function SecretaryRequisitionsPage({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {requisicoes.map((req) => (
-              <div key={req.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
+              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
                 <div className="flex items-start justify-between gap-4">
                   <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
                   <div className="flex items-center gap-2">
@@ -1020,7 +1335,7 @@ export function SecretaryRequisitionsPage({
                         : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
                     </p>
                   )}
-                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
                   {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
                 </div>
 
@@ -1028,9 +1343,180 @@ export function SecretaryRequisitionsPage({
             ))}
           </div>
         )}
+            </div>
+          )}
+        </GlassCard>
+      </div>
+
+      <div className="hidden lg:flex gap-6 items-stretch">
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-3/5' : 'w-full'}`}>
+          <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
+            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+          </div>
+
+          <div className="px-5 pb-5 pt-4 space-y-4">
+
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" role="tablist" aria-label="Separadores de tipo de requisição">
+            {REQUISICOES_TABS.map((tab) => {
+              const isActive = activeTab === tab.value;
+              return (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void handleSelectTab(tab.value);
+                  }}
+                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
+                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
+                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
+                    }`}
+                  aria-pressed={isActive}
+                  aria-label={`Selecionar ${tab.label}`}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label htmlFor="req-filter-estado-desktop" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
+            <select
+              id="req-filter-estado-desktop"
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
+              className={selectFieldClassName}
+            >
+              {ESTADO_OPTIONS.map((option) => (
+                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-prioridade-desktop" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <select
+              id="req-filter-prioridade-desktop"
+              value={filterPrioridade}
+              onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
+              className={selectFieldClassName}
+            >
+              <option value="">Todas as prioridades</option>
+              {PRIORIDADE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
+            <Input id="req-filter-criado-por-desktop" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
+            <Input id="req-filter-gerido-por-desktop" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
+            {loading ? 'A pesquisar...' : 'Pesquisar'}
+          </Button>
+          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>Limpar filtros</Button>
+        </div>
+
+        {requisicoes.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
+            Sem requisições para os filtros atuais.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            {requisicoes.map((req) => (
+              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
+                <div className="flex items-start justify-between gap-4">
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPrioridade(req.prioridade)}</p>
+                    <Button
+                      variant="outline"
+                      className="h-8 px-3"
+                      onClick={() => handleOpenRequisicao(req)}
+                    >
+                      Abrir
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
+
+                <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
+                  <p>Estado: {formatEstado(req.estado)}</p>
+                  <p>Criado por: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                  <p>Gerido por: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
+                  <p>Data: {req.criadoEm ? new Date(req.criadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p>Última alteração: {req.ultimaAlteracaoEstadoEm ? new Date(req.ultimaAlteracaoEstadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p>Prazo: {req.tempoLimite ? new Date(req.tempoLimite).toLocaleString('pt-PT') : '—'}</p>
+                  {req.tipo === 'MATERIAL' && (
+                    <p>
+                      Materiais:{' '}
+                      {req.itens && req.itens.length > 0
+                        ? req.itens
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .join(', ')
+                        : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
+                    </p>
+                  )}
+                  {req.tipo === 'TRANSPORTE' && <p>Transporte: {formatTransporteDisplay(req.transporte)}</p>}
+                  {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </GlassCard>
+
+          </div>
+        </GlassCard>
+
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-2/5 opacity-100' : 'w-[160px] opacity-100'}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection('create')}
+            className={`w-full transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${activeSection === 'create'
+              ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
+              : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
+              }`}
+            aria-label="Alternar secção Nova requisição"
+          >
+            {activeSection === 'create' ? (
+              <>
+                <div className="text-left">
+                  <h2 className={`text-lg font-semibold ${headingClass}`}>Nova requisição</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Painel de criação</p>
+                </div>
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Criar</span>
+                <ChevronLeft className="w-5 h-5 text-gray-500" />
+              </>
+            )}
+          </button>
+
+          {activeSection === 'create' && (
+            <div className="px-4 pb-4 pt-3">
+              {createFormContent}
+            </div>
+          )}
+        </GlassCard>
+      </div>
 
       <Dialog open={openedRequisicaoId !== null} onOpenChange={(open) => !open && setOpenedRequisicaoId(null)}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
@@ -1091,7 +1577,10 @@ export function SecretaryRequisitionsPage({
                   {selectedRequisicao.tipo === 'TRANSPORTE' && (
                     <>
                       <p className="text-gray-500 dark:text-gray-400">Transporte</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.transporte?.nome || 'Associado'}</p>
+                      <div className="space-y-1">
+                        <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(selectedRequisicao.transporte)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(selectedRequisicao.transporte)}</p>
+                      </div>
                     </>
                   )}
                   {selectedRequisicao.tipo === 'MANUTENCAO' && (
@@ -1109,7 +1598,7 @@ export function SecretaryRequisitionsPage({
                   id="req-estado-modal"
                   value={estadoEdicao}
                   onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                  className={selectFieldClassName}
                 >
                   {ESTADO_OPTIONS.filter((option) => option.value).map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -1147,11 +1636,11 @@ export function SecretaryRequisitionsPage({
           <div className="space-y-3">
             <div>
               <label htmlFor="novo-material-nome" className="text-sm text-gray-600 dark:text-gray-300">Nome</label>
-              <Input id="novo-material-nome" value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder="Ex: Luvas" />
+              <Input id="novo-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder="Ex: Luvas" />
             </div>
             <div>
               <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição (opcional)</label>
-              <Textarea id="novo-material-descricao" value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
+              <Textarea id="novo-material-descricao" className={textareaFieldClassName} value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
             </div>
             <div>
               <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
@@ -1159,7 +1648,7 @@ export function SecretaryRequisitionsPage({
                 id="novo-material-categoria"
                 value={novoMaterialCategoria}
                 onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
-                className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                className={selectFieldClassName}
               >
                 {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -1171,6 +1660,7 @@ export function SecretaryRequisitionsPage({
                 <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">Atributo</label>
                 <Input
                   id="novo-material-atributo"
+                  className={inputFieldClassName}
                   value={novoMaterialAtributo}
                   onChange={(e) => setNovoMaterialAtributo(e.target.value)}
                   placeholder="Ex: Cor, Tipo, Tamanho"
@@ -1180,6 +1670,7 @@ export function SecretaryRequisitionsPage({
                 <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">Valor do atributo</label>
                 <Input
                   id="novo-material-valor-atributo"
+                  className={inputFieldClassName}
                   value={novoMaterialValorAtributo}
                   onChange={(e) => setNovoMaterialValorAtributo(e.target.value)}
                   placeholder="Ex: Azul, A4, 100ml"
@@ -1207,8 +1698,12 @@ export function SecretaryRequisitionsPage({
           <div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
+                <label htmlFor="novo-transporte-codigo" className="text-sm text-gray-600 dark:text-gray-300">Código interno (opcional)</label>
+                <Input id="novo-transporte-codigo" className={inputFieldClassName} value={novoTransporteCodigo} onChange={(e) => setNovoTransporteCodigo(e.target.value)} placeholder="Ex: V10" />
+              </div>
+              <div>
                 <label htmlFor="novo-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-                <Input id="novo-transporte-tipo" value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
+                <Input id="novo-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} placeholder="Ex: Carrinha" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
@@ -1216,7 +1711,7 @@ export function SecretaryRequisitionsPage({
                   id="novo-transporte-categoria"
                   value={novoTransporteCategoria}
                   onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                  className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+                  className={selectFieldClassName}
                 >
                   {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -1226,20 +1721,20 @@ export function SecretaryRequisitionsPage({
 
               <div>
                 <label htmlFor="novo-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">Matrícula</label>
-                <Input id="novo-transporte-matricula" value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
+                <Input id="novo-transporte-matricula" className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} placeholder="Ex: 00-AA-00" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-lotacao" className="text-sm text-gray-600 dark:text-gray-300">Lotação (opcional)</label>
-                <Input id="novo-transporte-lotacao" type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
+                <Input id="novo-transporte-lotacao" className={inputFieldClassName} type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
               </div>
 
               <div>
                 <label htmlFor="novo-transporte-marca" className="text-sm text-gray-600 dark:text-gray-300">Marca (opcional)</label>
-                <Input id="novo-transporte-marca" value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
+                <Input id="novo-transporte-marca" className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} placeholder="Ex: Ford" />
               </div>
               <div>
                 <label htmlFor="novo-transporte-modelo" className="text-sm text-gray-600 dark:text-gray-300">Modelo (opcional)</label>
-                <Input id="novo-transporte-modelo" value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
+                <Input id="novo-transporte-modelo" className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} placeholder="Ex: Transit" />
               </div>
 
               <div>
