@@ -1686,9 +1686,9 @@ export function SecretaryRequisitionsPage({
                                   {detailsOpen && (
                                     <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
                                       <p>{formatTransporteCategoria(transporte.categoria)}</p>
-                                      <p>Matricula: {transporte.matricula ?? 'Sem matricula'}</p>
-                                      <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Nao definido'}</p>
-                                      <p>Data matricula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Nao definida'}</p>
+                                      <p>Matrícula: {transporte.matricula ?? 'Sem matrícula'}</p>
+                                      <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
+                                      <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
                                     </div>
                                   )}
                                 </div>
