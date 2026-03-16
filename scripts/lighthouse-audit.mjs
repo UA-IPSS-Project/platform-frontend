@@ -301,7 +301,7 @@ async function applyPageState(page, pageConfig) {
 
   await page.evaluate((entries) => {
     for (const [key, value] of Object.entries(entries)) {
-      window.localStorage.setItem(key, value);
+      window.localStorage.setItem(key, String(value));
     }
   }, storage);
 }
