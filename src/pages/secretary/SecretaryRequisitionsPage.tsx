@@ -669,7 +669,7 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">Data limite</p>
+            <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">Data limite</label>
             <DatePickerField
               id="req-create-tempo-limite"
               value={formatDateInput(tempoLimite)}
@@ -792,8 +792,9 @@ export function SecretaryRequisitionsPage({
 
                                             {checked && (
                                               <div>
-                                                <label className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
+                                                <label htmlFor={`qtd-variante-${variante.id}`} className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
                                                 <Input
+                                                  id={`qtd-variante-${variante.id}`}
                                                   type="number"
                                                   min="1"
                                                   className={quantityFieldClassName}
