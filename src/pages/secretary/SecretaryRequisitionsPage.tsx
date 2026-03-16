@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangleIcon, CalendarIcon, ChevronDown, ChevronUp, ClipboardListIcon, TruckIcon, WrenchIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
@@ -942,43 +942,94 @@ export function SecretaryRequisitionsPage({
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
-        <button
-          type="button"
-          onClick={() => toggleSection('create')}
-          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-          aria-label="Alternar secção Nova requisição"
-        >
-          <div className="text-left">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
-            {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Requisições</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <ClipboardListIcon className="w-5 h-5 text-blue-700 dark:text-blue-300" />
+            </div>
           </div>
-          {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-        </button>
+        </GlassCard>
 
-        {activeSection === 'create' && (
-          <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
-            {createFormContent}
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Urgentes</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <AlertTriangleIcon className="w-5 h-5 text-red-700 dark:text-red-300" />
+            </div>
           </div>
-        )}
-      </GlassCard>
+        </GlassCard>
 
-      <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'list' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
-        <button
-          type="button"
-          onClick={() => toggleSection('list')}
-          className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-          aria-label="Alternar secção Requisições"
-        >
-          <div className="text-left">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Manutenção</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <WrenchIcon className="w-5 h-5 text-amber-700 dark:text-amber-300" />
+            </div>
           </div>
-          {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-        </button>
+        </GlassCard>
 
-        {activeSection === 'list' && (
-          <div className="px-5 pb-5 space-y-4">
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Transportes</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <TruckIcon className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      <div className="lg:hidden space-y-6">
+        <GlassCard className="w-full p-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('create')}
+            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+            aria-label="Alternar secção Nova requisição"
+          >
+            <div className="text-left">
+              <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
+              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+            </div>
+            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+          </button>
+
+          {activeSection === 'create' && (
+            <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
+              {createFormContent}
+            </div>
+          )}
+        </GlassCard>
+
+        <GlassCard className="w-full p-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('list')}
+            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+            aria-label="Alternar secção Requisições"
+          >
+            <div className="text-left">
+              <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+            </div>
+            {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+          </button>
+
+          {activeSection === 'list' && (
+            <div className="px-5 pb-5 space-y-4">
 
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
@@ -1006,42 +1057,6 @@ export function SecretaryRequisitionsPage({
             })}
           </div>
         </div>
-
-        {activeTab === 'GERAL' && (
-          <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estatísticas gerais</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Urgentes</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Em análise</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.emAnalise}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Concluídas</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.concluidas}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Material</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Manutenção</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
-              </div>
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
-                <p className="text-xs text-gray-500 dark:text-gray-400">Transporte</p>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
@@ -1140,9 +1155,177 @@ export function SecretaryRequisitionsPage({
             ))}
           </div>
         )}
+            </div>
+          )}
+        </GlassCard>
+      </div>
+
+      <div className="hidden lg:flex gap-6 items-start">
+        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-2/3' : 'w-full'}`}>
+          <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
+            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+          </div>
+
+          <div className="px-5 pb-5 pt-4 space-y-4">
+
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
+          <div className="inline-flex flex-wrap rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" role="tablist" aria-label="Separadores de tipo de requisição">
+            {REQUISICOES_TABS.map((tab) => {
+              const isActive = activeTab === tab.value;
+              return (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void handleSelectTab(tab.value);
+                  }}
+                  className={`rounded-none border-r last:border-r-0 border-gray-200 dark:border-gray-700 px-4 h-10 ${isActive
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  aria-pressed={isActive}
+                  aria-label={`Selecionar ${tab.label}`}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div>
+            <label htmlFor="req-filter-estado-desktop" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
+            <select
+              id="req-filter-estado-desktop"
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
+              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+            >
+              {ESTADO_OPTIONS.map((option) => (
+                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-prioridade-desktop" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <select
+              id="req-filter-prioridade-desktop"
+              value={filterPrioridade}
+              onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
+              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
+            >
+              <option value="">Todas as prioridades</option>
+              {PRIORIDADE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
+            <Input id="req-filter-criado-por-desktop" type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+          </div>
+
+          <div>
+            <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
+            <Input id="req-filter-gerido-por-desktop" type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
+            {loading ? 'A pesquisar...' : 'Pesquisar'}
+          </Button>
+          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>Limpar filtros</Button>
+        </div>
+
+        {requisicoes.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
+            Sem requisições para os filtros atuais.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            {requisicoes.map((req) => (
+              <div key={req.id} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
+                <div className="flex items-start justify-between gap-4">
+                  <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPrioridade(req.prioridade)}</p>
+                    <Button
+                      variant="outline"
+                      className="h-8 px-3"
+                      onClick={() => handleOpenRequisicao(req)}
+                    >
+                      Abrir
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
+
+                <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
+                  <p>Estado: {formatEstado(req.estado)}</p>
+                  <p>Criado por: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                  <p>Gerido por: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
+                  <p>Data: {req.criadoEm ? new Date(req.criadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p>Última alteração: {req.ultimaAlteracaoEstadoEm ? new Date(req.ultimaAlteracaoEstadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p>Prazo: {req.tempoLimite ? new Date(req.tempoLimite).toLocaleString('pt-PT') : '—'}</p>
+                  {req.tipo === 'MATERIAL' && (
+                    <p>
+                      Materiais:{' '}
+                      {req.itens && req.itens.length > 0
+                        ? req.itens
+                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
+                            .join(', ')
+                        : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
+                    </p>
+                  )}
+                  {req.tipo === 'TRANSPORTE' && <p>Transporte ID: {req.transporte?.id || '—'}</p>}
+                  {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
+                </div>
+              </div>
+            ))}
           </div>
         )}
-      </GlassCard>
+
+          </div>
+        </GlassCard>
+
+        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[72px] opacity-100'}`}>
+          <button
+            type="button"
+            onClick={() => toggleSection('create')}
+            className="w-full flex items-center justify-between px-4 py-4 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-800"
+            aria-label="Alternar secção Nova requisição"
+          >
+            {activeSection === 'create' ? (
+              <>
+                <div className="text-left">
+                  <h2 className={`text-lg font-semibold ${headingClass}`}>Nova requisição</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Painel de criação</p>
+                </div>
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              </>
+            ) : (
+              <>
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Abrir</span>
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              </>
+            )}
+          </button>
+
+          {activeSection === 'create' && (
+            <div className="px-4 pb-4 pt-3">
+              {createFormContent}
+            </div>
+          )}
+        </GlassCard>
+      </div>
 
       <Dialog open={openedRequisicaoId !== null} onOpenChange={(open) => !open && setOpenedRequisicaoId(null)}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
