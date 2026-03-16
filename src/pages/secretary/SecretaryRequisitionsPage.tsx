@@ -1211,7 +1211,7 @@ export function SecretaryRequisitionsPage({
       </div>
 
       <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-2/3' : 'w-full'}`}>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-3/5' : 'w-full'}`}>
           <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
             <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
@@ -1346,7 +1346,7 @@ export function SecretaryRequisitionsPage({
           </div>
         </GlassCard>
 
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[140px] opacity-100'}`}>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-2/5 opacity-100' : 'w-[160px] opacity-100'}`}>
           <button
             type="button"
             onClick={() => toggleSection('create')}
