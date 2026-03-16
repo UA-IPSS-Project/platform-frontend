@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ProfilePage } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 interface EscolaDashboardProps {
     onLogout: () => void;
@@ -13,10 +14,7 @@ type EscolaView = 'home' | 'profile' | 'settings';
 
 export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: EscolaDashboardProps) {
     const { user: authUser } = useAuth();
-    const [currentView, setCurrentView] = useState<EscolaView>(() => {
-        const saved = localStorage.getItem('escolaDashboardView');
-        return saved ? (saved as EscolaView) : 'home';
-    });
+    const [currentView, setCurrentView] = usePersistentState<EscolaView>('escolaDashboardView', 'home');
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -32,10 +30,6 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             email: authUser?.email || '',
         });
     }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
-
-    useEffect(() => {
-        localStorage.setItem('escolaDashboardView', currentView);
-    }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);

@@ -24,6 +24,7 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
 interface SecretaryDashboardProps {
@@ -92,10 +93,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     sessionStorage.setItem('secretary_currentDate', currentDate.toISOString());
   }, [currentDate]);
-  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-    const saved = localStorage.getItem('secretaryDashboardView');
-    return saved ? [saved as ViewType] : ['home'];
-  });
+  const [viewHistory, setViewHistory] = usePersistentState<ViewType[]>(
+    'secretaryDashboardViewHistory',
+    () => {
+      const legacySaved = localStorage.getItem('secretaryDashboardView');
+      return legacySaved ? [legacySaved as ViewType] : ['home'];
+    }
+  );
 
   const currentView = viewHistory[viewHistory.length - 1] || 'home';
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -155,10 +159,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     if (currentView === 'appointments') refreshCurrentWeek(currentDate);
   }, [currentView, refreshCurrentWeek, currentDate]);
-
-  useEffect(() => {
-    localStorage.setItem('secretaryDashboardView', currentView);
-  }, [currentView]);
 
   useEffect(() => {
     const interval = setInterval(() => {

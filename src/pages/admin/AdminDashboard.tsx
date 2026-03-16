@@ -11,6 +11,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ProfilePage } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
 
@@ -177,10 +178,7 @@ function SlotsManagement({
 
 export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Readonly<AdminDashboardProps>) {
     const { user: authUser } = useAuth();
-    const [currentView, setCurrentView] = useState<AdminView>(() => {
-        const saved = localStorage.getItem('adminDashboardView');
-        return saved ? (saved as AdminView) : 'overview';
-    });
+    const [currentView, setCurrentView] = usePersistentState<AdminView>('adminDashboardView', 'overview');
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -272,10 +270,6 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             email: authUser?.email || '',
         });
     }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
-
-    useEffect(() => {
-        localStorage.setItem('adminDashboardView', currentView);
-    }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);

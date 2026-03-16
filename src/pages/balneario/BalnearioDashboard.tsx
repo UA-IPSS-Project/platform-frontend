@@ -21,6 +21,7 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 interface BalnearioDashboardProps {
     onLogout: () => void;
@@ -85,10 +86,13 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         sessionStorage.setItem('balneario_currentDate', currentDate.toISOString());
     }, [currentDate]);
 
-    const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-        const saved = localStorage.getItem('balnearioDashboardView');
-        return saved ? [saved as ViewType] : ['home'];
-    });
+    const [viewHistory, setViewHistory] = usePersistentState<ViewType[]>(
+        'balnearioDashboardViewHistory',
+        () => {
+            const legacySaved = localStorage.getItem('balnearioDashboardView');
+            return legacySaved ? [legacySaved as ViewType] : ['home'];
+        }
+    );
 
     const currentView = viewHistory[viewHistory.length - 1] || 'home';
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -152,10 +156,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         }, 60000);
         return () => clearInterval(interval);
     }, [currentView, refreshCurrentWeek, currentDate]);
-
-    useEffect(() => {
-        localStorage.setItem('balnearioDashboardView', currentView);
-    }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);

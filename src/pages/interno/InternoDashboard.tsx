@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ProfilePage } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 interface InternoDashboardProps {
     onLogout: () => void;
@@ -13,10 +14,7 @@ type InternoView = 'home' | 'profile' | 'settings';
 
 export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: InternoDashboardProps) {
     const { user: authUser } = useAuth();
-    const [currentView, setCurrentView] = useState<InternoView>(() => {
-        const saved = localStorage.getItem('internoDashboardView');
-        return saved ? (saved as InternoView) : 'home';
-    });
+    const [currentView, setCurrentView] = usePersistentState<InternoView>('internoDashboardView', 'home');
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -32,10 +30,6 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
             email: authUser?.email || '',
         });
     }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
-
-    useEffect(() => {
-        localStorage.setItem('internoDashboardView', currentView);
-    }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);
