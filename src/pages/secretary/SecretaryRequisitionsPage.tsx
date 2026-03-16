@@ -592,15 +592,29 @@ export function SecretaryRequisitionsPage({
   }, [monthlyRequisicoes]);
 
   const stats = useMemo(() => {
-    const total = monthlyRequisicoesAtual.length;
-    const urgentes = monthlyRequisicoesAtual.filter((item) => item.prioridade === 'URGENTE').length;
-    const emAnalise = monthlyRequisicoesAtual.filter((item) => item.estado === 'EM_ANALISE').length;
-    const concluidas = monthlyRequisicoesAtual.filter((item) => item.estado === 'CONCLUIDA').length;
-    const material = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MATERIAL').length;
-    const manutencao = monthlyRequisicoesAtual.filter((item) => item.tipo === 'MANUTENCAO').length;
-    const transporte = monthlyRequisicoesAtual.filter((item) => item.tipo === 'TRANSPORTE').length;
-
-    return { total, urgentes, emAnalise, concluidas, material, manutencao, transporte };
+    return monthlyRequisicoesAtual.reduce(
+      (acc, item) => {
+        acc.total += 1;
+        if (item.prioridade === 'URGENTE') {
+          acc.urgentes += 1;
+        }
+        if (item.tipo === 'MATERIAL') {
+          acc.material += 1;
+        } else if (item.tipo === 'MANUTENCAO') {
+          acc.manutencao += 1;
+        } else if (item.tipo === 'TRANSPORTE') {
+          acc.transporte += 1;
+        }
+        return acc;
+      },
+      {
+        total: 0,
+        urgentes: 0,
+        material: 0,
+        manutencao: 0,
+        transporte: 0,
+      }
+    );
   }, [monthlyRequisicoesAtual]);
 
   const materiaisAdicionadosAgrupados = useMemo(() => {
