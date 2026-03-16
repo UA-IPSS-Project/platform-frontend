@@ -52,20 +52,20 @@ export function FileUpload({
 
     return (
         <div className="space-y-2">
-            <input
-                id={resolvedInputId}
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="sr-only"
-                accept={accept}
-                disabled={isUploading}
-                aria-describedby={helperId}
-            />
             <label
                 htmlFor={resolvedInputId}
                 className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 transition-colors focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
+                <input
+                    id={resolvedInputId}
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="sr-only"
+                    accept={accept}
+                    disabled={isUploading}
+                    aria-describedby={helperId}
+                />
                 <Upload className="w-8 h-8 mb-2 text-purple-600 dark:text-purple-400" />
                 <p className="font-medium text-gray-900 dark:text-gray-100">Clique ou prima Enter para selecionar ficheiros</p>
                 <p id={helperId} className="text-xs text-gray-500 mt-1">
