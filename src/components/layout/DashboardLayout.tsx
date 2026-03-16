@@ -1,8 +1,10 @@
 import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
-import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../shared/CustomIcons';
+import { UserAvatarMenu } from '../shared/UserAvatarMenu';
+import { BellIcon, MenuIcon, MoonIcon, SunIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -13,16 +15,18 @@ interface DashboardLayoutProps {
     roleTitle: string;
     // Navigation
     navigationContent?: ReactNode;
-    // Notifications
-    notifications: Notificacao[];
-    unreadCount: number;
-    showNotifications: boolean;
-    onToggleNotifications: (show: boolean) => void;
-    onMarkAsRead: (id: number) => void;
-    onMarkAllAsRead: () => void;
-    onDeleteNotification: (id: number) => void;
-    onDeleteAllNotifications: () => void;
-    onNavigateToNotifications: () => void;
+    onNavigateToProfile?: () => void;
+    onNavigateToSettings?: () => void;
+    // Notifications (optional — dashboards in development may omit these)
+    notifications?: Notificacao[];
+    unreadCount?: number;
+    showNotifications?: boolean;
+    onToggleNotifications?: (show: boolean) => void;
+    onMarkAsRead?: (id: number) => void;
+    onMarkAllAsRead?: () => void;
+    onDeleteNotification?: (id: number) => void;
+    onDeleteAllNotifications?: () => void;
+    onNavigateToNotifications?: () => void;
 }
 
 export function DashboardLayout({
@@ -33,16 +37,19 @@ export function DashboardLayout({
     onMenuToggle,
     roleTitle,
     navigationContent,
-    notifications,
-    unreadCount,
-    showNotifications,
-    onToggleNotifications,
-    onMarkAsRead,
-    onMarkAllAsRead,
-    onDeleteNotification,
-    onDeleteAllNotifications,
-    onNavigateToNotifications,
+    onNavigateToProfile,
+    onNavigateToSettings,
+    notifications = [],
+    unreadCount = 0,
+    showNotifications = false,
+    onToggleNotifications = () => {},
+    onMarkAsRead = () => {},
+    onMarkAllAsRead = () => {},
+    onDeleteNotification = () => {},
+    onDeleteAllNotifications = () => {},
+    onNavigateToNotifications = () => {},
 }: DashboardLayoutProps) {
+    const { user } = useAuth();
     const notificationsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -128,15 +135,12 @@ export function DashboardLayout({
                                 >
                                     {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={onLogout}
-                                    className="text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                    aria-label="Terminar Sessão"
-                                >
-                                    <LogOutIcon className="w-5 h-5" />
-                                </Button>
+                                <UserAvatarMenu
+                                    nome={user?.nome ?? ''}
+                                    onProfile={onNavigateToProfile}
+                                    onSettings={onNavigateToSettings}
+                                    onLogout={onLogout}
+                                />
                             </div>
                         </div>
                     </header>

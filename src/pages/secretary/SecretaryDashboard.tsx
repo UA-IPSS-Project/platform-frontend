@@ -308,6 +308,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onMenuToggle={() => setSidebarOpen(true)}
         roleTitle="Secretaria"
         navigationContent={SecretaryNavigation}
+        onNavigateToProfile={() => navigateTo('profile')}
+        onNavigateToSettings={() => navigateTo('settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}

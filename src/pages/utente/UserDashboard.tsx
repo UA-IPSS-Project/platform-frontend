@@ -218,6 +218,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onMenuToggle={() => setSidebarOpen(true)}
         roleTitle="Utente"
         navigationContent={UserNavigation}
+        onNavigateToProfile={() => navigate('/dashboard/profile')}
+        onNavigateToSettings={() => navigate('/dashboard/settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}

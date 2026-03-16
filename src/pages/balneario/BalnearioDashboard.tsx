@@ -254,6 +254,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onMenuToggle={() => setSidebarOpen(true)}
                 roleTitle="Balneário"
                 navigationContent={BalnearioNavigation}
+                onNavigateToProfile={() => navigateTo('profile')}
+                onNavigateToSettings={() => navigateTo('settings')}
                 notifications={notifications}
                 unreadCount={unreadCount}
                 showNotifications={showNotifications}

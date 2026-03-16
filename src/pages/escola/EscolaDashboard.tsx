@@ -1,6 +1,12 @@
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
-export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: any) {
+interface EscolaDashboardProps {
+    onLogout: () => void;
+    isDarkMode: boolean;
+    onToggleDarkMode: () => void;
+}
+
+export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: EscolaDashboardProps) {
     return (
         <DashboardLayout
             isDarkMode={isDarkMode}
@@ -9,11 +15,6 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: any)
             roleTitle="Escola"
             navigationContent={<div className="text-gray-500 p-4">Menu Em Desenvolvimento</div>}
             onMenuToggle={() => { }}
-            notifications={[]}
-            unreadCount={0}
-            showNotifications={false}
-            onToggleNotifications={() => { }}
-            onMarkAsRead={() => { }}
         >
             <div className="flex items-center justify-center h-[500px]">
                 <div className="text-center">

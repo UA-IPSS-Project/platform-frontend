@@ -1,6 +1,12 @@
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 
-export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: any) {
+interface InternoDashboardProps {
+    onLogout: () => void;
+    isDarkMode: boolean;
+    onToggleDarkMode: () => void;
+}
+
+export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: InternoDashboardProps) {
     return (
         <DashboardLayout
             isDarkMode={isDarkMode}
