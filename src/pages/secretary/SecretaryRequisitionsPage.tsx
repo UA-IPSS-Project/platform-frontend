@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangleIcon, CalendarIcon, ChevronDown, ChevronUp, ClipboardListIcon, TruckIcon, WrenchIcon } from 'lucide-react';
+import { AlertTriangleIcon, CalendarIcon, ChevronDown, ChevronLeft, ChevronUp, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Calendar } from '../../components/ui/calendar';
@@ -533,6 +533,11 @@ export function SecretaryRequisitionsPage({
     });
   };
 
+  const handleCardShortcut = (tab: RequisicoesTab) => {
+    setActiveSection('list');
+    void handleSelectTab(tab);
+  };
+
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
     setOpenedRequisicaoId(req.id);
     setEstadoEdicao(req.estado);
@@ -942,53 +947,95 @@ export function SecretaryRequisitionsPage({
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <GlassCard className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('GERAL')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições gerais"
+          >
+            <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Requisições</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <ClipboardListIcon className="w-5 h-5 text-blue-700 dark:text-blue-300" />
             </div>
-          </div>
+          </Button>
         </GlassCard>
 
-        <GlassCard className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('URGENTE')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições urgentes"
+          >
+            <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Urgentes</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <AlertTriangleIcon className="w-5 h-5 text-red-700 dark:text-red-300" />
             </div>
-          </div>
+          </Button>
         </GlassCard>
 
-        <GlassCard className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('MATERIAL')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de material"
+          >
+            <div className="text-left">
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Material</p>
+              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
+            </div>
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+              <PackageIcon className="w-5 h-5 text-indigo-700 dark:text-indigo-300" />
+            </div>
+          </Button>
+        </GlassCard>
+
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('MANUTENCAO')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de manutenção"
+          >
+            <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Manutenção</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
               <WrenchIcon className="w-5 h-5 text-amber-700 dark:text-amber-300" />
             </div>
-          </div>
+          </Button>
         </GlassCard>
 
-        <GlassCard className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+        <GlassCard className="p-0 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => handleCardShortcut('TRANSPORTE')}
+            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
+            aria-label="Ir para requisições de transporte"
+          >
+            <div className="text-left">
               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Transportes</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <TruckIcon className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
             </div>
-          </div>
+          </Button>
         </GlassCard>
       </div>
 
@@ -1160,7 +1207,7 @@ export function SecretaryRequisitionsPage({
         </GlassCard>
       </div>
 
-      <div className="hidden lg:flex gap-6 items-start">
+      <div className="hidden lg:flex gap-6 items-stretch">
         <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-2/3' : 'w-full'}`}>
           <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
             <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
@@ -1296,11 +1343,14 @@ export function SecretaryRequisitionsPage({
           </div>
         </GlassCard>
 
-        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[72px] opacity-100'}`}>
+        <GlassCard className={`p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'w-1/3 opacity-100' : 'w-[140px] opacity-100'}`}>
           <button
             type="button"
             onClick={() => toggleSection('create')}
-            className="w-full flex items-center justify-between px-4 py-4 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors border-b border-gray-200 dark:border-gray-800"
+            className={`w-full transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${activeSection === 'create'
+              ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
+              : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
+              }`}
             aria-label="Alternar secção Nova requisição"
           >
             {activeSection === 'create' ? (
@@ -1313,8 +1363,8 @@ export function SecretaryRequisitionsPage({
               </>
             ) : (
               <>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Abrir</span>
-                <ChevronDown className="w-5 h-5 text-gray-500" />
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Criar</span>
+                <ChevronLeft className="w-5 h-5 text-gray-500" />
               </>
             )}
           </button>
