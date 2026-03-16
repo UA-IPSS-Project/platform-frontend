@@ -177,7 +177,10 @@ function SlotsManagement({
 
 export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Readonly<AdminDashboardProps>) {
     const { user: authUser } = useAuth();
-    const [currentView, setCurrentView] = useState<AdminView>('overview');
+    const [currentView, setCurrentView] = useState<AdminView>(() => {
+        const saved = localStorage.getItem('adminDashboardView');
+        return saved ? (saved as AdminView) : 'overview';
+    });
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -269,6 +272,10 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             email: authUser?.email || '',
         });
     }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
+
+    useEffect(() => {
+        localStorage.setItem('adminDashboardView', currentView);
+    }, [currentView]);
 
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);

@@ -39,6 +39,17 @@ interface ProfileFormData {
   workPhone: string;
 }
 
+interface ProfileDraftState {
+  isEditing: boolean;
+  expanded: {
+    personal: boolean;
+    address: boolean;
+    professional: boolean;
+  };
+  formData: ProfileFormData;
+  baseData: ProfileFormData;
+}
+
 // Função para formatar data no formato português
 const formatDateToPT = (dateString: string | undefined): string => {
   if (!dateString) return '';
@@ -93,6 +104,20 @@ const mapApiUserToFormData = (data: {
   workPhone: data.telefoneEmprego || '',
 });
 
+const getProfileDraftStorageKey = (userId: number) => `profile-page-draft:${userId}`;
+
+const mergeDraftWithLatestData = (draft: ProfileDraftState, latestData: ProfileFormData): ProfileFormData => {
+  const merged = { ...latestData };
+
+  (Object.keys(latestData) as Array<keyof ProfileFormData>).forEach((key) => {
+    if (draft.formData[key] !== draft.baseData[key]) {
+      merged[key] = draft.formData[key];
+    }
+  });
+
+  return merged;
+};
+
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
@@ -105,12 +130,35 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   });
 
   const [formData, setFormData] = useState<ProfileFormData>(createEmptyFormData());
+  const storageKey = getProfileDraftStorageKey(user.id);
 
-  const loadUserData = useCallback(async () => {
+  const loadUserData = useCallback(async (options?: { restoreDraft?: boolean }) => {
+    const shouldRestoreDraft = options?.restoreDraft ?? true;
     setLoading(true);
     try {
       const data = await utilizadoresApi.obterPorId(user.id);
-      setFormData(mapApiUserToFormData(data));
+      const mappedData = mapApiUserToFormData(data);
+      const savedDraftRaw = sessionStorage.getItem(storageKey);
+
+      if (shouldRestoreDraft && savedDraftRaw) {
+        try {
+          const savedDraft = JSON.parse(savedDraftRaw) as ProfileDraftState;
+          setExpanded(savedDraft.expanded);
+
+          if (savedDraft.isEditing) {
+            setIsEditing(true);
+            setFormData(mergeDraftWithLatestData(savedDraft, mappedData));
+          } else {
+            setIsEditing(false);
+            setFormData(mappedData);
+          }
+        } catch {
+          setFormData(mappedData);
+        }
+      } else {
+        setFormData(mappedData);
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao carregar dados do utilizador:', error);
@@ -119,12 +167,43 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, [storageKey, user.id]);
 
   // Carregar dados do utilizador da API
   useEffect(() => {
     void loadUserData();
   }, [loadUserData]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const draftState: ProfileDraftState = {
+      isEditing,
+      expanded,
+      formData,
+      baseData: createEmptyFormData(),
+    };
+
+    const savedDraftRaw = sessionStorage.getItem(storageKey);
+    if (savedDraftRaw) {
+      try {
+        const savedDraft = JSON.parse(savedDraftRaw) as ProfileDraftState;
+        draftState.baseData = savedDraft.baseData;
+      } catch {
+        draftState.baseData = formData;
+      }
+    } else {
+      draftState.baseData = formData;
+    }
+
+    if (!isEditing) {
+      draftState.baseData = formData;
+    }
+
+    sessionStorage.setItem(storageKey, JSON.stringify(draftState));
+  }, [expanded, formData, isEditing, loading, storageKey]);
 
   const handleSave = async () => {
     try {
@@ -156,6 +235,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       });
 
       setIsEditing(false);
+      sessionStorage.removeItem(storageKey);
       toast.success('Perfil atualizado com sucesso');
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
@@ -166,7 +246,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   };
 
   const handleCancel = async () => {
-    await loadUserData();
+    sessionStorage.removeItem(storageKey);
+    await loadUserData({ restoreDraft: false });
     setIsEditing(false);
   };
 
