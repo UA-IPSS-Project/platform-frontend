@@ -715,7 +715,6 @@ export function SecretaryRequisitionsPage({
                                           id={`item-toggle-${safeItemKey}`}
                                           checked={itemChecked}
                                           onCheckedChange={(checked) => handleItemToggle(item, !!checked)}
-                                          aria-label={item.nome}
                                         />
                                         <label
                                           htmlFor={`item-toggle-${safeItemKey}`}
