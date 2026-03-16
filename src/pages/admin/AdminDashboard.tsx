@@ -10,7 +10,7 @@ import { RequisitionsCatalogManagement } from '../../components/admin/Requisitio
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { calendarioApi, requisicoesApi } from '../../services/api';
 
-type AdminView = 'overview' | 'slots' | 'catalogs';
+type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -313,6 +313,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         overview: 'Este painel serve apenas para administração operacional. O admin gere slots, materiais, transportes e tipos de manutenção.',
         slots: 'Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.',
         catalogs: 'Cria, edita e remove materiais, transportes e tipos de manutenção usados nas requisições.',
+        profile: '',
+        settings: '',
     };
 
     const renderAdminContent = () => {
@@ -347,7 +349,18 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                     />
                 ) : null}
 
-                {currentView === 'catalogs' ? (
+                {currentView === 'profile' || currentView === 'settings' ? (
+            <div className="flex items-center justify-center h-[400px]">
+                <div className="text-center">
+                    <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">
+                        {currentView === 'profile' ? 'Perfil' : 'Definições'}
+                    </h2>
+                    <p className="text-gray-500">Em desenvolvimento</p>
+                </div>
+            </div>
+        ) : null}
+
+        {currentView === 'catalogs' ? (
                     <RequisitionsCatalogManagement />
                 ) : null}
             </div>
@@ -362,15 +375,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             onMenuToggle={() => {}}
             roleTitle="Administrador"
             navigationContent={AdminNavigation}
-            notifications={[]}
-            unreadCount={0}
-            showNotifications={false}
-            onToggleNotifications={() => {}}
-            onMarkAsRead={() => {}}
-            onMarkAllAsRead={() => {}}
-            onDeleteNotification={() => {}}
-            onDeleteAllNotifications={() => {}}
-            onNavigateToNotifications={() => {}}
+            onNavigateToProfile={() => setCurrentView('profile')}
+            onNavigateToSettings={() => setCurrentView('settings')}
         >
             <AnimatePresence mode="wait">
                 <motion.div

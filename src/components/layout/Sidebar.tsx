@@ -304,9 +304,13 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           <div className="p-4 border-t dark:border-gray-800">
             <button
               onClick={() => {
-                onLogout();
-                onClose();
+                const confirmed = window.confirm('Tem a certeza que quer sair?');
+                if (confirmed) {
+                  onLogout();
+                  onClose();
+                }
               }}
+              aria-label="Terminar sessão"
               className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
             >
               <LogOutIcon className="w-5 h-5" />
