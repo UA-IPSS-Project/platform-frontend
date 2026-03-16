@@ -622,6 +622,7 @@ export function SecretaryRequisitionsPage({
   const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -830,6 +831,7 @@ export function SecretaryRequisitionsPage({
                                                 <Input
                                                   type="number"
                                                   min="1"
+                                                  className={quantityFieldClassName}
                                                   value={linhaSelecionada?.quantidade ?? '1'}
                                                   onChange={(event) => updateVarianteQuantidade(variante.id, event.target.value)}
                                                 />
