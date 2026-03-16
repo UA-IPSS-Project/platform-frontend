@@ -153,7 +153,8 @@ const formatLotacao = (lotacao?: number): string => {
 };
 
 const formatVehicleTitle = (transporte?: TransporteLike): string => {
-  return (transporte?.nome || transporte?.tipo || 'Viatura').trim();
+  const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
+  return (nome || transporte?.tipo || 'Viatura').trim();
 };
 
 const formatTransporteDisplay = (transporte?: TransporteLike): string => {
