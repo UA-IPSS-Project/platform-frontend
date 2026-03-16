@@ -17,6 +17,8 @@ interface UserAvatarMenuProps {
 }
 
 export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout }: UserAvatarMenuProps) {
+    const displayName = nome.trim() || 'Utilizador';
+
     const handleLogout = () => {
         const shouldLogout = window.confirm('Tem a certeza que quer sair?');
         if (shouldLogout) {
@@ -29,12 +31,13 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
             <DropdownMenu.Trigger asChild>
                 <button
                     className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 transition-colors overflow-hidden shrink-0"
-                    aria-label="Menu do utilizador"
+                    aria-label={`Abrir menu do utilizador: ${displayName}`}
+                    title={displayName}
                 >
                     {photoUrl ? (
-                        <img src={photoUrl} alt={nome} className="w-full h-full object-cover" />
+                        <img src={photoUrl} alt={`Fotografia de ${displayName}`} className="w-full h-full object-cover" />
                     ) : (
-                        <span>{getInitials(nome)}</span>
+                        <span>{getInitials(displayName)}</span>
                     )}
                 </button>
             </DropdownMenu.Trigger>
@@ -48,12 +51,13 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
                     {/* User name header */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
-                            {nome}
+                            {displayName}
                         </p>
                     </div>
 
                     <DropdownMenu.Item
                         onSelect={onProfile}
+                        aria-label="Abrir perfil"
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
                     >
                         <UserIcon className="w-4 h-4 shrink-0" />
@@ -62,6 +66,7 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
 
                     <DropdownMenu.Item
                         onSelect={onSettings}
+                        aria-label="Abrir definições"
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
                     >
                         <SettingsIcon className="w-4 h-4 shrink-0" />
@@ -72,6 +77,7 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
 
                     <DropdownMenu.Item
                         onSelect={handleLogout}
+                        aria-label="Terminar sessão"
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer select-none outline-none transition-colors"
                     >
                         <LogOutIcon className="w-4 h-4 shrink-0" />
