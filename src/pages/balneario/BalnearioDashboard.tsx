@@ -363,7 +363,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         navigateTo('history');
                                         setShowNotifications(false);
                                     },
-                                    onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
+                                    onNavigateToDocument: () => toast.info(t('dashboard.messages.documentsViewInDevelopment')),
                                     onNavigateToCancelledSlot: (dateStr, time) => {
                                         navigateTo('appointments');
                                         setShowNotifications(false);

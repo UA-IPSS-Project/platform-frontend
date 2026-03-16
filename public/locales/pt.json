@@ -71,6 +71,116 @@
       "book": "Marcar"
     }
   },
+  "termsModal": {
+    "title": "Termos e Privacidade",
+    "description": "Por favor, leia atentamente os termos antes de aceitar.",
+    "acceptButton": "Li e aceito",
+    "officialLink": {
+      "label": "Para consultar a informação completa aceda ao site oficial:",
+      "url": "https://www.florinhasdovouga.pt/7ca6c-terms-and-privacy/"
+    },
+    "sections": [
+      {
+        "title": "Identificação do Responsável pelo Tratamento",
+        "paragraphs": [
+          "A presente Política de Privacidade regula o tratamento de dados pessoais realizado pela IPSS Florinhas do Vouga, pessoa colectiva n.º 501156577, com sede na Praceta Florinhas do Vouga, n.º 10, 3810-064 Aveiro.",
+          "Contactos: Telefone 234 377 330 | Email secretaria@florinhasdovouga.pt",
+          "A Instituição é uma IPSS de natureza diocesana, actuando no âmbito da sua missão social e comunitária."
+        ]
+      },
+      {
+        "title": "Compromisso com a Protecção de Dados",
+        "paragraphs": [
+          "A IPSS Florinhas do Vouga está empenhada na protecção dos dados pessoais dos seus Utentes, Beneficiários, Voluntários, Mecenas, Doadores, Benfeitores, Colaboradores, Parceiros e demais entidades que com ela interagem.",
+          "O tratamento de dados pessoais é realizado em conformidade com o Regulamento Geral sobre a Protecção de Dados (RGPD) e demais legislação nacional aplicável, assegurando os princípios da licitude, lealdade, transparência, minimização, exactidão, integridade e confidencialidade."
+        ]
+      },
+      {
+        "title": "Dados Pessoais Recolhidos",
+        "paragraphs": [
+          "Poderão ser recolhidos, entre outros, os seguintes dados:",
+          "A recolha ocorre apenas quando necessária e com fundamento legal adequado."
+        ],
+        "bullets": [
+          "Nome",
+          "Número de identificação fiscal",
+          "Contactos telefónicos",
+          "Endereço de correio electrónico",
+          "Morada",
+          "Dados necessários à emissão de recibos",
+          "Dados fornecidos voluntariamente através de formulários"
+        ]
+      },
+      {
+        "title": "Finalidade do Tratamento de Dados",
+        "paragraphs": [
+          "Os dados pessoais são tratados para as seguintes finalidades:",
+          "Os dados não serão utilizados para finalidades incompatíveis com aquelas que motivaram a sua recolha."
+        ],
+        "bullets": [
+          "Gestão administrativa e institucional",
+          "Processamento de donativos",
+          "Comunicação institucional",
+          "Gestão de voluntariado",
+          "Cumprimento de obrigações legais",
+          "Resposta a pedidos de contacto"
+        ]
+      },
+      {
+        "title": "Conservação dos Dados",
+        "paragraphs": [
+          "Os dados pessoais serão conservados apenas pelo período necessário ao cumprimento das finalidades que determinaram a sua recolha ou pelo período exigido por obrigações legais."
+        ]
+      },
+      {
+        "title": "Direitos dos Titulares dos Dados",
+        "paragraphs": [
+          "Nos termos da lei, os titulares dos dados podem exercer os seguintes direitos:",
+          "O exercício destes direitos pode ser efectuado através do email: secretaria@florinhasdovouga.pt",
+          "Caso considere que os seus direitos não foram respeitados, poderá apresentar reclamação junto da Comissão Nacional de Protecção de Dados (CNPD)."
+        ],
+        "bullets": [
+          "Direito de acesso",
+          "Direito de rectificação",
+          "Direito ao apagamento",
+          "Direito à limitação do tratamento",
+          "Direito de oposição",
+          "Direito à portabilidade, quando aplicável"
+        ]
+      },
+      {
+        "title": "O que são Cookies",
+        "paragraphs": [
+          "Cookies são pequenos ficheiros de texto armazenados no dispositivo do utilizador quando visita um website, permitindo melhorar a experiência de navegação."
+        ]
+      },
+      {
+        "title": "Tipos de Cookies Utilizados",
+        "paragraphs": [
+          "O website poderá utilizar:",
+          "Não são utilizados cookies para fins comerciais invasivos."
+        ],
+        "bullets": [
+          "Cookies estritamente necessários ao funcionamento do site",
+          "Cookies de desempenho e análise estatística (caso aplicável)",
+          "Cookies de funcionalidade"
+        ]
+      },
+      {
+        "title": "Gestão de Cookies",
+        "paragraphs": [
+          "O utilizador pode, a qualquer momento, configurar o seu navegador para bloquear ou eliminar cookies.",
+          "A desactivação de determinados cookies poderá afectar o funcionamento do website."
+        ]
+      },
+      {
+        "title": "Alterações à Política",
+        "paragraphs": [
+          "A IPSS Florinhas do Vouga reserva-se o direito de actualizar a presente Política sempre que necessário, sendo as alterações publicadas no website."
+        ]
+      }
+    ]
+  },
   "sidebar": {
     "home": "Início",
     "menu": "Menu",
@@ -146,6 +256,90 @@
       "loadDetails": "Erro ao carregar detalhes",
       "loadLatestAppointment": "Não foi possível carregar os dados mais recentes da marcação.",
       "findAppointment": "Não foi possível encontrar a marcação"
+    },
+    "admin": {
+      "roleTitle": "Administrador",
+      "title": "Painel de Administração",
+      "administrationOnlyArea": "Área reservada à administração",
+      "navigation": {
+        "dashboard": "Dashboard",
+        "slots": "Slots",
+        "catalogs": "Catálogos"
+      },
+      "viewDescriptions": {
+        "overview": "Este painel serve apenas para administração operacional. O admin gere slots, materiais, transportes e tipos de manutenção.",
+        "slots": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
+        "catalogs": "Cria, edita e remove materiais, transportes e tipos de manutenção usados nas requisições."
+      },
+      "overview": {
+        "managementAreas": {
+          "slots": {
+            "title": "Slots por marcação",
+            "description": "Define a capacidade de cada agenda por horário e controla a lotação operacional.",
+            "actionLabel": "Gerir slots"
+          },
+          "catalogs": {
+            "title": "Catálogos administrativos",
+            "description": "Cria, edita e remove materiais, transportes e tipos de manutenção sem acesso às requisições.",
+            "actionLabel": "Abrir catálogo"
+          }
+        }
+      },
+      "slots": {
+        "operationalConfiguration": "Configuração operacional",
+        "title": "Capacidade de marcações por slot",
+        "description": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
+        "secretaryScheduleTitle": "Agenda da Secretaria",
+        "balnearioScheduleTitle": "Agenda do Balneário",
+        "secretaryScheduleDescription": "Define quantas marcações da secretaria podem coexistir no mesmo horário.",
+        "balnearioScheduleDescription": "Controla a lotação operacional dos slots de marcação do balneário.",
+        "maxPerSlot": "Máximo por slot",
+        "saving": "A guardar...",
+        "saveConfiguration": "Guardar configuração"
+      },
+      "summary": {
+        "slots": {
+          "title": "Slots (Secretaria/Balneário)",
+          "description": "capacidade por horário"
+        },
+        "materials": {
+          "title": "Materiais",
+          "description": "itens no catálogo"
+        },
+        "transports": {
+          "title": "Transportes",
+          "description": "transportes no catálogo"
+        },
+        "maintenanceTypes": {
+          "title": "Tipos de manutenção",
+          "description": "tipos disponíveis"
+        }
+      },
+      "messages": {
+        "slotConfigUpdated": "Configuração de slots atualizada com sucesso"
+      },
+      "errors": {
+        "loadSlotConfig": "Não foi possível carregar a configuração de slots",
+        "saveSlotConfig": "Não foi possível guardar a configuração de slots"
+      }
+    },
+    "userHome": {
+      "labels": {
+        "reserved": "Reservado",
+        "occupied": "Ocupado",
+        "unavailableTime": "Horário indisponível"
+      },
+      "messages": {
+        "documentViewInDevelopment": "Em desenvolvimento"
+      },
+      "placeholders": {
+        "balnearioAppointments": "Balneário - Marcações",
+        "balnearioAbout": "Balneário - Sobre",
+        "volunteeringSignup": "Voluntariado - Inscrição",
+        "volunteeringAbout": "Voluntariado - Sobre",
+        "settings": "Definições",
+        "notFound": "Página não encontrada"
+      }
     }
   },
   "common": {
@@ -375,6 +569,66 @@
   },
   "requisitions": {
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
+    "labels": {
+      "allStatuses": "Todos os estados",
+      "inAnalysis": "Em análise",
+      "accepted": "Aceite",
+      "rejected": "Recusada",
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta",
+      "urgent": "Urgente",
+      "material": "Material",
+      "transport": "Transporte",
+      "maintenance": "Manutenção",
+      "general": "Geral",
+      "transportCategoryHeavyPassengers": "Pesado de passageiros",
+      "transportCategoryLightPassengers": "Ligeiro de passageiros",
+      "transportCategoryLightGoods": "Ligeiro de mercadorias",
+      "transportCategoryLightSpecial": "Ligeiro especial",
+      "transportCategoryAdapted": "Adaptado",
+      "transportCategoryLight": "Ligeiro",
+      "transportCategoryHeavy": "Pesado",
+      "passengers": "Passageiros",
+      "materialCategoryWriting": "Escrita",
+      "materialCategoryPaperFiling": "Papel e arquivo",
+      "materialCategoryHygieneCleaning": "Higiene e limpeza",
+      "materialCategoryTechnology": "Tecnologia",
+      "materialCategoryOther": "Outros",
+      "noCategory": "Sem categoria",
+      "capacityNotDefined": "Lotação não definida",
+      "seat": "lugar",
+      "seats": "lugares",
+      "vehicle": "Viatura",
+      "noAssociatedTransport": "Sem transporte associado",
+      "noDetails": "Sem detalhes",
+      "registeredOn": "Matriculado em {{date}}",
+      "providePassengerCount": "Indica os passageiros",
+      "missingSeats": "Faltam {{count}} lugar(es)",
+      "capacitySufficient": "Lotação suficiente",
+      "status": "Estado",
+      "createdBy": "Criado por",
+      "managedBy": "Gerido por",
+      "date": "Data",
+      "lastUpdate": "Última alteração",
+      "deadline": "Prazo",
+      "materials": "Materiais",
+      "destination": "Destino",
+      "vehicles": "Viaturas",
+      "subject": "Assunto",
+      "description": "Descrição",
+      "type": "Tipo",
+      "priority": "Prioridade",
+      "currentStatus": "Estado atual",
+      "creationDate": "Data de criação",
+      "quantity": "Quantidade",
+      "departure": "Saída",
+      "return": "Regresso",
+      "driver": "Condutor",
+      "toBeDefined": "A definir",
+      "newStatus": "Novo estado",
+      "finalStateRuleHint": "Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas."
+    },
     "ui": {
       "mainData": "Dados principais",
       "type": "Tipo",
@@ -686,6 +940,33 @@
     "exportAction": "Exportar Lista Diária",
     "exportSuccess": "Lista diária exportada com sucesso",
     "processing": "A processar..."
+  },
+  "blockedSchedule": {
+    "title": "Gerir Bloqueios de Horário",
+    "start": "Início",
+    "end": "Fim",
+    "chooseDate": "Escolher data",
+    "occupied": "Ocupado",
+    "unavailableShort": "Indisp.",
+    "processing": "A processar...",
+    "addBlock": "Adicionar Bloqueio",
+    "activeBlocks": "Bloqueios Ativos",
+    "day": "Dia",
+    "actions": "Ações",
+    "noRegisteredBlocks": "Não existem bloqueios registados",
+    "messages": {
+      "blockCreated": "Bloqueio criado com sucesso",
+      "blocksCreated": "{{count}} bloqueios criados com sucesso",
+      "blockRemoved": "Bloqueio removido"
+    },
+    "errors": {
+      "loadBlocks": "Erro ao carregar bloqueios:",
+      "fillAllFields": "Preencha todos os campos",
+      "endDateAfterStart": "A data de fim deve ser posterior ou igual à data de início",
+      "endTimeAfterStart": "A hora de fim deve ser posterior à hora de início",
+      "unknownCreateError": "Erro desconhecido ao criar bloqueio",
+      "removeFailed": "Erro ao remover bloqueio"
+    }
   },
   "balnearioAppointment": {
     "title": "Registar Banho",

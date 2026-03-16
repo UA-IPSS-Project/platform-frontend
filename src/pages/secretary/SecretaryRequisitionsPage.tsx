@@ -10,6 +10,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -33,69 +34,78 @@ interface SecretaryRequisitionsPageProps {
 }
 
 const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
-  { value: '', label: 'Todos os estados' },
-  { value: 'EM_ANALISE', label: 'Em análise' },
-  { value: 'ACEITE', label: 'Aceite' },
-  { value: 'RECUSADA', label: 'Recusada' },
+  { value: '', label: 'requisitions.labels.allStatuses' },
+  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
+  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
+  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
 ];
 
 const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
-  { value: 'EM_ANALISE', label: 'Em análise' },
-  { value: 'ACEITE', label: 'Aceite' },
-  { value: 'RECUSADA', label: 'Recusada' },
+  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
+  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
+  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
 ];
 
 const ESTADO_FINAL_OPTIONS = new Set<RequisicaoEstado>(['ACEITE', 'RECUSADA']);
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
-  { value: 'BAIXA', label: 'Baixa' },
-  { value: 'MEDIA', label: 'Média' },
-  { value: 'ALTA', label: 'Alta' },
-  { value: 'URGENTE', label: 'Urgente' },
+  { value: 'BAIXA', label: 'requisitions.labels.low' },
+  { value: 'MEDIA', label: 'requisitions.labels.medium' },
+  { value: 'ALTA', label: 'requisitions.labels.high' },
+  { value: 'URGENTE', label: 'requisitions.labels.urgent' },
 ];
 
 const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
-  { value: 'MATERIAL', label: 'Material' },
-  { value: 'TRANSPORTE', label: 'Transporte' },
-  { value: 'MANUTENCAO', label: 'Manutenção' },
+  { value: 'MATERIAL', label: 'requisitions.labels.material' },
+  { value: 'TRANSPORTE', label: 'requisitions.labels.transport' },
+  { value: 'MANUTENCAO', label: 'requisitions.labels.maintenance' },
 ];
 
 type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
 
 const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
-  { value: 'GERAL', label: 'Geral' },
-  { value: 'MATERIAL', label: 'Material' },
-  { value: 'MANUTENCAO', label: 'Manutenção' },
-  { value: 'TRANSPORTE', label: 'Transporte' },
-  { value: 'URGENTE', label: 'Urgente' },
+  { value: 'GERAL', label: 'requisitions.labels.general' },
+  { value: 'MATERIAL', label: 'requisitions.labels.material' },
+  { value: 'MANUTENCAO', label: 'requisitions.labels.maintenance' },
+  { value: 'TRANSPORTE', label: 'requisitions.labels.transport' },
+  { value: 'URGENTE', label: 'requisitions.labels.urgent' },
 ];
 
 const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
-  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
-  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
-  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
-  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
-  { value: 'LIGEIRO', label: 'Ligeiro' },
-  { value: 'PESADO', label: 'Pesado' },
-  { value: 'PASSAGEIROS', label: 'Passageiros' },
+  { value: 'PESADO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryHeavyPassengers' },
+  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryLightPassengers' },
+  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryLightGoods' },
+  { value: 'LIGEIRO_ESPECIAL', label: 'requisitions.labels.transportCategoryLightSpecial' },
+  { value: 'ADAPTADO', label: 'requisitions.labels.transportCategoryAdapted' },
+  { value: 'LIGEIRO', label: 'requisitions.labels.transportCategoryLight' },
+  { value: 'PESADO', label: 'requisitions.labels.transportCategoryHeavy' },
+  { value: 'PASSAGEIROS', label: 'requisitions.labels.passengers' },
 ];
 
 const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
-  { value: 'ESCRITA', label: 'Escrita' },
-  { value: 'PAPEL_E_ARQUIVO', label: 'Papel e arquivo' },
-  { value: 'HIGIENE_E_LIMPEZA', label: 'Higiene e limpeza' },
-  { value: 'TECNOLOGIA', label: 'Tecnologia' },
-  { value: 'OUTROS', label: 'Outros' },
+  { value: 'ESCRITA', label: 'requisitions.labels.materialCategoryWriting' },
+  { value: 'PAPEL_E_ARQUIVO', label: 'requisitions.labels.materialCategoryPaperFiling' },
+  { value: 'HIGIENE_E_LIMPEZA', label: 'requisitions.labels.materialCategoryHygieneCleaning' },
+  { value: 'TECNOLOGIA', label: 'requisitions.labels.materialCategoryTechnology' },
+  { value: 'OUTROS', label: 'requisitions.labels.materialCategoryOther' },
 ];
 
-const formatTipo = (tipo: RequisicaoTipo) => TIPO_OPTIONS.find((option) => option.value === tipo)?.label ?? tipo;
-const formatPrioridade = (prioridade: RequisicaoPrioridade) => PRIORIDADE_OPTIONS.find((option) => option.value === prioridade)?.label ?? prioridade;
-const formatEstado = (estado: RequisicaoEstado) => ESTADO_OPTIONS.find((option) => option.value === estado)?.label ?? estado;
+const formatTipo = (tipo: RequisicaoTipo) => {
+  const key = TIPO_OPTIONS.find((option) => option.value === tipo)?.label;
+  return key ? i18n.t(key) : tipo;
+};
+const formatPrioridade = (prioridade: RequisicaoPrioridade) => {
+  const key = PRIORIDADE_OPTIONS.find((option) => option.value === prioridade)?.label;
+  return key ? i18n.t(key) : prioridade;
+};
+const formatEstado = (estado: RequisicaoEstado) => {
+  const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
+  return key ? i18n.t(key) : estado;
+};
 const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
-  MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
+  i18n.t(MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
-  TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'Sem categoria';
+  i18n.t(TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 
 const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;
@@ -106,7 +116,7 @@ const formatMaterialItemLabel = (
   material?: { id: number; nome?: string; categoria?: MaterialCategoria; atributo?: string; valorAtributo?: string },
   quantidade?: number,
 ): string => {
-  const materialLabel = material?.nome ?? (material?.id ? `#${material.id}` : 'Material');
+  const materialLabel = material?.nome ?? (material?.id ? `#${material.id}` : i18n.t('requisitions.labels.material'));
   const detalhe = material?.atributo && material?.valorAtributo
     ? ` - ${material.atributo}: ${material.valorAtributo}`
     : '';
@@ -180,17 +190,17 @@ const previousDateInput = (dateInput?: string): string | undefined => {
 };
 
 const formatLotacao = (lotacao?: number): string => {
-  if (!lotacao || lotacao <= 0) return 'Lotação não definida';
-  return `${lotacao} ${lotacao === 1 ? 'lugar' : 'lugares'}`;
+  if (!lotacao || lotacao <= 0) return i18n.t('requisitions.labels.capacityNotDefined');
+  return `${lotacao} ${lotacao === 1 ? i18n.t('requisitions.labels.seat') : i18n.t('requisitions.labels.seats')}`;
 };
 
 const formatVehicleTitle = (transporte?: TransporteLike): string => {
   const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
-  return (nome || transporte?.tipo || 'Viatura').trim();
+  return (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
 };
 
 const formatTransporteDisplay = (transporte?: TransporteLike): string => {
-  if (!transporte) return 'Sem transporte associado';
+  if (!transporte) return i18n.t('requisitions.labels.noAssociatedTransport');
 
   const parts = [
     transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
@@ -202,7 +212,7 @@ const formatTransporteDisplay = (transporte?: TransporteLike): string => {
 };
 
 const formatTransporteMeta = (transporte?: TransporteLike): string => {
-  if (!transporte) return 'Sem detalhes';
+  if (!transporte) return i18n.t('requisitions.labels.noDetails');
 
   let dataMatricula: string | undefined;
   if (transporte.dataMatricula) {
@@ -219,14 +229,14 @@ const formatTransporteMeta = (transporte?: TransporteLike): string => {
   return [
     transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
     formatLotacao(transporte.lotacao),
-    dataMatricula ? `Matriculado em ${dataMatricula}` : undefined,
+    dataMatricula ? i18n.t('requisitions.labels.registeredOn', { date: dataMatricula }) : undefined,
   ].filter(Boolean).join(' · ');
 };
 
 const getCoberturaMensagem = (passageirosSolicitados: number, lugaresEmFalta: number): string => {
-  if (passageirosSolicitados <= 0) return 'Indica os passageiros';
-  if (lugaresEmFalta > 0) return `Faltam ${lugaresEmFalta} lugar(es)`;
-  return 'Lotação suficiente';
+  if (passageirosSolicitados <= 0) return i18n.t('requisitions.labels.providePassengerCount');
+  if (lugaresEmFalta > 0) return i18n.t('requisitions.labels.missingSeats', { count: lugaresEmFalta });
+  return i18n.t('requisitions.labels.capacitySufficient');
 };
 
 const getRequisicaoTransportes = (requisicao?: RequisicaoResponse | null): TransporteResumo[] => {
@@ -257,6 +267,11 @@ export function SecretaryRequisitionsPage({
   initialPrioridade,
 }: Readonly<SecretaryRequisitionsPageProps>) {
   const { t } = useTranslation();
+  const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
+  const formatDateTimeOrDash = (value?: string | null) => {
+    if (!value) return '—';
+    return new Date(value).toLocaleString(locale);
+  };
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
@@ -1182,7 +1197,7 @@ export function SecretaryRequisitionsPage({
               className={selectFieldClassName}
             >
               {TIPO_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -1196,7 +1211,7 @@ export function SecretaryRequisitionsPage({
               className={selectFieldClassName}
             >
               {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -1268,7 +1283,7 @@ export function SecretaryRequisitionsPage({
                           className="w-full px-3 py-2 flex items-center justify-between text-left"
                         >
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            {categoria.label}
+                            {t(categoria.label)}
                             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({itemsCategoria.length})</span>
                           </p>
                           {isCategoriaExpanded ? (
@@ -1380,7 +1395,7 @@ export function SecretaryRequisitionsPage({
                   <div className="space-y-4">
                     {materiaisAdicionadosAgrupados.map((grupo) => (
                       <div key={grupo.categoria} className="space-y-2">
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{grupo.label}</p>
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t(grupo.label)}</p>
 
                         <div className="space-y-2">
                           {grupo.itens.map((item) => (
@@ -1647,7 +1662,7 @@ export function SecretaryRequisitionsPage({
                           className="w-full px-4 py-3 flex items-center justify-between text-left"
                         >
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            {grupo.label}
+                            {t(grupo.label)}
                             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.vehiclesCount', { count: grupo.items.length })}</span>
                           </p>
                           {expandedTransporteCategorias[grupo.categoria] ? (
@@ -1920,9 +1935,9 @@ export function SecretaryRequisitionsPage({
                     : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
                   aria-pressed={isActive}
-                  aria-label={t('requisitions.ui.selectTab', { tab: tab.label })}
+                  aria-label={t('requisitions.ui.selectTab', { tab: t(tab.label) })}
                 >
-                  {tab.label}
+                  {t(tab.label)}
                 </Button>
               );
             })}
@@ -1939,7 +1954,7 @@ export function SecretaryRequisitionsPage({
               className={selectFieldClassName}
             >
               {ESTADO_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+                <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -1954,7 +1969,7 @@ export function SecretaryRequisitionsPage({
             >
               <option value="">{t('requisitions.ui.allPriorities')}</option>
               {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -2002,15 +2017,15 @@ export function SecretaryRequisitionsPage({
                 <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
-                  <p>Estado: {formatEstado(req.estado)}</p>
-                  <p>Criado por: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                  <p>Gerido por: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
-                  <p>Data: {req.criadoEm ? new Date(req.criadoEm).toLocaleString('pt-PT') : '—'}</p>
-                  <p>Última alteração: {req.ultimaAlteracaoEstadoEm ? new Date(req.ultimaAlteracaoEstadoEm).toLocaleString('pt-PT') : '—'}</p>
-                  <p>Prazo: {req.tempoLimite ? new Date(req.tempoLimite).toLocaleString('pt-PT') : '—'}</p>
+                  <p>{t('requisitions.labels.status')}: {formatEstado(req.estado)}</p>
+                  <p>{t('requisitions.labels.createdBy')}: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                  <p>{t('requisitions.labels.managedBy')}: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
+                  <p>{t('requisitions.labels.date')}: {formatDateTimeOrDash(req.criadoEm)}</p>
+                  <p>{t('requisitions.labels.lastUpdate')}: {formatDateTimeOrDash(req.ultimaAlteracaoEstadoEm)}</p>
+                  <p>{t('requisitions.labels.deadline')}: {formatDateTimeOrDash(req.tempoLimite)}</p>
                   {req.tipo === 'MATERIAL' && (
                     <p>
-                      Materiais:{' '}
+                      {t('requisitions.labels.materials')}:{' '}
                       {req.itens && req.itens.length > 0
                         ? req.itens
                             .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
@@ -2020,12 +2035,12 @@ export function SecretaryRequisitionsPage({
                   )}
                   {req.tipo === 'TRANSPORTE' && (
                     <>
-                      <p>Destino: {req.destino || '—'}</p>
-                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
-                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                      <p>{t('requisitions.labels.destination')}: {req.destino || '—'}</p>
+                      <p>{t('requisitions.labels.passengers')}: {req.numeroPassageiros || '—'}</p>
+                      <p>{t('requisitions.labels.vehicles')}: {formatTransporteCollection(req)}</p>
                     </>
                   )}
-                  {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
+                  {req.tipo === 'MANUTENCAO' && <p>{t('requisitions.labels.subject')}: {req.assunto || '—'}</p>}
                 </div>
 
               </div>
@@ -2104,7 +2119,7 @@ export function SecretaryRequisitionsPage({
                     : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
                 >
-                  {tab.label}
+                  {t(tab.label)}
                 </Button>
               );
             })}
@@ -2121,7 +2136,7 @@ export function SecretaryRequisitionsPage({
               className={selectFieldClassName}
             >
               {ESTADO_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>{option.label}</option>
+                <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -2136,7 +2151,7 @@ export function SecretaryRequisitionsPage({
             >
               <option value="">{t('requisitions.ui.allPriorities')}</option>
               {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <option key={option.value} value={option.value}>{t(option.label)}</option>
               ))}
             </select>
           </div>
@@ -2184,15 +2199,15 @@ export function SecretaryRequisitionsPage({
                 <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
-                  <p>Estado: {formatEstado(req.estado)}</p>
-                  <p>Criado por: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                  <p>Gerido por: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
-                  <p>Data: {req.criadoEm ? new Date(req.criadoEm).toLocaleString('pt-PT') : '—'}</p>
-                  <p>Última alteração: {req.ultimaAlteracaoEstadoEm ? new Date(req.ultimaAlteracaoEstadoEm).toLocaleString('pt-PT') : '—'}</p>
-                  <p>Prazo: {req.tempoLimite ? new Date(req.tempoLimite).toLocaleString('pt-PT') : '—'}</p>
+                  <p>{t('requisitions.labels.status')}: {formatEstado(req.estado)}</p>
+                  <p>{t('requisitions.labels.createdBy')}: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                  <p>{t('requisitions.labels.managedBy')}: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
+                  <p>{t('requisitions.labels.date')}: {formatDateTimeOrDash(req.criadoEm)}</p>
+                  <p>{t('requisitions.labels.lastUpdate')}: {formatDateTimeOrDash(req.ultimaAlteracaoEstadoEm)}</p>
+                  <p>{t('requisitions.labels.deadline')}: {formatDateTimeOrDash(req.tempoLimite)}</p>
                   {req.tipo === 'MATERIAL' && (
                     <p>
-                      Materiais:{' '}
+                      {t('requisitions.labels.materials')}:{' '}
                       {req.itens && req.itens.length > 0
                         ? req.itens
                             .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
@@ -2202,12 +2217,12 @@ export function SecretaryRequisitionsPage({
                   )}
                   {req.tipo === 'TRANSPORTE' && (
                     <>
-                      <p>Destino: {req.destino || '—'}</p>
-                      <p>Passageiros: {req.numeroPassageiros || '—'}</p>
-                      <p>Viaturas: {formatTransporteCollection(req)}</p>
+                      <p>{t('requisitions.labels.destination')}: {req.destino || '—'}</p>
+                      <p>{t('requisitions.labels.passengers')}: {req.numeroPassageiros || '—'}</p>
+                      <p>{t('requisitions.labels.vehicles')}: {formatTransporteCollection(req)}</p>
                     </>
                   )}
-                  {req.tipo === 'MANUTENCAO' && <p>Assunto: {req.assunto || '—'}</p>}
+                  {req.tipo === 'MANUTENCAO' && <p>{t('requisitions.labels.subject')}: {req.assunto || '—'}</p>}
                 </div>
               </div>
             ))}
@@ -2261,36 +2276,36 @@ export function SecretaryRequisitionsPage({
             <div className="space-y-4">
               <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
                 <div className="text-sm grid grid-cols-[130px_1fr] gap-x-3 gap-y-2 items-start">
-                  <p className="text-gray-500 dark:text-gray-400">Descrição</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.description')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.descricao || '—'}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Tipo</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.type')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{formatTipo(selectedRequisicao.tipo)}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Prioridade</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.priority')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{formatPrioridade(selectedRequisicao.prioridade)}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Estado atual</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.currentStatus')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{formatEstado(selectedRequisicao.estado)}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Criado por</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.createdBy')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoPor?.nome || '—'}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Gerido por</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.managedBy')}</p>
                   <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.geridoPor?.nome || '—'}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Data de criação</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoEm ? new Date(selectedRequisicao.criadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.creationDate')}</p>
+                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Última alteração</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.ultimaAlteracaoEstadoEm ? new Date(selectedRequisicao.ultimaAlteracaoEstadoEm).toLocaleString('pt-PT') : '—'}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.lastUpdate')}</p>
+                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
 
-                  <p className="text-gray-500 dark:text-gray-400">Prazo</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.tempoLimite ? new Date(selectedRequisicao.tempoLimite).toLocaleString('pt-PT') : '—'}</p>
+                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.deadline')}</p>
+                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.tempoLimite)}</p>
 
                   {selectedRequisicao.tipo === 'MATERIAL' && (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">Material</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.material')}</p>
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
                           ? selectedRequisicao.itens
@@ -2299,7 +2314,7 @@ export function SecretaryRequisitionsPage({
                           : selectedRequisicao.material?.nome || '—'}
                       </p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Quantidade</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.quantity')}</p>
                       <p className="text-gray-900 dark:text-gray-100">
                         {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
                           ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
@@ -2309,22 +2324,22 @@ export function SecretaryRequisitionsPage({
                   )}
                   {selectedRequisicao.tipo === 'TRANSPORTE' && (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">Destino</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.destination')}</p>
                       <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.destino || '—'}</p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Saída</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraSaida ? new Date(selectedRequisicao.dataHoraSaida).toLocaleString('pt-PT') : '—'}</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.departure')}</p>
+                      <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraSaida)}</p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Regresso</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.dataHoraRegresso ? new Date(selectedRequisicao.dataHoraRegresso).toLocaleString('pt-PT') : '—'}</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.return')}</p>
+                      <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraRegresso)}</p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Passageiros</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.passengers')}</p>
                       <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.numeroPassageiros || '—'}</p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Condutor</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || 'A definir'}</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.driver')}</p>
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || t('requisitions.labels.toBeDefined')}</p>
 
-                      <p className="text-gray-500 dark:text-gray-400">Viaturas</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.vehicles')}</p>
                       <div className="space-y-2">
                         {getRequisicaoTransportes(selectedRequisicao).length > 0 ? getRequisicaoTransportes(selectedRequisicao).map((transporte) => (
                           <div key={`${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`} className="space-y-1">
@@ -2339,7 +2354,7 @@ export function SecretaryRequisitionsPage({
                   )}
                   {selectedRequisicao.tipo === 'MANUTENCAO' && (
                     <>
-                      <p className="text-gray-500 dark:text-gray-400">Assunto</p>
+                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.subject')}</p>
                       <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
                     </>
                   )}
@@ -2347,7 +2362,7 @@ export function SecretaryRequisitionsPage({
               </div>
 
               <div>
-                <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">Novo estado</label>
+                <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.labels.newStatus')}</label>
                 <select
                   id="req-estado-modal"
                   value={estadoEdicao}
@@ -2356,12 +2371,12 @@ export function SecretaryRequisitionsPage({
                   className={selectFieldClassName}
                 >
                   {ESTADO_SECRETARIA_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
+                    <option key={option.value} value={option.value}>{t(option.label)}</option>
                   ))}
                 </select>
                 {!podeAtualizarEstado && (
                   <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                    Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas.
+                    {t('requisitions.labels.finalStateRuleHint')}
                   </p>
                 )}
               </div>
@@ -2411,7 +2426,7 @@ export function SecretaryRequisitionsPage({
                 className={selectFieldClassName}
               >
                 {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>{t(option.label)}</option>
                 ))}
               </select>
             </div>

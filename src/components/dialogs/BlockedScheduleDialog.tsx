@@ -6,13 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { useAuth } from '../../contexts/AuthContext';
-import { bloqueiosApi } from '../../services/api';
+import { bloqueiosApi, Bloqueio } from '../../services/api';
 import { toast } from 'sonner';
 import { Trash2, Lock, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { pt } from 'date-fns/locale';
+import { enUS, pt } from 'date-fns/locale';
 import { Appointment } from '../../types';
-import { Bloqueio } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface BlockedScheduleDialogProps {
     open: boolean;
@@ -35,6 +35,8 @@ const generateTimeSlots = () => {
 };
 
 export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess, tipo = 'SECRETARIA' }: BlockedScheduleDialogProps) {
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language.startsWith('en') ? enUS : pt;
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
@@ -90,7 +92,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             });
             setBloqueios(sorted);
         } catch (error) {
-            console.error('Erro ao carregar bloqueios:', error);
+            console.error(t('blockedSchedule.errors.loadBlocks'), error);
         }
     };
 
@@ -171,17 +173,17 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !endDate || !startTime || !endTime) {
-            toast.error('Preencha todos os campos');
+            toast.error(t('blockedSchedule.errors.fillAllFields'));
             return;
         }
 
         if (startDate > endDate) {
-            toast.error('A data de fim deve ser posterior ou igual à data de início');
+            toast.error(t('blockedSchedule.errors.endDateAfterStart'));
             return;
         }
 
         if (startTime >= endTime && startDate.getTime() === endDate.getTime()) {
-            toast.error('A hora de fim deve ser posterior à hora de início');
+            toast.error(t('blockedSchedule.errors.endTimeAfterStart'));
             return;
         }
 
@@ -205,7 +207,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     horaInicio: startTime,
                     horaFim: endTime
                 }, user?.id || 0, tipo);
-                toast.success('Bloqueio criado com sucesso');
+                toast.success(t('blockedSchedule.messages.blockCreated'));
             } else {
                 // Multiple day blocks
                 const blocks = [];
@@ -247,7 +249,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     await fetchBloqueios();
                 }
 
-                toast.success(`${blocks.length} bloqueios criados com sucesso`);
+                toast.success(t('blockedSchedule.messages.blocksCreated', { count: blocks.length }));
             }
 
             // Final reload and reset
@@ -260,7 +262,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
             onOpenChange(false);
         } catch (error) {
             console.error('Error creating block', error);
-            const msg = error instanceof Error ? error.message : "Erro desconhecido ao criar bloqueio";
+            const msg = error instanceof Error ? error.message : t('blockedSchedule.errors.unknownCreateError');
             toast.error(msg);
         } finally {
             setLoading(false);
@@ -270,11 +272,11 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const handleDelete = async (id: number) => {
         try {
             await bloqueiosApi.remover(id);
-            toast.success('Bloqueio removido');
+            toast.success(t('blockedSchedule.messages.blockRemoved'));
             await fetchBloqueios();
             onSuccess?.();
         } catch (error) {
-            toast.error('Erro ao remover bloqueio');
+            toast.error(t('blockedSchedule.errors.removeFailed'));
         }
     };
 
@@ -284,7 +286,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                 <DialogHeader className="mb-4">
                     <DialogTitle className="text-xl font-semibold flex items-center gap-2">
                         <Lock className="w-5 h-5 text-red-500" />
-                        Gerir Bloqueios de Horário
+                        {t('blockedSchedule.title')}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -294,7 +296,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                         <div className="grid grid-cols-2 gap-4">
                             {/* Start Date & Time */}
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase text-gray-500 font-semibold">Início</Label>
+                                <Label className="text-xs uppercase text-gray-500 font-semibold">{t('blockedSchedule.start')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -303,7 +305,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                 className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                                                {startDate ? format(startDate, 'dd/MM/yyyy') : 'Escolher data'}
+                                                {startDate ? format(startDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
@@ -316,7 +318,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                         setEndDate(date);
                                                     }
                                                 }}
-                                                locale={pt}
+                                                locale={dateLocale}
                                                 disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                             />
                                         </PopoverContent>
@@ -341,7 +343,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                             {startSlots.length > 0 ? (
                                                 startSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
                                             ) : (
-                                                <SelectItem value="none" disabled>Ocupado</SelectItem>
+                                                <SelectItem value="none" disabled>{t('blockedSchedule.occupied')}</SelectItem>
                                             )}
                                         </SelectContent>
                                     </Select>
@@ -350,7 +352,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                             {/* End Date & Time */}
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase text-gray-500 font-semibold">Fim</Label>
+                                <Label className="text-xs uppercase text-gray-500 font-semibold">{t('blockedSchedule.end')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
@@ -359,7 +361,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                 className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                                                {endDate ? format(endDate, 'dd/MM/yyyy') : 'Escolher data'}
+                                                {endDate ? format(endDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
@@ -412,7 +414,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                     })
                                                     .map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
                                             ) : (
-                                                <SelectItem value="none" disabled>Indisp.</SelectItem>
+                                                <SelectItem value="none" disabled>{t('blockedSchedule.unavailableShort')}</SelectItem>
                                             )}
                                         </SelectContent>
                                     </Select>
@@ -425,7 +427,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                             disabled={loading || !startDate || !endDate}
                             className="w-full bg-red-600 hover:bg-red-700 text-white font-medium h-10"
                         >
-                            {loading ? 'A processar...' : 'Adicionar Bloqueio'}
+                            {loading ? t('blockedSchedule.processing') : t('blockedSchedule.addBlock')}
                         </Button>
                     </form>
 
@@ -433,31 +435,31 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             <Lock className="w-4 h-4 text-red-500" />
-                            Bloqueios Ativos
+                            {t('blockedSchedule.activeBlocks')}
                         </h3>
 
                         <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-700">
                                     <tr>
-                                        <th className="px-4 py-3">Dia</th>
-                                        <th className="px-4 py-3">Início</th>
-                                        <th className="px-4 py-3">Fim</th>
-                                        <th className="px-4 py-3 text-right">Ações</th>
+                                        <th className="px-4 py-3">{t('blockedSchedule.day')}</th>
+                                        <th className="px-4 py-3">{t('blockedSchedule.start')}</th>
+                                        <th className="px-4 py-3">{t('blockedSchedule.end')}</th>
+                                        <th className="px-4 py-3 text-right">{t('blockedSchedule.actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
                                     {bloqueios.length === 0 ? (
                                         <tr>
                                             <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                                                Não existem bloqueios registados
+                                                {t('blockedSchedule.noRegisteredBlocks')}
                                             </td>
                                         </tr>
                                     ) : (
                                         bloqueios.map((b) => (
                                             <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                                 <td className="px-4 py-3 font-medium">
-                                                    {b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: pt }) : '-'}
+                                                    {b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: dateLocale }) : '-'}
                                                 </td>
                                                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                                                     {b.horaInicio?.substring(0, 5)}

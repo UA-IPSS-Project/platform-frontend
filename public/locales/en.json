@@ -71,6 +71,116 @@
       "book": "Book"
     }
   },
+  "termsModal": {
+    "title": "Terms and Privacy",
+    "description": "Please read the terms carefully before accepting.",
+    "acceptButton": "I have read and accept",
+    "officialLink": {
+      "label": "For complete information, visit the official website:",
+      "url": "https://www.florinhasdovouga.pt/7ca6c-terms-and-privacy/"
+    },
+    "sections": [
+      {
+        "title": "Data Controller Identification",
+        "paragraphs": [
+          "This Privacy Policy governs the processing of personal data carried out by IPSS Florinhas do Vouga, legal entity no. 501156577, headquartered at Praceta Florinhas do Vouga, no. 10, 3810-064 Aveiro.",
+          "Contacts: Phone +351 234 377 330 | Email secretaria@florinhasdovouga.pt",
+          "The Institution is a diocesan non-profit social institution (IPSS), acting within its social and community mission."
+        ]
+      },
+      {
+        "title": "Commitment to Data Protection",
+        "paragraphs": [
+          "IPSS Florinhas do Vouga is committed to protecting the personal data of its users, beneficiaries, volunteers, patrons, donors, benefactors, collaborators, partners, and other entities interacting with it.",
+          "Personal data processing is carried out in compliance with the General Data Protection Regulation (GDPR) and applicable national legislation, ensuring lawfulness, fairness, transparency, minimization, accuracy, integrity, and confidentiality."
+        ]
+      },
+      {
+        "title": "Personal Data Collected",
+        "paragraphs": [
+          "The following data may be collected, among others:",
+          "Data is collected only when necessary and under an appropriate legal basis."
+        ],
+        "bullets": [
+          "Name",
+          "Tax identification number",
+          "Phone contacts",
+          "Email address",
+          "Address",
+          "Data required for receipt issuance",
+          "Data voluntarily provided through forms"
+        ]
+      },
+      {
+        "title": "Purpose of Data Processing",
+        "paragraphs": [
+          "Personal data is processed for the following purposes:",
+          "Data will not be used for purposes incompatible with those that justified its collection."
+        ],
+        "bullets": [
+          "Administrative and institutional management",
+          "Donation processing",
+          "Institutional communication",
+          "Volunteer management",
+          "Compliance with legal obligations",
+          "Response to contact requests"
+        ]
+      },
+      {
+        "title": "Data Retention",
+        "paragraphs": [
+          "Personal data will be retained only for the period necessary to fulfill the purposes that determined its collection or for the period required by legal obligations."
+        ]
+      },
+      {
+        "title": "Data Subject Rights",
+        "paragraphs": [
+          "Under the law, data subjects may exercise the following rights:",
+          "These rights can be exercised via email at secretaria@florinhasdovouga.pt",
+          "If you believe your rights were not respected, you may lodge a complaint with the Portuguese Data Protection Authority (CNPD)."
+        ],
+        "bullets": [
+          "Right of access",
+          "Right to rectification",
+          "Right to erasure",
+          "Right to restriction of processing",
+          "Right to object",
+          "Right to data portability, where applicable"
+        ]
+      },
+      {
+        "title": "What Cookies Are",
+        "paragraphs": [
+          "Cookies are small text files stored on the user's device when visiting a website, helping improve browsing experience."
+        ]
+      },
+      {
+        "title": "Types of Cookies Used",
+        "paragraphs": [
+          "The website may use:",
+          "No invasive commercial-purpose cookies are used."
+        ],
+        "bullets": [
+          "Strictly necessary cookies for site operation",
+          "Performance and statistical analysis cookies (when applicable)",
+          "Functionality cookies"
+        ]
+      },
+      {
+        "title": "Cookie Management",
+        "paragraphs": [
+          "Users may configure their browser at any time to block or delete cookies.",
+          "Disabling certain cookies may affect website functionality."
+        ]
+      },
+      {
+        "title": "Policy Changes",
+        "paragraphs": [
+          "IPSS Florinhas do Vouga reserves the right to update this Policy whenever necessary, and changes will be published on the website."
+        ]
+      }
+    ]
+  },
   "sidebar": {
     "home": "Home",
     "menu": "Menu",
@@ -146,6 +256,90 @@
       "loadDetails": "Failed to load details",
       "loadLatestAppointment": "Could not load the latest appointment data.",
       "findAppointment": "Could not find the appointment"
+    },
+    "admin": {
+      "roleTitle": "Administrator",
+      "title": "Administration Panel",
+      "administrationOnlyArea": "Administration-only area",
+      "navigation": {
+        "dashboard": "Dashboard",
+        "slots": "Slots",
+        "catalogs": "Catalogs"
+      },
+      "viewDescriptions": {
+        "overview": "This panel is for operational administration only. Admin manages slots, materials, transports and maintenance types.",
+        "slots": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
+        "catalogs": "Create, edit and remove materials, transports and maintenance types used in requests."
+      },
+      "overview": {
+        "managementAreas": {
+          "slots": {
+            "title": "Slots per appointment",
+            "description": "Define capacity per schedule and time slot and control operational occupancy.",
+            "actionLabel": "Manage slots"
+          },
+          "catalogs": {
+            "title": "Administrative catalogs",
+            "description": "Create, edit and remove materials, transports and maintenance types without access to requests.",
+            "actionLabel": "Open catalog"
+          }
+        }
+      },
+      "slots": {
+        "operationalConfiguration": "Operational configuration",
+        "title": "Appointments capacity per slot",
+        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
+        "secretaryScheduleTitle": "Secretary schedule",
+        "balnearioScheduleTitle": "Bathhouse schedule",
+        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot.",
+        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots.",
+        "maxPerSlot": "Maximum per slot",
+        "saving": "Saving...",
+        "saveConfiguration": "Save configuration"
+      },
+      "summary": {
+        "slots": {
+          "title": "Slots (Secretary/Bathhouse)",
+          "description": "capacity per time slot"
+        },
+        "materials": {
+          "title": "Materials",
+          "description": "catalog items"
+        },
+        "transports": {
+          "title": "Transport",
+          "description": "transport items in catalog"
+        },
+        "maintenanceTypes": {
+          "title": "Maintenance types",
+          "description": "available types"
+        }
+      },
+      "messages": {
+        "slotConfigUpdated": "Slot configuration updated successfully"
+      },
+      "errors": {
+        "loadSlotConfig": "Could not load slot configuration",
+        "saveSlotConfig": "Could not save slot configuration"
+      }
+    },
+    "userHome": {
+      "labels": {
+        "reserved": "Reserved",
+        "occupied": "Occupied",
+        "unavailableTime": "Time slot unavailable"
+      },
+      "messages": {
+        "documentViewInDevelopment": "In development"
+      },
+      "placeholders": {
+        "balnearioAppointments": "Bathhouse - Appointments",
+        "balnearioAbout": "Bathhouse - About",
+        "volunteeringSignup": "Volunteering - Signup",
+        "volunteeringAbout": "Volunteering - About",
+        "settings": "Settings",
+        "notFound": "Page not found"
+      }
     }
   },
   "common": {
@@ -375,6 +569,66 @@
   },
   "requisitions": {
     "summary": "{{total}} request(s) · {{urgent}} urgent",
+    "labels": {
+      "allStatuses": "All statuses",
+      "inAnalysis": "In analysis",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent",
+      "material": "Material",
+      "transport": "Transport",
+      "maintenance": "Maintenance",
+      "general": "General",
+      "transportCategoryHeavyPassengers": "Heavy passenger vehicle",
+      "transportCategoryLightPassengers": "Light passenger vehicle",
+      "transportCategoryLightGoods": "Light goods vehicle",
+      "transportCategoryLightSpecial": "Special light vehicle",
+      "transportCategoryAdapted": "Adapted",
+      "transportCategoryLight": "Light vehicle",
+      "transportCategoryHeavy": "Heavy vehicle",
+      "passengers": "Passengers",
+      "materialCategoryWriting": "Writing supplies",
+      "materialCategoryPaperFiling": "Paper and filing",
+      "materialCategoryHygieneCleaning": "Hygiene and cleaning",
+      "materialCategoryTechnology": "Technology",
+      "materialCategoryOther": "Other",
+      "noCategory": "No category",
+      "capacityNotDefined": "Capacity not defined",
+      "seat": "seat",
+      "seats": "seats",
+      "vehicle": "Vehicle",
+      "noAssociatedTransport": "No associated transport",
+      "noDetails": "No details",
+      "registeredOn": "Registered on {{date}}",
+      "providePassengerCount": "Provide passenger count",
+      "missingSeats": "{{count}} seat(s) missing",
+      "capacitySufficient": "Sufficient capacity",
+      "status": "Status",
+      "createdBy": "Created by",
+      "managedBy": "Managed by",
+      "date": "Date",
+      "lastUpdate": "Last update",
+      "deadline": "Deadline",
+      "materials": "Materials",
+      "destination": "Destination",
+      "vehicles": "Vehicles",
+      "subject": "Subject",
+      "description": "Description",
+      "type": "Type",
+      "priority": "Priority",
+      "currentStatus": "Current status",
+      "creationDate": "Creation date",
+      "quantity": "Quantity",
+      "departure": "Departure",
+      "return": "Return",
+      "driver": "Driver",
+      "toBeDefined": "To be defined",
+      "newStatus": "New status",
+      "finalStateRuleHint": "This request has already been decided. Only transitions from In analysis to Accepted or Rejected are allowed."
+    },
     "ui": {
       "mainData": "Main data",
       "type": "Type",
@@ -686,6 +940,33 @@
     "exportAction": "Export Daily List",
     "exportSuccess": "Daily list exported successfully",
     "processing": "Processing..."
+  },
+  "blockedSchedule": {
+    "title": "Manage Time Slot Blocks",
+    "start": "Start",
+    "end": "End",
+    "chooseDate": "Choose date",
+    "occupied": "Occupied",
+    "unavailableShort": "N/A",
+    "processing": "Processing...",
+    "addBlock": "Add Block",
+    "activeBlocks": "Active Blocks",
+    "day": "Day",
+    "actions": "Actions",
+    "noRegisteredBlocks": "No registered blocks",
+    "messages": {
+      "blockCreated": "Block created successfully",
+      "blocksCreated": "{{count}} blocks created successfully",
+      "blockRemoved": "Block removed"
+    },
+    "errors": {
+      "loadBlocks": "Error loading blocks:",
+      "fillAllFields": "Fill in all fields",
+      "endDateAfterStart": "End date must be after or equal to start date",
+      "endTimeAfterStart": "End time must be later than start time",
+      "unknownCreateError": "Unknown error while creating block",
+      "removeFailed": "Error removing block"
+    }
   },
   "balnearioAppointment": {
     "title": "Register Bath",
