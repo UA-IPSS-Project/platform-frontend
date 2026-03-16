@@ -89,7 +89,13 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
       {/* Stats Grid - Flex row for side-by-side */}
       <div className="flex flex-row gap-6 w-full overflow-x-auto pb-2">
         {stats.map((stat, index) => (
-          <div key={index} onClick={() => onNavigate(stat.view)} className="cursor-pointer group flex-1 min-w-[200px]">
+          <button
+            key={index}
+            type="button"
+            onClick={() => onNavigate(stat.view)}
+            className="cursor-pointer group flex-1 min-w-[200px] p-0 text-left bg-transparent border-0"
+            aria-label={`Abrir ${stat.label}`}
+          >
             <GlassCard className="p-6 h-full hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1 relative overflow-hidden flex flex-col justify-center">
               <div className="relative z-10 flex items-center justify-between w-full">
                 <div className="flex flex-col min-w-0">
@@ -104,7 +110,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
         ))}
       </div>
 
