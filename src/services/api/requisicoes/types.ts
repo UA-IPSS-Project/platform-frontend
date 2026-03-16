@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'NEGADA' | 'CONCLUIDA' | 'CANCELADA';
+export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'RECUSADA' | 'CONCLUIDA' | 'CANCELADA';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 

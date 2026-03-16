@@ -33,7 +33,7 @@ const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: 'ENVIADA', label: 'Enviada' },
   { value: 'EM_ANALISE', label: 'Em análise' },
   { value: 'ACEITE', label: 'Aceite' },
-  { value: 'NEGADA', label: 'Negada' },
+  { value: 'RECUSADA', label: 'Recusada' },
   { value: 'CONCLUIDA', label: 'Concluída' },
   { value: 'CANCELADA', label: 'Cancelada' },
 ];
@@ -41,7 +41,7 @@ const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
 const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
   { value: 'EM_ANALISE', label: 'Em análise' },
   { value: 'ACEITE', label: 'Aceite' },
-  { value: 'NEGADA', label: 'Negada' },
+  { value: 'RECUSADA', label: 'Recusada' },
 ];
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
@@ -146,6 +146,27 @@ const getPassengerCapacity = (lotacao?: number): number => {
 const composeDateTime = (date?: string, time?: string): string | undefined => {
   if (!date || !time) return undefined;
   return `${date}T${time}`;
+};
+
+const toValidDate = (dateTime?: string): Date | undefined => {
+  if (!dateTime) return undefined;
+  const parsed = new Date(dateTime);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+};
+
+const periodsOverlap = (
+  startA?: string,
+  endA?: string,
+  startB?: string,
+  endB?: string,
+): boolean => {
+  const startADate = toValidDate(startA);
+  const endADate = toValidDate(endA);
+  const startBDate = toValidDate(startB);
+  const endBDate = toValidDate(endB);
+
+  if (!startADate || !endADate || !startBDate || !endBDate) return false;
+  return startADate < endBDate && endADate > startBDate;
 };
 
 const previousDateInput = (dateInput?: string): string | undefined => {
@@ -414,6 +435,46 @@ export function SecretaryRequisitionsPage({
     [transportes],
   );
 
+  const dataHoraSaidaSelecionada = useMemo(
+    () => composeDateTime(dataSaida, horaSaida),
+    [dataSaida, horaSaida],
+  );
+
+  const dataHoraRegressoSelecionada = useMemo(
+    () => composeDateTime(dataRegresso, horaRegresso),
+    [dataRegresso, horaRegresso],
+  );
+
+  const transportesIndisponiveis = useMemo(() => {
+    if (tipo !== 'TRANSPORTE') return new Set<number>();
+
+    const ids = new Set<number>();
+    monthlyRequisicoes.forEach((requisicao) => {
+      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
+      if (!periodsOverlap(
+        dataHoraSaidaSelecionada,
+        dataHoraRegressoSelecionada,
+        requisicao.dataHoraSaida,
+        requisicao.dataHoraRegresso,
+      )) {
+        return;
+      }
+
+      getRequisicaoTransportes(requisicao).forEach((transporte) => {
+        if (typeof transporte.id === 'number') {
+          ids.add(transporte.id);
+        }
+      });
+    });
+
+    return ids;
+  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, tipo]);
+
+  const transportesOrdenadosDisponiveis = useMemo(
+    () => transportesOrdenados.filter((transporte) => !transportesIndisponiveis.has(transporte.id)),
+    [transportesIndisponiveis, transportesOrdenados],
+  );
+
   const transportesPorCategoria = useMemo(
     () => TRANSPORTE_CATEGORIA_OPTIONS.map((categoria) => ({
       categoria: categoria.value,
@@ -431,7 +492,7 @@ export function SecretaryRequisitionsPage({
   const recommendedTransportIds = useMemo(() => {
     if (passageirosSolicitados <= 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenados
+    const viaturasComLotacao = transportesOrdenadosDisponiveis
       .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
       .map((transporte) => ({
         id: transporte.id as number,
@@ -482,7 +543,7 @@ export function SecretaryRequisitionsPage({
     }
 
     return melhor?.ids ?? [];
-  }, [passageirosSolicitados, transportesOrdenados]);
+  }, [passageirosSolicitados, transportesOrdenadosDisponiveis]);
 
   useEffect(() => {
     if (tipo !== 'TRANSPORTE' || transportSelectionMode !== 'auto') {
@@ -490,6 +551,22 @@ export function SecretaryRequisitionsPage({
     }
     setSelectedTransportIds(recommendedTransportIds.map(String));
   }, [recommendedTransportIds, transportSelectionMode, tipo]);
+
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE' || selectedTransportIds.length === 0) {
+      return;
+    }
+
+    const selectedDisponiveis = selectedTransportIds.filter((id) => !transportesIndisponiveis.has(Number(id)));
+    if (selectedDisponiveis.length === selectedTransportIds.length) {
+      return;
+    }
+
+    setSelectedTransportIds(selectedDisponiveis);
+    if (createTouched.transporteIds) {
+      setTimeout(() => validateAndSetField('transporteIds'), 0);
+    }
+  }, [createTouched.transporteIds, selectedTransportIds, tipo, transportesIndisponiveis]);
 
   const selectedTransportes = useMemo(
     () => transportesOrdenados.filter((item) => selectedTransportIds.includes(String(item.id))),
@@ -739,6 +816,10 @@ export function SecretaryRequisitionsPage({
   };
 
   const toggleSelectedTransport = (transporteId: number, checked: boolean) => {
+    if (checked && transportesIndisponiveis.has(transporteId)) {
+      return;
+    }
+
     const transporteIdStr = String(transporteId);
     setTransportSelectionMode('manual');
     setSelectedTransportIds((prev) => {
@@ -1461,6 +1542,12 @@ export function SecretaryRequisitionsPage({
                   <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
                 )}
 
+                {transportesIndisponiveis.size > 0 && dataHoraSaidaSelecionada && dataHoraRegressoSelecionada && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    {transportesIndisponiveis.size} viatura(s) indisponível(is) por já terem uma requisição aceite neste horário.
+                  </p>
+                )}
+
                 {selectedTransportIds.length > 0 && (
                   <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
                     <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Seleção atual</p>
@@ -1519,12 +1606,15 @@ export function SecretaryRequisitionsPage({
                               const isSelected = selectedTransportIds.includes(String(transporte.id));
                               const isRecommended = recommendedTransportIds.includes(transporte.id);
                               const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
+                              const isUnavailable = transportesIndisponiveis.has(transporte.id);
 
                               return (
                                 <div
                                   key={transporte.id}
                                   className={`rounded-xl border p-4 transition-all ${isSelected
                                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm'
+                                    : isUnavailable
+                                      ? 'border-amber-300 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/10'
                                     : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
                                     }`}
                                 >
@@ -1542,12 +1632,21 @@ export function SecretaryRequisitionsPage({
                                             Sugerida
                                           </span>
                                         )}
+                                        {isUnavailable && (
+                                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                            Indisponível
+                                          </span>
+                                        )}
                                       </div>
                                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
                                       <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
+                                      {isUnavailable && (
+                                        <p className="text-xs text-amber-700 dark:text-amber-300">Já existe uma requisição aceite com horário sobreposto.</p>
+                                      )}
                                     </div>
                                     <Checkbox
                                       checked={isSelected}
+                                      disabled={isUnavailable}
                                       onCheckedChange={(checked) => {
                                         toggleSelectedTransport(transporte.id, !!checked);
                                         validateAndSetField('transporteIds', true);
