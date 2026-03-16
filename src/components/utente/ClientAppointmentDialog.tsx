@@ -188,9 +188,14 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
+            <Label htmlFor="client-subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
             <Select value={subject} onValueChange={(value) => setSubject(value)}>
-              <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}>
+              <SelectTrigger
+                id="client-subject"
+                aria-invalid={!!errors.subject}
+                aria-describedby={errors.subject ? 'client-subject-error' : undefined}
+                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
+              >
                 <SelectValue placeholder="Selecione o assunto" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -201,7 +206,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
                 ))}
               </SelectContent>
             </Select>
-            {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+            {errors.subject && <p id="client-subject-error" className="text-sm text-red-500">{errors.subject}</p>}
           </div>
 
           <div className="space-y-2">
@@ -216,8 +221,10 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="space-y-2">
-            <Label className="text-gray-900 dark:text-gray-100 mb-2 block">Documentos (opcional)</Label>
+            <Label htmlFor="client-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">Documentos (opcional)</Label>
             <FileUpload
+              inputId="client-upload"
+              describedById="client-upload-help"
               selectedFiles={selectedFiles}
               onChange={setSelectedFiles}
               isUploading={isLoading}

@@ -108,6 +108,9 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         }));
     };
 
+    const optionId = (group: string, option: string) =>
+        `${group}-${option.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -197,9 +200,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                 setName(e.target.value);
                                 if (errors.name) setErrors({});
                             }}
+                            aria-invalid={!!errors.name}
+                            aria-describedby={errors.name ? 'balneario-name-error' : undefined}
                             className={`text-lg py-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
                         />
-                        {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                        {errors.name && <p id="balneario-name-error" className="text-sm text-red-500">{errors.name}</p>}
                     </div>
 
                     <div className="space-y-4">
@@ -207,58 +212,58 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                         <div className="space-y-4">
                             {/* Hygiene */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</Label>
+                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
                                         <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={`opt-${opt}`}
+                                                id={optionId('higiene', opt)}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('higiene', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </fieldset>
 
                             {/* Laundry */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</Label>
+                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
                                         <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={`opt-${opt}`}
+                                                id={optionId('lavandaria', opt)}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('lavandaria', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </fieldset>
 
                             {/* Clothing */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</Label>
+                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {CLOTHING_OPTIONS.map((opt) => (
                                         <div key={opt} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={`opt-${opt}`}
+                                                id={optionId('vestuario', opt)}
                                                 checked={selectedOptions[opt] || false}
                                                 onCheckedChange={() => toggleOption(opt)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={`opt-${opt}`} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('vestuario', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </fieldset>
                         </div>
                     </div>
 

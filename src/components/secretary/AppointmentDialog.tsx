@@ -424,9 +424,11 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                     }
                     setNifError(undefined);
                   }}
+                  aria-invalid={!!errors.nif}
+                  aria-describedby={errors.nif ? 'nif-error' : undefined}
                   className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
                 />
-                {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
+                {errors.nif && <p id="nif-error" className="text-sm text-red-500">{errors.nif}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento *</Label>
@@ -448,9 +450,11 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 placeholder="Nome completo"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'name-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && <p className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
+              {errors.name && <p id="name-error" className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
@@ -461,9 +465,11 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 placeholder="exemplo@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p id="email-error" className="text-sm text-red-500">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -475,16 +481,23 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 maxLength={9}
                 value={formData.contact}
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
+                aria-invalid={!!errors.contact}
+                aria-describedby={errors.contact ? 'contact-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.contact ? 'border-red-500' : ''}`}
               />
-              {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
+              {errors.contact && <p id="contact-error" className="text-sm text-red-500">{errors.contact}</p>}
             </div>
 
 
             <div className="space-y-2">
-              <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
+              <Label htmlFor="secretary-subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
               <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
-                <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}>
+                <SelectTrigger
+                  id="secretary-subject"
+                  aria-invalid={!!errors.subject}
+                  aria-describedby={errors.subject ? 'secretary-subject-error' : undefined}
+                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
+                >
                   <SelectValue placeholder="Selecione o assunto" />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -495,7 +508,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   ))}
                 </SelectContent>
               </Select>
-              {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+              {errors.subject && <p id="secretary-subject-error" className="text-sm text-red-500">{errors.subject}</p>}
             </div>
 
             <div className="space-y-2">
@@ -511,8 +524,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 dark:text-gray-100 mb-2 block">Anexar documentos (opcional)</Label>
+              <Label htmlFor="secretary-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">Anexar documentos (opcional)</Label>
               <FileUpload
+                inputId="secretary-upload"
+                describedById="secretary-upload-help"
                 selectedFiles={selectedFiles}
                 onChange={setSelectedFiles}
                 isUploading={isLoading}
