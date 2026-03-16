@@ -20,6 +20,16 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface UserDashboardProps {
   user: {
@@ -66,6 +76,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = sessionStorage.getItem('utente_currentDate');
     return saved ? new Date(saved) : new Date();
@@ -138,12 +151,34 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     setUserData(updatedUser);
   };
 
+  const navigateWithGuard = (path: string) => {
+    if (currentView === 'profile' && profileIsDirty && path !== '/dashboard/profile') {
+      setPendingPath(path);
+      setShowLeaveConfirm(true);
+      return;
+    }
+
+    navigate(path);
+  };
+
+  const confirmLeaveProfile = () => {
+    const nextPath = pendingPath;
+
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    setPendingPath(null);
+
+    if (nextPath) {
+      navigate(nextPath);
+    }
+  };
+
   const handleNavigate = (view: string) => {
-    if (view === 'appointments') navigate('/dashboard');
-    else if (view === 'history') navigate('/dashboard/history');
-    else if (view === 'profile') navigate('/dashboard/profile');
-    else if (view === 'notificacoes') navigate('/dashboard/notifications');
-    else navigate(`/dashboard/${view}`);
+    if (view === 'appointments') navigateWithGuard('/dashboard');
+    else if (view === 'history') navigateWithGuard('/dashboard/history');
+    else if (view === 'profile') navigateWithGuard('/dashboard/profile');
+    else if (view === 'notificacoes') navigateWithGuard('/dashboard/notifications');
+    else navigateWithGuard(`/dashboard/${view}`);
   };
 
   const handleCreateAppointment = async (date: Date, time: string) => {
@@ -204,7 +239,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     <>
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigateWithGuard('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
         Secretaria
@@ -218,7 +253,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           { id: 'erpi', label: 'ERPI' },
         ]}
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-        onSelect={(id) => navigate(`/dashboard/${id}`)}
+        onSelect={(id) => navigateWithGuard(`/dashboard/${id}`)}
       />
     </>
   );
@@ -232,8 +267,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onMenuToggle={() => setSidebarOpen(true)}
         roleTitle="Utente"
         navigationContent={UserNavigation}
-        onNavigateToProfile={() => navigate('/dashboard/profile')}
-        onNavigateToSettings={() => navigate('/dashboard/settings')}
+        onNavigateToProfile={() => navigateWithGuard('/dashboard/profile')}
+        onNavigateToSettings={() => navigateWithGuard('/dashboard/settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}
@@ -246,7 +281,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onDeleteNotification={handleDeleteNotification}
         onDeleteAllNotifications={handleDeleteAllNotifications}
         onNavigateToNotifications={() => {
-          navigate('/dashboard/notifications');
+          navigateWithGuard('/dashboard/notifications');
           setShowNotifications(false);
         }}
       >
@@ -325,6 +360,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   onBack={() => navigate('/dashboard')}
                   onUpdateUser={handleUpdateUser}
                   isDarkMode={isDarkMode}
+                  onDirtyChange={setProfileIsDirty}
                 />
               } />
 
@@ -445,6 +481,33 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           existingAppointments={[...allAppointments, ...blockedAppointments]}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => {
+        if (!open) {
+          setPendingPath(null);
+          setShowLeaveConfirm(false);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPendingPath(null);
+              setShowLeaveConfirm(false);
+            }}>
+              Ficar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

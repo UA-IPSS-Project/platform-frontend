@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { NotificationsPage } from '../NotificationsPage';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import BalnearioHome from '../../components/balneario/BalnearioHome';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
@@ -22,6 +22,16 @@ import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointment
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface BalnearioDashboardProps {
     onLogout: () => void;
@@ -99,12 +109,30 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [showNotifications, setShowNotifications] = useState(false);
     const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
     const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+    const [profileIsDirty, setProfileIsDirty] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
 
     const navigateTo = (view: ViewType) => {
-        setViewHistory(prev => [...prev, view]);
+        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+            setPendingNavigation(view);
+            setShowLeaveConfirm(true);
+        } else {
+            setViewHistory(prev => [...prev, view]);
+        }
+    };
+
+    const confirmLeaveProfile = () => {
+        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+        setProfileIsDirty(false);
+        setShowLeaveConfirm(false);
+        if (pendingNavigation) {
+            setViewHistory(prev => [...prev, pendingNavigation]);
+            setPendingNavigation(null);
+        }
     };
 
     const navigateBack = () => {
@@ -331,6 +359,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 onBack={navigateBack}
                                 onUpdateUser={handleUpdateUser}
                                 isDarkMode={isDarkMode}
+                                onDirtyChange={setProfileIsDirty}
                             />
                         ) : currentView === 'notificacoes' ? (
                             <NotificationsPage
@@ -460,6 +489,23 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     onSuccess={() => refreshCurrentWeek(currentDate)}
                 />
             )}
+
+            <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem mudanças por guardar. Deseja descartá-las?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                            Descartar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

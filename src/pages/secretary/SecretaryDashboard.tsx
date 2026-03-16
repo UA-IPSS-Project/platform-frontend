@@ -15,7 +15,7 @@ import { DayScheduleDialog } from '../../components/secretary/DayScheduleDialog'
 import { Sidebar } from '../../components/layout/Sidebar';
 import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleDialog';
 import { UserManagement } from '../../components/secretary/UserManagement';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,6 +26,16 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface SecretaryDashboardProps {
   user: {
@@ -108,8 +118,27 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+
   const navigateTo = (view: ViewType) => {
-    setViewHistory(prev => [...prev, view]);
+    if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+      setPendingNavigation(view);
+      setShowLeaveConfirm(true);
+    } else {
+      setViewHistory(prev => [...prev, view]);
+    }
+  };
+
+  const confirmLeaveProfile = () => {
+    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    if (pendingNavigation) {
+      setViewHistory(prev => [...prev, pendingNavigation]);
+      setPendingNavigation(null);
+    }
   };
 
   const navigateBack = () => {
@@ -423,6 +452,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
+                onDirtyChange={setProfileIsDirty}
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
@@ -553,6 +583,23 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           }}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

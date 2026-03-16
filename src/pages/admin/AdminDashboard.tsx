@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, Settings2, Save, Package2, CalendarDays, Package, Truck, Wrench, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,7 +18,7 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
@@ -185,6 +195,28 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         contact: authUser?.telefone || '',
         email: authUser?.email || '',
     });
+    const [profileIsDirty, setProfileIsDirty] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<AdminView | null>(null);
+
+    const safeSetView = (view: AdminView) => {
+        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+            setPendingNavigation(view);
+            setShowLeaveConfirm(true);
+        } else {
+            setCurrentView(view);
+        }
+    };
+
+    const confirmLeaveProfile = () => {
+        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+        setProfileIsDirty(false);
+        setShowLeaveConfirm(false);
+        if (pendingNavigation) {
+            setCurrentView(pendingNavigation);
+            setPendingNavigation(null);
+        }
+    };
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
         BALNEARIO: 2,
@@ -310,7 +342,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         <>
             <Button
                 variant={currentView === 'overview' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('overview')}
+                onClick={() => safeSetView('overview')}
                 aria-label="Ir para Dashboard"
                 aria-current={currentView === 'overview' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'overview' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
@@ -319,7 +351,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             </Button>
             <Button
                 variant={currentView === 'slots' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('slots')}
+                onClick={() => safeSetView('slots')}
                 aria-label="Ir para Slots"
                 aria-current={currentView === 'slots' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'slots' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
@@ -328,7 +360,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             </Button>
             <Button
                 variant={currentView === 'catalogs' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('catalogs')}
+                onClick={() => safeSetView('catalogs')}
                 aria-label="Ir para Catálogos"
                 aria-current={currentView === 'catalogs' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'catalogs' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
@@ -363,8 +395,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 {currentView === 'overview' ? (
                     <AdminOverview
                         summaryCards={summaryCards}
-                        onOpenSlots={() => setCurrentView('slots')}
-                        onOpenCatalogs={() => setCurrentView('catalogs')}
+                        onOpenSlots={() => safeSetView('slots')}
+                        onOpenCatalogs={() => safeSetView('catalogs')}
                     />
                 ) : null}
 
@@ -384,6 +416,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                         onBack={() => setCurrentView('overview')}
                         onUpdateUser={handleUpdateUser}
                         isDarkMode={isDarkMode}
+                        onDirtyChange={setProfileIsDirty}
                     />
                 ) : null}
 
@@ -404,6 +437,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
     };
 
     return (
+        <>
         <DashboardLayout
             isDarkMode={isDarkMode}
             onToggleDarkMode={onToggleDarkMode}
@@ -412,7 +446,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             roleTitle="Administrador"
             navigationContent={AdminNavigation}
             onNavigateToProfile={() => setCurrentView('profile')}
-            onNavigateToSettings={() => setCurrentView('settings')}
+            onNavigateToSettings={() => safeSetView('settings')}
         >
             <AnimatePresence mode="wait">
                 <motion.div
@@ -426,5 +460,23 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 </motion.div>
             </AnimatePresence>
         </DashboardLayout>
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Tem mudanças por guardar. Deseja descartá-las?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                      Descartar
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+        </>
     );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -8,6 +8,16 @@ import { utilizadoresApi } from '../services/api';
 import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { ChangePasswordDialog } from '../components/auth/ChangePasswordDialog';
 import { useIsMobile } from '../components/ui/use-mobile';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 
 interface ProfilePageProps {
   user: {
@@ -22,6 +32,7 @@ interface ProfilePageProps {
   onUpdateUser: (user: { name: string; nif: string; contact: string; email: string }) => void;
   isDarkMode: boolean;
   isEmployee?: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 interface ProfileFormData {
@@ -104,7 +115,7 @@ const mapApiUserToFormData = (data: {
   workPhone: data.telefoneEmprego || '',
 });
 
-const getProfileDraftStorageKey = (userId: number) => `profile-page-draft:${userId}`;
+export const getProfileDraftStorageKey = (userId: number) => `profile-page-draft:${userId}`;
 
 const mergeDraftWithLatestData = (draft: ProfileDraftState, latestData: ProfileFormData): ProfileFormData => {
   const merged = { ...latestData };
@@ -118,11 +129,13 @@ const mergeDraftWithLatestData = (draft: ProfileDraftState, latestData: ProfileF
   return merged;
 };
 
-export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
+export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false, onDirtyChange }: ProfilePageProps) {
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
   const [expanded, setExpanded] = useState({
     personal: true,
     address: false,
@@ -130,6 +143,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   });
 
   const [formData, setFormData] = useState<ProfileFormData>(createEmptyFormData());
+  const [baseData, setBaseData] = useState<ProfileFormData>(createEmptyFormData());
   const storageKey = getProfileDraftStorageKey(user.id);
 
   const loadUserData = useCallback(async (options?: { restoreDraft?: boolean }) => {
@@ -148,15 +162,19 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
           if (savedDraft.isEditing) {
             setIsEditing(true);
             setFormData(mergeDraftWithLatestData(savedDraft, mappedData));
+            setBaseData(savedDraft.baseData);
           } else {
             setIsEditing(false);
             setFormData(mappedData);
+            setBaseData(mappedData);
           }
         } catch {
           setFormData(mappedData);
+          setBaseData(mappedData);
         }
       } else {
         setFormData(mappedData);
+        setBaseData(mappedData);
       }
 
       return data;
@@ -251,6 +269,53 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     setIsEditing(false);
   };
 
+  // Computed: whether the user has unsaved changes
+  const hasUnsavedChanges = isEditing && JSON.stringify(formData) !== JSON.stringify(baseData);
+
+  // Notify parent when dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Guard: show dialog before leaving if there are unsaved changes
+  const requestLeave = (action: () => void) => {
+    if (hasUnsavedChanges) {
+      pendingActionRef.current = action;
+      setShowUnsavedDialog(true);
+    } else {
+      action();
+    }
+  };
+
+  const confirmDiscard = () => {
+    setShowUnsavedDialog(false);
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    action?.();
+  };
+
+  const cancelDiscard = () => {
+    pendingActionRef.current = null;
+    setShowUnsavedDialog(false);
+  };
+
   const toggleSection = (section: keyof typeof expanded) => {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -306,7 +371,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       <div className="w-full max-w-2xl">
         {/* Back Button */}
         <button
-          onClick={onBack}
+          onClick={() => requestLeave(onBack)}
           className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
@@ -337,7 +402,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   {isMobile ? 'Palavra-passe' : 'Mudar Palavra-passe'}
                 </Button>
                 <Button
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => { setBaseData({ ...formData }); setIsEditing(true); }}
                   className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
@@ -395,7 +460,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             {isEditing && (
               <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
                 <Button
-                  onClick={handleCancel}
+                  onClick={() => requestLeave(handleCancel)}
                   variant="outline"
                   className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
@@ -419,6 +484,26 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         open={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={(open) => { if (!open) cancelDiscard(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDiscard}>Ficar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscard}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
