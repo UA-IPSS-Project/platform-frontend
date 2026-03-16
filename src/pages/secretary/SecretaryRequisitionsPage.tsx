@@ -50,6 +50,16 @@ const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
   { value: 'MANUTENCAO', label: 'Manutenção' },
 ];
 
+type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
+
+const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
+  { value: 'GERAL', label: 'Geral' },
+  { value: 'MATERIAL', label: 'Material' },
+  { value: 'MANUTENCAO', label: 'Manutenção' },
+  { value: 'TRANSPORTE', label: 'Transporte' },
+  { value: 'URGENTE', label: 'Urgente' },
+];
+
 const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
   { value: 'LIGEIRO', label: 'Ligeiro' },
   { value: 'PESADO', label: 'Pesado' },
@@ -138,6 +148,11 @@ export function SecretaryRequisitionsPage({
   const [filterPrioridade, setFilterPrioridade] = useState<RequisicaoPrioridade | ''>(initialPrioridade ?? '');
   const [filterCriadoPorNome, setFilterCriadoPorNome] = useState('');
   const [filterGeridoPorNome, setFilterGeridoPorNome] = useState('');
+  const [activeTab, setActiveTab] = useState<RequisicoesTab>(() => {
+    if (initialPrioridade === 'URGENTE') return 'URGENTE';
+    if (initialTipo) return initialTipo;
+    return 'GERAL';
+  });
 
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MANUTENCAO');
   const [descricao, setDescricao] = useState('');
@@ -168,6 +183,13 @@ export function SecretaryRequisitionsPage({
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
     setFilterPrioridade(initialPrioridade ?? '');
+    if (initialPrioridade === 'URGENTE') {
+      setActiveTab('URGENTE');
+    } else if (initialTipo) {
+      setActiveTab(initialTipo);
+    } else {
+      setActiveTab('GERAL');
+    }
     if (initialTipo) setTipo(initialTipo);
     if (initialPrioridade) setPrioridade(initialPrioridade);
   }, [initialTipo, initialPrioridade]);
@@ -479,10 +501,36 @@ export function SecretaryRequisitionsPage({
 
   const handleClearFilters = () => {
     setFilterEstado('');
-    setFilterTipo(initialTipo ?? '');
-    setFilterPrioridade(initialPrioridade ?? '');
+    if (activeTab === 'URGENTE') {
+      setFilterTipo('');
+      setFilterPrioridade('URGENTE');
+    } else if (activeTab === 'GERAL') {
+      setFilterTipo('');
+      setFilterPrioridade('');
+    } else {
+      setFilterTipo(activeTab);
+      setFilterPrioridade('');
+    }
     setFilterCriadoPorNome('');
     setFilterGeridoPorNome('');
+  };
+
+  const handleSelectTab = async (tab: RequisicoesTab) => {
+    setActiveTab(tab);
+
+    const nextTipo: RequisicaoTipo | '' = tab === 'GERAL' || tab === 'URGENTE' ? '' : tab;
+    const nextPrioridade: RequisicaoPrioridade | '' = tab === 'URGENTE' ? 'URGENTE' : '';
+
+    setFilterTipo(nextTipo);
+    setFilterPrioridade(nextPrioridade);
+
+    await fetchRequisicoes({
+      estado: filterEstado,
+      tipo: nextTipo,
+      prioridade: nextPrioridade,
+      criadoPorNome: filterCriadoPorNome,
+      geridoPorNome: filterGeridoPorNome,
+    });
   };
 
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
@@ -510,6 +558,18 @@ export function SecretaryRequisitionsPage({
     const total = requisicoes.length;
     const urgentes = requisicoes.filter((item) => item.prioridade === 'URGENTE').length;
     return `${total} requisição(ões) · ${urgentes} urgente(s)`;
+  }, [requisicoes]);
+
+  const stats = useMemo(() => {
+    const total = requisicoes.length;
+    const urgentes = requisicoes.filter((item) => item.prioridade === 'URGENTE').length;
+    const emAnalise = requisicoes.filter((item) => item.estado === 'EM_ANALISE').length;
+    const concluidas = requisicoes.filter((item) => item.estado === 'CONCLUIDA').length;
+    const material = requisicoes.filter((item) => item.tipo === 'MATERIAL').length;
+    const manutencao = requisicoes.filter((item) => item.tipo === 'MANUTENCAO').length;
+    const transporte = requisicoes.filter((item) => item.tipo === 'TRANSPORTE').length;
+
+    return { total, urgentes, emAnalise, concluidas, material, manutencao, transporte };
   }, [requisicoes]);
 
   const materiaisAdicionadosAgrupados = useMemo(() => {
@@ -884,8 +944,10 @@ export function SecretaryRequisitionsPage({
     <div className="max-w-[1600px] mx-auto space-y-6">
       <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
         <button
+          type="button"
           onClick={() => toggleSection('create')}
           className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+          aria-label="Alternar secção Nova requisição"
         >
           <div className="text-left">
             <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
@@ -903,8 +965,10 @@ export function SecretaryRequisitionsPage({
 
       <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'list' ? 'ring-2 ring-purple-500/30' : 'opacity-85 hover:opacity-100'}`}>
         <button
+          type="button"
           onClick={() => toggleSection('list')}
           className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+          aria-label="Alternar secção Requisições"
         >
           <div className="text-left">
             <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
@@ -916,7 +980,70 @@ export function SecretaryRequisitionsPage({
         {activeSection === 'list' && (
           <div className="px-5 pb-5 space-y-4">
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
+          <div className="inline-flex flex-wrap rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden" role="tablist" aria-label="Separadores de tipo de requisição">
+            {REQUISICOES_TABS.map((tab) => {
+              const isActive = activeTab === tab.value;
+              return (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void handleSelectTab(tab.value);
+                  }}
+                  className={`rounded-none border-r last:border-r-0 border-gray-200 dark:border-gray-700 px-4 h-10 ${isActive
+                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  aria-pressed={isActive}
+                  aria-label={`Selecionar ${tab.label}`}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        {activeTab === 'GERAL' && (
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estatísticas gerais</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Urgentes</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Em análise</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.emAnalise}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Concluídas</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.concluidas}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Material</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Manutenção</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-white/80 dark:bg-gray-900/60">
+                <p className="text-xs text-gray-500 dark:text-gray-400">Transporte</p>
+                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
             <label htmlFor="req-filter-estado" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
             <select
@@ -927,21 +1054,6 @@ export function SecretaryRequisitionsPage({
             >
               {ESTADO_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
-            <select
-              id="req-filter-tipo"
-              value={filterTipo}
-              onChange={(e) => setFilterTipo(e.target.value as RequisicaoTipo | '')}
-              className="w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100"
-            >
-              <option value="">Todos os tipos</option>
-              {TIPO_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </div>
