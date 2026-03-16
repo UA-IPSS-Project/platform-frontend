@@ -1430,7 +1430,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
-                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">Data de saida</label>
+                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">Data de saída</label>
                     <DatePickerField
                       id="req-create-transporte-data-saida"
                       value={dataSaida}
@@ -1452,7 +1452,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">Hora de saida</label>
+                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">Hora de saída</label>
                     <Input
                       id="req-create-transporte-hora-saida"
                       type="time"
