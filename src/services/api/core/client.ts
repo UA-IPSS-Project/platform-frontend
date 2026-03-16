@@ -1,6 +1,11 @@
 // API Base URL
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
+export interface ApiRequestError extends Error {
+    status?: number;
+    fieldErrors?: Record<string, string>;
+}
+
 // Helper to get cookie by name
 export const getCookie = (name: string): string | null => {
     if (!document.cookie) {
@@ -66,6 +71,7 @@ export async function apiRequest<T>(
         if (!response.ok) {
             const isAuthError = response.status === 401 || response.status === 403;
             let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
+            let parsedErrorData: any = null;
 
             if (response.status === 401) {
                 errorMessage = 'Sessão expirada ou inválida. Inicie sessão novamente.';
@@ -79,6 +85,7 @@ export async function apiRequest<T>(
                 try {
                     // Try to parse as JSON
                     const errorData = JSON.parse(text);
+                    parsedErrorData = errorData;
 
                     if (errorData.message && !isAuthError) {
                         errorMessage = errorData.message;
@@ -110,7 +117,14 @@ export async function apiRequest<T>(
             }
 
             console.error(`API Error: ${config.method || 'GET'} ${url} - ${errorMessage}`);
-            throw new Error(errorMessage);
+            const error = new Error(errorMessage) as ApiRequestError;
+            error.status = response.status;
+
+            if (parsedErrorData?.errors && typeof parsedErrorData.errors === 'object') {
+                error.fieldErrors = parsedErrorData.errors as Record<string, string>;
+            }
+
+            throw error;
         }
 
         // Get response text first to check if it's empty or invalid

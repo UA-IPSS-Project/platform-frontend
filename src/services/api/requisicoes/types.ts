@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'CONCLUIDA' | 'CANCELADA';
+export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'RECUSADA' | 'CONCLUIDA' | 'CANCELADA';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 
@@ -84,6 +84,26 @@ export interface RequisicaoResponse {
     dataMatricula?: string;
     nome?: string;
   };
+  transportes?: Array<{
+    id?: number;
+    transporte: {
+      id: number;
+      codigo?: string;
+      tipo?: string;
+      categoria?: TransporteCategoria;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
+      lotacao?: number;
+      dataMatricula?: string;
+      nome?: string;
+    };
+  }>;
+  destino?: string;
+  dataHoraSaida?: string;
+  dataHoraRegresso?: string;
+  numeroPassageiros?: number;
+  condutor?: string | null;
   assunto?: string;
 }
 
@@ -111,7 +131,12 @@ export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseReque
 }
 
 export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseRequest {
-  transporteId: number;
+  destino: string;
+  dataHoraSaida: string;
+  dataHoraRegresso: string;
+  numeroPassageiros: number;
+  condutor?: string;
+  transporteIds: number[];
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
