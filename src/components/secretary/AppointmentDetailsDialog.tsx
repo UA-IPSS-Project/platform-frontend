@@ -27,7 +27,7 @@ interface AppointmentDetailsDialogProps {
   existingAppointments?: Appointment[];
 }
 
-const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
 
 export function AppointmentDetailsDialog({
   open,
@@ -528,7 +528,7 @@ export function AppointmentDetailsDialog({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'in-progress':
-        return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">Em Curso</Badge>;
+        return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">{t('appointmentDetails.inProgress')}</Badge>;
       case 'scheduled':
         return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">{t('appointmentDetails.scheduled')}</Badge>;
       case 'warning':
@@ -560,9 +560,10 @@ export function AppointmentDetailsDialog({
   const invalidDocuments = appointment.documents?.filter(doc => doc.invalid) || [];
 
   const dateObj = new Date(appointment.date);
-  const dayName = WEEKDAYS_LONG[dateObj.getDay()];
+  const locale = i18n.language === 'en' ? 'en-GB' : 'pt-PT';
+  const dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
   const day = dateObj.getDate();
-  const month = dateObj.toLocaleDateString(i18n.language === 'en' ? 'en-GB' : 'pt-PT', { month: 'long' });
+  const month = dateObj.toLocaleDateString(locale, { month: 'long' });
   const year = dateObj.getFullYear();
   const dateString = t('appointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
 
@@ -727,7 +728,7 @@ export function AppointmentDetailsDialog({
                           type="button"
                           onClick={() => handleRemoverDocumento(doc)}
                           className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                          title="Remover"
+                          title={t('appointmentDetails.removeDocument')}
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
@@ -743,7 +744,7 @@ export function AppointmentDetailsDialog({
               <div>
                 <Label className="text-sm flex items-center gap-2 mb-3">
                   <FileTextIcon className="w-4 h-4" />
-                  Documentos Extra (Legacy)
+                  {t('appointmentDetails.legacyDocuments')}
                 </Label>
                 <div className="space-y-3">
                   {appointment.documents.map((doc, index) => (
@@ -771,7 +772,7 @@ export function AppointmentDetailsDialog({
                               setShowUpdateDocDialog(true);
                             }}
                           >
-                            Atualizar
+                            {t('appointmentDetails.updateLegacyDoc')}
                           </Button>
                         )}
                       </div>
@@ -879,7 +880,7 @@ export function AppointmentDetailsDialog({
                   onClick={() => setShowCancelDialog(true)}
                   className="w-full"
                 >
-                  Cancelar
+                  {t('appointmentDialog.actions.cancel')}
                 </Button>
               )}
 
@@ -889,7 +890,7 @@ export function AppointmentDetailsDialog({
                   onClick={() => setShowCancelDialog(true)}
                   className="w-full"
                 >
-                  Cancelar
+                  {t('appointmentDialog.actions.cancel')}
                 </Button>
               )}
             </div>
@@ -903,25 +904,25 @@ export function AppointmentDetailsDialog({
       }}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Cancelar marcação
+            {t('appointmentDetails.cancelDialogTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
             {isClient
-              ? 'Tem certeza que deseja cancelar a marcação?'
-              : 'Explique brevemente ao utente porque esta marcação será cancelada.'}
+              ? t('appointmentDetails.cancelDialogDescClient')
+              : t('appointmentDetails.cancelDialogDescSecretary')}
           </DialogPrimitive.Description>
 
           {!isClient && (
             <>
               <Textarea
-                placeholder="Ex.: Utente não enviou os documentos necessários..."
+                placeholder={t('appointmentDetails.cancelReasonPlaceholder')}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={4}
                 className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                O motivo será enviado ao utente juntamente com a notificação de cancelamento.
+                {t('appointmentDetails.cancelReasonHint')}
               </p>
             </>
           )}
@@ -931,14 +932,14 @@ export function AppointmentDetailsDialog({
               setCancelReason('');
               setShowCancelDialog(false);
             }}>
-              {isClient ? 'Não' : 'Esquecer'}
+              {isClient ? t('appointmentDetails.cancelDialogNo') : t('appointmentDetails.cancelDialogForget')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleCancelAppointment}
               disabled={!isClient && !cancelReason.trim()}
             >
-              {isClient ? 'Sim, cancelar' : 'Confirmar'}
+              {isClient ? t('appointmentDetails.cancelDialogConfirmClient') : t('appointmentDetails.cancelDialogConfirmSecretary')}
             </Button>
           </div>
         </DialogContent>
@@ -948,14 +949,14 @@ export function AppointmentDetailsDialog({
       <Dialog open={showAddDocDialog} onOpenChange={setShowAddDocDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Adicionar Documento
+            {t('appointmentDetails.addDocTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-            Digite o nome do documento que deseja adicionar.
+            {t('appointmentDetails.addDocDesc')}
           </DialogPrimitive.Description>
 
           <Input
-            placeholder="Ex.: Comprovativo de morada..."
+            placeholder={t('appointmentDetails.addDocPlaceholder')}
             value={newDocName}
             onChange={(e) => setNewDocName(e.target.value)}
             className="mt-4"
@@ -966,14 +967,14 @@ export function AppointmentDetailsDialog({
               setNewDocName('');
               setShowAddDocDialog(false);
             }}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-purple-600 hover:bg-purple-700"
               onClick={handleAddDocument}
               disabled={!newDocName.trim()}
             >
-              Adicionar
+              {t('appointmentDetails.add')}
             </Button>
           </div>
         </DialogContent>
@@ -983,14 +984,14 @@ export function AppointmentDetailsDialog({
       <Dialog open={showUpdateDocDialog} onOpenChange={setShowUpdateDocDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Atualizar Documento
+            {t('appointmentDetails.updateDocTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-            Digite o novo nome para o documento.
+            {t('appointmentDetails.updateDocDesc')}
           </DialogPrimitive.Description>
 
           <Input
-            placeholder="Novo nome do documento..."
+            placeholder={t('appointmentDetails.updateDocPlaceholder')}
             value={newDocName}
             onChange={(e) => setNewDocName(e.target.value)}
             className="mt-4"
@@ -1002,14 +1003,14 @@ export function AppointmentDetailsDialog({
               setUpdateDocIndex(null);
               setShowUpdateDocDialog(false);
             }}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-purple-600 hover:bg-purple-700"
               onClick={handleUpdateDocument}
               disabled={!newDocName.trim()}
             >
-              Atualizar
+              {t('appointmentDetails.updateLegacyDoc')}
             </Button>
           </div>
         </DialogContent>
@@ -1020,10 +1021,10 @@ export function AppointmentDetailsDialog({
         <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Reagendar Marcação
+              {t('appointmentDetails.rescheduleDialogTitle')}
             </DialogTitle>
             <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha a nova data e horário para a sua marcação.
+              {t('appointmentDetails.rescheduleDialogDesc')}
             </DialogPrimitive.Description>
           </DialogHeader>
 
@@ -1031,7 +1032,7 @@ export function AppointmentDetailsDialog({
             <div className="flex items-end gap-4 flex-wrap">
               {/* Ano */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ano</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleYear')}</Label>
                 <Select value={String(rescheduleYear)} onValueChange={(value) => setRescheduleYear(Number(value))}>
                   <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
                     <SelectValue />
@@ -1046,14 +1047,16 @@ export function AppointmentDetailsDialog({
 
               {/* Mês */}
               <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Mês</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleMonth')}</Label>
                 <Select value={String(rescheduleMonth)} onValueChange={(value) => setRescheduleMonth(Number(value))}>
                   <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((month, idx) => (
-                      <SelectItem key={idx} value={String(idx)}>{month}</SelectItem>
+                    {Array.from({ length: 12 }, (_, idx) => (
+                      <SelectItem key={idx} value={String(idx)}>
+                        {new Date(rescheduleYear, idx).toLocaleDateString(locale, { month: 'long' })}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1061,7 +1064,7 @@ export function AppointmentDetailsDialog({
 
               {/* Dia */}
               <div className="flex flex-col gap-1 flex-1 min-w-[100px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleDay')}</Label>
                 <Select
                   value={String(rescheduleDay)}
                   onValueChange={(value) => setRescheduleDay(Math.min(Number(value), getDaysInMonth(rescheduleYear, rescheduleMonth)))}
@@ -1083,10 +1086,10 @@ export function AppointmentDetailsDialog({
 
               {/* Horário */}
               <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
                 <Select value={rescheduleTime} onValueChange={setRescheduleTime} disabled={!availableRescheduleSlots.length}>
                   <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue placeholder={availableRescheduleSlots.length ? "Selecione" : "Indisponível"} />
+                    <SelectValue placeholder={availableRescheduleSlots.length ? t('appointmentDetails.rescheduleSelectPlaceholder') : t('appointmentDetails.rescheduleUnavailable')} />
                   </SelectTrigger>
                   <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
                     {availableRescheduleSlots.map((slot) => (
@@ -1100,14 +1103,14 @@ export function AppointmentDetailsDialog({
 
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-yellow-500 hover:bg-yellow-600"
               onClick={handleReschedule}
               disabled={!rescheduleTime}
             >
-              Confirmar Reagendamento
+              {t('appointmentDetails.rescheduleConfirm')}
             </Button>
           </div>
         </DialogContent>

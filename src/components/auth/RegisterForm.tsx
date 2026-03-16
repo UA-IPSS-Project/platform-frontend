@@ -293,7 +293,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label className="text-gray-700 dark:text-gray-300">
-            Data de Nascimento *
+            {t('auth.birthDate')} *
           </Label>
           <DatePickerField
             value={toInputDate(formData.birthDate)}
@@ -324,7 +324,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
           <div className="space-y-2">
             <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-              Contacto *
+              {t('auth.contact')} *
             </Label>
             <Input
               id="contact"
@@ -342,7 +342,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         {accountType === 'employee' ? (
           <div className="space-y-3">
-            <Label className="text-gray-700 dark:text-gray-300">Email Institucional *</Label>
+            <Label className="text-gray-700 dark:text-gray-300">{t('auth.institutionalEmailLabel')} *</Label>
 
             <div className="space-y-3">
               {/* Option 1: Auto Generated */}
@@ -362,7 +362,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 <div className="flex flex-col">
                   {/* <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automático</span> */}
                   <span className={`text-sm font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome primeiro)'}
+                    {formData.name ? generateInstitutionalEmail(formData.name) : t('auth.fillNameFirst')}
                   </span>
                 </div>
               </div>
@@ -383,7 +383,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                     {emailSelection === 'manual' && <div className="w-2 h-2 rounded-full bg-white" />}
                   </div>
                   <span className={`text-sm font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    Outro
+                    {t('auth.other')}
                   </span>
                 </div>
 
@@ -428,17 +428,17 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         {
           accountType === 'employee' && (
             <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300">Função *</Label>
+              <Label className="text-gray-700 dark:text-gray-300">{t('auth.role')} *</Label>
               <div className="flex items-center gap-2">
                 <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
                   <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Selecione a função" />
+                    <SelectValue placeholder={t('auth.selectRole')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Secretaria">Secretaria</SelectItem>
-                    <SelectItem value="Balneário Social">Balneário Social</SelectItem>
-                    <SelectItem value="Escola">Escola</SelectItem>
-                    <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
+                    <SelectItem value="Secretaria">{t('auth.roleSecretary')}</SelectItem>
+                    <SelectItem value="Balneário Social">{t('auth.roleSocialBath')}</SelectItem>
+                    <SelectItem value="Escola">{t('auth.roleSchool')}</SelectItem>
+                    <SelectItem value="Serviços Internos">{t('auth.roleInternalServices')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -449,7 +449,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
-            Palavra-passe *
+            {t('auth.password')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
             ? 'border-red-500 focus-within:ring-red-500/50'
@@ -476,15 +476,15 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             <div className="space-y-1 text-sm">
               <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.minLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Min. 8 caracteres</span>
+                <span>{t('auth.passwordRuleMinLength')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasUpperLower ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Maiúsculas e minúsculas</span>
+                <span>{t('auth.passwordRuleCases')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasNumber ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Números</span>
+                <span>{t('auth.passwordRuleNumbers')}</span>
               </div>
             </div>
           )}
@@ -493,7 +493,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-gray-300">
-            Confirmar Palavra-passe *
+            {t('auth.confirmPassword')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.confirmPassword
             ? 'border-red-500 focus-within:ring-red-500/50'
@@ -537,7 +537,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 htmlFor="termsAccepted"
                 className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
               >
-                Aceito os{' '}
+                {t('auth.acceptTermsPrefix')}{' '}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -546,7 +546,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                   }}
                   className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
                 >
-                  termos de uso e política de privacidade
+                  {t('auth.termsAndPrivacy')}
                 </button>
               </label>
             </div>
@@ -560,7 +560,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           type="submit"
           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200 mt-6"
         >
-          Criar Conta
+          {t('auth.createAccount')}
         </Button>
       </form>
 

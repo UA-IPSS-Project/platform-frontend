@@ -110,7 +110,7 @@ function App() {
           {/* Actually dashboards have their own toggles often, but global one is useful outside */}
           {(!isAuthenticated || location.pathname === '/set-password') && (
             <div className="absolute top-6 right-6 z-50 flex items-center gap-2">
-              {location.pathname === '/login' && (
+              {(location.pathname === '/login' || location.pathname === '/register') && (
                 <LanguageToggle
                      variant="full"
                   className="bg-white dark:bg-gray-800 px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"

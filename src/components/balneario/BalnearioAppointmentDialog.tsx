@@ -8,6 +8,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { calendarioApi, apiRequest } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 interface BalnearioAppointmentDialogProps {
     open: boolean;
@@ -18,11 +19,27 @@ interface BalnearioAppointmentDialogProps {
     funcionarioId: number;
 }
 
-const HYGIENE_OPTIONS = ['Shampoo', 'Gel de Banho', 'Toalha', 'Sabonete/Creme'];
-const LAUNDRY_OPTIONS = ['Lavar Roupa Seca', 'Lavar Roupa Molhada'];
-const CLOTHING_OPTIONS = ['T-shirt/Camisola', 'Calças', 'Sapatos/Sapatilhas', 'Roupa Interior', 'Meias', 'Agasalho/Casaco'];
+const HYGIENE_OPTIONS = [
+    { value: 'Shampoo', labelKey: 'balnearioAppointment.options.shampoo' },
+    { value: 'Gel de Banho', labelKey: 'balnearioAppointment.options.showerGel' },
+    { value: 'Toalha', labelKey: 'balnearioAppointment.options.towel' },
+    { value: 'Sabonete/Creme', labelKey: 'balnearioAppointment.options.soapCream' },
+];
+const LAUNDRY_OPTIONS = [
+    { value: 'Lavar Roupa Seca', labelKey: 'balnearioAppointment.options.washDryClothes' },
+    { value: 'Lavar Roupa Molhada', labelKey: 'balnearioAppointment.options.washWetClothes' },
+];
+const CLOTHING_OPTIONS = [
+    { value: 'T-shirt/Camisola', labelKey: 'balnearioAppointment.options.shirtSweater' },
+    { value: 'Calças', labelKey: 'balnearioAppointment.options.pants' },
+    { value: 'Sapatos/Sapatilhas', labelKey: 'balnearioAppointment.options.shoesSneakers' },
+    { value: 'Roupa Interior', labelKey: 'balnearioAppointment.options.underwear' },
+    { value: 'Meias', labelKey: 'balnearioAppointment.options.socks' },
+    { value: 'Agasalho/Casaco', labelKey: 'balnearioAppointment.options.coatJacket' },
+];
 
 export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: BalnearioAppointmentDialogProps) {
+    const { t, i18n } = useTranslation();
     const [name, setName] = useState('');
     const [selectedOptions, setSelectedOptions] = useState<Record<string, boolean>>({});
     const [notes, setNotes] = useState('');
@@ -53,7 +70,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
             const now = new Date();
             if (dateTime <= now) {
-                toast.error('Não é possível marcar para uma data/hora no passado');
+                toast.error(t('balnearioAppointment.errors.pastDate'));
                 onClose();
                 return;
             }
@@ -61,7 +78,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             const dateStr = date.toISOString().split('T')[0];
             const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'BALNEARIO');
             if (isBlocked) {
-                toast.error('Horário indisponível');
+                toast.error(t('balnearioAppointment.errors.slotUnavailable'));
                 onClose();
                 return;
             }
@@ -80,7 +97,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             tempReservaRef.current = data.tempId;
         } catch (error: any) {
             console.error('Erro ao reservar slot:', error);
-            toast.error(error.message || 'Este horário já está ocupado');
+            toast.error(error.message || t('balnearioAppointment.errors.slotOccupied'));
             onClose();
         }
     };
@@ -137,20 +154,20 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             Object.entries(selectedOptions).forEach(([option, isSelected]) => {
                 if (!isSelected) return;
 
-                if (HYGIENE_OPTIONS.includes(option)) {
+                if (HYGIENE_OPTIONS.some(item => item.value === option)) {
                     hasHygiene = true;
                     roupasVal.push({ categoria: option, quantidade: 1 });
-                } else if (LAUNDRY_OPTIONS.includes(option)) {
+                } else if (LAUNDRY_OPTIONS.some(item => item.value === option)) {
                     hasLaundry = true;
                     roupasVal.push({ categoria: option, quantidade: 1 });
-                } else if (CLOTHING_OPTIONS.includes(option)) {
+                } else if (CLOTHING_OPTIONS.some(item => item.value === option)) {
                     roupasVal.push({ categoria: option, quantidade: 1 });
                 }
             });
 
             const payload = {
                 data: dataHora.toISOString().slice(0, 19),
-                nomeUtente: name.trim() || 'Anónimo',
+                nomeUtente: name.trim() || t('balnearioAppointment.anonymousName'),
                 produtosHigiene: hasHygiene,
                 lavagemRoupa: hasLaundry,
                 responsavelId: funcionarioId,
@@ -162,7 +179,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 body: JSON.stringify(payload),
             });
 
-            toast.success('Marcação de balneário registada!');
+            toast.success(t('balnearioAppointment.createdSuccess'));
 
             // Esperar que o backend processe a transação
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -170,7 +187,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             onClose();
         } catch (error: any) {
             console.error('Erro ao registar marcação de balneário:', error);
-            toast.error(`Erro: ${error.message || 'Falha na criação'}`);
+            toast.error(t('balnearioAppointment.creationFailed', { message: error.message || t('balnearioAppointment.creationFailedFallback') }));
         } finally {
             setIsLoading(false);
         }
@@ -180,22 +197,22 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 <DialogHeader>
-                    <DialogTitle className="text-gray-900 dark:text-gray-100">Registar Banho</DialogTitle>
+                    <DialogTitle className="text-gray-900 dark:text-gray-100">{t('balnearioAppointment.title')}</DialogTitle>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {date.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} às {time}
+                        {date.toLocaleDateString(i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
                     </p>
                 </DialogHeader>
                 <DialogPrimitive.Description className="sr-only">
-                    Formulário para agendamento de banhos rápidos.
+                    {t('balnearioAppointment.description')}
                 </DialogPrimitive.Description>
 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100 font-bold text-base">Nome do Utente</Label>
+                        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100 font-bold text-base">{t('balnearioAppointment.patientName')}</Label>
                         <Input
                             id="name"
                             type="text"
-                            placeholder="Ex: João da Silva"
+                            placeholder={t('balnearioAppointment.patientNamePlaceholder')}
                             value={name}
                             onChange={(e) => {
                                 setName(e.target.value);
@@ -209,22 +226,22 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     </div>
 
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-purple-700 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/40 pb-2">Necessidades do Utente</h3>
+                        <h3 className="font-semibold text-purple-700 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/40 pb-2">{t('balnearioAppointment.patientNeeds')}</h3>
 
                         <div className="space-y-4">
                             {/* Hygiene */}
                             <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</legend>
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-3">
+                                        <div key={opt.value} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={optionId('higiene', opt)}
-                                                checked={selectedOptions[opt] || false}
-                                                onCheckedChange={() => toggleOption(opt)}
+                                                id={optionId('higiene', opt.value)}
+                                                checked={selectedOptions[opt.value] || false}
+                                                onCheckedChange={() => toggleOption(opt.value)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={optionId('higiene', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                         </div>
                                     ))}
                                 </div>
@@ -232,17 +249,17 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                             {/* Laundry */}
                             <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</legend>
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-3">
+                                        <div key={opt.value} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={optionId('lavandaria', opt)}
-                                                checked={selectedOptions[opt] || false}
-                                                onCheckedChange={() => toggleOption(opt)}
+                                                id={optionId('lavandaria', opt.value)}
+                                                checked={selectedOptions[opt.value] || false}
+                                                onCheckedChange={() => toggleOption(opt.value)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={optionId('lavandaria', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                         </div>
                                     ))}
                                 </div>
@@ -250,17 +267,17 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                             {/* Clothing */}
                             <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</legend>
+                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</legend>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {CLOTHING_OPTIONS.map((opt) => (
-                                        <div key={opt} className="flex items-center space-x-3">
+                                        <div key={opt.value} className="flex items-center space-x-3">
                                             <Checkbox
-                                                id={optionId('vestuario', opt)}
-                                                checked={selectedOptions[opt] || false}
-                                                onCheckedChange={() => toggleOption(opt)}
+                                                id={optionId('vestuario', opt.value)}
+                                                checked={selectedOptions[opt.value] || false}
+                                                onCheckedChange={() => toggleOption(opt.value)}
                                                 className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                             />
-                                            <label htmlFor={optionId('vestuario', opt)} className="text-sm cursor-pointer select-none leading-tight">{opt}</label>
+                                            <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                         </div>
                                     ))}
                                 </div>
@@ -269,10 +286,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="notes" className="text-gray-900 dark:text-gray-100">Notas Adicionais</Label>
+                        <Label htmlFor="notes" className="text-gray-900 dark:text-gray-100">{t('balnearioAppointment.additionalNotes')}</Label>
                         <Textarea
                             id="notes"
-                            placeholder="Ex: Alergias, cuidados especiais, tamanho de roupa..."
+                            placeholder={t('balnearioAppointment.notesPlaceholder')}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
@@ -282,10 +299,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                     <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                         <Button type="button" variant="outline" onClick={handleClose} className="flex-1" disabled={isLoading}>
-                            Cancelar
+                            {t('appointmentDialog.actions.cancel')}
                         </Button>
                         <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
-                            {isLoading ? 'A Guardar...' : 'Confirmar e Marcar'}
+                            {isLoading ? t('balnearioAppointment.saving') : t('balnearioAppointment.confirmBook')}
                         </Button>
                     </div>
                 </form>

@@ -413,7 +413,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 <Input
                   id="nif"
                   type="text"
-                  placeholder="123456789"
+                  placeholder={t('appointmentDialog.fields.nifPlaceholder')}
                   maxLength={9}
                   value={formData.nif}
                   onChange={(e) => handleNifChange(e.target.value)}
@@ -466,7 +466,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               <Input
                 id="email"
                 type="email"
-                placeholder="exemplo@email.com"
+                placeholder={t('appointmentDialog.fields.emailPlaceholder')}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 aria-invalid={!!errors.email}
@@ -481,7 +481,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               <Input
                 id="contact"
                 type="text"
-                placeholder="912345678"
+                placeholder={t('appointmentDialog.fields.contactPlaceholder')}
                 maxLength={9}
                 value={formData.contact}
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
