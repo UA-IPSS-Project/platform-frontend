@@ -32,8 +32,16 @@ const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: '', label: 'Todos os estados' },
   { value: 'ENVIADA', label: 'Enviada' },
   { value: 'EM_ANALISE', label: 'Em análise' },
+  { value: 'ACEITE', label: 'Aceite' },
+  { value: 'NEGADA', label: 'Negada' },
   { value: 'CONCLUIDA', label: 'Concluída' },
   { value: 'CANCELADA', label: 'Cancelada' },
+];
+
+const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
+  { value: 'EM_ANALISE', label: 'Em análise' },
+  { value: 'ACEITE', label: 'Aceite' },
+  { value: 'NEGADA', label: 'Negada' },
 ];
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
@@ -217,7 +225,7 @@ export function SecretaryRequisitionsPage({
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
-  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('ENVIADA');
+  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
@@ -895,7 +903,11 @@ export function SecretaryRequisitionsPage({
 
   const handleOpenRequisicao = (req: RequisicaoResponse) => {
     setOpenedRequisicaoId(req.id);
-    setEstadoEdicao(req.estado);
+    // Pré-seleciona o estado atual se for um dos estados geridos pela secretaria, caso contrário EM_ANALISE
+    const estadoSecretaria = ESTADO_SECRETARIA_OPTIONS.some((opt) => opt.value === req.estado)
+      ? req.estado
+      : 'EM_ANALISE';
+    setEstadoEdicao(estadoSecretaria);
   };
 
   const handleAtualizarEstado = async () => {
@@ -2149,7 +2161,7 @@ export function SecretaryRequisitionsPage({
                   onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
                   className={selectFieldClassName}
                 >
-                  {ESTADO_OPTIONS.filter((option) => option.value).map((option) => (
+                  {ESTADO_SECRETARIA_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
