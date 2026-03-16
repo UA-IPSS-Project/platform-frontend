@@ -25,6 +25,7 @@ import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointment
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 interface SecretaryDashboardProps {
   user: {
@@ -39,6 +40,7 @@ interface SecretaryDashboardProps {
 }
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
+  const { t } = useTranslation();
   const { user: authUser, isLoading: authLoading } = useAuth();
 
   const {
@@ -130,7 +132,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       );
       setHistoryAppointments((Array.isArray(data) ? data : []).map(mapApiToAppointment));
     } catch (error) {
-      toast.error('Erro ao carregar histórico');
+      toast.error(t('dashboard.errors.loadHistory'));
     }
   };
 
@@ -189,14 +191,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setSelectedAppointment(freshAppointment);
       setShowDetailsDialog(true);
     } catch (error) {
-      toast.error('Não foi possível carregar os dados mais recentes da marcação.');
+      toast.error(t('dashboard.errors.loadLatestAppointment'));
       refreshCurrentWeek(currentDate);
     }
   };
 
   const handleCancelAppointment = (id: string, reason: string) => {
     updateAppointmentOptimistically(id, { status: 'cancelled', cancellationReason: reason });
-    toast.success('Marcação cancelada e utente notificado com o motivo');
+    toast.success(t('dashboard.messages.appointmentCancelled'));
     refreshCurrentWeek(currentDate);
   };
 
@@ -210,27 +212,27 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     <div className="flex items-center justify-center h-[600px]">
       <div className="text-center">
         <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
-          {view === 'requisitions' && 'Requisições'}
-          {view === 'sections' && 'Secções'}
-          {view === 'management' && 'Gestão'}
-          {view === 'settings' && 'Definições'}
-          {view === 'more' && 'Mais'}
-          {view === 'administrative' && 'Área Administrativa'}
-          {view === 'material' && 'Requisições - Material'}
-          {view === 'manutencao' && 'Requisições - Manutenção'}
-          {view === 'transportes' && 'Requisições - Transporte'}
-          {view === 'urgente' && 'Requisições - Prioridade Alta'}
-          {view === 'balneario' && 'Valências - Balneário'}
-          {view === 'escola' && 'Valências - Escola'}
-          {view === 'valencias' && 'Valências'}
-          {view === 'candidaturas' && 'Candidaturas'}
-          {view === 'creche' && 'Candidaturas - Creche'}
-          {view === 'catl' && 'Candidaturas - CATL'}
-          {view === 'erpi' && 'Candidaturas - ERPI'}
-          {view === 'reports' && 'Relatórios'}
+          {view === 'requisitions' && t('dashboard.requisitions')}
+          {view === 'sections' && t('dashboard.sections')}
+          {view === 'management' && t('dashboard.management')}
+          {view === 'settings' && t('dashboard.settings')}
+          {view === 'more' && t('dashboard.more')}
+          {view === 'administrative' && t('dashboard.administrativeArea')}
+          {view === 'material' && t('dashboard.requisitionsMaterial')}
+          {view === 'manutencao' && t('dashboard.requisitionsMaintenance')}
+          {view === 'transportes' && t('dashboard.requisitionsTransport')}
+          {view === 'urgente' && t('dashboard.requisitionsHighPriority')}
+          {view === 'balneario' && t('dashboard.servicesBalneario')}
+          {view === 'escola' && t('dashboard.servicesSchool')}
+          {view === 'valencias' && t('dashboard.services')}
+          {view === 'candidaturas' && t('dashboard.applications')}
+          {view === 'creche' && t('dashboard.applicationsCreche')}
+          {view === 'catl' && t('dashboard.applicationsCatl')}
+          {view === 'erpi' && t('dashboard.applicationsErpi')}
+          {view === 'reports' && t('dashboard.reports')}
           {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <p className="text-gray-500 dark:text-gray-500">{t('dashboard.inDevelopment')}</p>
       </div>
     </div>
   );
@@ -238,12 +240,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const SecretaryNavigation = (
     <>
       <NavDropdown
-        label="Requisições"
+        label={t('dashboard.requisitions')}
         items={[
-          { id: 'material', label: 'Material' },
-          { id: 'manutencao', label: 'Manutenção' },
-          { id: 'transportes', label: 'Transporte' },
-          { id: 'urgente', label: 'Prioridade Alta' },
+          { id: 'material', label: t('dashboard.material') },
+          { id: 'manutencao', label: t('dashboard.maintenance') },
+          { id: 'transportes', label: t('dashboard.transport') },
+          { id: 'urgente', label: t('dashboard.highPriority') },
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -251,10 +253,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       />
 
       <NavDropdown
-        label="Valências"
+        label={t('dashboard.services')}
         items={[
-          { id: 'balneario', label: 'Balneário' },
-          { id: 'escola', label: 'Escola' },
+          { id: 'balneario', label: t('dashboard.balneario') },
+          { id: 'escola', label: t('dashboard.school') },
         ]}
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -266,13 +268,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('appointments')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Marcações
+        {t('dashboard.appointments')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('dashboard.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('dashboard.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -286,7 +288,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('reports')}
         className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Relatórios
+        {t('dashboard.reports')}
       </Button>
 
       <Button
@@ -294,7 +296,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('management')}
         className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Gestão
+        {t('dashboard.management')}
       </Button>
     </>
   );
@@ -306,7 +308,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Secretaria"
+        roleTitle={t('dashboard.secretary')}
         navigationContent={SecretaryNavigation}
         notifications={notifications}
         unreadCount={unreadCount}
@@ -455,14 +457,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       setSelectedAppointment(appointment);
                       setShowDetailsDialog(true);
                     } catch (e) {
-                      toast.error('Não foi possível encontrar a marcação');
+                      toast.error(t('dashboard.errors.findAppointment'));
                     }
                   },
                   onNavigateToHistory: async () => {
                     navigateTo('history');
                     setShowNotifications(false);
                   },
-                  onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
+                  onNavigateToDocument: () => toast.info(t('dashboard.messages.documentsViewInDevelopment')),
                   onNavigateToCancelledSlot: (dateStr, time) => {
                     navigateTo('appointments');
                     setShowNotifications(false);

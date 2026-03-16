@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles/globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import "./i18n";
 
 import { BrowserRouter } from "react-router-dom";
 

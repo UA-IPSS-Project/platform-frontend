@@ -21,6 +21,7 @@ import {
   validateBirthDate,
   type PasswordValidation
 } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
 
 interface RegisterFormProps {
   onNavigateToLogin: () => void;
@@ -42,6 +43,7 @@ const toDisplayDate = (value: string): string => {
 };
 
 export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     nif: '',
@@ -72,62 +74,62 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     const newErrors: Record<string, string> = {};
 
     const nameValidation = validateName(formData.name);
-    if (!nameValidation.valid) newErrors.name = nameValidation.error || 'Nome inválido';
+    if (!nameValidation.valid) newErrors.name = nameValidation.error || t('auth.invalidName');
 
     if (!formData.nif) {
-      newErrors.nif = 'NIF é obrigatório';
+      newErrors.nif = t('auth.nifRequired');
     } else if (!validateNIF(formData.nif)) {
-      newErrors.nif = 'NIF deve ter 9 dígitos';
+      newErrors.nif = t('auth.nifMustHave9Digits');
     }
 
     if (!formData.contact) {
-      newErrors.contact = 'Contacto é obrigatório';
+      newErrors.contact = t('auth.contactRequired');
     } else if (!validateContact(formData.contact)) {
-      newErrors.contact = 'Contacto deve ter 9 dígitos';
+      newErrors.contact = t('auth.contactMustHave9Digits');
     }
 
     if (!formData.email) {
-      newErrors.email = 'Email é obrigatório';
+      newErrors.email = t('auth.emailRequired');
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('auth.emailInvalid');
     }
 
     if (accountType === 'employee') {
       // require institutional email
       if (!formData.email.endsWith('@florinhasdovouga.pt')) {
-        newErrors.email = 'Use um email institucional (@florinhasdovouga.pt)';
+        newErrors.email = t('auth.useInstitutionalEmail');
       }
     }
 
     if (accountType === 'employee') {
       if (!employeeRole) {
-        newErrors.employeeRole = 'Role é obrigatória para funcionários';
+        newErrors.employeeRole = t('auth.roleRequiredEmployee');
       }
     }
 
     if (!formData.birthDate) {
-      newErrors.birthDate = 'Data de nascimento é obrigatória';
+      newErrors.birthDate = t('appointmentDialog.errors.birthDateRequired');
     } else {
       const birthValidation = validateBirthDate(formData.birthDate);
       if (!birthValidation.valid) {
-        newErrors.birthDate = birthValidation.error || 'Data inválida';
+        newErrors.birthDate = birthValidation.error || t('appointmentDialog.errors.dateInvalid');
       }
     }
 
     if (!formData.password) {
-      newErrors.password = 'Palavra-passe é obrigatória';
+      newErrors.password = t('auth.passwordRequired');
     } else if (!isPasswordValid) {
-      newErrors.password = 'Palavra-passe não cumpre os requisitos';
+      newErrors.password = t('auth.passwordRequirementsNotMet');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirmação de palavra-passe é obrigatória';
+      newErrors.confirmPassword = t('auth.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'As palavras-passe não coincidem';
+      newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
     }
 
     if (!formData.termsAccepted) {
-      newErrors.termsAccepted = 'Deve aceitar os termos de uso para se registar';
+      newErrors.termsAccepted = t('auth.mustAcceptTermsRegister');
     }
 
     setErrors(newErrors);
@@ -175,7 +177,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Por favor, corrija os erros no formulário');
+      toast.error(t('auth.fixFormErrors'));
       return;
     }
 
@@ -194,7 +196,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           password: formData.password,
           termsAccepted: formData.termsAccepted,
         });
-        toast.success('Conta criada com sucesso!');
+        toast.success(t('auth.accountCreatedSuccess'));
         onNavigateToLogin();
       } else {
         await registerFuncionario({
@@ -208,12 +210,12 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           termsAccepted: formData.termsAccepted,
         });
         // Employee registration success
-        toast.success('Conta criada com sucesso! Aguarde aprovação da secretaria.');
+        toast.success(t('auth.employeeAccountCreatedSuccess'));
         onNavigateToLogin();
       }
 
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar conta');
+      toast.error(error.message || t('auth.errorCreatingAccount'));
     }
   };
 
@@ -248,12 +250,12 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Voltar ao Login</span>
+        <span>{t('auth.backToLogin')}</span>
       </button>
 
       <div className="text-center mb-8">
-        <h1 className="text-gray-800 dark:text-gray-100 mb-2">Criar Conta</h1>
-        <p className="text-gray-600 dark:text-gray-400">Registe-se no sistema</p>
+        <h1 className="text-gray-800 dark:text-gray-100 mb-2">{t('auth.createAccount')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('auth.registerInSystem')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -268,7 +270,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
-            Nome Completo *
+            {t('auth.fullName')} *
           </Label>
           <Input
             id="name"

@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 
 interface UserDashboardProps {
   user: {
@@ -34,6 +35,7 @@ interface UserDashboardProps {
 }
 
 export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
+  const { t } = useTranslation();
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,7 +112,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const data = await marcacoesApi.obterPassadas(startIsoString, endOfDay.toISOString(), authUser.id);
       setHistoryAppointments(data.map(mapApiToAppointment));
     } catch (error) {
-      toast.error('Erro ao carregar histórico');
+      toast.error(t('dashboard.errors.loadHistory'));
     }
   };
 
@@ -170,7 +172,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       setSelectedAppointment(fresh);
       setShowDetailsDialog(true);
     } catch (e) {
-      toast.error('Erro ao carregar detalhes');
+      toast.error(t('dashboard.errors.loadDetails'));
       refreshAppointments();
     }
   };
@@ -179,7 +181,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     <div className="flex items-center justify-center h-[500px]">
       <div className="text-center">
         <h2 className="text-xl text-gray-600 dark:text-gray-300 mb-2">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <p className="text-gray-500 dark:text-gray-500">{t('dashboard.inDevelopment')}</p>
       </div>
     </div>
   );
@@ -193,13 +195,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onClick={() => navigate('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Secretaria
+        {t('dashboard.secretary')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('dashboard.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('dashboard.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -216,7 +218,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Utente"
+        roleTitle={t('dashboard.user')}
         navigationContent={UserNavigation}
         notifications={notifications}
         unreadCount={unreadCount}

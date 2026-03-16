@@ -9,6 +9,7 @@ import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
 import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
+import { useTranslation } from 'react-i18next';
 import {
   MaterialCategoria,
   MaterialCatalogo,
@@ -255,6 +256,7 @@ export function SecretaryRequisitionsPage({
   initialTipo,
   initialPrioridade,
 }: Readonly<SecretaryRequisitionsPageProps>) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
@@ -351,7 +353,7 @@ export function SecretaryRequisitionsPage({
       // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
       setMonthlyRequisicoes(lista);
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao carregar requisições.');
+      toast.error(error?.message || t('requisitions.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -381,7 +383,7 @@ export function SecretaryRequisitionsPage({
       setMateriais(Array.isArray(materiaisData) ? materiaisData : []);
       setTransportes(Array.isArray(transportesData) ? transportesData : []);
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao carregar materiais e transportes.');
+      toast.error(error?.message || t('requisitions.errors.loadCatalogFailed'));
     } finally {
       setLoadingCatalogo(false);
     }
@@ -624,32 +626,32 @@ export function SecretaryRequisitionsPage({
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = (field: CreateField): string | undefined => {
     if (field === 'descricao') {
-      if (!descricao.trim()) return 'Campo obrigatório.';
+      if (!descricao.trim()) return t('requisitions.errors.requiredField');
       return undefined;
     }
 
     if (tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-      if (linhasValidas.length === 0) return 'Adicione pelo menos um material com quantidade válida.';
+      if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
       return undefined;
     }
 
     if (tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino' && !destinoTransporte.trim()) return 'Campo obrigatório.';
-    if (field === 'dataSaida' && !dataSaida) return 'Campo obrigatório.';
-    if (field === 'horaSaida' && !horaSaida) return 'Campo obrigatório.';
-    if (field === 'dataRegresso' && !dataRegresso) return 'Campo obrigatório.';
-    if (field === 'horaRegresso' && !horaRegresso) return 'Campo obrigatório.';
+    if (field === 'destino' && !destinoTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'dataSaida' && !dataSaida) return t('requisitions.errors.requiredField');
+    if (field === 'horaSaida' && !horaSaida) return t('requisitions.errors.requiredField');
+    if (field === 'dataRegresso' && !dataRegresso) return t('requisitions.errors.requiredField');
+    if (field === 'horaRegresso' && !horaRegresso) return t('requisitions.errors.requiredField');
 
     if (field === 'numeroPassageiros') {
-      if (!numeroPassageiros) return 'Campo obrigatório.';
-      if (passageirosSolicitados < 1) return 'Indique um número de passageiros válido.';
+      if (!numeroPassageiros) return t('requisitions.errors.requiredField');
+      if (passageirosSolicitados < 1) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
     if (field === 'transporteIds' && selectedTransportIds.length === 0) {
-      return 'Selecione pelo menos uma viatura.';
+      return t('requisitions.errors.selectOneVehicle');
     }
 
     const saida = composeDateTime(dataSaida, horaSaida);
@@ -658,7 +660,7 @@ export function SecretaryRequisitionsPage({
       const saidaDate = new Date(saida);
       const regressoDate = new Date(regresso);
       if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
-        return 'A data/hora de regresso deve ser posterior à data/hora de saída.';
+        return t('requisitions.errors.returnAfterDeparture');
       }
     }
 
@@ -705,11 +707,11 @@ export function SecretaryRequisitionsPage({
 
   const handleCriarMaterialCatalogo = async () => {
     if (!novoMaterialNome.trim()) {
-      toast.error('O nome do material é obrigatório.');
+      toast.error(t('requisitions.material.errors.nameRequired'));
       return;
     }
     if (!novoMaterialAtributo.trim() || !novoMaterialValorAtributo.trim()) {
-      toast.error('Atributo e valor do atributo são obrigatórios.');
+      toast.error(t('requisitions.material.errors.attributeRequired'));
       return;
     }
 
@@ -722,7 +724,7 @@ export function SecretaryRequisitionsPage({
         atributo: novoMaterialAtributo.trim(),
         valorAtributo: novoMaterialValorAtributo.trim(),
       });
-      toast.success('Material criado com sucesso.');
+      toast.success(t('requisitions.material.messages.created'));
       setMateriais((prev) => [...prev, novoMaterial]);
       setNovoMaterialNome('');
       setNovoMaterialDescricao('');
@@ -731,7 +733,7 @@ export function SecretaryRequisitionsPage({
       setNovoMaterialValorAtributo('');
       setCreateMaterialDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao criar material.');
+      toast.error(error?.message || t('requisitions.material.errors.createFailed'));
     } finally {
       setSubmittingMaterial(false);
     }
@@ -859,7 +861,7 @@ export function SecretaryRequisitionsPage({
 
   const handleCreate = async () => {
     if (!currentUserId) {
-      toast.error('Não foi possível identificar o utilizador autenticado.');
+      toast.error(t('requisitions.errors.missingAuthenticatedUser'));
       return;
     }
 
@@ -914,7 +916,7 @@ export function SecretaryRequisitionsPage({
           ...payloadBase,
           itens: itensDedupe,
         });
-        toast.success('Requisição de material criada com sucesso.');
+        toast.success(t('requisitions.messages.materialCreated'));
       } else if (tipo === 'TRANSPORTE') {
         await requisicoesApi.criarTransporte({
           ...payloadBase,
@@ -933,7 +935,7 @@ export function SecretaryRequisitionsPage({
       }
 
       if (tipo !== 'MATERIAL') {
-        toast.success('Requisição criada com sucesso.');
+        toast.success(t('requisitions.messages.created'));
       }
       handleResetCreateForm();
       setActiveSection('list');
@@ -951,7 +953,7 @@ export function SecretaryRequisitionsPage({
           return next;
         });
       } else {
-        toast.error(error?.message || 'Erro ao criar requisição.');
+        toast.error(error?.message || t('requisitions.errors.createFailed'));
       }
     } finally {
       setSubmitting(false);
@@ -1017,28 +1019,28 @@ export function SecretaryRequisitionsPage({
     if (!openedRequisicaoId || !selectedRequisicao) return;
 
     if (selectedRequisicao.estado !== 'EM_ANALISE') {
-      toast.error('Só é possível decidir requisições que estejam em Em análise.');
+      toast.error(t('requisitions.errors.onlyPendingDecision'));
       return;
     }
 
     if (estadoEdicao === 'EM_ANALISE') {
-      toast.error('Escolhe um estado final: Aceite ou Recusada.');
+      toast.error(t('requisitions.errors.chooseFinalState'));
       return;
     }
 
     if (!ESTADO_FINAL_OPTIONS.has(estadoEdicao)) {
-      toast.error('Estado inválido. Escolhe Aceite ou Recusada.');
+      toast.error(t('requisitions.errors.invalidFinalState'));
       return;
     }
 
     try {
       setUpdatingEstadoId(openedRequisicaoId);
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
-      toast.success('Estado da requisição atualizado com sucesso.');
+      toast.success(t('requisitions.messages.statusUpdated'));
       await fetchRequisicoes();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao atualizar estado da requisição.');
+      toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
     } finally {
       setUpdatingEstadoId(null);
     }
@@ -1047,8 +1049,8 @@ export function SecretaryRequisitionsPage({
   const summaryText = useMemo(() => {
     const total = requisicoes.length;
     const urgentes = requisicoes.filter((item) => item.prioridade === 'URGENTE').length;
-    return `${total} requisição(ões) · ${urgentes} urgente(s)`;
-  }, [requisicoes]);
+    return t('requisitions.summary', { total, urgent: urgentes });
+  }, [requisicoes, t]);
 
   const monthlyRequisicoesAtual = useMemo(() => {
     const now = new Date();
@@ -1168,11 +1170,11 @@ export function SecretaryRequisitionsPage({
   const createFormContent = (
     <div className="space-y-5">
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Dados principais</h3>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
+            <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
             <select
               id="req-create-tipo"
               value={tipo}
@@ -1186,7 +1188,7 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
             <select
               id="req-create-prioridade"
               value={prioridade}
@@ -1200,7 +1202,7 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">Data limite</label>
+            <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.deadlineDate')}</label>
             <DatePickerField
               id="req-create-tempo-limite"
               value={formatDateInput(tempoLimite)}
@@ -1208,17 +1210,17 @@ export function SecretaryRequisitionsPage({
                 setTempoLimite(parseDateInput(value));
                 setTempoLimiteManuallyEdited(true);
               }}
-              placeholder="Selecionar data"
+              placeholder={t('requisitions.ui.selectDate')}
               buttonClassName="mt-1"
             />
             {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Preenchida automaticamente para o dia anterior a saída.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
             )}
           </div>
         </div>
 
         <div>
-          <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição</label>
+          <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.description')}</label>
           <Textarea
             id="req-create-descricao"
             className={getFieldClassName(textareaFieldClassName, 'descricao')}
@@ -1230,23 +1232,23 @@ export function SecretaryRequisitionsPage({
               }
             }}
             onBlur={() => validateAndSetField('descricao', true)}
-            placeholder="Descreva a requisição"
+            placeholder={t('requisitions.ui.describeRequest')}
           />
           {createErrors.descricao && <p className="text-red-500 text-xs mt-1">{createErrors.descricao}</p>}
         </div>
       </div>
 
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Detalhes por tipo</h3>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.detailsByType')}</h3>
 
         <div>
           {tipo === 'MATERIAL' && (
             <div className="space-y-3">
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Selecionar materiais</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.selectMaterials')}</p>
                   <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
-                    Novo material
+                    {t('requisitions.ui.newMaterial')}
                   </Button>
                 </div>
 
@@ -1278,7 +1280,7 @@ export function SecretaryRequisitionsPage({
 
                         {isCategoriaExpanded && (itemsCategoria.length === 0 ? (
                           <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
-                            Sem itens nesta categoria.
+                            {t('requisitions.ui.noItemsInCategory')}
                           </p>
                         ) : (
                           <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
@@ -1316,7 +1318,7 @@ export function SecretaryRequisitionsPage({
                                         className="h-7 px-2 text-xs"
                                         onClick={() => toggleItemAttributesVisibility(item.itemKey)}
                                       >
-                                        {isExpanded ? 'Ocultar atributos' : 'Mostrar atributos'}
+                                        {isExpanded ? t('requisitions.ui.hideAttributes') : t('requisitions.ui.showAttributes')}
                                       </Button>
                                     )}
                                   </div>
@@ -1342,7 +1344,7 @@ export function SecretaryRequisitionsPage({
 
                                             {checked && (
                                               <div>
-                                                <label htmlFor={`qtd-variante-${variante.id}`} className="text-xs text-gray-500 dark:text-gray-400">Qtd</label>
+                                                <label htmlFor={`qtd-variante-${variante.id}`} className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.quantityShort')}</label>
                                                 <Input
                                                   id={`qtd-variante-${variante.id}`}
                                                   type="number"
@@ -1370,10 +1372,10 @@ export function SecretaryRequisitionsPage({
               </div>
 
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Materiais adicionados</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.addedMaterials')}</p>
 
                 {materialLinhas.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não adicionaste materiais.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('requisitions.ui.noMaterialsYet')}</p>
                 ) : (
                   <div className="space-y-4">
                     {materiaisAdicionadosAgrupados.map((grupo) => (
@@ -1396,7 +1398,7 @@ export function SecretaryRequisitionsPage({
                                 className="h-8 px-3"
                                 onClick={() => handleRemoveMaterialLinha(item.rowId)}
                               >
-                                Remover
+                                {t('requisitions.ui.remove')}
                               </Button>
                             </div>
                           ))}
@@ -1405,8 +1407,8 @@ export function SecretaryRequisitionsPage({
                     ))}
 
                     <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span>Total de linhas: {materialLinhas.length}</span>
-                      <span>Total de unidades: {materiaisAdicionadosTotal}</span>
+                      <span>{t('requisitions.ui.totalRows', { count: materialLinhas.length })}</span>
+                      <span>{t('requisitions.ui.totalUnits', { count: materiaisAdicionadosTotal })}</span>
                     </div>
                   </div>
                 )}
@@ -1423,12 +1425,12 @@ export function SecretaryRequisitionsPage({
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Planeamento da deslocação</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Preenche o percurso e a ocupação prevista para sugerir automaticamente a frota mais adequada.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.transportPlanningHint')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">Destino</label>
+                    <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
                     <Input
                       id="req-create-transporte-destino"
                       className={getFieldClassName(inputFieldClassName, 'destino')}
@@ -1440,24 +1442,24 @@ export function SecretaryRequisitionsPage({
                         }
                       }}
                       onBlur={() => validateAndSetField('destino', true)}
-                      placeholder="Ex: Porto, Casa da Música"
+                      placeholder={t('requisitions.ui.destinationPlaceholder')}
                     />
                     {createErrors.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">Condutor (opcional)</label>
+                    <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.driverOptional')}</label>
                     <Input
                       id="req-create-transporte-condutor"
                       className={inputFieldClassName}
                       value={condutorTransporte}
                       onChange={(e) => setCondutorTransporte(e.target.value)}
-                      placeholder="Ex: Motorista interno ou a definir"
+                      placeholder={t('requisitions.ui.driverPlaceholder')}
                     />
                   </div>
 
                   <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
-                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">Data de saída</label>
+                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-saida"
                       value={dataSaida}
@@ -1479,7 +1481,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">Hora de saída</label>
+                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')}</label>
                     <Input
                       id="req-create-transporte-hora-saida"
                       type="time"
@@ -1497,7 +1499,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div onBlurCapture={() => validateAndSetField('dataRegresso', true)}>
-                    <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">Data de regresso</label>
+                    <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-regresso"
                       value={dataRegresso}
@@ -1516,7 +1518,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">Hora de regresso</label>
+                    <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')}</label>
                     <Input
                       id="req-create-transporte-hora-regresso"
                       type="time"
@@ -1534,7 +1536,7 @@ export function SecretaryRequisitionsPage({
                   </div>
 
                   <div>
-                    <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">Número de passageiros</label>
+                    <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
                     <Input
                       id="req-create-transporte-passageiros"
                       type="number"
@@ -1548,7 +1550,7 @@ export function SecretaryRequisitionsPage({
                         }
                       }}
                       onBlur={() => validateAndSetField('numeroPassageiros', true)}
-                      placeholder="Ex: 14"
+                      placeholder={t('requisitions.ui.passengersPlaceholder')}
                     />
                     {createErrors.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
                   </div>
@@ -1558,36 +1560,36 @@ export function SecretaryRequisitionsPage({
               <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Viaturas sugeridas e selecionadas</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Podes manter a sugestão automática ou ajustar manualmente a combinação de viaturas.</p>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.suggestedAndSelectedVehicles')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.suggestionHint')}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={handleAplicarSugestaoTransporte}>
-                      Aplicar sugestão
+                      {t('requisitions.ui.applySuggestion')}
                     </Button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
                   <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Modo de seleção</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? 'Automático' : 'Manual'}</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.selectionMode')}</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? t('requisitions.ui.automatic') : t('requisitions.ui.manual')}</p>
                   </div>
                   <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Capacidade para passageiros</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{selectedTransportesCapacidade} lugares</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.passengerCapacity')}</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{t('requisitions.ui.seatsCount', { count: selectedTransportesCapacidade })}</p>
                   </div>
                   <div className={`rounded-lg border px-3 py-3 ${lugaresEmFalta > 0
                     ? 'border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20'
                     : 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20'
                     }`}>
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Cobertura</p>
+                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.coverage')}</p>
                     <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
                       {getCoberturaMensagem(passageirosSolicitados, lugaresEmFalta)}
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">A lotação útil considera 1 lugar para o condutor em cada viatura.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.capacityHint')}</p>
 
                 {createErrors.transporteIds && (
                   <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
@@ -1595,19 +1597,19 @@ export function SecretaryRequisitionsPage({
 
                 {transportesIndisponiveis.size > 0 && dataHoraSaidaSelecionada && dataHoraRegressoSelecionada && (
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    {transportesIndisponiveis.size} viatura(s) indisponível(is) por já terem uma requisição aceite neste horário.
+                    {t('requisitions.ui.unavailableVehiclesCount', { count: transportesIndisponiveis.size })}
                   </p>
                 )}
 
                 {selectedTransportIds.length > 0 && (
                   <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Seleção atual</p>
+                    <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t('requisitions.ui.currentSelection')}</p>
                     <div className="space-y-2">
                       {selectedTransportes.map((transporte) => (
                         <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Lotação: {formatLotacao(transporte.lotacao)}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{t('requisitions.ui.capacityLabel')}: {formatLotacao(transporte.lotacao)}</p>
                           </div>
                           <Button
                             type="button"
@@ -1615,7 +1617,7 @@ export function SecretaryRequisitionsPage({
                             className="h-8 px-3"
                             onClick={() => toggleSelectedTransport(transporte.id, false)}
                           >
-                            Remover
+                            {t('requisitions.ui.remove')}
                           </Button>
                         </div>
                       ))}
@@ -1625,13 +1627,13 @@ export function SecretaryRequisitionsPage({
 
                 {loadingCatalogo && (
                   <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                    A carregar viaturas disponíveis...
+                    {t('requisitions.ui.loadingVehicles')}
                   </div>
                 )}
 
                 {!loadingCatalogo && transportesPorCategoria.length === 0 && (
                   <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                    Ainda não existem viaturas em catálogo.
+                    {t('requisitions.ui.noVehiclesInCatalog')}
                   </div>
                 )}
 
@@ -1646,7 +1648,7 @@ export function SecretaryRequisitionsPage({
                         >
                           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                             {grupo.label}
-                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{grupo.items.length} viatura(s)</span>
+                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.vehiclesCount', { count: grupo.items.length })}</span>
                           </p>
                           {expandedTransporteCategorias[grupo.categoria] ? (
                             <ChevronUp className="w-4 h-4 text-gray-500" />
@@ -1685,19 +1687,19 @@ export function SecretaryRequisitionsPage({
                                         </span>
                                         {isRecommended && (
                                           <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                                            Sugerida
+                                            {t('requisitions.ui.suggested')}
                                           </span>
                                         )}
                                         {isUnavailable && (
                                           <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                                            Indisponível
+                                            {t('requisitions.ui.unavailable')}
                                           </span>
                                         )}
                                       </div>
                                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400">{t('requisitions.ui.capacityLabel')}: {formatLotacao(transporte.lotacao)}</p>
                                       {isUnavailable && (
-                                        <p className="text-xs text-amber-700 dark:text-amber-300">Já existe uma requisição aceite com horário sobreposto.</p>
+                                        <p className="text-xs text-amber-700 dark:text-amber-300">{t('requisitions.ui.overlapWarning')}</p>
                                       )}
                                     </div>
                                     <Checkbox
@@ -1717,16 +1719,16 @@ export function SecretaryRequisitionsPage({
                                       className="h-8 px-3 text-xs"
                                       onClick={() => toggleTransporteDetalhes(transporte.id)}
                                     >
-                                      {detailsOpen ? 'Ocultar detalhes' : 'Detalhes'}
+                                      {detailsOpen ? t('requisitions.ui.hideDetails') : t('requisitions.ui.details')}
                                     </Button>
                                   </div>
 
                                   {detailsOpen && (
                                     <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
                                       <p>{formatTransporteCategoria(transporte.categoria)}</p>
-                                      <p>Matrícula: {transporte.matricula ?? 'Sem matrícula'}</p>
-                                      <p>Marca/Modelo: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || 'Não definido'}</p>
-                                      <p>Data matrícula: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : 'Não definida'}</p>
+                                      <p>{t('requisitions.ui.licensePlate')}: {transporte.matricula ?? t('requisitions.ui.noLicensePlate')}</p>
+                                      <p>{t('requisitions.ui.brandModel')}: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || t('requisitions.ui.notDefined')}</p>
+                                      <p>{t('requisitions.ui.licenseDate')}: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : t('requisitions.ui.notDefined')}</p>
                                     </div>
                                   )}
                                 </div>
@@ -1744,8 +1746,8 @@ export function SecretaryRequisitionsPage({
 
           {tipo === 'MANUTENCAO' && (
             <div>
-              <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">Assunto (opcional)</label>
-              <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex: Torneira com fuga" />
+              <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.subjectOptional')}</label>
+              <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder={t('requisitions.ui.subjectPlaceholder')} />
             </div>
           )}
         </div>
@@ -1760,10 +1762,10 @@ export function SecretaryRequisitionsPage({
           }}
           disabled={submitting}
         >
-          Fechar
+          {t('requisitions.ui.close')}
         </Button>
         <Button onClick={handleCreate} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
-          {submitting ? 'A criar...' : 'Criar requisição'}
+          {submitting ? t('requisitions.ui.creatingRequest') : t('requisitions.ui.createRequest')}
         </Button>
       </div>
     </div>

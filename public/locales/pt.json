@@ -1,0 +1,387 @@
+{
+  "header": {
+    "toggleTheme": "Alternar Tema",
+    "logout": "Terminar Sessão",
+    "language": "Idioma",
+    "switchLanguage": "Mudar idioma",
+    "pt": "PT",
+    "en": "EN"
+  },
+  "appointmentDialog": {
+    "title": "Novo Agendamento",
+    "description": "Preencha os dados do utente para criar uma nova marcação",
+    "at": "às",
+    "errors": {
+      "pastDate": "Não é possível marcar para uma data/hora no passado",
+      "slotUnavailable": "Horário indisponível",
+      "slotOccupied": "Este horário já está ocupado",
+      "nifInvalid": "NIF inválido",
+      "nifMustHave9Digits": "NIF deve ter 9 dígitos",
+      "nifRequired": "NIF é obrigatório",
+      "nameInvalid": "Nome inválido",
+      "emailRequired": "Email é obrigatório",
+      "emailInvalid": "Email inválido",
+      "contactInvalid": "Contacto deve ter 9 dígitos",
+      "birthDateRequired": "Data de nascimento é obrigatória",
+      "dateInvalid": "Data inválida",
+      "subjectRequired": "Selecione um assunto",
+      "fixForm": "Por favor, corrija os erros no formulário",
+      "updateUserFailed": "Erro ao atualizar dados do utilizador",
+      "creationFailed": "Erro: {{message}}"
+    },
+    "messages": {
+      "slotReserved": "Slot reservado temporariamente:",
+      "slotReleased": "Slot liberado:",
+      "userLoaded": "Dados do utente carregados",
+      "userNotFound": "Utente não encontrado com este NIF.",
+      "userNotFoundOrNetwork": "Utente não encontrado na base de dados (ou erro de rede).",
+      "userUpdated": "Dados do utilizador atualizados",
+      "appointmentCreated": "Marcação criada com sucesso!",
+      "documentsUploaded": "{{count}} documento(s) enviado(s) com sucesso!",
+      "documentsUploadError": "Marcação criada, mas houve erro ao enviar documentos"
+    },
+    "confirm": {
+      "title": "Alterações detetadas",
+      "body": "Os dados do utente foram alterados. Deseja atualizar a ficha do utente com as novas informações antes de criar a marcação?",
+      "nameChanged": "Nome alterado",
+      "emailChanged": "Email alterado",
+      "contactChanged": "Contacto alterado",
+      "birthDateChanged": "Data de nasc. alterada",
+      "back": "Voltar / Corrigir",
+      "confirmAndBook": "Confirmar e Marcar"
+    },
+    "fields": {
+      "nif": "NIF *",
+      "birthDate": "Data de Nascimento *",
+      "name": "Nome *",
+      "email": "Email *",
+      "contact": "Contacto *",
+      "subject": "Assunto *",
+      "subjectPlaceholder": "Selecione o assunto",
+      "shortDescription": "Descrição curta",
+      "shortDescriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
+      "attachDocs": "Anexar documentos (opcional)"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "booking": "A marcar...",
+      "book": "Marcar"
+    }
+  },
+  "sidebar": {
+    "home": "Início",
+    "menu": "Menu",
+    "closeSidebar": "Fechar menu lateral",
+    "secretary": "Secretaria",
+    "appointments": "Marcações",
+    "history": "Histórico",
+    "about": "Sobre",
+    "volunteering": "Voluntariado",
+    "signup": "Inscrição",
+    "notifications": "Notificações",
+    "profile": "Perfil",
+    "settings": "Definições",
+    "services": "Valências",
+    "balneario": "Balneário",
+    "school": "Escola",
+    "requisitions": "Requisições",
+    "material": "Material",
+    "maintenance": "Manutenção",
+    "transport": "Transporte",
+    "highPriority": "Prioridade Alta",
+    "applications": "Candidaturas",
+    "creche": "Creche",
+    "reports": "Relatórios",
+    "management": "Gestão",
+    "consumption": "Consumos",
+    "administrativeArea": "Área Administrativa",
+    "general": "Geral"
+  },
+  "dashboard": {
+    "secretary": "Secretaria",
+    "user": "Utente",
+    "balneario": "Balneário",
+    "appointments": "Marcações",
+    "requisitions": "Requisições",
+    "material": "Material",
+    "maintenance": "Manutenção",
+    "transport": "Transporte",
+    "highPriority": "Prioridade Alta",
+    "services": "Valências",
+    "school": "Escola",
+    "applications": "Candidaturas",
+    "creche": "Creche",
+    "reports": "Relatórios",
+    "management": "Gestão",
+    "sections": "Secções",
+    "more": "Mais",
+    "settings": "Definições",
+    "administrativeArea": "Área Administrativa",
+    "requisitionsMaterial": "Requisições - Material",
+    "requisitionsMaintenance": "Requisições - Manutenção",
+    "requisitionsTransport": "Requisições - Transporte",
+    "requisitionsHighPriority": "Requisições - Prioridade Alta",
+    "servicesBalneario": "Valências - Balneário",
+    "servicesSchool": "Valências - Escola",
+    "applicationsCreche": "Candidaturas - Creche",
+    "applicationsCatl": "Candidaturas - CATL",
+    "applicationsErpi": "Candidaturas - ERPI",
+    "consumption": "Consumos",
+    "menuInDevelopment": "Menu Em Desenvolvimento",
+    "schoolPanel": "Painel Escola",
+    "internalTeam": "Equipa Interna",
+    "internalPanel": "Painel Interno",
+    "inDevelopment": "Em desenvolvimento",
+    "pageInDevelopment": "Página em desenvolvimento",
+    "messages": {
+      "appointmentCancelled": "Marcação cancelada e utente notificado com o motivo",
+      "appointmentCancelledSimple": "Marcação cancelada com sucesso",
+      "documentsViewInDevelopment": "A funcionalidade de visualização de documentos está em desenvolvimento."
+    },
+    "errors": {
+      "loadHistory": "Erro ao carregar histórico",
+      "loadDetails": "Erro ao carregar detalhes",
+      "loadLatestAppointment": "Não foi possível carregar os dados mais recentes da marcação.",
+      "findAppointment": "Não foi possível encontrar a marcação"
+    }
+  },
+  "common": {
+    "back": "Voltar",
+    "edit": "Editar",
+    "save": "Guardar",
+    "saving": "A guardar..."
+  },
+  "notifications": {
+    "title": "Notificações",
+    "unreadCount_one": "{{count}} notificação não lida",
+    "unreadCount_other": "{{count}} notificações não lidas",
+    "markAllRead": "Marcar todas como lidas",
+    "deleteAll": "Eliminar todas",
+    "filterAll": "Todas ({{count}})",
+    "filterUnread": "Não lidas ({{count}})",
+    "noUnread": "Sem notificações não lidas",
+    "none": "Sem notificações",
+    "deleteOne": "Eliminar notificação",
+    "agoMinutes": "Há {{count}} min",
+    "agoHours_one": "Há {{count}} hora",
+    "agoHours_other": "Há {{count}} horas",
+    "agoDays_one": "Há {{count}} dia",
+    "agoDays_other": "Há {{count}} dias"
+  },
+  "auth": {
+    "welcome": "Bem-vindo",
+    "platformSubtitle": "Plataforma Institucional das Florinhas do Vouga",
+    "nif": "NIF",
+    "institutionalEmail": "Email institucional",
+    "password": "Palavra-passe",
+    "login": "Entrar",
+    "noAccount": "Não tem conta?",
+    "createAccount": "Criar Conta",
+    "requiredField": "Campo obrigatório",
+    "onlyNumbersAllowed": "Apenas é permitido números",
+    "invalidInstitutionalEmail": "Email institucional inválido",
+    "fillAllFields": "Por favor, preencha todos os campos",
+    "loginSuccess": "Login realizado com sucesso!",
+    "invalidCredentials": "Credenciais inválidas",
+    "invalidName": "Nome inválido",
+    "nifRequired": "NIF é obrigatório",
+    "nifMustHave9Digits": "NIF deve ter 9 dígitos",
+    "contactRequired": "Contacto é obrigatório",
+    "contactMustHave9Digits": "Contacto deve ter 9 dígitos",
+    "emailRequired": "Email é obrigatório",
+    "emailInvalid": "Email inválido",
+    "useInstitutionalEmail": "Use um email institucional (@florinhasdovouga.pt)",
+    "roleRequiredEmployee": "Role é obrigatória para funcionários",
+    "passwordRequired": "Palavra-passe é obrigatória",
+    "passwordRequirementsNotMet": "A palavra-passe não cumpre os requisitos",
+    "confirmPasswordRequired": "Confirmação de palavra-passe é obrigatória",
+    "passwordsDoNotMatch": "As palavras-passe não coincidem",
+    "mustAcceptTermsRegister": "Deve aceitar os termos de uso para se registar",
+    "mustAcceptTermsActivate": "Deve aceitar os termos de uso para ativar a conta",
+    "fixFormErrors": "Por favor, corrija os erros no formulário",
+    "fixErrorsBeforeContinue": "Corrija os erros antes de continuar",
+    "accountCreatedSuccess": "Conta criada com sucesso!",
+    "employeeAccountCreatedSuccess": "Conta criada com sucesso! Aguarde aprovação da secretaria.",
+    "errorCreatingAccount": "Erro ao criar conta",
+    "backToLogin": "Voltar ao Login",
+    "registerInSystem": "Registe-se no sistema",
+    "fullName": "Nome Completo",
+    "setNewPassword": "Definir Nova Palavra-Passe",
+    "setPasswordSubtitle": "Por favor, defina uma palavra-passe segura para aceder à sua conta.",
+    "newPassword": "Nova Palavra-Passe",
+    "repeatPassword": "Repetir Palavra-Passe",
+    "passwordRuleMinLength": "Min. 8 caracteres",
+    "passwordRuleCases": "Maiúsculas e minúsculas",
+    "passwordRuleNumbers": "Números",
+    "termsAndPrivacy": "termos de uso e política de privacidade",
+    "saveAndEnter": "Guardar e Entrar na Plataforma",
+    "passwordSetSuccess": "Palavra-passe definida com sucesso",
+    "errorSettingPassword": "Erro ao definir palavra-passe"
+  },
+  "profile": {
+    "loading": "A carregar...",
+    "changePassword": "Mudar Palavra-passe",
+    "passwordShort": "Palavra-passe",
+    "phone": "Telemóvel",
+    "address": "Morada",
+    "parish": "Freguesia",
+    "postalCode": "Código Postal",
+    "profession": "Profissão",
+    "workLocation": "Local de Emprego",
+    "workAddress": "Morada do Emprego",
+    "workPhone": "Telefone do Emprego",
+    "sections": {
+      "personal": "Informação Pessoal",
+      "address": "Morada",
+      "professional": "Informação Profissional"
+    },
+    "placeholders": {
+      "nameUnavailable": "Nome indisponível",
+      "emailUnavailable": "Email indisponível",
+      "addContact": "Adicione contacto",
+      "addAddress": "Adicione morada",
+      "addParish": "Adicione freguesia",
+      "addPostalCode": "Adicione código postal",
+      "addProfession": "Adicione profissão",
+      "addWorkLocation": "Adicione local de emprego",
+      "addWorkAddress": "Adicione morada do emprego",
+      "addWorkPhone": "Adicione telefone do emprego"
+    },
+    "messages": {
+      "updatedSuccess": "Perfil atualizado com sucesso"
+    },
+    "errors": {
+      "loadProfile": "Erro ao carregar dados do perfil",
+      "updateProfile": "Erro ao atualizar perfil"
+    }
+  },
+  "history": {
+    "title": "Histórico de Marcações",
+    "backToAppointments": "Voltar para Marcações",
+    "status": {
+      "completed": "Concluído",
+      "warning": "Aviso",
+      "noShow": "Não compareceu",
+      "cancelled": "Cancelado"
+    },
+    "filters": {
+      "fromDate": "A partir de",
+      "searchLabel": "Pesquisar",
+      "searchPlaceholder": "Pesquisar...",
+      "allStatuses": "Todos os estados",
+      "allSubjects": "Todos os assuntos"
+    },
+    "table": {
+      "timeHeader": "Horário",
+      "dayHeader": "Dia",
+      "attendantHeader": "Atendente",
+      "patientHeader": "Utente",
+      "subjectHeader": "Assunto",
+      "statusHeader": "Estado",
+      "noResults": "Nenhuma marcação encontrada"
+    },
+    "pagination": {
+      "showingRange": "A mostrar {{start}}-{{end}} de {{total}} resultados",
+      "previous": "Anterior",
+      "next": "Seguinte"
+    },
+    "export": {
+      "action": "Exportar",
+      "dialogTitle": "Exportar Histórico",
+      "dialogDescription": "Escolha o formato de exportação ({{count}} registos)",
+      "csvDescription": "Formato de texto compatível com Excel e outras aplicações",
+      "excelDescription": "Ficheiro formatado para Microsoft Excel",
+      "pdfDescription": "Documento para impressão ou visualização",
+      "recordsFound": "{{count}} registos encontrados",
+      "generatedAt": "Gerado em {{date}} às {{time}}",
+      "headers": {
+        "time": "Horário",
+        "date": "Data",
+        "attendant": "Atendente",
+        "patientName": "Nome do Utente",
+        "contact": "Contacto",
+        "email": "Email",
+        "subject": "Assunto",
+        "status": "Estado"
+      }
+    },
+    "toast": {
+      "noAppointmentsToExport": "Não existem marcações para exportar",
+      "csvSuccess": "Histórico exportado em CSV com sucesso",
+      "excelSuccess": "Histórico exportado em Excel com sucesso",
+      "preparingPdf": "A preparar PDF para impressão..."
+    }
+  },
+  "documents": {
+    "title": "Pesquisa de Documentos",
+    "metadataFilters": "Filtros por metadados",
+    "resultsTitle": "Resultados",
+    "resultsSummary": "{{count}} documento(s) · {{size}} MB",
+    "noResults": "Sem resultados para os filtros atuais.",
+    "filters": {
+      "originalName": "Nome original do documento",
+      "userName": "Nome do utente",
+      "userNif": "NIF do utente",
+      "type": "Tipo",
+      "from": "Desde",
+      "to": "Até"
+    },
+    "actions": {
+      "search": "Pesquisar",
+      "searching": "A pesquisar...",
+      "clear": "Limpar",
+      "download": "Download"
+    },
+    "pagination": {
+      "pageOf": "Página {{page}} de {{total}}",
+      "perPage": "Por página"
+    },
+    "card": {
+      "appointmentRef": "Marcação #{{id}} · {{mime}} · {{size}} KB",
+      "userLine": "Utente: {{name}} ({{nif}})",
+      "uploadAt": "Upload: {{date}}"
+    },
+    "messages": {
+      "searchDone": "Pesquisa concluída: {{count}} documento(s).",
+      "downloadStarted": "Download iniciado: {{name}}"
+    },
+    "errors": {
+      "search": "Erro ao pesquisar documentos.",
+      "load": "Erro ao carregar documentos.",
+      "download": "Erro ao fazer download do documento."
+    }
+  },
+  "requisitions": {
+    "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
+    "messages": {
+      "created": "Requisição criada com sucesso.",
+      "materialCreated": "Requisição de material criada com sucesso.",
+      "statusUpdated": "Estado da requisição atualizado com sucesso."
+    },
+    "errors": {
+      "requiredField": "Campo obrigatório.",
+      "addOneMaterial": "Adicione pelo menos um material com quantidade válida.",
+      "invalidPassengers": "Indique um número de passageiros válido.",
+      "selectOneVehicle": "Selecione pelo menos uma viatura.",
+      "returnAfterDeparture": "A data/hora de regresso deve ser posterior à data/hora de saída.",
+      "missingAuthenticatedUser": "Não foi possível identificar o utilizador autenticado.",
+      "createFailed": "Erro ao criar requisição.",
+      "onlyPendingDecision": "Só é possível decidir requisições que estejam em Em análise.",
+      "chooseFinalState": "Escolhe um estado final: Aceite ou Recusada.",
+      "invalidFinalState": "Estado inválido. Escolhe Aceite ou Recusada.",
+      "updateStatusFailed": "Erro ao atualizar estado da requisição.",
+      "loadFailed": "Erro ao carregar requisições.",
+      "loadCatalogFailed": "Erro ao carregar materiais e transportes."
+    },
+    "material": {
+      "messages": {
+        "created": "Material criado com sucesso."
+      },
+      "errors": {
+        "nameRequired": "O nome do material é obrigatório.",
+        "attributeRequired": "Atributo e valor do atributo são obrigatórios.",
+        "createFailed": "Erro ao criar material."
+      }
+    }
+  }
+}

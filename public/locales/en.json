@@ -1,0 +1,387 @@
+{
+  "header": {
+    "toggleTheme": "Toggle Theme",
+    "logout": "Log Out",
+    "language": "Language",
+    "switchLanguage": "Switch language",
+    "pt": "PT",
+    "en": "EN"
+  },
+  "appointmentDialog": {
+    "title": "New Appointment",
+    "description": "Fill in the user's details to create a new appointment",
+    "at": "at",
+    "errors": {
+      "pastDate": "You cannot book a date/time in the past",
+      "slotUnavailable": "Time slot unavailable",
+      "slotOccupied": "This time slot is already taken",
+      "nifInvalid": "Invalid NIF",
+      "nifMustHave9Digits": "NIF must have 9 digits",
+      "nifRequired": "NIF is required",
+      "nameInvalid": "Invalid name",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email",
+      "contactInvalid": "Contact must have 9 digits",
+      "birthDateRequired": "Date of birth is required",
+      "dateInvalid": "Invalid date",
+      "subjectRequired": "Please select a subject",
+      "fixForm": "Please fix the form errors",
+      "updateUserFailed": "Failed to update user data",
+      "creationFailed": "Error: {{message}}"
+    },
+    "messages": {
+      "slotReserved": "Slot temporarily reserved:",
+      "slotReleased": "Slot released:",
+      "userLoaded": "User data loaded",
+      "userNotFound": "User not found with this NIF.",
+      "userNotFoundOrNetwork": "User not found in the database (or network error).",
+      "userUpdated": "User data updated",
+      "appointmentCreated": "Appointment created successfully!",
+      "documentsUploaded": "{{count}} file(s) uploaded successfully!",
+      "documentsUploadError": "Appointment created, but file upload failed"
+    },
+    "confirm": {
+      "title": "Changes detected",
+      "body": "User data has changed. Do you want to update the user record with the new information before creating the appointment?",
+      "nameChanged": "Name changed",
+      "emailChanged": "Email changed",
+      "contactChanged": "Contact changed",
+      "birthDateChanged": "Date of birth changed",
+      "back": "Back / Fix",
+      "confirmAndBook": "Confirm and Book"
+    },
+    "fields": {
+      "nif": "NIF *",
+      "birthDate": "Date of Birth *",
+      "name": "Name *",
+      "email": "Email *",
+      "contact": "Contact *",
+      "subject": "Subject *",
+      "subjectPlaceholder": "Select subject",
+      "shortDescription": "Short description",
+      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
+      "attachDocs": "Attach documents (optional)"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "booking": "Booking...",
+      "book": "Book"
+    }
+  },
+  "sidebar": {
+    "home": "Home",
+    "menu": "Menu",
+    "closeSidebar": "Close sidebar",
+    "secretary": "Secretary",
+    "appointments": "Appointments",
+    "history": "History",
+    "about": "About",
+    "volunteering": "Volunteering",
+    "signup": "Signup",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "settings": "Settings",
+    "services": "Services",
+    "balneario": "Bathhouse",
+    "school": "School",
+    "requisitions": "Requests",
+    "material": "Material",
+    "maintenance": "Maintenance",
+    "transport": "Transport",
+    "highPriority": "High Priority",
+    "applications": "Applications",
+    "creche": "Nursery",
+    "reports": "Reports",
+    "management": "Management",
+    "consumption": "Consumption",
+    "administrativeArea": "Administrative Area",
+    "general": "General"
+  },
+  "dashboard": {
+    "secretary": "Secretary",
+    "user": "User",
+    "balneario": "Bathhouse",
+    "appointments": "Appointments",
+    "requisitions": "Requests",
+    "material": "Material",
+    "maintenance": "Maintenance",
+    "transport": "Transport",
+    "highPriority": "High Priority",
+    "services": "Services",
+    "school": "School",
+    "applications": "Applications",
+    "creche": "Nursery",
+    "reports": "Reports",
+    "management": "Management",
+    "sections": "Sections",
+    "more": "More",
+    "settings": "Settings",
+    "administrativeArea": "Administrative Area",
+    "requisitionsMaterial": "Requests - Material",
+    "requisitionsMaintenance": "Requests - Maintenance",
+    "requisitionsTransport": "Requests - Transport",
+    "requisitionsHighPriority": "Requests - High Priority",
+    "servicesBalneario": "Services - Bathhouse",
+    "servicesSchool": "Services - School",
+    "applicationsCreche": "Applications - Nursery",
+    "applicationsCatl": "Applications - CATL",
+    "applicationsErpi": "Applications - ERPI",
+    "consumption": "Consumption",
+    "menuInDevelopment": "Menu In Development",
+    "schoolPanel": "School Panel",
+    "internalTeam": "Internal Team",
+    "internalPanel": "Internal Panel",
+    "inDevelopment": "In development",
+    "pageInDevelopment": "Page in development",
+    "messages": {
+      "appointmentCancelled": "Appointment cancelled and user notified with the reason",
+      "appointmentCancelledSimple": "Appointment cancelled successfully",
+      "documentsViewInDevelopment": "Document viewing feature is in development."
+    },
+    "errors": {
+      "loadHistory": "Failed to load history",
+      "loadDetails": "Failed to load details",
+      "loadLatestAppointment": "Could not load the latest appointment data.",
+      "findAppointment": "Could not find the appointment"
+    }
+  },
+  "common": {
+    "back": "Back",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unreadCount_one": "{{count}} unread notification",
+    "unreadCount_other": "{{count}} unread notifications",
+    "markAllRead": "Mark all as read",
+    "deleteAll": "Delete all",
+    "filterAll": "All ({{count}})",
+    "filterUnread": "Unread ({{count}})",
+    "noUnread": "No unread notifications",
+    "none": "No notifications",
+    "deleteOne": "Delete notification",
+    "agoMinutes": "{{count}} min ago",
+    "agoHours_one": "{{count}} hour ago",
+    "agoHours_other": "{{count}} hours ago",
+    "agoDays_one": "{{count}} day ago",
+    "agoDays_other": "{{count}} days ago"
+  },
+  "auth": {
+    "welcome": "Welcome",
+    "platformSubtitle": "Florinhas do Vouga Institutional Platform",
+    "nif": "NIF",
+    "institutionalEmail": "Institutional email",
+    "password": "Password",
+    "login": "Sign in",
+    "noAccount": "Don't have an account?",
+    "createAccount": "Create Account",
+    "requiredField": "Required field",
+    "onlyNumbersAllowed": "Only numbers are allowed",
+    "invalidInstitutionalEmail": "Invalid institutional email",
+    "fillAllFields": "Please fill in all fields",
+    "loginSuccess": "Login successful!",
+    "invalidCredentials": "Invalid credentials",
+    "invalidName": "Invalid name",
+    "nifRequired": "NIF is required",
+    "nifMustHave9Digits": "NIF must have 9 digits",
+    "contactRequired": "Contact is required",
+    "contactMustHave9Digits": "Contact must have 9 digits",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email",
+    "useInstitutionalEmail": "Use an institutional email (@florinhasdovouga.pt)",
+    "roleRequiredEmployee": "Role is required for employees",
+    "passwordRequired": "Password is required",
+    "passwordRequirementsNotMet": "Password does not meet requirements",
+    "confirmPasswordRequired": "Password confirmation is required",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
+    "fixFormErrors": "Please fix form errors",
+    "fixErrorsBeforeContinue": "Fix the errors before continuing",
+    "accountCreatedSuccess": "Account created successfully!",
+    "employeeAccountCreatedSuccess": "Account created successfully! Please wait for secretary approval.",
+    "errorCreatingAccount": "Error creating account",
+    "backToLogin": "Back to Login",
+    "registerInSystem": "Register in the system",
+    "fullName": "Full Name",
+    "setNewPassword": "Set New Password",
+    "setPasswordSubtitle": "Please set a secure password to access your account.",
+    "newPassword": "New Password",
+    "repeatPassword": "Repeat Password",
+    "passwordRuleMinLength": "Min. 8 characters",
+    "passwordRuleCases": "Uppercase and lowercase letters",
+    "passwordRuleNumbers": "Numbers",
+    "termsAndPrivacy": "terms of use and privacy policy",
+    "saveAndEnter": "Save and Enter Platform",
+    "passwordSetSuccess": "Password set successfully",
+    "errorSettingPassword": "Error setting password"
+  },
+  "profile": {
+    "loading": "Loading...",
+    "changePassword": "Change Password",
+    "passwordShort": "Password",
+    "phone": "Phone",
+    "address": "Address",
+    "parish": "Parish",
+    "postalCode": "Postal Code",
+    "profession": "Profession",
+    "workLocation": "Work Location",
+    "workAddress": "Work Address",
+    "workPhone": "Work Phone",
+    "sections": {
+      "personal": "Personal Information",
+      "address": "Address",
+      "professional": "Professional Information"
+    },
+    "placeholders": {
+      "nameUnavailable": "Name unavailable",
+      "emailUnavailable": "Email unavailable",
+      "addContact": "Add contact",
+      "addAddress": "Add address",
+      "addParish": "Add parish",
+      "addPostalCode": "Add postal code",
+      "addProfession": "Add profession",
+      "addWorkLocation": "Add work location",
+      "addWorkAddress": "Add work address",
+      "addWorkPhone": "Add work phone"
+    },
+    "messages": {
+      "updatedSuccess": "Profile updated successfully"
+    },
+    "errors": {
+      "loadProfile": "Error loading profile data",
+      "updateProfile": "Error updating profile"
+    }
+  },
+  "history": {
+    "title": "Appointment History",
+    "backToAppointments": "Back to Appointments",
+    "status": {
+      "completed": "Completed",
+      "warning": "Warning",
+      "noShow": "No-show",
+      "cancelled": "Cancelled"
+    },
+    "filters": {
+      "fromDate": "From",
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search...",
+      "allStatuses": "All statuses",
+      "allSubjects": "All subjects"
+    },
+    "table": {
+      "timeHeader": "Time",
+      "dayHeader": "Day",
+      "attendantHeader": "Attendant",
+      "patientHeader": "User",
+      "subjectHeader": "Subject",
+      "statusHeader": "Status",
+      "noResults": "No appointments found"
+    },
+    "pagination": {
+      "showingRange": "Showing {{start}}-{{end}} of {{total}} results",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "export": {
+      "action": "Export",
+      "dialogTitle": "Export History",
+      "dialogDescription": "Choose export format ({{count}} records)",
+      "csvDescription": "Text format compatible with Excel and other apps",
+      "excelDescription": "Formatted file for Microsoft Excel",
+      "pdfDescription": "Document for printing or viewing",
+      "recordsFound": "{{count}} records found",
+      "generatedAt": "Generated on {{date}} at {{time}}",
+      "headers": {
+        "time": "Time",
+        "date": "Date",
+        "attendant": "Attendant",
+        "patientName": "User Name",
+        "contact": "Contact",
+        "email": "Email",
+        "subject": "Subject",
+        "status": "Status"
+      }
+    },
+    "toast": {
+      "noAppointmentsToExport": "There are no appointments to export",
+      "csvSuccess": "History exported to CSV successfully",
+      "excelSuccess": "History exported to Excel successfully",
+      "preparingPdf": "Preparing PDF for printing..."
+    }
+  },
+  "documents": {
+    "title": "Document Search",
+    "metadataFilters": "Metadata filters",
+    "resultsTitle": "Results",
+    "resultsSummary": "{{count}} document(s) · {{size}} MB",
+    "noResults": "No results for current filters.",
+    "filters": {
+      "originalName": "Original document name",
+      "userName": "User name",
+      "userNif": "User NIF",
+      "type": "Type",
+      "from": "From",
+      "to": "To"
+    },
+    "actions": {
+      "search": "Search",
+      "searching": "Searching...",
+      "clear": "Clear",
+      "download": "Download"
+    },
+    "pagination": {
+      "pageOf": "Page {{page}} of {{total}}",
+      "perPage": "Per page"
+    },
+    "card": {
+      "appointmentRef": "Appointment #{{id}} · {{mime}} · {{size}} KB",
+      "userLine": "User: {{name}} ({{nif}})",
+      "uploadAt": "Upload: {{date}}"
+    },
+    "messages": {
+      "searchDone": "Search completed: {{count}} document(s).",
+      "downloadStarted": "Download started: {{name}}"
+    },
+    "errors": {
+      "search": "Error searching documents.",
+      "load": "Error loading documents.",
+      "download": "Error downloading document."
+    }
+  },
+  "requisitions": {
+    "summary": "{{total}} request(s) · {{urgent}} urgent",
+    "messages": {
+      "created": "Request created successfully.",
+      "materialCreated": "Material request created successfully.",
+      "statusUpdated": "Request status updated successfully."
+    },
+    "errors": {
+      "requiredField": "Required field.",
+      "addOneMaterial": "Add at least one material with a valid quantity.",
+      "invalidPassengers": "Provide a valid number of passengers.",
+      "selectOneVehicle": "Select at least one vehicle.",
+      "returnAfterDeparture": "Return date/time must be after departure date/time.",
+      "missingAuthenticatedUser": "Could not identify the authenticated user.",
+      "createFailed": "Error creating request.",
+      "onlyPendingDecision": "You can only decide requests that are In analysis.",
+      "chooseFinalState": "Choose a final status: Accepted or Rejected.",
+      "invalidFinalState": "Invalid status. Choose Accepted or Rejected.",
+      "updateStatusFailed": "Error updating request status.",
+      "loadFailed": "Error loading requests.",
+      "loadCatalogFailed": "Error loading materials and transport options."
+    },
+    "material": {
+      "messages": {
+        "created": "Material created successfully."
+      },
+      "errors": {
+        "nameRequired": "Material name is required.",
+        "attributeRequired": "Attribute and attribute value are required.",
+        "createFailed": "Error creating material."
+      }
+    }
+  }
+}
