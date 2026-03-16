@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useId } from 'react';
 import { Upload, X, File as FileIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatFileSize } from '../../utils/fileUtils';
@@ -9,6 +9,8 @@ interface FileUploadProps {
     maxSizeMB?: number;
     accept?: string;
     isUploading?: boolean;
+    inputId?: string;
+    describedById?: string;
 }
 
 export function FileUpload({
@@ -16,9 +18,13 @@ export function FileUpload({
     onChange,
     maxSizeMB = 10,
     accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif",
-    isUploading = false
+    isUploading = false,
+    inputId,
+    describedById,
 }: FileUploadProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const generatedId = useId();
+    const resolvedInputId = inputId ?? `file-upload-${generatedId}`;
+    const helperId = describedById ?? `${resolvedInputId}-help`;
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -47,24 +53,25 @@ export function FileUpload({
     return (
         <div className="space-y-2">
             <input
-                ref={fileInputRef}
+                id={resolvedInputId}
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="hidden"
+                className="sr-only"
                 accept={accept}
                 disabled={isUploading}
+                aria-describedby={helperId}
             />
-            <div
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            <label
+                htmlFor={resolvedInputId}
+                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 transition-colors focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 <Upload className="w-8 h-8 mb-2 text-purple-600 dark:text-purple-400" />
-                <p className="font-medium text-gray-900 dark:text-gray-100">Clique para selecionar ficheiros</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="font-medium text-gray-900 dark:text-gray-100">Clique ou prima Enter para selecionar ficheiros</p>
+                <p id={helperId} className="text-xs text-gray-500 mt-1">
                     Suporta ficheiros de até {maxSizeMB}MB
                 </p>
-            </div>
+            </label>
 
             {selectedFiles.length > 0 && (
                 <div className="space-y-2 mt-4">
