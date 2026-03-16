@@ -1554,7 +1554,7 @@ export function SecretaryRequisitionsPage({
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">A lotacao util considera 1 lugar para o condutor em cada viatura.</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">A lotação útil considera 1 lugar para o condutor em cada viatura.</p>
 
                 {createErrors.transporteIds && (
                   <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
@@ -1574,7 +1574,7 @@ export function SecretaryRequisitionsPage({
                         <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">Lotacao: {formatLotacao(transporte.lotacao)}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">Lotação: {formatLotacao(transporte.lotacao)}</p>
                           </div>
                           <Button
                             type="button"
