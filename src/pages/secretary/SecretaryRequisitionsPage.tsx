@@ -1780,10 +1780,10 @@ export function SecretaryRequisitionsPage({
             variant="ghost"
             onClick={() => handleCardShortcut('GERAL')}
             className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="Ir para requisições gerais"
+            aria-label={t('requisitions.ui.goToGeneralRequests')}
           >
             <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Requisições</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.requests')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -1798,10 +1798,10 @@ export function SecretaryRequisitionsPage({
             variant="ghost"
             onClick={() => handleCardShortcut('URGENTE')}
             className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="Ir para requisições urgentes"
+            aria-label={t('requisitions.ui.goToUrgentRequests')}
           >
             <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Urgentes</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.urgent')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -1816,10 +1816,10 @@ export function SecretaryRequisitionsPage({
             variant="ghost"
             onClick={() => handleCardShortcut('MATERIAL')}
             className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="Ir para requisições de material"
+            aria-label={t('requisitions.ui.goToMaterialRequests')}
           >
             <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Material</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.material')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
@@ -1834,10 +1834,10 @@ export function SecretaryRequisitionsPage({
             variant="ghost"
             onClick={() => handleCardShortcut('MANUTENCAO')}
             className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="Ir para requisições de manutenção"
+            aria-label={t('requisitions.ui.goToMaintenanceRequests')}
           >
             <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Manutenção</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.maintenance')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -1852,10 +1852,10 @@ export function SecretaryRequisitionsPage({
             variant="ghost"
             onClick={() => handleCardShortcut('TRANSPORTE')}
             className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label="Ir para requisições de transporte"
+            aria-label={t('requisitions.ui.goToTransportRequests')}
           >
             <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Transportes</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.transport')}</p>
               <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
             </div>
             <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -1871,11 +1871,11 @@ export function SecretaryRequisitionsPage({
             type="button"
             onClick={() => toggleSection('create')}
             className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label="Alternar secção Nova requisição"
+            aria-label={t('requisitions.ui.toggleNewRequestSection')}
           >
             <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>Nova requisição</h2>
-              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Clique para abrir o formulário</p>}
+              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.clickToOpenForm')}</p>}
             </div>
             {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
           </button>
@@ -1892,10 +1892,10 @@ export function SecretaryRequisitionsPage({
             type="button"
             onClick={() => toggleSection('list')}
             className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label="Alternar secção Requisições"
+            aria-label={t('requisitions.ui.toggleRequestsSection')}
           >
             <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
             </div>
             {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
@@ -1905,8 +1905,8 @@ export function SecretaryRequisitionsPage({
             <div className="px-5 pb-5 space-y-4">
 
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" aria-label="Separadores de tipo de requisição">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('requisitions.ui.listType')}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" aria-label={t('requisitions.ui.requestTypeTabs')}>
             {REQUISICOES_TABS.map((tab) => {
               const isActive = activeTab === tab.value;
               return (
@@ -1920,7 +1920,7 @@ export function SecretaryRequisitionsPage({
                     : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
                     }`}
                   aria-pressed={isActive}
-                  aria-label={`Selecionar ${tab.label}`}
+                  aria-label={t('requisitions.ui.selectTab', { tab: tab.label })}
                 >
                   {tab.label}
                 </Button>
@@ -1931,7 +1931,7 @@ export function SecretaryRequisitionsPage({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label htmlFor="req-filter-estado" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
+            <label htmlFor="req-filter-estado" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
             <select
               id="req-filter-estado"
               value={filterEstado}
@@ -1945,14 +1945,14 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-filter-prioridade" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <label htmlFor="req-filter-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
             <select
               id="req-filter-prioridade"
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
               className={selectFieldClassName}
             >
-              <option value="">Todas as prioridades</option>
+              <option value="">{t('requisitions.ui.allPriorities')}</option>
               {PRIORIDADE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -1960,26 +1960,26 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-filter-criado-por" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
-            <Input id="req-filter-criado-por" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+            <label htmlFor="req-filter-criado-por" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByName')}</label>
+            <Input id="req-filter-criado-por" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder={t('requisitions.ui.createdByPlaceholder')} />
           </div>
 
           <div>
-            <label htmlFor="req-filter-gerido-por" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
-            <Input id="req-filter-gerido-por" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+            <label htmlFor="req-filter-gerido-por" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.managedByName')}</label>
+            <Input id="req-filter-gerido-por" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder={t('requisitions.ui.managedByPlaceholder')} />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
-            {loading ? 'A pesquisar...' : 'Pesquisar'}
+            {loading ? t('requisitions.ui.searching') : t('requisitions.ui.search')}
           </Button>
-          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>Limpar filtros</Button>
+          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>{t('requisitions.ui.clearFilters')}</Button>
         </div>
 
         {requisicoes.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
-            Sem requisições para os filtros atuais.
+            {t('requisitions.ui.noRequestsForFilters')}
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -1994,7 +1994,7 @@ export function SecretaryRequisitionsPage({
                       className="h-8 px-3"
                       onClick={() => handleOpenRequisicao(req)}
                     >
-                      Abrir
+                      {t('requisitions.ui.open')}
                     </Button>
                   </div>
                 </div>
@@ -2040,19 +2040,19 @@ export function SecretaryRequisitionsPage({
       <div className="hidden lg:flex gap-6 items-stretch">
         <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-3/5' : 'w-full'}`}>
           <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>Requisições</h2>
+            <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
           </div>
 
           <div className="px-5 pb-5 pt-4 space-y-4">
 
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de listagem</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('requisitions.ui.listType')}</p>
           <div
             className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2"
             role="tablist"
             tabIndex={0}
-            aria-label="Separadores de tipo de requisição"
+            aria-label={t('requisitions.ui.requestTypeTabs')}
             onKeyDown={(event) => {
               const { key } = event;
               if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(key)) {
@@ -2113,7 +2113,7 @@ export function SecretaryRequisitionsPage({
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <div>
-            <label htmlFor="req-filter-estado-desktop" className="text-sm text-gray-600 dark:text-gray-300">Estado</label>
+            <label htmlFor="req-filter-estado-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
             <select
               id="req-filter-estado-desktop"
               value={filterEstado}
@@ -2127,14 +2127,14 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-filter-prioridade-desktop" className="text-sm text-gray-600 dark:text-gray-300">Prioridade</label>
+            <label htmlFor="req-filter-prioridade-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
             <select
               id="req-filter-prioridade-desktop"
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
               className={selectFieldClassName}
             >
-              <option value="">Todas as prioridades</option>
+              <option value="">{t('requisitions.ui.allPriorities')}</option>
               {PRIORIDADE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
@@ -2142,26 +2142,26 @@ export function SecretaryRequisitionsPage({
           </div>
 
           <div>
-            <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Criado por nome</label>
-            <Input id="req-filter-criado-por-desktop" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder="Ex: Maria" />
+            <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByName')}</label>
+            <Input id="req-filter-criado-por-desktop" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder={t('requisitions.ui.createdByPlaceholder')} />
           </div>
 
           <div>
-            <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">Gerido por nome</label>
-            <Input id="req-filter-gerido-por-desktop" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder="Ex: João" />
+            <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.managedByName')}</label>
+            <Input id="req-filter-gerido-por-desktop" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder={t('requisitions.ui.managedByPlaceholder')} />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
-            {loading ? 'A pesquisar...' : 'Pesquisar'}
+            {loading ? t('requisitions.ui.searching') : t('requisitions.ui.search')}
           </Button>
-          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>Limpar filtros</Button>
+          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>{t('requisitions.ui.clearFilters')}</Button>
         </div>
 
         {requisicoes.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
-            Sem requisições para os filtros atuais.
+            {t('requisitions.ui.noRequestsForFilters')}
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -2176,7 +2176,7 @@ export function SecretaryRequisitionsPage({
                       className="h-8 px-3"
                       onClick={() => handleOpenRequisicao(req)}
                     >
-                      Abrir
+                      {t('requisitions.ui.open')}
                     </Button>
                   </div>
                 </div>
@@ -2225,19 +2225,19 @@ export function SecretaryRequisitionsPage({
               ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
               : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
               }`}
-            aria-label="Alternar secção Nova requisição"
+            aria-label={t('requisitions.ui.toggleNewRequestSection')}
           >
             {activeSection === 'create' ? (
               <>
                 <div className="text-left">
-                  <h2 className={`text-lg font-semibold ${headingClass}`}>Nova requisição</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Painel de criação</p>
+                  <h2 className={`text-lg font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.creationPanel')}</p>
                 </div>
                 <ChevronUp className="w-5 h-5 text-gray-500" />
               </>
             ) : (
               <>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Criar</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.create')}</span>
                 <ChevronLeft className="w-5 h-5 text-gray-500" />
               </>
             )}
@@ -2254,7 +2254,7 @@ export function SecretaryRequisitionsPage({
       <Dialog open={openedRequisicaoId !== null} onOpenChange={(open) => !open && setOpenedRequisicaoId(null)}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
           <DialogHeader>
-            <DialogTitle>Detalhes da requisição</DialogTitle>
+            <DialogTitle>{t('requisitions.ui.requestDetails')}</DialogTitle>
           </DialogHeader>
 
           {selectedRequisicao && (
@@ -2372,14 +2372,14 @@ export function SecretaryRequisitionsPage({
                   onClick={() => setOpenedRequisicaoId(null)}
                   disabled={updatingEstadoId === selectedRequisicao.id}
                 >
-                  Fechar
+                  {t('requisitions.ui.close')}
                 </Button>
                 <Button
                   onClick={handleAtualizarEstado}
                   disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
-                  {updatingEstadoId === selectedRequisicao.id ? 'A guardar...' : 'Guardar estado'}
+                  {updatingEstadoId === selectedRequisicao.id ? t('common.saving') : t('requisitions.ui.saveStatus')}
                 </Button>
               </div>
             </div>
@@ -2390,20 +2390,20 @@ export function SecretaryRequisitionsPage({
       <Dialog open={createMaterialDialogOpen} onOpenChange={setCreateMaterialDialogOpen}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
           <DialogHeader>
-            <DialogTitle>Novo material</DialogTitle>
+            <DialogTitle>{t('requisitions.ui.newMaterial')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
-              <label htmlFor="novo-material-nome" className="text-sm text-gray-600 dark:text-gray-300">Nome</label>
-              <Input id="novo-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder="Ex: Luvas" />
+                <label htmlFor="novo-material-nome" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.name')}</label>
+                <Input id="novo-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder={t('requisitions.ui.materialNamePlaceholder')} />
             </div>
             <div>
-              <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">Descrição (opcional)</label>
-              <Textarea id="novo-material-descricao" className={textareaFieldClassName} value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder="Descrição do material" />
+                <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.descriptionOptional')}</label>
+                <Textarea id="novo-material-descricao" className={textareaFieldClassName} value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder={t('requisitions.ui.materialDescriptionPlaceholder')} />
             </div>
             <div>
-              <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">Categoria</label>
+                <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.category')}</label>
               <select
                 id="novo-material-categoria"
                 value={novoMaterialCategoria}
@@ -2417,32 +2417,32 @@ export function SecretaryRequisitionsPage({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">Atributo</label>
+                  <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.attribute')}</label>
                 <Input
                   id="novo-material-atributo"
                   className={inputFieldClassName}
                   value={novoMaterialAtributo}
                   onChange={(e) => setNovoMaterialAtributo(e.target.value)}
-                  placeholder="Ex: Cor, Tipo, Tamanho"
+                  placeholder={t('requisitions.ui.attributePlaceholder')}
                 />
               </div>
               <div>
-                <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">Valor do atributo</label>
+                <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.attributeValue')}</label>
                 <Input
                   id="novo-material-valor-atributo"
                   className={inputFieldClassName}
                   value={novoMaterialValorAtributo}
                   onChange={(e) => setNovoMaterialValorAtributo(e.target.value)}
-                  placeholder="Ex: Azul, A4, 100ml"
+                  placeholder={t('requisitions.ui.attributeValuePlaceholder')}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setCreateMaterialDialogOpen(false)} disabled={submittingMaterial}>
-                Cancelar
+                {t('appointmentDialog.actions.cancel')}
               </Button>
               <Button onClick={handleCriarMaterialCatalogo} disabled={submittingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {submittingMaterial ? 'A criar...' : 'Criar material'}
+                {submittingMaterial ? t('requisitions.ui.creating') : t('requisitions.ui.createMaterial')}
               </Button>
             </div>
           </div>
