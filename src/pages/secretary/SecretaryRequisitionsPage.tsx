@@ -947,8 +947,8 @@ export function SecretaryRequisitionsPage({
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
-        <GlassCard className="p-0 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <GlassCard className="hidden md:block p-0 overflow-hidden">
           <Button
             type="button"
             variant="ghost"
@@ -966,7 +966,7 @@ export function SecretaryRequisitionsPage({
           </Button>
         </GlassCard>
 
-        <GlassCard className="p-0 overflow-hidden">
+        <GlassCard className="hidden md:block p-0 overflow-hidden">
           <Button
             type="button"
             variant="ghost"
@@ -984,7 +984,7 @@ export function SecretaryRequisitionsPage({
           </Button>
         </GlassCard>
 
-        <GlassCard className="p-0 overflow-hidden">
+        <GlassCard className="hidden xl:block p-0 overflow-hidden">
           <Button
             type="button"
             variant="ghost"
@@ -1002,7 +1002,7 @@ export function SecretaryRequisitionsPage({
           </Button>
         </GlassCard>
 
-        <GlassCard className="p-0 overflow-hidden">
+        <GlassCard className="hidden xl:block p-0 overflow-hidden">
           <Button
             type="button"
             variant="ghost"
