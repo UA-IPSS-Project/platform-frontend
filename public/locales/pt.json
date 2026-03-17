@@ -435,6 +435,7 @@
     "acceptTermsPrefix": "Aceito os"
   },
   "profile": {
+    "title": "Perfil do Utilizador",
     "loading": "A carregar...",
     "changePassword": "Mudar Palavra-passe",
     "passwordShort": "Palavra-passe",
@@ -469,6 +470,12 @@
     "errors": {
       "loadProfile": "Erro ao carregar dados do perfil",
       "updateProfile": "Erro ao atualizar perfil"
+    },
+    "unsaved": {
+      "title": "Alterações por guardar",
+      "description": "Tem mudanças por guardar. Deseja descartá-las?",
+      "stay": "Ficar",
+      "discard": "Descartar"
     }
   },
   "history": {

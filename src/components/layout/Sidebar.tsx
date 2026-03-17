@@ -24,6 +24,7 @@ import {
   ShieldCheckIcon,
   FileTextIcon
 } from '../shared/CustomIcons';
+import { useTranslation } from 'react-i18next';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria' }: SidebarProps) {
+  const { t } = useTranslation();
   const isClient = mode === 'client';
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
@@ -48,81 +50,81 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   const clientSections = [
     {
       heading: 'Secretaria', items: [
-        { id: 'appointments', label: 'Marcações' },
-        { id: 'history', label: 'Histórico' },
+        { id: 'appointments', label: t('sidebar.appointments') },
+        { id: 'history', label: t('sidebar.history') },
       ]
     },
     {
-      heading: 'Balneário', items: [
-        { id: 'balneario', label: 'Marcações' },
-        { id: 'balneario-sobre', label: 'Sobre' },
+      heading: t('sidebar.balneario'), items: [
+        { id: 'balneario', label: t('sidebar.appointments') },
+        { id: 'balneario-sobre', label: t('sidebar.about') },
       ]
     },
     {
-      heading: 'Voluntariado', items: [
-        { id: 'voluntariado', label: 'Inscrição' },
-        { id: 'voluntariado-sobre', label: 'Sobre' },
+      heading: t('sidebar.volunteering'), items: [
+        { id: 'voluntariado', label: t('sidebar.signup') },
+        { id: 'voluntariado-sobre', label: t('sidebar.about') },
       ]
     },
   ];
 
   const clientBottom = [
-    { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
-    { id: 'profile', label: 'Perfil', icon: UserIcon },
-    { id: 'settings', label: 'Definições', icon: SlidersIcon },
+    { id: 'notificacoes', label: t('sidebar.notifications'), icon: BellIcon },
+    { id: 'profile', label: t('sidebar.profile'), icon: UserIcon },
+    { id: 'settings', label: t('sidebar.settings'), icon: SlidersIcon },
   ];
 
   // Main menu structure with subitems for Secretary
   const secretaryMenuItems = [
     {
       id: 'home',
-      label: 'Início',
+      label: t('sidebar.home'),
       icon: HomeIcon
     },
     {
       id: 'appointments',
-      label: 'Marcações',
+      label: t('sidebar.appointments'),
       icon: CalendarIcon
     },
     {
       id: 'valencias',
-      label: 'Valências',
+      label: t('sidebar.services'),
       icon: BuildingIcon,
       subitems: [
-        { id: 'balneario', label: 'Balneário', icon: UsersIcon },
-        { id: 'escola', label: 'Escola', icon: SchoolIcon },
+        { id: 'balneario', label: t('sidebar.balneario'), icon: UsersIcon },
+        { id: 'escola', label: t('sidebar.school'), icon: SchoolIcon },
       ]
     },
     {
       id: 'requisitions',
-      label: 'Requisições',
+      label: t('sidebar.requisitions'),
       icon: ClipboardListIcon,
       subitems: [
-        { id: 'requisitions', label: 'Geral', icon: HomeIcon },
-        { id: 'material', label: 'Material', icon: PackageIcon },
-        { id: 'manutencao', label: 'Manutenção', icon: WrenchIcon },
-        { id: 'transportes', label: 'Transporte', icon: TruckIcon },
-        { id: 'urgente', label: 'Prioridade Alta', icon: AlertCircleIcon },
+        { id: 'requisitions', label: t('sidebar.general'), icon: HomeIcon },
+        { id: 'material', label: t('sidebar.material'), icon: PackageIcon },
+        { id: 'manutencao', label: t('sidebar.maintenance'), icon: WrenchIcon },
+        { id: 'transportes', label: t('sidebar.transport'), icon: TruckIcon },
+        { id: 'urgente', label: t('sidebar.highPriority'), icon: AlertCircleIcon },
       ]
     },
     {
       id: 'candidaturas',
-      label: 'Candidaturas',
+      label: t('sidebar.applications'),
       icon: FileTextIcon,
       subitems: [
-        { id: 'creche', label: 'Creche', icon: BabyIcon },
+        { id: 'creche', label: t('sidebar.creche'), icon: BabyIcon },
         { id: 'catl', label: 'CATL', icon: UsersIcon },
         { id: 'erpi', label: 'ERPI', icon: HeartIcon },
       ]
     },
     {
       id: 'reports',
-      label: 'Relatórios',
+      label: t('sidebar.reports'),
       icon: HistoryIcon
     },
     {
       id: 'management',
-      label: 'Gestão',
+      label: t('sidebar.management'),
       icon: DatabaseIcon
     },
   ];
@@ -131,15 +133,15 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   const clientMenuItems = [
     {
       id: 'appointments',
-      label: 'Secretaria',
+      label: t('sidebar.secretary'),
       icon: CalendarIcon
     },
     {
       id: 'candidaturas',
-      label: 'Candidaturas',
+      label: t('sidebar.applications'),
       icon: FileTextIcon,
       subitems: [
-        { id: 'creche', label: 'Creche', icon: BabyIcon },
+        { id: 'creche', label: t('sidebar.creche'), icon: BabyIcon },
         { id: 'catl', label: 'CATL', icon: UsersIcon },
         { id: 'erpi', label: 'ERPI', icon: HeartIcon },
       ]
@@ -147,25 +149,25 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
   ];
 
   const generalItems = [
-    { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
-    { id: 'profile', label: 'Perfil', icon: UserIcon },
-    { id: 'settings', label: 'Definições', icon: SlidersIcon },
+    { id: 'notificacoes', label: t('sidebar.notifications'), icon: BellIcon },
+    { id: 'profile', label: t('sidebar.profile'), icon: UserIcon },
+    { id: 'settings', label: t('sidebar.settings'), icon: SlidersIcon },
   ];
 
   const secretaryGeneralItems = [
-    { id: 'notificacoes', label: 'Notificações', icon: BellIcon },
-    { id: 'administrative', label: 'Área Administrativa', icon: ShieldCheckIcon },
-    { id: 'profile', label: 'Perfil', icon: UserIcon },
-    { id: 'settings', label: 'Definições', icon: SlidersIcon },
+    { id: 'notificacoes', label: t('sidebar.notifications'), icon: BellIcon },
+    { id: 'administrative', label: t('sidebar.administrativeArea'), icon: ShieldCheckIcon },
+    { id: 'profile', label: t('sidebar.profile'), icon: UserIcon },
+    { id: 'settings', label: t('sidebar.settings'), icon: SlidersIcon },
   ];
 
   // Main menu structure for Balneario
   const balnearioMenuItems = [
-    { id: 'home', label: 'Início', icon: HomeIcon },
-    { id: 'appointments', label: 'Marcações', icon: CalendarIcon },
-    { id: 'consumos', label: 'Consumos', icon: HistoryIcon }, // using HistoryIcon temporarily
-    { id: 'requisitions', label: 'Requisições', icon: ClipboardListIcon },
-    { id: 'reports', label: 'Relatórios', icon: FileTextIcon },
+    { id: 'home', label: t('sidebar.home'), icon: HomeIcon },
+    { id: 'appointments', label: t('sidebar.appointments'), icon: CalendarIcon },
+    { id: 'consumos', label: t('sidebar.consumption'), icon: HistoryIcon },
+    { id: 'requisitions', label: t('sidebar.requisitions'), icon: ClipboardListIcon },
+    { id: 'reports', label: t('sidebar.reports'), icon: FileTextIcon },
   ];
 
   return (
@@ -175,7 +177,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
           type="button"
           className="fixed inset-0 bg-black/50 z-40"
           onClick={onClose}
-          aria-label="Fechar menu lateral"
+          aria-label={t('sidebar.closeSidebar')}
         />
       )}
 
@@ -193,12 +195,12 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
               />
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-tight">Florinhas do Vouga</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Menu</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{t('sidebar.menu')}</span>
               </div>
             </div>
             <button
               onClick={onClose}
-              aria-label="Fechar menu lateral"
+              aria-label={t('sidebar.closeSidebar')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
@@ -280,7 +282,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
 
               {/* GERAL section */}
               <div className="mb-6">
-                <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">Geral</h3>
+                <h3 className="text-xs text-gray-500 dark:text-gray-500 uppercase px-4 mb-2">{t('sidebar.general')}</h3>
                 <div className="space-y-1">
                   {(isClient ? generalItems : secretaryGeneralItems).map((item) => {
                     const Icon = item.icon;
@@ -322,7 +324,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
               className="w-full flex items-center gap-3 px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
             >
               <LogOutIcon className="w-5 h-5" aria-hidden="true" />
-              <span>Terminar Sessão</span>
+              <span>{t('header.logout')}</span>
             </button>
           </div>
         </div>

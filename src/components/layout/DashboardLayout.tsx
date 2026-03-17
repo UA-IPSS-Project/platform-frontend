@@ -6,6 +6,7 @@ import { UserAvatarMenu } from '../shared/UserAvatarMenu';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -51,6 +52,7 @@ export function DashboardLayout({
     onNavigateToNotifications = () => {},
 }: DashboardLayoutProps) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const notificationsRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -130,13 +132,13 @@ export function DashboardLayout({
                                         />
                                     )}
                                 </div>
-                                <LanguageToggle variant="compact" />
+                                <LanguageToggle variant="full" />
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={onToggleDarkMode}
                                     className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    aria-label="Alternar Tema"
+                                    aria-label={t('header.toggleTheme')}
                                 >
                                     {isDarkMode ? <SunIcon className="w-5 h-5" aria-hidden="true" /> : <MoonIcon className="w-5 h-5" aria-hidden="true" />}
                                 </Button>
