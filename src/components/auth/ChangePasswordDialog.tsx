@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { authApi } from '../../services/api';
 import { Lock, Eye, EyeOff, Check, X } from 'lucide-react';
 import { validatePassword, isPasswordValid as checkPasswordValid } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
 
 interface ChangePasswordDialogProps {
     open: boolean;
@@ -13,6 +14,7 @@ interface ChangePasswordDialogProps {
 }
 
 export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProps) {
+    const { t } = useTranslation();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showNewPassword, setShowNewPassword] = useState(false);
@@ -35,13 +37,13 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
         setLoading(true);
         try {
             await authApi.updatePassword(password, true); // termsAccepted=true pois já foi aceite ao criar conta
-            toast.success('Palavra-passe alterada com sucesso');
+            toast.success(t('auth.passwordChangedSuccess'));
             onClose();
             setPassword('');
             setConfirmPassword('');
         } catch (error) {
             console.error('Erro ao alterar palavra-passe:', error);
-            toast.error('Erro ao alterar palavra-passe');
+            toast.error(t('auth.passwordChangedError'));
         } finally {
             setLoading(false);
         }
@@ -60,20 +62,20 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Lock className="w-5 h-5 text-purple-600" />
-                        Alterar Palavra-passe
+                        {t('auth.changePasswordTitle')}
                     </DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="new-password">Nova Palavra-passe</Label>
+                        <Label htmlFor="new-password">{t('auth.newPassword')}</Label>
                         <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 shadow-sm focus-within:ring-1 focus-within:ring-ring">
                             <input
                                 id="new-password"
                                 type={showNewPassword ? 'text' : 'password'}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Introduza a nova palavra-passe"
+                                placeholder={t('auth.changePasswordNewPlaceholder')}
                                 className="flex-1 bg-transparent outline-none text-sm w-full h-full placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                 required
                             />
@@ -88,21 +90,21 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
 
                         {/* Password Requirements */}
                         <div className="space-y-1 pt-1 ml-1">
-                            <RequirementItem fulfilled={passwordValidation.minLength} text="Min. 8 caracteres" />
-                            <RequirementItem fulfilled={passwordValidation.hasUpperLower} text="Maiúsculas e minúsculas" />
-                            <RequirementItem fulfilled={passwordValidation.hasNumber} text="Números" />
+                            <RequirementItem fulfilled={passwordValidation.minLength} text={t('auth.passwordRuleMinLength')} />
+                            <RequirementItem fulfilled={passwordValidation.hasUpperLower} text={t('auth.passwordRuleCases')} />
+                            <RequirementItem fulfilled={passwordValidation.hasNumber} text={t('auth.passwordRuleNumbers')} />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="confirm-password">Confirmar Palavra-passe</Label>
+                        <Label htmlFor="confirm-password">{t('auth.confirmPassword')}</Label>
                         <div className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 shadow-sm focus-within:ring-1 focus-within:ring-ring">
                             <input
                                 id="confirm-password"
                                 type={showConfirmPassword ? 'text' : 'password'}
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="Confirme a nova palavra-passe"
+                                placeholder={t('auth.changePasswordConfirmPlaceholder')}
                                 className="flex-1 bg-transparent outline-none text-sm w-full h-full placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                                 required
                             />
@@ -115,7 +117,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                             </button>
                         </div>
                         {password && confirmPassword && password !== confirmPassword && (
-                            <p className="text-sm text-red-500 mt-1">As palavras-passe não coincidem</p>
+                            <p className="text-sm text-red-500 mt-1">{t('auth.passwordsDoNotMatch')}</p>
                         )}
                     </div>
 
@@ -126,14 +128,14 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                             onClick={onClose}
                             disabled={loading}
                         >
-                            Cancelar
+                            {t('appointmentDialog.actions.cancel')}
                         </Button>
                         <Button
                             type="submit"
                             className="bg-purple-600 hover:bg-purple-700 text-white"
                             disabled={loading || !isValid}
                         >
-                            {loading ? 'A guardar...' : 'Guardar Alterações'}
+                            {loading ? t('common.saving') : t('auth.saveChanges')}
                         </Button>
                     </DialogFooter>
                 </form>

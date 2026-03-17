@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface TermsOfUseModalProps {
   open: boolean;
@@ -9,9 +10,17 @@ interface TermsOfUseModalProps {
   onAccept: () => void;
 }
 
+interface TermsSection {
+  title: string;
+  paragraphs: string[];
+  bullets?: string[];
+}
+
 export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<TermsOfUseModalProps>) {
+  const { t } = useTranslation();
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sections = t('termsModal.sections', { returnObjects: true }) as TermsSection[];
 
   useEffect(() => {
     if (!open) {
@@ -51,10 +60,10 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
-            Termos e Privacidade
+            {t('termsModal.title')}
           </DialogTitle>
           <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
-            Por favor, leia atentamente os termos antes de aceitar.
+            {t('termsModal.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -67,198 +76,43 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
             onScroll={handleTermsScroll}
           >
             <div className="space-y-5 text-sm text-gray-700 dark:text-gray-300 pr-4">
-              <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">1</span>
-                {' '}
-                Identificação do Responsável pelo Tratamento
-              </h3>
-              <p className="leading-relaxed">
-                A presente Política de Privacidade regula o tratamento de dados pessoais realizado pela IPSS Florinhas do Vouga,
-                pessoa colectiva n.º 501156577, com sede na Praceta Florinhas do Vouga, n.º 10, 3810-064 Aveiro.
-              </p>
-              <p className="leading-relaxed mt-2">
-                Contactos:<br />
-                Telefone: 234 377 330<br />
-                Email: secretaria@florinhasdovouga.pt
-              </p>
-              <p className="leading-relaxed mt-2">
-                A Instituição é uma IPSS de natureza diocesana, actuando no âmbito da sua missão social e comunitária.
-              </p>
-            </section>
+              {sections.map((section, index) => (
+                <section key={section.title} className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+                  <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
+                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">{index + 1}</span>
+                    {' '}
+                    {section.title}
+                  </h3>
 
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">2</span>
-                {' '}
-                Compromisso com a Protecção de Dados
-              </h3>
-              <p className="leading-relaxed">
-                A IPSS Florinhas do Vouga está empenhada na protecção dos dados pessoais dos seus Utentes,
-                Beneficiários, Voluntários, Mecenas, Doadores, Benfeitores, Colaboradores, Parceiros e demais
-                entidades que com ela interagem.
-              </p>
-              <p className="leading-relaxed mt-2">
-                O tratamento de dados pessoais é realizado em conformidade com o Regulamento Geral sobre a
-                Protecção de Dados (RGPD) e demais legislação nacional aplicável, assegurando os princípios da
-                licitude, lealdade, transparência, minimização, exactidão, integridade e confidencialidade.
-              </p>
-            </section>
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph} className="leading-relaxed mt-2 first:mt-0">
+                      {paragraph}
+                    </p>
+                  ))}
 
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">3</span>
-                {' '}
-                Dados Pessoais Recolhidos
-              </h3>
-              <p className="leading-relaxed mb-2">
-                Poderão ser recolhidos, entre outros, os seguintes dados:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Nome</li>
-                <li>Número de identificação fiscal</li>
-                <li>Contactos telefónicos</li>
-                <li>Endereço de correio electrónico</li>
-                <li>Morada</li>
-                <li>Dados necessários à emissão de recibos</li>
-                <li>Dados fornecidos voluntariamente através de formulários</li>
-              </ul>
-              <p className="leading-relaxed mt-2">
-                A recolha ocorre apenas quando necessária e com fundamento legal adequado.
-              </p>
-            </section>
+                  {section.bullets && section.bullets.length > 0 && (
+                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                      {section.bullets.map((bullet) => (
+                        <li key={bullet}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ))}
 
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">4</span>
-                {' '}
-                Finalidade do Tratamento de Dados
-              </h3>
-              <p className="leading-relaxed">
-                Os dados pessoais são tratados para as seguintes finalidades:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Gestão administrativa e institucional</li>
-                <li>Processamento de donativos</li>
-                <li>Comunicação institucional</li>
-                <li>Gestão de voluntariado</li>
-                <li>Cumprimento de obrigações legais</li>
-                <li>Resposta a pedidos de contacto</li>
-              </ul>
-              <p className="leading-relaxed mt-2">
-                Os dados não serão utilizados para finalidades incompatíveis com aquelas que motivaram a sua recolha.
-              </p>
-            </section>
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">5</span>
-                {' '}
-                Conservação dos Dados
-              </h3>
-              <p className="leading-relaxed">
-                Os dados pessoais serão conservados apenas pelo período necessário ao cumprimento das finalidades
-                que determinaram a sua recolha ou pelo período exigido por obrigações legais.
-              </p>
-            </section>
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">6</span>
-                {' '}
-                Direitos dos Titulares dos Dados
-              </h3>
-              <p className="leading-relaxed mb-2">
-                Nos termos da lei, os titulares dos dados podem exercer os seguintes direitos:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Direito de acesso</li>
-                <li>Direito de rectificação</li>
-                <li>Direito ao apagamento</li>
-                <li>Direito à limitação do tratamento</li>
-                <li>Direito de oposição</li>
-                <li>Direito à portabilidade, quando aplicável</li>
-              </ul>
-              <p className="leading-relaxed mt-2">
-                O exercício destes direitos pode ser efectuado através do email: secretaria@florinhasdovouga.pt
-              </p>
-              <p className="leading-relaxed mt-2">
-                Caso considere que os seus direitos não foram respeitados, poderá apresentar reclamação junto da
-                Comissão Nacional de Protecção de Dados (CNPD).
-              </p>
-            </section>
-
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">7</span>
-                {' '}
-                O que são Cookies
-              </h3>
-              <p className="leading-relaxed">
-                Cookies são pequenos ficheiros de texto armazenados no dispositivo do utilizador quando visita um website,
-                permitindo melhorar a experiência de navegação.
-              </p>
-            </section>
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">8</span>
-                {' '}
-                Tipos de Cookies Utilizados
-              </h3>
-              <p className="leading-relaxed mb-2">
-                O website poderá utilizar:
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-4">
-                <li>Cookies estritamente necessários ao funcionamento do site</li>
-                <li>Cookies de desempenho e análise estatística (caso aplicável)</li>
-                <li>Cookies de funcionalidade</li>
-              </ul>
-              <p className="leading-relaxed mt-2">
-                Não são utilizados cookies para fins comerciais invasivos.
-              </p>
-            </section>
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">9</span>
-                {' '}
-                Gestão de Cookies
-              </h3>
-              <p className="leading-relaxed">
-                O utilizador pode, a qualquer momento, configurar o seu navegador para bloquear ou eliminar cookies.
-              </p>
-              <p className="leading-relaxed mt-2">
-                A desactivação de determinados cookies poderá afectar o funcionamento do website.
-              </p>
-            </section>
-
-            <section className="bg-white dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
-              <h3 className="font-semibold text-base text-purple-700 dark:text-purple-400 mb-3 flex items-center gap-2">
-                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold">10</span>
-                {' '}
-                Alterações à Política
-              </h3>
-              <p className="leading-relaxed">
-                A IPSS Florinhas do Vouga reserva-se o direito de actualizar a presente Política sempre que necessário,
-                sendo as alterações publicadas no website.
-              </p>
-            </section>
-
-            <section className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
-              <p className="leading-relaxed">
-                Para consultar a informação completa aceda ao site oficial:
-              </p>
-              <a
-                href="https://www.florinhasdovouga.pt/7ca6c-terms-and-privacy/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-2 text-purple-700 dark:text-purple-300 hover:underline break-all"
-              >
-                https://www.florinhasdovouga.pt/7ca6c-terms-and-privacy/
-              </a>
-            </section>
+              <section className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <p className="leading-relaxed">
+                  {t('termsModal.officialLink.label')}
+                </p>
+                <a
+                  href={t('termsModal.officialLink.url')}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block mt-2 text-purple-700 dark:text-purple-300 hover:underline break-all"
+                >
+                  {t('termsModal.officialLink.url')}
+                </a>
+              </section>
           </div>
           </div>
           
@@ -271,7 +125,7 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
               onClick={handleAccept}
               className="bg-purple-600 hover:bg-purple-700 text-white transition-colors duration-200"
             >
-              Li e aceito
+              {t('termsModal.acceptButton')}
             </Button>
           )}
         </DialogFooter>

@@ -15,6 +15,7 @@ import { Toaster } from 'sonner';
 import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { LanguageToggle } from './components/shared/LanguageToggle';
 
 function App() {
   const getInitialTheme = () => {
@@ -108,17 +109,25 @@ function App() {
           {/* Theme Toggle - Only show specific pages or always? Keeping logic: not on dashboard if dashboard handles it */}
           {/* Actually dashboards have their own toggles often, but global one is useful outside */}
           {(!isAuthenticated || location.pathname === '/set-password') && (
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="absolute top-6 right-6 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-purple-600" />
+            <div className="absolute top-6 right-6 z-50 flex items-center gap-2">
+              {(location.pathname === '/login' || location.pathname === '/register') && (
+                <LanguageToggle
+                     variant="full"
+                  className="bg-white dark:bg-gray-800 px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                />
               )}
-            </button>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <Moon className="w-5 h-5 text-purple-600" />
+                )}
+              </button>
+            </div>
           )}
 
           <div className="relative z-10 min-h-screen w-full">
