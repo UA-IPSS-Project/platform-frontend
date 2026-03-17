@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { Upload, X, File as FileIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatFileSize } from '../../utils/fileUtils';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadProps {
     selectedFiles: File[];
@@ -22,6 +23,7 @@ export function FileUpload({
     inputId,
     describedById,
 }: FileUploadProps) {
+    const { t } = useTranslation();
     const generatedId = useId();
     const resolvedInputId = inputId ?? `file-upload-${generatedId}`;
     const helperId = describedById ?? `${resolvedInputId}-help`;
@@ -36,7 +38,10 @@ export function FileUpload({
 
             if (oversizedFiles.length > 0) {
                 const fileNames = oversizedFiles.map(f => f.name).join(', ');
-                toast.error(`Ficheiro(s) excede(m) ${maxSizeMB}MB: ${fileNames}`);
+                toast.error(t('fileUpload.errors.maxSizeExceeded', {
+                    maxSizeMB,
+                    fileNames,
+                }));
                 return;
             }
 
@@ -67,16 +72,16 @@ export function FileUpload({
                     aria-describedby={helperId}
                 />
                 <Upload className="w-8 h-8 mb-2 text-purple-600 dark:text-purple-400" />
-                <p className="font-medium text-gray-900 dark:text-gray-100">Clique ou prima Enter para selecionar ficheiros</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{t('fileUpload.selectPrompt')}</p>
                 <p id={helperId} className="text-xs text-gray-500 mt-1">
-                    Suporta ficheiros de até {maxSizeMB}MB
+                    {t('fileUpload.maxSizeHint', { maxSizeMB })}
                 </p>
             </label>
 
             {selectedFiles.length > 0 && (
                 <div className="space-y-2 mt-4">
                     <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">
-                        Ficheiros selecionados ({selectedFiles.length})
+                        {t('fileUpload.selectedFiles', { count: selectedFiles.length })}
                     </h3>
                     <div className="max-h-60 overflow-y-auto space-y-2">
                         {selectedFiles.map((file, index) => (
@@ -100,7 +105,7 @@ export function FileUpload({
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); removeFile(index); }}
                                         className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex-shrink-0 text-gray-500 dark:text-gray-400"
-                                        aria-label="Remover ficheiro"
+                                        aria-label={t('fileUpload.removeFileAriaLabel')}
                                     >
                                         <X className="w-4 h-4" />
                                     </button>

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import SUBJECTS from '../lib/subjects';
+import SUBJECTS, { getSubjectLabel } from '../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../components/shared/CustomIcons';
 import { Appointment } from '../types';
 
@@ -103,6 +103,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.patientNIF.includes(searchTerm) ||
       apt.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getSubjectLabel(apt.subject, t).toLowerCase().includes(searchTerm.toLowerCase()) ||
       statusText.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
@@ -472,7 +473,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               <SelectItem value="all">{t('history.filters.allSubjects')}</SelectItem>
               {uniqueSubjects.map((subject) => (
                 <SelectItem key={subject} value={subject}>
-                  {subject}
+                  {getSubjectLabel(subject, t)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -526,7 +527,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                     </td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
                     {!isClient && <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>}
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.subject}</td>
+                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{getSubjectLabel(apt.subject, t)}</td>
                     <td className="py-4 px-4">{getStatusBadge(apt.status)}</td>
                   </tr>
                 ))

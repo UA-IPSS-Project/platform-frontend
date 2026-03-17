@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Input } from '../ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
-import SUBJECTS from '../../lib/subjects';
+import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
 import { toast } from 'sonner';
 import { ClockIcon, DownloadIcon, HistoryIcon, AlertTriangleIcon, FileTextIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
@@ -80,6 +80,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     const searchMatch =
       searchLower === '' ||
       apt.subject.toLowerCase().includes(searchLower) ||
+      getSubjectLabel(apt.subject, t).toLowerCase().includes(searchLower) ||
       apt.patientName.toLowerCase().includes(searchLower) ||
       apt.patientNIF.includes(searchLower) ||
       apt.time.includes(searchLower);
@@ -135,7 +136,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                         <SelectItem value="all">{t('history.filters.allSubjects')}</SelectItem>
                         {uniqueSubjects.map((subject) => (
                           <SelectItem key={subject} value={subject}>
-                            {subject}
+                            {getSubjectLabel(subject, t)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -226,7 +227,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                   </div>
 
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{apt.subject}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{getSubjectLabel(apt.subject, t)}</p>
                 </div>
               ))
             )}

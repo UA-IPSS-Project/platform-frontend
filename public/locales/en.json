@@ -65,10 +65,25 @@
       "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
       "attachDocs": "Attach documents (optional)"
     },
+    "subjects": {
+      "payMonthlyFee": "Pay monthly fee",
+      "submitDocuments": "Submit documents",
+      "inPersonMeeting": "In-person meeting",
+      "other": "Other"
+    },
     "actions": {
       "cancel": "Cancel",
       "booking": "Booking...",
       "book": "Book"
+    }
+  },
+  "fileUpload": {
+    "selectPrompt": "Click or press Enter to select files",
+    "maxSizeHint": "Supports files up to {{maxSizeMB}}MB",
+    "selectedFiles": "Selected files ({{count}})",
+    "removeFileAriaLabel": "Remove file",
+    "errors": {
+      "maxSizeExceeded": "File(s) exceed {{maxSizeMB}}MB: {{fileNames}}"
     }
   },
   "termsModal": {

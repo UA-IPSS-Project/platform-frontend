@@ -65,10 +65,25 @@
       "shortDescriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
       "attachDocs": "Anexar documentos (opcional)"
     },
+    "subjects": {
+      "payMonthlyFee": "Pagar mensalidade",
+      "submitDocuments": "Entregar documentos",
+      "inPersonMeeting": "Reunião presencial",
+      "other": "Outro"
+    },
     "actions": {
       "cancel": "Cancelar",
       "booking": "A marcar...",
       "book": "Marcar"
+    }
+  },
+  "fileUpload": {
+    "selectPrompt": "Clique ou prima Enter para selecionar ficheiros",
+    "maxSizeHint": "Suporta ficheiros de até {{maxSizeMB}}MB",
+    "selectedFiles": "Ficheiros selecionados ({{count}})",
+    "removeFileAriaLabel": "Remover ficheiro",
+    "errors": {
+      "maxSizeExceeded": "Ficheiro(s) excede(m) {{maxSizeMB}}MB: {{fileNames}}"
     }
   },
   "termsModal": {

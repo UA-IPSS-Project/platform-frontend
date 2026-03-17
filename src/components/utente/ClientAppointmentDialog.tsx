@@ -19,7 +19,7 @@ interface ClientAppointmentDialogProps {
   onSuccess?: () => void;
 }
 
-import SUBJECTS from '../../lib/subjects';
+import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
 import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
 import { useTranslation } from 'react-i18next';
 
@@ -203,7 +203,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
               <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 {SUBJECTS.map((option) => (
                   <SelectItem key={option} value={option} className="text-gray-900 dark:text-gray-100">
-                    {option}
+                    {getSubjectLabel(option, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
