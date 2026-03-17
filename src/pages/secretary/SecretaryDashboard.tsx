@@ -122,6 +122,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
 
+  const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  }, []);
+
   const navigateTo = (view: ViewType) => {
     if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
       setPendingNavigation(view);
@@ -452,7 +456,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
-                onDirtyChange={setProfileIsDirty}
+                onDirtyChange={handleProfileDirtyChange}
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
