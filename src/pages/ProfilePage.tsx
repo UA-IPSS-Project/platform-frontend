@@ -321,6 +321,17 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     setShowUnsavedDialog(false);
   };
 
+  const handleCancelEdit = () => {
+    if (hasUnsavedChanges) {
+      requestLeave();
+      return;
+    }
+
+    // No changes: just leave edit mode immediately.
+    setIsEditing(false);
+    sessionStorage.removeItem(storageKey);
+  };
+
   const toggleSection = (section: keyof typeof expanded) => {
     setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
   };
@@ -465,7 +476,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             {isEditing && (
               <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
                 <Button
-                  onClick={() => requestLeave()}
+                  onClick={handleCancelEdit}
                   variant="outline"
                   className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
