@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { FileUpload } from '../shared/FileUpload';
 import { DatePickerField } from '../ui/date-picker-field';
-import SUBJECTS from '../../lib/subjects';
+import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
 import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail, validateBirthDate } from '../../lib/validations';
@@ -507,7 +507,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   {SUBJECTS.map((subject) => (
                     <SelectItem key={subject} value={subject} className="text-gray-900 dark:text-gray-100">
-                      {subject}
+                      {getSubjectLabel(subject, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
