@@ -1,6 +1,7 @@
 import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
+import { LanguageToggle } from '../shared/LanguageToggle';
 import { UserAvatarMenu } from '../shared/UserAvatarMenu';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
@@ -129,6 +130,7 @@ export function DashboardLayout({
                                         />
                                     )}
                                 </div>
+                                <LanguageToggle variant="compact" />
                                 <Button
                                     variant="ghost"
                                     size="icon"
