@@ -112,6 +112,10 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+
+    const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    }, []);
     const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
@@ -361,7 +365,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 onBack={navigateBack}
                                 onUpdateUser={handleUpdateUser}
                                 isDarkMode={isDarkMode}
-                                onDirtyChange={setProfileIsDirty}
+                                onDirtyChange={handleProfileDirtyChange}
                             />
                         ) : currentView === 'notificacoes' ? (
                             <NotificationsPage

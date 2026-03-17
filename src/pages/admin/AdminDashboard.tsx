@@ -199,6 +199,10 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<AdminView | null>(null);
 
+    const handleProfileDirtyChange = (isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    };
+
     const safeSetView = (view: AdminView) => {
         if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
             setPendingNavigation(view);
@@ -416,7 +420,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                         onBack={() => setCurrentView('overview')}
                         onUpdateUser={handleUpdateUser}
                         isDarkMode={isDarkMode}
-                        onDirtyChange={setProfileIsDirty}
+                        onDirtyChange={handleProfileDirtyChange}
                     />
                 ) : null}
 

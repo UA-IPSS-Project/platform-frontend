@@ -79,6 +79,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [profileIsDirty, setProfileIsDirty] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  const handleProfileDirtyChange = (isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  };
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = sessionStorage.getItem('utente_currentDate');
     return saved ? new Date(saved) : new Date();
@@ -367,7 +371,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                   onBack={() => navigate('/dashboard')}
                   onUpdateUser={handleUpdateUser}
                   isDarkMode={isDarkMode}
-                  onDirtyChange={setProfileIsDirty}
+                  onDirtyChange={handleProfileDirtyChange}
                 />
               } />
 

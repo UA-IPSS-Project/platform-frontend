@@ -28,6 +28,10 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<EscolaView | null>(null);
+
+    const handleProfileDirtyChange = (isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    };
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -75,7 +79,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
                     onBack={() => safeSetView('home')}
                     onUpdateUser={handleUpdateUser}
                     isDarkMode={isDarkMode}
-                    onDirtyChange={setProfileIsDirty}
+                    onDirtyChange={handleProfileDirtyChange}
                 />
             );
         }

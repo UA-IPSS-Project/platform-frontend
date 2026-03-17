@@ -28,6 +28,10 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<InternoView | null>(null);
+
+    const handleProfileDirtyChange = (isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    };
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -75,7 +79,7 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
                     onBack={() => safeSetView('home')}
                     onUpdateUser={handleUpdateUser}
                     isDarkMode={isDarkMode}
-                    onDirtyChange={setProfileIsDirty}
+                    onDirtyChange={handleProfileDirtyChange}
                 />
             );
         }
