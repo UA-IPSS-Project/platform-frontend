@@ -513,6 +513,7 @@ export function AppointmentDetailsDialog({
 
       toast.success('Marcação reagendada com sucesso');
       setShowRescheduleDialog(false);
+      onClose();
     } catch (error) {
       console.error("Erro ao reagendar:", error);
       toast.error("Falha ao guardar o reagendamento.");
