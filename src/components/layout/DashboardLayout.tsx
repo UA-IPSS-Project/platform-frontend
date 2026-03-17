@@ -2,8 +2,10 @@ import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
 import { UserAvatarMenu } from '../shared/UserAvatarMenu';
+import { LanguageToggle } from '../shared/LanguageToggle';
 import { BellIcon, MenuIcon, MoonIcon, SunIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface DashboardLayoutProps {
@@ -17,16 +19,16 @@ interface DashboardLayoutProps {
     navigationContent?: ReactNode;
     onNavigateToProfile?: () => void;
     onNavigateToSettings?: () => void;
-    // Notifications (optional — dashboards in development may omit these)
-    notifications?: Notificacao[];
-    unreadCount?: number;
-    showNotifications?: boolean;
-    onToggleNotifications?: (show: boolean) => void;
-    onMarkAsRead?: (id: number) => void;
-    onMarkAllAsRead?: () => void;
-    onDeleteNotification?: (id: number) => void;
-    onDeleteAllNotifications?: () => void;
-    onNavigateToNotifications?: () => void;
+    // Notifications
+    notifications: Notificacao[];
+    unreadCount: number;
+    showNotifications: boolean;
+    onToggleNotifications: (show: boolean) => void;
+    onMarkAsRead: (id: number) => void;
+    onMarkAllAsRead: () => void;
+    onDeleteNotification: (id: number) => void;
+    onDeleteAllNotifications: () => void;
+    onNavigateToNotifications: () => void;
 }
 
 export function DashboardLayout({
@@ -39,16 +41,17 @@ export function DashboardLayout({
     navigationContent,
     onNavigateToProfile,
     onNavigateToSettings,
-    notifications = [],
-    unreadCount = 0,
-    showNotifications = false,
-    onToggleNotifications = () => {},
-    onMarkAsRead = () => {},
-    onMarkAllAsRead = () => {},
-    onDeleteNotification = () => {},
-    onDeleteAllNotifications = () => {},
-    onNavigateToNotifications = () => {},
+    notifications,
+    unreadCount,
+    showNotifications,
+    onToggleNotifications,
+    onMarkAsRead,
+    onMarkAllAsRead,
+    onDeleteNotification,
+    onDeleteAllNotifications,
+    onNavigateToNotifications,
 }: DashboardLayoutProps) {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const notificationsRef = useRef<HTMLDivElement>(null);
 
@@ -75,8 +78,8 @@ export function DashboardLayout({
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
-                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200" aria-label="Abrir menu lateral" aria-expanded={false}>
-                                    <MenuIcon className="w-5 h-5" aria-hidden="true" />
+                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200">
+                                    <MenuIcon className="w-5 h-5" />
                                 </Button>
                                 <span className="text-gray-700 dark:text-gray-200 font-medium hidden sm:inline-block">
                                     {roleTitle}
@@ -84,7 +87,7 @@ export function DashboardLayout({
                             </div>
 
                             {/* Central Navigation Area - Injected depending on role */}
-                            <nav className="hidden md:flex items-center gap-1" aria-label="Navegação principal">
+                            <nav className="hidden md:flex items-center gap-1">
                                 {navigationContent}
                             </nav>
 
@@ -95,13 +98,10 @@ export function DashboardLayout({
                                         size="icon"
                                         className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                         onClick={() => onToggleNotifications(!showNotifications)}
-                                        aria-label={unreadCount > 0 ? `Notificações — ${unreadCount} não lidas` : 'Notificações'}
-                                        aria-expanded={showNotifications}
-                                        aria-haspopup="true"
                                     >
-                                        <BellIcon className="w-5 h-5" aria-hidden="true" />
+                                        <BellIcon className="w-5 h-5" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4" aria-hidden="true">
+                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4">
                                                 {unreadCount}
                                             </span>
                                         )}
@@ -129,17 +129,18 @@ export function DashboardLayout({
                                         />
                                     )}
                                 </div>
+                                <LanguageToggle />
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={onToggleDarkMode}
                                     className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                                    aria-label="Alternar Tema"
+                                    aria-label={t('header.toggleTheme')}
                                 >
-                                    {isDarkMode ? <SunIcon className="w-5 h-5" aria-hidden="true" /> : <MoonIcon className="w-5 h-5" aria-hidden="true" />}
+                                    {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
                                 </Button>
                                 <UserAvatarMenu
-                                    nome={user?.nome ?? ''}
+                                    nome={user?.nome || 'Utilizador'}
                                     onProfile={onNavigateToProfile}
                                     onSettings={onNavigateToSettings}
                                     onLogout={onLogout}

@@ -11,6 +11,7 @@ import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIco
 import { Appointment } from '../../types';
 import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
+import { useTranslation } from 'react-i18next';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -49,11 +50,13 @@ const generateTimeSlots = () => {
   return slots;
 };
 
-const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
-const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
-
 export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+  const { i18n } = useTranslation();
+  const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
+  const currentLocale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
+  const weekdaysShort = i18n.language.startsWith('en') ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+  const weekdaysMedium = i18n.language.startsWith('en') ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
+  const weekdaysMobile = i18n.language.startsWith('en') ? ['M', 'T', 'W', 'T', 'F'] : ['S', 'T', 'Q', 'Q', 'S'];
   const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
@@ -460,9 +463,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     if (selected) {
       if (selected.status === 'reserved') {
         if (onRefresh) {
-          toast.info('A atualizar marcações...');
+          toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
           await onRefresh();
-          toast.success('Marcações atualizadas!');
+          toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
         }
         return;
       }
@@ -473,13 +476,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     if (isSlotInPast(slotNavigator.date, slotNavigator.time)) {
-      toast.error('Não é possível marcar para uma data/hora no passado');
+      toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
       return;
     }
 
     const blocked = await isSlotBlocked(slotNavigator.date, slotNavigator.time);
     if (blocked) {
-      toast.error('Horário indisponível');
+      toast.error(tt('Horário indisponível', 'Time slot unavailable'));
       if (onRefresh) {
         onRefresh();
       }
@@ -507,13 +510,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     // mesmo quando já existem marcações nesse horário.
     if (!isClient && slotAppointments.length > 0 && !slotIsFull) {
       if (isSlotInPast(date, time)) {
-        toast.error('Não é possível marcar para uma data/hora no passado');
+        toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
         return;
       }
 
       const blocked = await isSlotBlocked(date, time);
       if (blocked) {
-        toast.error('Horário indisponível');
+        toast.error(tt('Horário indisponível', 'Time slot unavailable'));
         if (onRefresh) {
           onRefresh();
         }
@@ -535,9 +538,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       // Se for slot reservado ou bloqueado, recarregar marcações
       if (appointment.status === 'reserved' || (isClient && !isOwn)) {
         if (onRefresh) {
-          toast.info('A atualizar marcações...');
+          toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
           await onRefresh();
-          toast.success('Marcações atualizadas!');
+          toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
         }
         return;
       }
@@ -547,7 +550,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     // Validar se o horário não é no passado APENAS para criar nova marcação
     if (isSlotInPast(date, time)) {
-      toast.error('Não é possível marcar para uma data/hora no passado');
+      toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
       return;
     }
 
@@ -556,7 +559,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     // Nesse caso, devemos forçar um refresh visual para o utilizador ver o novo estado
     const blocked = await isSlotBlocked(date, time);
     if (blocked) {
-      toast.error('Horário indisponível');
+      toast.error(tt('Horário indisponível', 'Time slot unavailable'));
       if (onRefresh) {
         // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
         onRefresh();
@@ -569,8 +572,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const getWeekLabel = () => {
     const firstDay = weekDays[0];
-    const month = firstDay.toLocaleDateString('pt-PT', { month: 'long' });
-    return `${firstDay.getDate()} de ${month}`;
+    const month = firstDay.toLocaleDateString(currentLocale, { month: 'long' });
+    if (i18n.language.startsWith('en')) {
+      return `${month} ${firstDay.getDate()}`;
+    }
+    return `${firstDay.getDate()} ${tt('de', 'of')} ${month}`;
   };
 
   // Obter marcações da semana para exportação
@@ -595,21 +601,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
   };
 
-  // Mapear status para português
+  // Map status labels by language
   const statusLabels: Record<string, string> = {
-    'scheduled': 'Agendado',
-    'in-progress': 'Em Curso',
-    'warning': 'Aviso',
-    'completed': 'Concluído',
-    'cancelled': 'Cancelado',
-    'no-show': 'Faltou'
+    'scheduled': tt('Agendado', 'Scheduled'),
+    'in-progress': tt('Em Curso', 'In progress'),
+    'warning': tt('Aviso', 'Warning'),
+    'completed': tt('Concluído', 'Completed'),
+    'cancelled': tt('Cancelado', 'Cancelled'),
+    'no-show': tt('Faltou', 'No-show')
   };
 
   // Gerar nome do arquivo
   const getFileName = (extension: string) => {
     const firstDay = weekDays[0];
     const lastDay = weekDays[weekDays.length - 1];
-    return `agenda_${firstDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}_a_${lastDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}.${extension}`;
+    return `agenda_${firstDay.toLocaleDateString(currentLocale).replace(/\//g, '-')}_${tt('a', 'to')}_${lastDay.toLocaleDateString(currentLocale).replace(/\//g, '-')}.${extension}`;
   };
 
   // Exportar como CSV
@@ -617,16 +623,18 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
     const csvContent = [
       headers.join(';'),
       ...sortedAppointments.map(apt => {
         const date = new Date(apt.date);
-        const formattedDate = date.toLocaleDateString('pt-PT');
+        const formattedDate = date.toLocaleDateString(currentLocale);
         const status = statusLabels[apt.status] || apt.status;
 
         const escapeField = (field: string) => {
@@ -662,7 +670,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Agenda exportada em CSV com sucesso');
+    toast.success(tt('Agenda exportada em CSV com sucesso', 'Schedule exported to CSV successfully'));
   };
 
   // Exportar como Excel (usando formato XML do Excel)
@@ -670,11 +678,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
 
     // Criar conteúdo HTML que o Excel pode abrir
     let tableContent = '<table border="1">';
@@ -694,7 +704,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     sortedAppointments.forEach(apt => {
       const date = new Date(apt.date);
-      const formattedDate = date.toLocaleDateString('pt-PT');
+      const formattedDate = date.toLocaleDateString(currentLocale);
       const status = statusLabels[apt.status] || apt.status;
       const statusColor = getStatusColor(apt.status);
 
@@ -730,7 +740,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Agenda exportada em Excel com sucesso');
+    toast.success(tt('Agenda exportada em Excel com sucesso', 'Schedule exported to Excel successfully'));
   };
 
   // Exportar como PDF
@@ -738,14 +748,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
     const firstDay = weekDays[0];
     const lastDay = weekDays[weekDays.length - 1];
-    const periodLabel = `${firstDay.toLocaleDateString('pt-PT')} a ${lastDay.toLocaleDateString('pt-PT')}`;
+    const periodLabel = `${firstDay.toLocaleDateString(currentLocale)} ${tt('a', 'to')} ${lastDay.toLocaleDateString(currentLocale)}`;
 
     // Criar HTML para impressão como PDF
     let htmlContent = `
@@ -753,7 +765,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Agenda Semanal - ${periodLabel}</title>
+        <title>${tt('Agenda Semanal', 'Weekly Schedule')} - ${periodLabel}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
@@ -773,7 +785,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       </head>
       <body>
         <br/><br/><br/>
-        <h1>Agenda Semanal</h1>
+        <h1>${tt('Agenda Semanal', 'Weekly Schedule')}</h1>
         <p class="period">${periodLabel}</p>
         <table>
           <thead>
@@ -784,7 +796,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     sortedAppointments.forEach(apt => {
       const date = new Date(apt.date);
-      const formattedDate = date.toLocaleDateString('pt-PT');
+      const formattedDate = date.toLocaleDateString(currentLocale);
       const status = statusLabels[apt.status] || apt.status;
       const statusClass = `status-${apt.status.toLowerCase().replace('-', '_')}`;
 
@@ -805,7 +817,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     htmlContent += `
           </tbody>
         </table>
-        <p class="footer">Gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}</p>
+        <p class="footer">${tt('Gerado em', 'Generated on')} ${new Date().toLocaleDateString(currentLocale)} ${tt('às', 'at')} ${new Date().toLocaleTimeString(currentLocale)}</p>
       </body>
       </html>
     `;
@@ -826,7 +838,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     setExportDialogOpen(false);
-    toast.success('A preparar PDF para impressão...');
+    toast.success(tt('A preparar PDF para impressão...', 'Preparing PDF for printing...'));
   };
 
   // Exportar como ICS (iCalendar) - apenas marcações agendadas
@@ -836,7 +848,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const scheduledAppointments = allAppointments.filter(apt => apt.status === 'scheduled');
 
     if (scheduledAppointments.length === 0) {
-      toast.warning('Não existem marcações agendadas para exportar nesta semana');
+      toast.warning(tt('Não existem marcações agendadas para exportar nesta semana', 'There are no scheduled appointments to export this week'));
       return;
     }
 
@@ -867,7 +879,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       'PRODID:-//Junta de Freguesia//Agenda//PT',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      `X-WR-CALNAME:Agenda Semanal - ${getWeekLabel()}`,
+      `X-WR-CALNAME:${tt('Agenda Semanal', 'Weekly Schedule')} - ${getWeekLabel()}`,
     ];
 
     scheduledAppointments.forEach(apt => {
@@ -881,7 +893,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         `DTSTART:${formatICSDate(aptDate, apt.time)}`,
         `DTEND:${formatICSEndDate(aptDate, apt.time)}`,
         `SUMMARY:${apt.subject} - ${apt.patientName}`,
-        `DESCRIPTION:Utente: ${apt.patientName}\\nNIF: ${apt.patientNIF || 'N/A'}\\nContacto: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\nEstado: ${status}`,
+        `DESCRIPTION:${tt('Utente', 'Patient')}: ${apt.patientName}\\nNIF: ${apt.patientNIF || 'N/A'}\\n${tt('Contacto', 'Contact')}: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\n${tt('Estado', 'Status')}: ${status}`,
         `STATUS:${apt.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,
         'END:VEVENT'
       );
@@ -954,7 +966,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     // Se não encontrou nenhuma data disponível, manter a data atual
-    toast.warning('Não foram encontrados horários disponíveis nos próximos 30 dias');
+    toast.warning(tt('Não foram encontrados horários disponíveis nos próximos 30 dias', 'No available slots were found in the next 30 days'));
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -1085,7 +1097,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const handleConfirmQuickAppointment = () => {
     if (!quickTime) {
-      toast.error('Selecione um horário disponível');
+      toast.error(tt('Selecione um horário disponível', 'Select an available time slot'));
       return;
     }
     setQuickDialogOpen(false);
@@ -1097,10 +1109,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       {/* Header - Outside Card */}
       <div className="mb-4 flex flex-col gap-1">
         <div className="mb-1">
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">{tt('Agenda Semanal', 'Weekly Schedule')}</h2>
         </div>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-          Clique numa célula vazia para iniciar uma marcação
+          {tt('Clique numa célula vazia para iniciar uma marcação', 'Click an empty cell to start an appointment')}
         </p>
       </div>
 
@@ -1151,7 +1163,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={onBlockSchedule}
               className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
-              Bloquear
+              {tt('Bloquear', 'Block')}
             </Button>
             <Button
               variant="outline"
@@ -1159,7 +1171,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={() => handleQuickDialogToggle(true)}
               className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
-              Nova marcação
+              {tt('Nova marcação', 'New appointment')}
             </Button>
           </div>
         )}
@@ -1175,11 +1187,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             className={`grid grid-cols-6 gap-2 mb-4 border-b border-gray-200 dark:border-gray-700 pr-4`}
             style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
           >
-            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Hora</div>
+            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{tt('Hora', 'Time')}</div>
             {weekDays.map((day, index) => (
               <div key={index} className="text-center">
                 <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {isMobile ? WEEKDAYS_MOBILE[index] : isTablet ? WEEKDAYS_MEDIUM[index] : WEEKDAYS_SHORT[index]}
+                  {isMobile ? weekdaysMobile[index] : isTablet ? weekdaysMedium[index] : weekdaysShort[index]}
                 </div>
                 <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
               </div>
@@ -1281,22 +1293,22 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     // Compute tooltip title in a separate statement to avoid nested ternary
                     const getSlotTooltip = (): string => {
                       if (!appointment) {
-                        if (isHolidayDay) return 'Feriado';
-                        return inPast ? 'Horário no passado' : 'Clique para marcar';
+                        if (isHolidayDay) return tt('Feriado', 'Holiday');
+                        return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
                       }
                       if (appointment.status === 'reserved') {
-                        return 'Slot reservado - clique para atualizar';
+                        return tt('Slot reservado - clique para atualizar', 'Reserved slot - click to refresh');
                       }
                       if (blocked) {
-                        return 'Horário ocupado - clique para atualizar';
+                        return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
                       }
                       if (isClient && isOwn) {
-                        return 'Sua marcação - clique para ver detalhes';
+                        return tt('Sua marcação - clique para ver detalhes', 'Your appointment - click to view details');
                       }
                       if (inPast) {
-                        return 'Marcação histórica - clique para ver detalhes';
+                        return tt('Marcação histórica - clique para ver detalhes', 'Past appointment - click to view details');
                       }
-                      return 'Clique para ver detalhes';
+                      return tt('Clique para ver detalhes', 'Click to view details');
                     };
 
                     // Gerar ID estável para este slot
@@ -1328,7 +1340,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             return (
                               <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
                                 <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
-                                {!isMobile && 'Indisponível'}
+                                {!isMobile && tt('Indisponível', 'Unavailable')}
                               </div>
                             );
                           }
@@ -1338,7 +1350,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             return (
                               <div className="flex items-center justify-center w-full h-full">
                                 <span className="text-[10px] font-medium truncate leading-none px-0.5">
-                                  Reservado
+                                  {tt('Reservado', 'Reserved')}
                                 </span>
                               </div>
                             );
@@ -1396,7 +1408,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       <div className="flex justify-end mt-4">
         <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
           <DownloadIcon className="w-4 h-4" />
-          Exportar Agenda
+          {tt('Exportar Agenda', 'Export schedule')}
         </Button>
       </div>
 
@@ -1412,7 +1424,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       >
         <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle>Navegar marcações do slot</DialogTitle>
+            <DialogTitle>{tt('Navegar marcações do slot', 'Browse slot appointments')}</DialogTitle>
           </DialogHeader>
 
           {slotNavigator && (
@@ -1427,19 +1439,19 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   variant="outline"
                   onClick={() => setSlotNavigatorIndex((prev) => Math.max(0, prev - 1))}
                   disabled={slotNavigatorIndex === 0}
-                  aria-label="Ver sub-slot anterior"
+                  aria-label={tt('Ver sub-slot anterior', 'View previous sub-slot')}
                 >
                   ←
                 </Button>
 
                 <div className="text-center flex-1">
                   <p className="text-sm font-medium">
-                    Sub-slot {slotNavigatorIndex + 1} de {slotNavigator.slots.length}
+                    {tt('Sub-slot', 'Sub-slot')} {slotNavigatorIndex + 1} {tt('de', 'of')} {slotNavigator.slots.length}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {slotNavigator.slots[slotNavigatorIndex]
-                      ? `Marcado para ${slotNavigator.slots[slotNavigatorIndex]?.patientName}`
-                      : 'Disponível para nova marcação'}
+                      ? `${tt('Marcado para', 'Scheduled for')} ${slotNavigator.slots[slotNavigatorIndex]?.patientName}`
+                      : tt('Disponível para nova marcação', 'Available for a new appointment')}
                   </p>
                 </div>
 
@@ -1448,7 +1460,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   variant="outline"
                   onClick={() => setSlotNavigatorIndex((prev) => Math.min(slotNavigator.slots.length - 1, prev + 1))}
                   disabled={slotNavigatorIndex === slotNavigator.slots.length - 1}
-                  aria-label="Ver sub-slot seguinte"
+                  aria-label={tt('Ver sub-slot seguinte', 'View next sub-slot')}
                 >
                   →
                 </Button>
@@ -1458,9 +1470,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 type="button"
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                 onClick={handleSlotNavigatorAction}
-                aria-label={slotNavigator.slots[slotNavigatorIndex] ? 'Abrir marcação selecionada' : 'Criar marcação no sub-slot selecionado'}
+                aria-label={slotNavigator.slots[slotNavigatorIndex]
+                  ? tt('Abrir marcação selecionada', 'Open selected appointment')
+                  : tt('Criar marcação no sub-slot selecionado', 'Create appointment in selected sub-slot')}
               >
-                {slotNavigator.slots[slotNavigatorIndex] ? 'Abrir marcação' : 'Criar marcação neste sub-slot'}
+                {slotNavigator.slots[slotNavigatorIndex]
+                  ? tt('Abrir marcação', 'Open appointment')
+                  : tt('Criar marcação neste sub-slot', 'Create appointment in this sub-slot')}
               </Button>
             </div>
           )}
@@ -1471,9 +1487,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">Exportar Agenda</DialogTitle>
+            <DialogTitle className="text-xl">{tt('Exportar Agenda', 'Export schedule')}</DialogTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha o formato de exportação da agenda semanal
+              {tt('Escolha o formato de exportação da agenda semanal', 'Choose the weekly schedule export format')}
             </p>
           </DialogHeader>
           <div className="grid gap-3 mt-4">
@@ -1487,7 +1503,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">CSV</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Formato de texto compatível com Excel e outras aplicações</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Formato de texto compatível com Excel e outras aplicações', 'Text format compatible with Excel and other apps')}</div>
               </div>
             </Button>
 
@@ -1503,7 +1519,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">Excel</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Ficheiro formatado para Microsoft Excel</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Ficheiro formatado para Microsoft Excel', 'File formatted for Microsoft Excel')}</div>
               </div>
             </Button>
 
@@ -1519,7 +1535,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">PDF</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Documento para impressão ou visualização</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Documento para impressão ou visualização', 'Document for printing or viewing')}</div>
               </div>
             </Button>
 
@@ -1534,8 +1550,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 </svg>
               </div>
               <div className="text-left">
-                <div className="font-medium">iCalendar - Apenas marcações agendadas (.ics)</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Google Calendar, Outlook</div>
+                <div className="font-medium">{tt('iCalendar - Apenas marcações agendadas (.ics)', 'iCalendar - Scheduled appointments only (.ics)')}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Google Calendar, Outlook', 'Google Calendar, Outlook')}</div>
               </div>
             </Button>
           </div>
@@ -1546,9 +1562,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         {/* CORREÇÃO 3: DialogContent como card */}
         <DialogContent className="max-w-5xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Criar nova marcação</DialogTitle>
+            <DialogTitle className="text-2xl">{tt('Criar nova marcação', 'Create new appointment')}</DialogTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha rapidamente um dia específico e um horário disponível
+              {tt('Escolha rapidamente um dia específico e um horário disponível', 'Quickly choose a specific day and an available time')}
             </p>
           </DialogHeader>
           <div className="space-y-4">
@@ -1558,7 +1574,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Ano (Select/Dropdown) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ano</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Ano', 'Year')}</Label>
                 <Select
                   value={String(quickYear)}
                   onValueChange={(value) => setQuickYear(Number(value))}
@@ -1578,7 +1594,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Mês */}
               <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Mês</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Mês', 'Month')}</Label>
                 <Select
                   value={String(quickMonth)}
                   onValueChange={(value) => setQuickMonth(Number(value))}
@@ -1591,7 +1607,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       const monthDate = new Date(quickYear, index, 1);
                       return (
                         <SelectItem key={index} value={String(index)}>
-                          {monthDate.toLocaleDateString('pt-PT', { month: 'long' })}
+                          {monthDate.toLocaleDateString(currentLocale, { month: 'long' })}
                         </SelectItem>
                       );
                     })}
@@ -1601,7 +1617,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Dia (Com Scrollbar) - Apenas dias de semana */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Dia', 'Day')}</Label>
                 <Select
                   value={String(quickDay)}
                   onValueChange={(value) => setQuickDay(Number(value))}
@@ -1635,14 +1651,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Horário (Com Scrollbar) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Horário', 'Time')}</Label>
                 <Select
                   value={quickTime}
                   onValueChange={setQuickTime}
                   disabled={!quickSlots.length}
                 >
                   <SelectTrigger className="min-w-[160px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
-                    <SelectValue placeholder="Sem horários disponíveis" />
+                    <SelectValue placeholder={tt('Sem horários disponíveis', 'No available time slots')} />
                   </SelectTrigger>
                   {/* CORREÇÃO 2: Scrollbar para os horários */}
                   <SelectContent className={selectMenuClassName} style={selectMenuStyle}>
@@ -1662,12 +1678,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={handleConfirmQuickAppointment}
               disabled={!quickTime}
             >
-              Escolher
+              {tt('Escolher', 'Choose')}
             </Button>
 
             {!quickSlots.length && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Não existem horários disponíveis para esta data.
+                {tt('Não existem horários disponíveis para esta data.', 'There are no available time slots for this date.')}
               </p>
             )}
           </div>

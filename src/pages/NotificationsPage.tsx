@@ -3,6 +3,7 @@ import { Button } from '../components/ui/button';
 import { ArrowLeftIcon, BellIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from '../components/shared/CustomIcons';
 import { NotificationDetailModal } from '../components/dialogs/NotificationDetailModal';
 import { NotificationWithType, NotificationActionCallbacks } from '../hooks/useNotificationAction';
+import { useTranslation } from 'react-i18next';
 
 interface Notification {
   id: string;
@@ -40,6 +41,7 @@ export function NotificationsPage({
   highlightedNotificationId,
   actionCallbacks,
 }: NotificationsPageProps) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [animatingId, setAnimatingId] = useState<string | null>(null);
   const [selectedNotification, setSelectedNotification] = useState<NotificationWithType | null>(null);
@@ -96,12 +98,12 @@ export function NotificationsPage({
     const diffHours = Math.floor(diffMs / 3600000);
 
     if (diffMins < 60) {
-      return `Há ${diffMins} min`;
+      return t('notifications.agoMinutes', { count: diffMins });
     } else if (diffHours < 24) {
-      return `Há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+      return t('notifications.agoHours', { count: diffHours });
     } else {
       const diffDays = Math.floor(diffHours / 24);
-      return `Há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
+      return t('notifications.agoDays', { count: diffDays });
     }
   };
 
@@ -142,17 +144,17 @@ export function NotificationsPage({
           className="mb-4 text-gray-700 dark:text-gray-200"
         >
           <ArrowLeftIcon className="w-5 h-5 mr-2" />
-          Voltar
+          {t('common.back')}
         </Button>
 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-              Notificações
+              {t('notifications.title')}
             </h1>
             {unreadCount > 0 && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {unreadCount} notificação{unreadCount !== 1 ? 'ões' : ''} não lida{unreadCount !== 1 ? 's' : ''}
+                {t('notifications.unreadCount', { count: unreadCount })}
               </p>
             )}
           </div>
@@ -164,7 +166,7 @@ export function NotificationsPage({
                 className="flex items-center gap-2"
               >
                 <CheckCircleIcon className="w-4 h-4" />
-                Marcar todas como lidas
+                {t('notifications.markAllRead')}
               </Button>
             )}
             {notifications.length > 0 && (
@@ -174,7 +176,7 @@ export function NotificationsPage({
                 className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 border-red-200 dark:border-red-900/50"
               >
                 <TrashIcon className="w-4 h-4" />
-                Eliminar todas
+                {t('notifications.deleteAll')}
               </Button>
             )}
           </div>
@@ -190,7 +192,7 @@ export function NotificationsPage({
             : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
-          Todas ({notifications.length})
+          {t('notifications.filterAll', { count: notifications.length })}
         </button>
         <button
           onClick={() => setFilter('unread')}
@@ -199,7 +201,7 @@ export function NotificationsPage({
             : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
             }`}
         >
-          Não lidas ({unreadCount})
+          {t('notifications.filterUnread', { count: unreadCount })}
         </button>
       </div>
 
@@ -209,7 +211,7 @@ export function NotificationsPage({
           <div className="p-12 text-center text-gray-500 dark:text-gray-400">
             <BellIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p className="text-lg">
-              {filter === 'unread' ? 'Sem notificações não lidas' : 'Sem notificações'}
+              {filter === 'unread' ? t('notifications.noUnread') : t('notifications.none')}
             </p>
           </div>
         ) : (
@@ -263,7 +265,7 @@ export function NotificationsPage({
                     onDelete(notification.id);
                   }}
                   className="p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all self-center"
-                  title="Eliminar notificação"
+                  title={t('notifications.deleteOne')}
                 >
                   <TrashIcon className="w-5 h-5" />
                 </button>

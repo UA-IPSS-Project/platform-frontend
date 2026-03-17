@@ -6,6 +6,7 @@ import { DatePickerField, formatDateInput, parseDateInput } from '../components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import SUBJECTS from '../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../components/shared/CustomIcons';
 import { Appointment } from '../types';
@@ -28,37 +29,23 @@ const parseAppointmentDate = (value: Appointment['date']) => {
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const getStatusLabel = (status: Appointment['status']) => {
+const getStatusKey = (status: Appointment['status']) => {
   switch (status) {
     case 'completed':
-      return 'Concluído';
+      return 'completed';
     case 'warning':
-      return 'Aviso';
+      return 'warning';
     case 'no-show':
-      return 'Não compareceu';
+      return 'noShow';
     case 'cancelled':
-      return 'Cancelado';
+      return 'cancelled';
     default:
       return status;
   }
 };
 
-const getStatusBadge = (status: Appointment['status']) => {
-  switch (status) {
-    case 'completed':
-      return <Badge className="bg-green-600 text-white dark:bg-green-600 dark:text-white">Concluído</Badge>;
-    case 'warning':
-      return <Badge className="bg-yellow-500 text-gray-900">Aviso</Badge>;
-    case 'no-show':
-      return <Badge style={{ backgroundColor: '#f97316', color: 'white' }}>Não compareceu</Badge>;
-    case 'cancelled':
-      return <Badge variant="destructive">Cancelado</Badge>;
-    default:
-      return null;
-  }
-};
-
 export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode, startDate, endDate, onDateChange, isClient = false }: HistoryPageProps) {
+  const { t, i18n } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [subjectFilter, setSubjectFilter] = useState('all');
@@ -66,6 +53,25 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   /* Sorting State */
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const currentLocale = i18n.resolvedLanguage === 'en' ? 'en-GB' : 'pt-PT';
+
+  const getStatusLabel = (status: Appointment['status']) => t(`history.status.${getStatusKey(status)}`, { defaultValue: status });
+
+  const getStatusBadge = (status: Appointment['status']) => {
+    const label = getStatusLabel(status);
+    switch (status) {
+      case 'completed':
+        return <Badge className="bg-green-600 text-white dark:bg-green-600 dark:text-white">{label}</Badge>;
+      case 'warning':
+        return <Badge className="bg-yellow-500 text-gray-900">{label}</Badge>;
+      case 'no-show':
+        return <Badge style={{ backgroundColor: '#f97316', color: 'white' }}>{label}</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">{label}</Badge>;
+      default:
+        return null;
+    }
+  };
 
   // Sort appointments by date
   const sortedAppointments = [...appointments].sort((a, b) => {
@@ -93,7 +99,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     const matchesSearch =
       searchTerm === '' ||
       apt.time.includes(searchTerm) ||
-      appointmentDate?.toLocaleDateString('pt-PT')?.includes(searchTerm) ||
+      appointmentDate?.toLocaleDateString(currentLocale)?.includes(searchTerm) ||
       apt.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       apt.patientNIF.includes(searchTerm) ||
       apt.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,27 +121,36 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   // Gerar nome do arquivo
   const getFileName = (extension: string) => {
     const today = new Date();
-    return `historico_${today.toLocaleDateString('pt-PT').replace(/\//g, '-')}.${extension}`;
+    return `history_${today.toLocaleDateString(currentLocale).replace(/\//g, '-')}.${extension}`;
   };
 
   // Exportar como CSV
   const handleExportCSV = () => {
     if (filteredAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar');
+      toast.warning(t('history.toast.noAppointmentsToExport'));
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente'];
+    const headers = [
+      t('history.export.headers.time'),
+      t('history.export.headers.date'),
+      t('history.export.headers.attendant'),
+    ];
     if (!isClient) {
-      headers.push('Nome do Utente', 'NIF', 'Contacto', 'Email');
+      headers.push(
+        t('history.export.headers.patientName'),
+        'NIF',
+        t('history.export.headers.contact'),
+        t('history.export.headers.email'),
+      );
     }
-    headers.push('Assunto', 'Estado');
+    headers.push(t('history.export.headers.subject'), t('history.export.headers.status'));
 
     const csvContent = [
       headers.join(';'),
       ...filteredAppointments.map(apt => {
         const date = parseAppointmentDate(apt.date);
-        const formattedDate = date?.toLocaleDateString('pt-PT') ?? String(apt.date);
+        const formattedDate = date?.toLocaleDateString(currentLocale) ?? String(apt.date);
         const status = getStatusLabel(apt.status);
 
         const escapeField = (field: string) => {
@@ -182,21 +197,30 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Histórico exportado em CSV com sucesso');
+    toast.success(t('history.toast.csvSuccess'));
   };
 
   // Exportar como Excel
   const handleExportExcel = () => {
     if (filteredAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar');
+      toast.warning(t('history.toast.noAppointmentsToExport'));
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente'];
+    const headers = [
+      t('history.export.headers.time'),
+      t('history.export.headers.date'),
+      t('history.export.headers.attendant'),
+    ];
     if (!isClient) {
-      headers.push('Nome do Utente', 'NIF', 'Contacto', 'Email');
+      headers.push(
+        t('history.export.headers.patientName'),
+        'NIF',
+        t('history.export.headers.contact'),
+        t('history.export.headers.email'),
+      );
     }
-    headers.push('Assunto', 'Estado');
+    headers.push(t('history.export.headers.subject'), t('history.export.headers.status'));
 
     // Função para obter cor do status
     const getStatusColor = (statusKey: string) => {
@@ -214,7 +238,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
 
     filteredAppointments.forEach(apt => {
       const date = parseAppointmentDate(apt.date);
-      const formattedDate = date?.toLocaleDateString('pt-PT') ?? String(apt.date);
+      const formattedDate = date?.toLocaleDateString(currentLocale) ?? String(apt.date);
       const status = getStatusLabel(apt.status);
       const statusColor = getStatusColor(apt.status);
 
@@ -255,21 +279,25 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Histórico exportado em Excel com sucesso');
+    toast.success(t('history.toast.excelSuccess'));
   };
 
   // Exportar como PDF
   const handleExportPDF = () => {
     if (filteredAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar');
+      toast.warning(t('history.toast.noAppointmentsToExport'));
       return;
     }
 
-    const headers = ['Horário', 'Data', 'Atendente'];
+    const headers = [
+      t('history.export.headers.time'),
+      t('history.export.headers.date'),
+      t('history.export.headers.attendant'),
+    ];
     if (!isClient) {
-      headers.push('Nome do Utente', 'NIF');
+      headers.push(t('history.export.headers.patientName'), 'NIF');
     }
-    headers.push('Assunto', 'Estado');
+    headers.push(t('history.export.headers.subject'), t('history.export.headers.status'));
 
     const today = new Date();
 
@@ -278,7 +306,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Histórico de Marcações</title>
+        <title>${t('history.title')}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
@@ -296,8 +324,8 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       </head>
       <body>
         <br/><br/><br/>
-        <h1>Histórico de Marcações</h1>
-        <p class="subtitle">${filteredAppointments.length} registos encontrados</p>
+        <h1>${t('history.title')}</h1>
+        <p class="subtitle">${t('history.export.recordsFound', { count: filteredAppointments.length })}</p>
         <table>
           <thead>
             <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
@@ -307,7 +335,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
 
     filteredAppointments.forEach(apt => {
       const date = parseAppointmentDate(apt.date);
-      const formattedDate = date?.toLocaleDateString('pt-PT') ?? String(apt.date);
+      const formattedDate = date?.toLocaleDateString(currentLocale) ?? String(apt.date);
       const status = getStatusLabel(apt.status);
       const statusClass = `status-${apt.status.toLowerCase().replace('-', '_')}`;
 
@@ -326,7 +354,10 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     htmlContent += `
           </tbody>
         </table>
-        <p class="footer">Gerado em ${today.toLocaleDateString('pt-PT')} às ${today.toLocaleTimeString('pt-PT')}</p>
+        <p class="footer">${t('history.export.generatedAt', {
+          date: today.toLocaleDateString(currentLocale),
+          time: today.toLocaleTimeString(currentLocale),
+        })}</p>
       </body>
       </html>
     `;
@@ -346,7 +377,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     }
 
     setExportDialogOpen(false);
-    toast.success('A preparar PDF para impressão...');
+    toast.success(t('history.toast.preparingPdf'));
   };
 
   const handleExport = () => {
@@ -361,21 +392,21 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
       >
         <ArrowLeftIcon className="w-5 h-5" />
-        <span>Voltar para Marcações</span>
+        <span>{t('history.backToAppointments')}</span>
       </button>
 
       {/* History Card */}
       <div className={`rounded-lg ${isDarkMode ? 'bg-gray-900/50 border border-gray-800 shadow-lg' : 'bg-white shadow-xl'} p-6`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl text-gray-900 dark:text-gray-100">Histórico de Marcações</h1>
+          <h1 className="text-2xl text-gray-900 dark:text-gray-100">{t('history.title')}</h1>
           <Button
             variant="outline"
             onClick={handleExport}
             className="gap-2"
           >
             <DownloadIcon className="w-4 h-4" />
-            Exportar
+            {t('history.export.action')}
           </Button>
         </div>
 
@@ -383,7 +414,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Filters and Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="md:col-span-1">
-            <label className="text-xs text-gray-500 mb-1 ml-1 block">A partir de</label>
+            <label className="text-xs text-gray-500 mb-1 ml-1 block">{t('history.filters.fromDate')}</label>
             <DatePickerField
               value={startDate ? formatDateInput(startDate) : ''}
               onChange={(value) => onDateChange(parseDateInput(value) ?? null, endDate)}
@@ -392,10 +423,10 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           </div>
 
           <div className="md:col-span-3">
-            <label className="text-xs text-gray-500 mb-1 ml-1 block">Pesquisar</label>
+            <label className="text-xs text-gray-500 mb-1 ml-1 block">{t('history.filters.searchLabel')}</label>
             <Input
               type="text"
-              placeholder="Pesquisar..."
+              placeholder={t('history.filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -416,14 +447,14 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             }}
           >
             <SelectTrigger className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}>
-              <SelectValue placeholder="Todos os estados" />
+              <SelectValue placeholder={t('history.filters.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os estados</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
+              <SelectItem value="all">{t('history.filters.allStatuses')}</SelectItem>
+              <SelectItem value="completed">{t('history.status.completed')}</SelectItem>
               {/* <SelectItem value="warning">Aviso</SelectItem> */}
-              <SelectItem value="no-show">Não compareceu</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
+              <SelectItem value="no-show">{t('history.status.noShow')}</SelectItem>
+              <SelectItem value="cancelled">{t('history.status.cancelled')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -435,10 +466,10 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
             }}
           >
             <SelectTrigger className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}>
-              <SelectValue placeholder="Todos os assuntos" />
+              <SelectValue placeholder={t('history.filters.allSubjects')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os assuntos</SelectItem>
+              <SelectItem value="all">{t('history.filters.allSubjects')}</SelectItem>
               {uniqueSubjects.map((subject) => (
                 <SelectItem key={subject} value={subject}>
                   {subject}
@@ -453,30 +484,30 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           <table className="w-full">
             <thead className={isDarkMode ? 'bg-gray-900/30' : 'bg-gray-50'}>
               <tr className={`border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">HORÁRIO</th>
+                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.timeHeader').toUpperCase()}</th>
                 <th
                   className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group select-none"
                   onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                 >
                   <div className="flex items-center gap-1">
-                    DIA
+                    {t('history.table.dayHeader').toUpperCase()}
                     <span className="flex flex-col -space-y-1">
                       <svg className={`w-2 h-2 ${sortOrder === 'asc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
                       <svg className={`w-2 h-2 ${sortOrder === 'desc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
                     </span>
                   </div>
                 </th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ATENDENTE</th>
-                {!isClient && <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">UTENTE</th>}
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ASSUNTO</th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">ESTADO</th>
+                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.attendantHeader').toUpperCase()}</th>
+                {!isClient && <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.patientHeader').toUpperCase()}</th>}
+                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.subjectHeader').toUpperCase()}</th>
+                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.statusHeader').toUpperCase()}</th>
               </tr>
             </thead>
             <tbody>
               {paginatedAppointments.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-gray-500 dark:text-gray-400">
-                    Nenhuma marcação encontrada
+                    {t('history.table.noResults')}
                   </td>
                 </tr>
               ) : (
@@ -491,7 +522,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                   >
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.time}</td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">
-                      {parseAppointmentDate(apt.date)?.toLocaleDateString('pt-PT') ?? String(apt.date)}
+                      {parseAppointmentDate(apt.date)?.toLocaleDateString(currentLocale) ?? String(apt.date)}
                     </td>
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
                     {!isClient && <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>}
@@ -508,7 +539,11 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {filteredAppointments.length > 0 && (
           <div className="flex items-center justify-between mt-6">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              A mostrar {startIndex + 1}-{Math.min(endIndex, filteredAppointments.length)} de {filteredAppointments.length} resultados
+              {t('history.pagination.showingRange', {
+                start: startIndex + 1,
+                end: Math.min(endIndex, filteredAppointments.length),
+                total: filteredAppointments.length,
+              })}
             </p>
             <div className="flex gap-2">
               <Button
@@ -517,7 +552,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 disabled={currentPage === 1}
                 className={isDarkMode ? 'border-gray-700' : ''}
               >
-                Anterior
+                {t('history.pagination.previous')}
               </Button>
               <Button
                 variant="outline"
@@ -525,7 +560,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 disabled={currentPage === totalPages || totalPages === 0}
                 className={isDarkMode ? 'border-gray-700' : ''}
               >
-                Seguinte
+                {t('history.pagination.next')}
               </Button>
             </div>
           </div>
@@ -536,9 +571,9 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">Exportar Histórico</DialogTitle>
+            <DialogTitle className="text-xl">{t('history.export.dialogTitle')}</DialogTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha o formato de exportação ({filteredAppointments.length} registos)
+              {t('history.export.dialogDescription', { count: filteredAppointments.length })}
             </p>
           </DialogHeader>
           <div className="grid gap-3 mt-4">
@@ -552,7 +587,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               </div>
               <div className="text-left">
                 <div className="font-medium">CSV</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Formato de texto compatível com Excel e outras aplicações</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.csvDescription')}</div>
               </div>
             </Button>
 
@@ -568,7 +603,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               </div>
               <div className="text-left">
                 <div className="font-medium">Excel</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Ficheiro formatado para Microsoft Excel</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.excelDescription')}</div>
               </div>
             </Button>
 
@@ -584,7 +619,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               </div>
               <div className="text-left">
                 <div className="font-medium">PDF</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Documento para impressão ou visualização</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.pdfDescription')}</div>
               </div>
             </Button>
           </div>

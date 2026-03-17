@@ -8,6 +8,7 @@ import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
 import { GlassCard } from '../ui/glass-card';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { validatePassword, isPasswordValid as checkPasswordValid } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
 
 interface NewPasswordFormProps {
   onSuccess?: () => void;
@@ -15,6 +16,7 @@ interface NewPasswordFormProps {
 }
 
 export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFormProps) {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [repeat, setRepeat] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,10 +33,10 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
 
   const validate = () => {
     const e: { password?: string; repeat?: string; termsAccepted?: string } = {};
-    if (!password) e.password = 'Campo obrigatório';
-    else if (!isPasswordValid) e.password = 'A palavra-passe não cumpre os requisitos';
-    if (password !== repeat) e.repeat = 'As palavras-passe não coincidem';
-    if (!termsAccepted) e.termsAccepted = 'Deve aceitar os termos de uso para ativar a conta';
+    if (!password) e.password = t('auth.requiredField');
+    else if (!isPasswordValid) e.password = t('auth.passwordRequirementsNotMet');
+    if (password !== repeat) e.repeat = t('auth.passwordsDoNotMatch');
+    if (!termsAccepted) e.termsAccepted = t('auth.mustAcceptTermsActivate');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -44,16 +46,16 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
-      toast.error('Corrija os erros antes de continuar');
+      toast.error(t('auth.fixErrorsBeforeContinue'));
       return;
     }
 
     try {
       await updatePassword(password, termsAccepted);
-      toast.success('Palavra-passe definida com sucesso');
+      toast.success(t('auth.passwordSetSuccess'));
       onSuccess?.();
     } catch (error) {
-      toast.error('Erro ao definir palavra-passe');
+      toast.error(t('auth.errorSettingPassword'));
     }
   };
 
@@ -67,13 +69,13 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
             className="h-16 w-auto object-contain"
           />
         </div>
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Definir Nova Palavra-Passe</h1>
-        <p className="text-gray-600 dark:text-gray-400">Por favor, defina uma palavra-passe segura para aceder à sua conta.</p>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">{t('auth.setNewPassword')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('auth.setPasswordSubtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="newPassword" className="text-gray-700 dark:text-gray-300">Nova Palavra-Passe</Label>
+          <Label htmlFor="newPassword" className="text-gray-700 dark:text-gray-300">{t('auth.newPassword')}</Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
             ? 'border-red-500 focus-within:ring-red-500/50'
             : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
@@ -103,22 +105,22 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
             <div className="space-y-1 text-sm pt-2">
               <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.minLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Min. 8 caracteres</span>
+                <span>{t('auth.passwordRuleMinLength')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasUpperLower ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Maiúsculas e minúsculas</span>
+                <span>{t('auth.passwordRuleCases')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasNumber ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Números</span>
+                <span>{t('auth.passwordRuleNumbers')}</span>
               </div>
             </div>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="repeatPassword" className="text-gray-700 dark:text-gray-300">Repetir Palavra-Passe</Label>
+          <Label htmlFor="repeatPassword" className="text-gray-700 dark:text-gray-300">{t('auth.repeatPassword')}</Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.repeat
             ? 'border-red-500 focus-within:ring-red-500/50'
             : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
@@ -174,7 +176,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
                   }}
                   className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
                 >
-                  termos de uso e política de privacidade
+                  {t('auth.termsAndPrivacy')}
                 </button>
               </label>
             </div>
@@ -185,7 +187,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
         </div>
 
         <Button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200">
-          Guardar e Entrar na Plataforma
+          {t('auth.saveAndEnter')}
         </Button>
       </form>
 

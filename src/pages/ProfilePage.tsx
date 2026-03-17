@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -130,6 +131,7 @@ const mergeDraftWithLatestData = (draft: ProfileDraftState, latestData: ProfileF
 };
 
 export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false, onDirtyChange }: ProfilePageProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);

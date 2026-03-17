@@ -11,6 +11,7 @@ import { ClipboardList, Save } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface BalnearioAppointmentDetailsDialogProps {
     open: boolean;
@@ -20,11 +21,24 @@ interface BalnearioAppointmentDetailsDialogProps {
     onCancel: (id: string, reason: string) => void;
 }
 
-const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
-
-const HYGIENE_OPTIONS = ['Shampoo', 'Gel de Banho', 'Toalha', 'Sabonete/Creme'];
-const LAUNDRY_OPTIONS = ['Lavar Roupa Seca', 'Lavar Roupa Molhada'];
-const CLOTHING_OPTIONS = ['T-shirt/Camisola', 'Calças', 'Sapatos/Sapatilhas', 'Roupa Interior', 'Meias', 'Agasalho/Casaco'];
+const HYGIENE_OPTIONS = [
+    { value: 'Shampoo', labelKey: 'balnearioAppointment.options.shampoo' },
+    { value: 'Gel de Banho', labelKey: 'balnearioAppointment.options.showerGel' },
+    { value: 'Toalha', labelKey: 'balnearioAppointment.options.towel' },
+    { value: 'Sabonete/Creme', labelKey: 'balnearioAppointment.options.soapCream' },
+];
+const LAUNDRY_OPTIONS = [
+    { value: 'Lavar Roupa Seca', labelKey: 'balnearioAppointment.options.washDryClothes' },
+    { value: 'Lavar Roupa Molhada', labelKey: 'balnearioAppointment.options.washWetClothes' },
+];
+const CLOTHING_OPTIONS = [
+    { value: 'T-shirt/Camisola', labelKey: 'balnearioAppointment.options.shirtSweater' },
+    { value: 'Calças', labelKey: 'balnearioAppointment.options.pants' },
+    { value: 'Sapatos/Sapatilhas', labelKey: 'balnearioAppointment.options.shoesSneakers' },
+    { value: 'Roupa Interior', labelKey: 'balnearioAppointment.options.underwear' },
+    { value: 'Meias', labelKey: 'balnearioAppointment.options.socks' },
+    { value: 'Agasalho/Casaco', labelKey: 'balnearioAppointment.options.coatJacket' },
+];
 
 export function BalnearioAppointmentDetailsDialog({
     open,
@@ -34,6 +48,7 @@ export function BalnearioAppointmentDetailsDialog({
     onCancel
 }: BalnearioAppointmentDetailsDialogProps) {
     const { user: authUser } = useAuth();
+    const { t, i18n } = useTranslation();
 
     // Editable state for the checklist
     const [selectedOptions, setSelectedOptions] = useState<Record<string, boolean>>({});
@@ -75,11 +90,11 @@ export function BalnearioAppointmentDetailsDialog({
     const handleSaveDetails = async () => {
         setIsSaving(true);
         try {
-            const hasHygiene = HYGIENE_OPTIONS.some(opt => selectedOptions[opt]);
-            const hasLaundry = LAUNDRY_OPTIONS.some(opt => selectedOptions[opt]);
+            const hasHygiene = HYGIENE_OPTIONS.some(opt => selectedOptions[opt.value]);
+            const hasLaundry = LAUNDRY_OPTIONS.some(opt => selectedOptions[opt.value]);
 
             // Store ALL selected items (hygiene + laundry + clothing) in roupas
-            const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS];
+            const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].map(opt => opt.value);
             const roupasVal = allOptions
                 .filter(opt => selectedOptions[opt])
                 .map(opt => ({ categoria: opt, quantidade: 1 }));
@@ -99,10 +114,10 @@ export function BalnearioAppointmentDetailsDialog({
                 }
             });
 
-            toast.success('Detalhes atualizados com sucesso');
+            toast.success(t('balnearioAppointmentDetails.detailsUpdated'));
             setHasChanges(false);
         } catch (error: any) {
-            const msg = error.message || 'Erro ao guardar alterações';
+            const msg = error.message || t('balnearioAppointmentDetails.saveError');
             toast.error(msg);
         } finally {
             setIsSaving(false);
@@ -110,7 +125,7 @@ export function BalnearioAppointmentDetailsDialog({
     };
 
     const handleCancelAppointment = async () => {
-        const reason = 'Cancelado pelo funcionário do Balneário';
+        const reason = t('balnearioAppointmentDetails.cancelledByStaff');
 
         if (!authUser?.id) return;
 
@@ -125,10 +140,10 @@ export function BalnearioAppointmentDetailsDialog({
 
             onCancel(appointment.id, reason);
             onUpdate(appointment.id, { status: 'cancelled', cancellationReason: reason });
-            toast.success('Marcação cancelada');
+            toast.success(t('balnearioAppointmentDetails.cancelledSuccess'));
             onClose();
         } catch (error: any) {
-            const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível cancelar a marcação';
+            const mensagemErro = error.response?.data?.message || error.message || t('balnearioAppointmentDetails.cancelError');
             toast.error(mensagemErro);
         }
     };
@@ -145,10 +160,10 @@ export function BalnearioAppointmentDetailsDialog({
             );
 
             onUpdate(appointment.id, { status: 'completed' });
-            toast.success('Banho concluído com sucesso!');
+            toast.success(t('balnearioAppointmentDetails.completeSuccess'));
             onClose();
         } catch (error: any) {
-            const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível concluir o atendimento';
+            const mensagemErro = error.response?.data?.message || error.message || t('balnearioAppointmentDetails.completeError');
             toast.error(mensagemErro);
         }
     };
@@ -165,10 +180,10 @@ export function BalnearioAppointmentDetailsDialog({
             );
 
             onUpdate(appointment.id, { status: 'no-show' });
-            toast.success('Marcação atualizada para não comparência.');
+            toast.success(t('appointmentDetails.markedNoShow'));
             onClose();
         } catch (error: any) {
-            const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível atualizar estado';
+            const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.statusUpdateFailed');
             toast.error(mensagemErro);
         }
     };
@@ -185,10 +200,10 @@ export function BalnearioAppointmentDetailsDialog({
             );
 
             onUpdate(appointment.id, { status: 'in-progress' });
-            toast.success('Presença registada!');
+            toast.success(t('balnearioAppointmentDetails.startedSuccess'));
             onClose();
         } catch (error: any) {
-            const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível iniciar o atendimento';
+            const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.startFailed');
             toast.error(mensagemErro);
         }
     };
@@ -196,55 +211,61 @@ export function BalnearioAppointmentDetailsDialog({
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'in-progress':
-                return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">Em Curso</Badge>;
+                return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">{t('statusBadge.inProgress')}</Badge>;
             case 'scheduled':
-                return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">Agendado</Badge>;
+                return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">{t('statusBadge.scheduled')}</Badge>;
             case 'warning':
                 return (
                     <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
                         <AlertTriangleIcon className="w-3 h-3" />
-                        Agendado
+                        {t('statusBadge.warning')}
                     </Badge>
                 );
             case 'completed':
                 return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                    Concluído
+                    {t('statusBadge.completed')}
                 </Badge>;
             case 'no-show':
                 return (
                     <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
-                        Não compareceu
+                        {t('statusBadge.noShow')}
                     </Badge>
                 );
             case 'cancelled':
-                return <Badge variant="destructive" className="rounded-full px-3">Cancelado</Badge>;
+                return <Badge variant="destructive" className="rounded-full px-3">{t('statusBadge.cancelled')}</Badge>;
             default:
                 return null;
         }
     };
 
+    const getOptionLabel = (value: string) => {
+        const option = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].find(item => item.value === value);
+        return option ? t(option.labelKey) : value;
+    };
+
     const isEditable = appointment.status === 'scheduled' || appointment.status === 'warning' || appointment.status === 'in-progress';
 
     const dateObj = new Date(appointment.date);
-    const dayName = WEEKDAYS_LONG[dateObj.getDay()];
+    const locale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT';
+    const dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
     const day = dateObj.getDate();
-    const month = dateObj.toLocaleDateString('pt-PT', { month: 'long' });
+    const month = dateObj.toLocaleDateString(locale, { month: 'long' });
     const year = dateObj.getFullYear();
-    const dateString = `${dayName}, ${day} de ${month} de ${year} às ${appointment.time}`;
+    const dateString = t('balnearioAppointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
-                <DialogTitle className="sr-only">Detalhes do Agendamento Balneário</DialogTitle>
+                <DialogTitle className="sr-only">{t('balnearioAppointmentDetails.dialogTitle')}</DialogTitle>
                 <DialogPrimitive.Description className="sr-only">
-                    Consulte e edite as necessidades e informações do utente.
+                    {t('balnearioAppointmentDetails.dialogDescription')}
                 </DialogPrimitive.Description>
 
                 {/* Header - Fixed */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Detalhes do Banho</h2>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('balnearioAppointmentDetails.title')}</h2>
                             {getStatusBadge(appointment.status)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
@@ -252,7 +273,7 @@ export function BalnearioAppointmentDetailsDialog({
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                        aria-label="Fechar detalhes"
+                        aria-label={t('appointmentDetails.closeDetails')}
                     >
                         <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </button>
@@ -264,7 +285,7 @@ export function BalnearioAppointmentDetailsDialog({
                     <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
                         <Label className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 mb-2">
                             <UserIcon className="w-4 h-4" />
-                            Nome do Utente
+                            {t('balnearioAppointmentDetails.patientName')}
                         </Label>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
                     </div>
@@ -273,10 +294,10 @@ export function BalnearioAppointmentDetailsDialog({
                     {appointment.status === 'cancelled' && appointment.cancellationReason && (
                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
                             <p className="text-sm font-bold text-red-700 dark:text-red-300 mb-1">
-                                Marcação cancelada
+                                {t('appointmentDetails.cancelledAppointment')}
                             </p>
                             <p className="text-sm text-red-600 dark:text-red-200">
-                                Motivo: {appointment.cancellationReason}
+                                {t('appointmentDetails.reason')}: {appointment.cancellationReason}
                             </p>
                         </div>
                     )}
@@ -285,25 +306,25 @@ export function BalnearioAppointmentDetailsDialog({
                     <div>
                         <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                             <ClipboardList className="w-4 h-4 text-purple-600" />
-                            Necessidades Assinaladas
-                            {isEditable && <span className="text-xs font-normal text-gray-500">(editável)</span>}
+                            {t('balnearioAppointmentDetails.markedNeeds')}
+                            {isEditable && <span className="text-xs font-normal text-gray-500">({t('balnearioAppointmentDetails.editable')})</span>}
                         </Label>
 
                         {isEditable ? (
                             <div className="space-y-4">
                                 {/* Hygiene */}
                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Higiene</Label>
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {HYGIENE_OPTIONS.map((opt) => (
-                                            <div key={opt} className="flex items-center space-x-3">
+                                            <div key={opt.value} className="flex items-center space-x-3">
                                                 <Checkbox
-                                                    id={`detail-${opt}`}
-                                                    checked={selectedOptions[opt] || false}
-                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    id={`detail-${opt.value}`}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                                 />
-                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
                                             </div>
                                         ))}
                                     </div>
@@ -311,17 +332,17 @@ export function BalnearioAppointmentDetailsDialog({
 
                                 {/* Laundry */}
                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Lavandaria</Label>
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {LAUNDRY_OPTIONS.map((opt) => (
-                                            <div key={opt} className="flex items-center space-x-3">
+                                            <div key={opt.value} className="flex items-center space-x-3">
                                                 <Checkbox
-                                                    id={`detail-${opt}`}
-                                                    checked={selectedOptions[opt] || false}
-                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    id={`detail-${opt.value}`}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                                 />
-                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
                                             </div>
                                         ))}
                                     </div>
@@ -329,17 +350,17 @@ export function BalnearioAppointmentDetailsDialog({
 
                                 {/* Clothing */}
                                 <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">Vestuário</Label>
+                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {CLOTHING_OPTIONS.map((opt) => (
-                                            <div key={opt} className="flex items-center space-x-3">
+                                            <div key={opt.value} className="flex items-center space-x-3">
                                                 <Checkbox
-                                                    id={`detail-${opt}`}
-                                                    checked={selectedOptions[opt] || false}
-                                                    onCheckedChange={() => toggleOption(opt)}
+                                                    id={`detail-${opt.value}`}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
                                                 />
-                                                <label htmlFor={`detail-${opt}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{opt}</label>
+                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
                                             </div>
                                         ))}
                                     </div>
@@ -353,38 +374,42 @@ export function BalnearioAppointmentDetailsDialog({
                                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
                                     >
                                         <Save className="w-4 h-4 mr-2" />
-                                        {isSaving ? 'A guardar...' : 'Guardar Alterações'}
+                                        {isSaving ? t('balnearioAppointment.saving') : t('balnearioAppointmentDetails.saveChanges')}
                                     </Button>
                                 )}
                             </div>
                         ) : (
                             /* Read-only view for completed/cancelled/no-show */
                             <div className="space-y-2">
-                                <h4 className="text-sm font-medium text-gray-500 mb-2">Serviços Solicitados:</h4>
+                                <h4 className="text-sm font-medium text-gray-500 mb-2">{t('balnearioAppointmentDetails.requestedServices')}</h4>
                                 {(!appointment.balnearioDetails?.produtosHigiene &&
                                     !appointment.balnearioDetails?.lavagemRoupa &&
                                     (!appointment.balnearioDetails?.roupas || appointment.balnearioDetails.roupas.length === 0)) ? (
-                                    <p className="text-sm text-gray-500 italic">Nenhum serviço logístico específico registado.</p>
+                                    <p className="text-sm text-gray-500 italic">{t('balnearioAppointmentDetails.noSpecificServices')}</p>
                                 ) : (
                                     <>
                                         {appointment.balnearioDetails?.produtosHigiene && (
                                             <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                Produtos de higiene (Gel de banho / Shampoo)
+                                                {t('balnearioAppointmentDetails.hygieneProducts')}
                                             </div>
                                         )}
 
                                         {appointment.balnearioDetails?.lavagemRoupa && (
                                             <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                Lavar a roupa
+                                                {t('balnearioAppointmentDetails.laundryService')}
                                             </div>
                                         )}
 
                                         {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
                                             <div key={index} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                                                Fornecimento: {roupa.categoria} {roupa.tamanho ? `(Tam: ${roupa.tamanho})` : ''} x{roupa.quantidade}
+                                                {t('balnearioAppointmentDetails.supplyItem', {
+                                                    category: getOptionLabel(roupa.categoria),
+                                                    sizePart: roupa.tamanho ? ` (${t('balnearioAppointmentDetails.size')}: ${roupa.tamanho})` : '',
+                                                    quantity: roupa.quantidade
+                                                })}
                                             </div>
                                         ))}
                                     </>
@@ -396,7 +421,7 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Additional Notes */}
                     {appointment.description && appointment.description !== 'Serviços Logísticos' && (
                         <div>
-                            <h4 className="text-sm font-medium text-gray-500 mb-2">Notas Adicionais:</h4>
+                            <h4 className="text-sm font-medium text-gray-500 mb-2">{t('balnearioAppointment.additionalNotes')}:</h4>
                             <p className="text-sm text-gray-700 bg-yellow-50 p-3 rounded-md whitespace-pre-wrap border border-yellow-100">
                                 {appointment.description}
                             </p>
@@ -411,7 +436,7 @@ export function BalnearioAppointmentDetailsDialog({
                                     onClick={handleStartAppointment}
                                     className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
                                 >
-                                    Compareceu
+                                    {t('balnearioAppointmentDetails.markPresent')}
                                 </Button>
 
                                 <div className="grid grid-cols-2 gap-3">
@@ -420,14 +445,14 @@ export function BalnearioAppointmentDetailsDialog({
                                         onClick={handleCancelAppointment}
                                         className="w-full h-11"
                                     >
-                                        Cancelar Marcação
+                                        {t('balnearioAppointmentDetails.cancelAppointment')}
                                     </Button>
                                     <Button
                                         onClick={handleNoShowAppointment}
                                         variant="warning"
                                         className="w-full h-11 font-medium"
                                     >
-                                        Faltou
+                                        {t('balnearioAppointmentDetails.missedAppointment')}
                                     </Button>
                                 </div>
                             </div>
@@ -438,7 +463,7 @@ export function BalnearioAppointmentDetailsDialog({
                                 onClick={handleCompleteAppointment}
                                 className="bg-green-600 hover:bg-green-700 text-white font-medium w-full py-6 h-auto mb-2"
                             >
-                                Concluir Atendimento
+                                {t('balnearioAppointmentDetails.completeService')}
                             </Button>
                         )}
 

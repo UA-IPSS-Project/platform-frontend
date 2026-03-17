@@ -1,4 +1,5 @@
 import { Appointment } from '../types';
+import i18n from '../i18n';
 
 export const mapStatusFromApiToUi = (estado: string | undefined): 'scheduled' | 'in-progress' | 'warning' | 'completed' | 'cancelled' | 'reserved' | 'no-show' => {
     const estadoUpper = estado?.toUpperCase() || '';
@@ -68,9 +69,9 @@ export const getCurrentActivity = (appointments: Appointment[], isSecretary: boo
     const inProgressApt = todayAppointments.find(apt => apt.status === 'in-progress');
     if (inProgressApt) {
         if (isSecretary && inProgressApt.patientName && inProgressApt.patientName !== 'reserved' && inProgressApt.patientName !== 'Ocupado' && inProgressApt.patientName !== 'Nome não disponível') {
-            return `Atendimento a decorrer - ${inProgressApt.patientName}`;
+            return i18n.t('appointmentActivity.inProgressWithPatient', { name: inProgressApt.patientName });
         }
-        return `Atendimento a decorrer`;
+        return i18n.t('appointmentActivity.inProgress');
     }
 
     for (const apt of todayAppointments) {
@@ -81,9 +82,19 @@ export const getCurrentActivity = (appointments: Appointment[], isSecretary: boo
             const diff = aptTime - currentTime;
             const hours = Math.floor(diff / 60);
             const minutes = diff % 60;
-            if (hours > 0) return `Próximo agendamento em ${hours} hora${hours > 1 ? 's' : ''} e ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
-            return `Próximo agendamento em ${minutes} minuto${minutes !== 1 ? 's' : ''}`;
+            if (hours > 0) {
+                return i18n.t('appointmentActivity.nextAppointmentHours', {
+                    hours,
+                    minutes,
+                    hoursSuffix: hours > 1 ? 's' : '',
+                    minutesSuffix: minutes !== 1 ? 's' : ''
+                });
+            }
+            return i18n.t('appointmentActivity.nextAppointmentMinutes', {
+                minutes,
+                minutesSuffix: minutes !== 1 ? 's' : ''
+            });
         }
     }
-    return 'Ainda não existem marcações para hoje';
+    return i18n.t('appointmentActivity.noneToday');
 };

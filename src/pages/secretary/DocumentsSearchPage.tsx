@@ -7,6 +7,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { ChevronLeftIcon, DownloadIcon, FileTextIcon } from '../../components/shared/CustomIcons';
 import { documentosApi, DocumentoDTO } from '../../services/api';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface DocumentsSearchPageProps {
   onBack: () => void;
@@ -24,6 +25,7 @@ const MIME_OPTIONS = [
 ];
 
 export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageProps) {
+  const { t, i18n } = useTranslation();
   const [nomeOriginal, setNomeOriginal] = useState('');
   const [tipo, setTipo] = useState('');
   const [utenteNome, setUtenteNome] = useState('');
@@ -35,6 +37,7 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
   const [resultados, setResultados] = useState<DocumentoDTO[]>([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
+  const currentLocale = i18n.resolvedLanguage === 'en' ? 'en-GB' : 'pt-PT';
 
   const totalSizeMb = useMemo(() => {
     const totalBytes = resultados.reduce((acc, doc) => acc + (doc.tamanho ?? 0), 0);
@@ -79,10 +82,10 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
       setResultados(Array.isArray(dados) ? dados : []);
       setPaginaAtual(1);
       if (showToast) {
-        toast.success(`Pesquisa concluída: ${Array.isArray(dados) ? dados.length : 0} documento(s).`);
+        toast.success(t('documents.messages.searchDone', { count: Array.isArray(dados) ? dados.length : 0 }));
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao pesquisar documentos.');
+      toast.error(error?.message || t('documents.errors.search'));
     } finally {
       setLoading(false);
     }
@@ -109,7 +112,7 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
       setResultados(Array.isArray(dados) ? dados : []);
       setPaginaAtual(1);
     } catch (error: any) {
-      toast.error(error?.message || 'Erro ao carregar documentos.');
+      toast.error(error?.message || t('documents.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -118,9 +121,9 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
   const handleDownload = async (doc: DocumentoDTO) => {
     try {
       await documentosApi.downloadDocumento(doc.id, doc.nomeOriginal);
-      toast.success(`Download iniciado: ${doc.nomeOriginal}`);
+      toast.success(t('documents.messages.downloadStarted', { name: doc.nomeOriginal }));
     } catch {
-      toast.error('Erro ao fazer download do documento.');
+      toast.error(t('documents.errors.download'));
     }
   };
 
@@ -131,30 +134,30 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
       <div className="flex items-center gap-3">
         <Button variant="ghost" onClick={onBack} className="gap-2 text-gray-700 dark:text-gray-200">
           <ChevronLeftIcon className="w-4 h-4" />
-          Voltar
+          {t('common.back')}
         </Button>
-        <h1 className={`text-2xl font-bold ${headerTextClass}`}>Pesquisa de Documentos</h1>
+        <h1 className={`text-2xl font-bold ${headerTextClass}`}>{t('documents.title')}</h1>
       </div>
 
       <GlassCard className="p-5 space-y-4">
-        <h2 className={`text-lg font-semibold ${headerTextClass}`}>Filtros por metadados</h2>
+        <h2 className={`text-lg font-semibold ${headerTextClass}`}>{t('documents.metadataFilters')}</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
           <Input
             type="text"
-            placeholder="Nome original do documento"
+            placeholder={t('documents.filters.originalName')}
             value={nomeOriginal}
             onChange={(e) => setNomeOriginal(e.target.value)}
           />
           <Input
             type="text"
-            placeholder="Nome do utente"
+            placeholder={t('documents.filters.userName')}
             value={utenteNome}
             onChange={(e) => setUtenteNome(e.target.value)}
           />
           <Input
             type="text"
-            placeholder="NIF do utente"
+            placeholder={t('documents.filters.userNif')}
             value={utenteNif}
             onChange={(e) => setUtenteNif(e.target.value)}
           />
@@ -162,7 +165,7 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Tipo</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">{t('documents.filters.type')}</label>
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
@@ -175,38 +178,38 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Desde</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">{t('documents.filters.from')}</label>
             <DatePickerField value={desde} onChange={setDesde} buttonClassName="mt-1" />
           </div>
 
           <div>
-            <label className="text-sm text-gray-600 dark:text-gray-300">Até</label>
+            <label className="text-sm text-gray-600 dark:text-gray-300">{t('documents.filters.to')}</label>
             <DatePickerField value={ate} onChange={setAte} buttonClassName="mt-1" />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           <Button onClick={handlePesquisar} className="bg-purple-600 hover:bg-purple-700 text-white" disabled={loading}>
-            {loading ? 'A pesquisar...' : 'Pesquisar'}
+            {loading ? t('documents.actions.searching') : t('documents.actions.search')}
           </Button>
           <Button variant="outline" onClick={handleLimpar} disabled={loading}>
-            Limpar
+            {t('documents.actions.clear')}
           </Button>
         </div>
       </GlassCard>
 
       <GlassCard className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className={`text-lg font-semibold ${headerTextClass}`}>Resultados</h2>
+          <h2 className={`text-lg font-semibold ${headerTextClass}`}>{t('documents.resultsTitle')}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {resultados.length} documento(s) · {totalSizeMb} MB
+            {t('documents.resultsSummary', { count: resultados.length, size: totalSizeMb })}
           </p>
         </div>
 
         {resultados.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center">
             <FileTextIcon className="w-10 h-10 mx-auto text-gray-400 dark:text-gray-500 mb-2" />
-            <p className="text-gray-600 dark:text-gray-400">Sem resultados para os filtros atuais.</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('documents.noResults')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -227,20 +230,24 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{doc.nomeOriginal}</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Marcação #{doc.marcacaoId} · {doc.tipoMime} · {(doc.tamanho / 1024).toFixed(1)} KB
+                        {t('documents.card.appointmentRef', {
+                          id: doc.marcacaoId,
+                          mime: doc.tipoMime,
+                          size: (doc.tamanho / 1024).toFixed(1),
+                        })}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Utente: {doc.utenteNome || '—'} ({doc.utenteNif || '—'})
+                        {t('documents.card.userLine', { name: doc.utenteNome || '—', nif: doc.utenteNif || '—' })}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        Upload: {new Date(doc.uploadedEm).toLocaleString('pt-PT')}
+                        {t('documents.card.uploadAt', { date: new Date(doc.uploadedEm).toLocaleString(currentLocale) })}
                       </p>
                     </div>
 
                     <div>
                       <Button variant="outline" className="gap-2" onClick={() => handleDownload(doc)}>
                         <DownloadIcon className="w-4 h-4" />
-                        Download
+                        {t('documents.actions.download')}
                       </Button>
                     </div>
                   </div>
@@ -252,10 +259,10 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
               <div className="flex items-center justify-between pt-2">
                 <div className="flex items-center gap-3">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Página {paginaAtual} de {totalPaginas}
+                    {t('documents.pagination.pageOf', { page: paginaAtual, total: totalPaginas })}
                   </p>
                   <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-600 dark:text-gray-400">Por página</label>
+                    <label className="text-sm text-gray-600 dark:text-gray-400">{t('documents.pagination.perPage')}</label>
                     <select
                       value={itensPorPagina}
                       onChange={(e) => {
@@ -276,14 +283,14 @@ export function DocumentsSearchPage({ onBack, isDarkMode }: DocumentsSearchPageP
                     onClick={() => setPaginaAtual((prev) => Math.max(1, prev - 1))}
                     disabled={paginaAtual === 1}
                   >
-                    Anterior
+                    {t('history.pagination.previous')}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setPaginaAtual((prev) => Math.min(totalPaginas, prev + 1))}
                     disabled={paginaAtual === totalPaginas}
                   >
-                    Próxima
+                    {t('history.pagination.next')}
                   </Button>
                 </div>
               </div>
