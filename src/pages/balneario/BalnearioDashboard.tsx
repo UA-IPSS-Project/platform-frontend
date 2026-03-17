@@ -112,6 +112,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+    const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
@@ -333,6 +334,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                             appointmentType="BALNEARIO"
                                             highlightedSlot={highlightedSlot}
                                             onBlockSchedule={() => setShowBlockedDialog(true)}
+                                            refreshTrigger={blockRefreshTrigger}
                                         />
                                     </div>
                                     <div className="space-y-6 lg:sticky lg:top-24">
@@ -486,7 +488,10 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     onOpenChange={setShowBlockedDialog}
                     appointments={appointments}
                     tipo="BALNEARIO"
-                    onSuccess={() => refreshCurrentWeek(currentDate)}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        setBlockRefreshTrigger(prev => prev + 1);
+                    }}
                 />
             )}
 
