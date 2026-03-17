@@ -26,6 +26,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +52,7 @@ interface SecretaryDashboardProps {
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
 
   const {
     appointments,
@@ -271,12 +273,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const SecretaryNavigation = (
     <>
       <NavDropdown
-        label="Requisições"
+        label={t('sidebar.requisitions')}
         items={[
-          { id: 'material', label: 'Material' },
-          { id: 'manutencao', label: 'Manutenção' },
-          { id: 'transportes', label: 'Transporte' },
-          { id: 'urgente', label: 'Prioridade Alta' },
+          { id: 'material', label: t('sidebar.material') },
+          { id: 'manutencao', label: t('sidebar.maintenance') },
+          { id: 'transportes', label: t('sidebar.transport') },
+          { id: 'urgente', label: t('sidebar.highPriority') },
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -284,10 +286,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       />
 
       <NavDropdown
-        label="Valências"
+        label={t('sidebar.services')}
         items={[
-          { id: 'balneario', label: 'Balneário' },
-          { id: 'escola', label: 'Escola' },
+          { id: 'balneario', label: t('sidebar.balneario') },
+          { id: 'escola', label: t('sidebar.school') },
         ]}
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -299,13 +301,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('appointments')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Marcações
+        {t('sidebar.appointments')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -319,7 +321,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('reports')}
         className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Relatórios
+        {t('sidebar.reports')}
       </Button>
 
       <Button
@@ -327,7 +329,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('management')}
         className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Gestão
+        {t('sidebar.management')}
       </Button>
     </>
   );
@@ -339,7 +341,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Secretaria"
+        roleTitle={t('dashboard.secretary')}
         navigationContent={SecretaryNavigation}
         onNavigateToProfile={() => navigateTo('profile')}
         onNavigateToSettings={() => navigateTo('settings')}
