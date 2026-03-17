@@ -305,6 +305,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   };
 
   const confirmDiscard = () => {
+    sessionStorage.removeItem(storageKey);
+    setIsEditing(false);
     setShowUnsavedDialog(false);
     const action = pendingActionRef.current;
     pendingActionRef.current = null;

@@ -6,7 +6,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
@@ -164,6 +164,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const confirmLeaveProfile = () => {
     const nextPath = pendingPath;
 
+    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
     setProfileIsDirty(false);
     setShowLeaveConfirm(false);
     setPendingPath(null);
