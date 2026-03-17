@@ -263,11 +263,11 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     }
   };
 
-  const handleCancel = async () => {
+  const resetDraftAndExitEditMode = useCallback(async () => {
     sessionStorage.removeItem(storageKey);
     await loadUserData({ restoreDraft: false });
     setIsEditing(false);
-  };
+  }, [loadUserData, storageKey]);
 
   // Computed: whether the user has unsaved changes
   const hasUnsavedChanges = isEditing && JSON.stringify(formData) !== JSON.stringify(baseData);
@@ -295,21 +295,22 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   }, [hasUnsavedChanges]);
 
   // Guard: show dialog before leaving if there are unsaved changes
-  const requestLeave = (action: () => void) => {
+  const requestLeave = (action?: () => void) => {
     if (hasUnsavedChanges) {
-      pendingActionRef.current = action;
+      pendingActionRef.current = action ?? null;
       setShowUnsavedDialog(true);
     } else {
-      action();
+      action?.();
     }
   };
 
-  const confirmDiscard = () => {
-    sessionStorage.removeItem(storageKey);
-    setIsEditing(false);
-    setShowUnsavedDialog(false);
+  const confirmDiscard = async () => {
     const action = pendingActionRef.current;
     pendingActionRef.current = null;
+
+    await resetDraftAndExitEditMode();
+
+    setShowUnsavedDialog(false);
     action?.();
   };
 
@@ -462,7 +463,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             {isEditing && (
               <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
                 <Button
-                  onClick={() => requestLeave(handleCancel)}
+                  onClick={() => requestLeave()}
                   variant="outline"
                   className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
