@@ -2,8 +2,10 @@ import { ReactNode, useRef, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { NotificationsPanel } from '../shared/NotificationsPanel';
 import { LanguageToggle } from '../shared/LanguageToggle';
-import { BellIcon, MenuIcon, MoonIcon, SunIcon, LogOutIcon } from '../shared/CustomIcons';
+import { UserAvatarMenu } from '../shared/UserAvatarMenu';
+import { BellIcon, MenuIcon, MoonIcon, SunIcon } from '../shared/CustomIcons';
 import { Notificacao } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 
 interface DashboardLayoutProps {
@@ -15,16 +17,18 @@ interface DashboardLayoutProps {
     roleTitle: string;
     // Navigation
     navigationContent?: ReactNode;
-    // Notifications
-    notifications: Notificacao[];
-    unreadCount: number;
-    showNotifications: boolean;
-    onToggleNotifications: (show: boolean) => void;
-    onMarkAsRead: (id: number) => void;
-    onMarkAllAsRead: () => void;
-    onDeleteNotification: (id: number) => void;
-    onDeleteAllNotifications: () => void;
-    onNavigateToNotifications: () => void;
+    onNavigateToProfile?: () => void;
+    onNavigateToSettings?: () => void;
+    // Notifications (optional — dashboards in development may omit these)
+    notifications?: Notificacao[];
+    unreadCount?: number;
+    showNotifications?: boolean;
+    onToggleNotifications?: (show: boolean) => void;
+    onMarkAsRead?: (id: number) => void;
+    onMarkAllAsRead?: () => void;
+    onDeleteNotification?: (id: number) => void;
+    onDeleteAllNotifications?: () => void;
+    onNavigateToNotifications?: () => void;
 }
 
 export function DashboardLayout({
@@ -35,16 +39,19 @@ export function DashboardLayout({
     onMenuToggle,
     roleTitle,
     navigationContent,
-    notifications,
-    unreadCount,
-    showNotifications,
-    onToggleNotifications,
-    onMarkAsRead,
-    onMarkAllAsRead,
-    onDeleteNotification,
-    onDeleteAllNotifications,
-    onNavigateToNotifications,
+    onNavigateToProfile,
+    onNavigateToSettings,
+    notifications = [],
+    unreadCount = 0,
+    showNotifications = false,
+    onToggleNotifications = () => {},
+    onMarkAsRead = () => {},
+    onMarkAllAsRead = () => {},
+    onDeleteNotification = () => {},
+    onDeleteAllNotifications = () => {},
+    onNavigateToNotifications = () => {},
 }: DashboardLayoutProps) {
+    const { user } = useAuth();
     const { t } = useTranslation();
     const notificationsRef = useRef<HTMLDivElement>(null);
 
@@ -71,8 +78,8 @@ export function DashboardLayout({
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
-                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200">
-                                    <MenuIcon className="w-5 h-5" />
+                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200" aria-label={t('sidebar.closeSidebar')} aria-expanded={false}>
+                                    <MenuIcon className="w-5 h-5" aria-hidden="true" />
                                 </Button>
                                 <span className="text-gray-700 dark:text-gray-200 font-medium hidden sm:inline-block">
                                     {roleTitle}
@@ -80,7 +87,7 @@ export function DashboardLayout({
                             </div>
 
                             {/* Central Navigation Area - Injected depending on role */}
-                            <nav className="hidden md:flex items-center gap-1">
+                            <nav className="hidden md:flex items-center gap-1" aria-label={t('sidebar.menu')}>
                                 {navigationContent}
                             </nav>
 
@@ -91,10 +98,13 @@ export function DashboardLayout({
                                         size="icon"
                                         className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                         onClick={() => onToggleNotifications(!showNotifications)}
+                                        aria-label={t('sidebar.notifications')}
+                                        aria-expanded={showNotifications}
+                                        aria-haspopup="true"
                                     >
-                                        <BellIcon className="w-5 h-5" />
+                                        <BellIcon className="w-5 h-5" aria-hidden="true" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4">
+                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4" aria-hidden="true">
                                                 {unreadCount}
                                             </span>
                                         )}
@@ -122,7 +132,7 @@ export function DashboardLayout({
                                         />
                                     )}
                                 </div>
-                                <LanguageToggle />
+                                <LanguageToggle variant="full" />
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -130,17 +140,14 @@ export function DashboardLayout({
                                     className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                     aria-label={t('header.toggleTheme')}
                                 >
-                                    {isDarkMode ? <SunIcon className="w-5 h-5" /> : <MoonIcon className="w-5 h-5" />}
+                                    {isDarkMode ? <SunIcon className="w-5 h-5" aria-hidden="true" /> : <MoonIcon className="w-5 h-5" aria-hidden="true" />}
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={onLogout}
-                                    className="text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                    aria-label={t('header.logout')}
-                                >
-                                    <LogOutIcon className="w-5 h-5" />
-                                </Button>
+                                <UserAvatarMenu
+                                    nome={user?.nome ?? ''}
+                                    onProfile={onNavigateToProfile}
+                                    onSettings={onNavigateToSettings}
+                                    onLogout={onLogout}
+                                />
                             </div>
                         </div>
                     </header>

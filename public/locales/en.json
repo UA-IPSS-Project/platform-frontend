@@ -343,6 +343,7 @@
     }
   },
   "common": {
+    "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",
     "edit": "Edit",
     "save": "Save",
@@ -435,7 +436,10 @@
     "acceptTermsPrefix": "I accept the"
   },
   "profile": {
+    "title": "User Profile",
     "loading": "Loading...",
+    "fullName": "Full Name",
+    "birthDate": "Date of Birth",
     "changePassword": "Change Password",
     "passwordShort": "Password",
     "phone": "Phone",
@@ -469,6 +473,12 @@
     "errors": {
       "loadProfile": "Error loading profile data",
       "updateProfile": "Error updating profile"
+    },
+    "unsaved": {
+      "title": "Unsaved changes",
+      "description": "You have unsaved changes. Do you want to discard them?",
+      "stay": "Stay",
+      "discard": "Discard"
     }
   },
   "history": {

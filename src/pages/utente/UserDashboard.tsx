@@ -6,7 +6,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
@@ -21,6 +21,16 @@ import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface UserDashboardProps {
   user: {
@@ -34,11 +44,12 @@ interface UserDashboardProps {
   onToggleDarkMode: () => void;
 }
 
-export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: Readonly<UserDashboardProps>) {
-  const { t } = useTranslation();
+export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
   const { user: authUser } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [userData, setUserData] = useState(user);
 
   const {
     allAppointments,
@@ -67,6 +78,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  const handleProfileDirtyChange = (isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  };
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = sessionStorage.getItem('utente_currentDate');
     return saved ? new Date(saved) : new Date();
@@ -112,8 +130,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       const data = await marcacoesApi.obterPassadas(startIsoString, endOfDay.toISOString(), authUser.id);
       setHistoryAppointments(data.map(mapApiToAppointment));
     } catch (error) {
-      console.error('Erro ao carregar histórico do utente:', error);
-      toast.error(t('dashboard.errors.loadHistory'));
+      toast.error('Erro ao carregar histórico');
     }
   };
 
@@ -121,18 +138,60 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (getCurrentView() === 'history') carregarHistorico();
   }, [location.pathname, historyStartDate, historyEndDate, authUser?.id]);
 
+  useEffect(() => {
+    setUserData({
+      name: authUser?.nome || user.name,
+      nif: authUser?.nif || user.nif,
+      contact: authUser?.telefone || user.contact,
+      email: authUser?.email || user.email,
+    });
+  }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone, user]);
+
 
   const visibleAppointments = useMemo(
-    () => allAppointments.filter((apt) => apt.patientNIF === user.nif),
-    [allAppointments, user.nif]
+    () => allAppointments.filter((apt) => apt.patientNIF === userData.nif),
+    [allAppointments, userData.nif]
   );
 
+  const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
+    setUserData(updatedUser);
+  };
+
+  const navigateWithGuard = (path: string) => {
+    if (currentView === 'profile' && profileIsDirty && path !== '/dashboard/profile') {
+      setPendingPath(path);
+      setShowLeaveConfirm(true);
+      return;
+    }
+
+    navigate(path);
+  };
+
+  const confirmLeaveProfile = () => {
+    const nextPath = pendingPath;
+    const draftStorageKey = getProfileDraftStorageKey(authUser?.id || 0);
+
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    setPendingPath(null);
+
+    if (nextPath) {
+      navigate(nextPath);
+    }
+
+    // Remove draft after navigation to avoid being recreated by the profile page
+    // effect while it is still mounted during the transition.
+    requestAnimationFrame(() => {
+      sessionStorage.removeItem(draftStorageKey);
+    });
+  };
+
   const handleNavigate = (view: string) => {
-    if (view === 'appointments') navigate('/dashboard');
-    else if (view === 'history') navigate('/dashboard/history');
-    else if (view === 'profile') navigate('/dashboard/profile');
-    else if (view === 'notificacoes') navigate('/dashboard/notifications');
-    else navigate(`/dashboard/${view}`);
+    if (view === 'appointments') navigateWithGuard('/dashboard');
+    else if (view === 'history') navigateWithGuard('/dashboard/history');
+    else if (view === 'profile') navigateWithGuard('/dashboard/profile');
+    else if (view === 'notificacoes') navigateWithGuard('/dashboard/notifications');
+    else navigateWithGuard(`/dashboard/${view}`);
   };
 
   const handleCreateAppointment = async (date: Date, time: string) => {
@@ -143,18 +202,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const handleViewAppointment = async (appointment: Appointment) => {
     try {
-      const latestData = await marcacoesApi.obterPorId(Number.parseInt(appointment.id, 10));
+      const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
-      const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
+      const isOwn = utente?.nif === userData.nif || appointment.patientNIF === userData.nif;
 
       const status = mapStatusFromApiToUi(latestData.estado);
-      const genericLabel = status === 'reserved'
-        ? t('dashboard.userHome.labels.reserved')
-        : t('dashboard.userHome.labels.occupied');
-      const genericSubject = status === 'reserved'
-        ? t('dashboard.userHome.labels.unavailableTime')
-        : t('dashboard.userHome.labels.occupied');
 
       const fresh: Appointment = {
         id: latestData.id.toString(),
@@ -163,10 +216,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         time: dateTime.toTimeString().slice(0, 5),
         duration: 15,
         patientNIF: isOwn ? utente?.nif || '' : '',
-        patientName: isOwn ? utente?.nome || '' : genericLabel,
+        patientName: isOwn ? utente?.nome || '' : (status === 'reserved' ? 'Reservado' : 'Ocupado'),
         patientContact: isOwn ? utente?.telefone || '' : '',
         patientEmail: isOwn ? utente?.email || '' : '',
-        subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : genericSubject,
+        subject: isOwn ? latestData.marcacaoSecretaria?.assunto || '' : (status === 'reserved' ? 'Horário Indisponível' : 'Ocupado'),
         description: isOwn ? latestData.marcacaoSecretaria?.descricao || '' : '',
         status: status,
         cancellationReason: latestData.motivoCancelamento,
@@ -178,24 +231,17 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       }
       setSelectedAppointment(fresh);
       setShowDetailsDialog(true);
-    } catch (error) {
-      console.error('Erro ao abrir detalhes da marcação no dashboard do utente:', error);
-      toast.error(t('dashboard.errors.loadDetails'));
+    } catch (e) {
+      toast.error('Erro ao carregar detalhes');
       refreshAppointments();
     }
-  };
-
-  const getNotificationIcon = (tipo?: string): 'calendar' | 'document' | 'alert' => {
-    if (tipo === 'LEMBRETE') return 'calendar';
-    if (tipo === 'FICHEIRO') return 'document';
-    return 'alert';
   };
 
   const renderPlaceholder = (title: string) => (
     <div className="flex items-center justify-center h-[500px]">
       <div className="text-center">
         <h2 className="text-xl text-gray-600 dark:text-gray-300 mb-2">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-500">{t('dashboard.inDevelopment')}</p>
+        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
       </div>
     </div>
   );
@@ -206,21 +252,21 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     <>
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigateWithGuard('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        {t('dashboard.secretary')}
+        {t('sidebar.secretary')}
       </Button>
 
       <NavDropdown
-        label={t('dashboard.applications')}
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: t('dashboard.creche') },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-        onSelect={(id) => navigate(`/dashboard/${id}`)}
+        onSelect={(id) => navigateWithGuard(`/dashboard/${id}`)}
       />
     </>
   );
@@ -234,6 +280,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onMenuToggle={() => setSidebarOpen(true)}
         roleTitle={t('dashboard.user')}
         navigationContent={UserNavigation}
+        onNavigateToProfile={() => navigateWithGuard('/dashboard/profile')}
+        onNavigateToSettings={() => navigateWithGuard('/dashboard/settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}
@@ -246,7 +294,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onDeleteNotification={handleDeleteNotification}
         onDeleteAllNotifications={handleDeleteAllNotifications}
         onNavigateToNotifications={() => {
-          navigate('/dashboard/notifications');
+          navigateWithGuard('/dashboard/notifications');
           setShowNotifications(false);
         }}
       >
@@ -320,14 +368,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 <ProfilePage
                   user={{
                     id: authUser?.id || 0,
-                    name: authUser?.nome || user.name,
-                    nif: authUser?.nif || user.nif,
-                    contact: authUser?.telefone || user.contact,
-                    email: authUser?.email || user.email,
+                    ...userData,
                   }}
                   onBack={() => navigate('/dashboard')}
-                  onUpdateUser={() => { }}
+                  onUpdateUser={handleUpdateUser}
                   isDarkMode={isDarkMode}
+                  onDirtyChange={handleProfileDirtyChange}
                 />
               } />
 
@@ -340,7 +386,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     message: n.mensagem,
                     timestamp: n.dataCriacao,
                     isRead: n.lida,
-                    icon: getNotificationIcon(n.tipo),
+                    icon: n.tipo === 'LEMBRETE' ? 'calendar' : n.tipo === 'FICHEIRO' ? 'document' : 'alert',
                     type: n.tipo,
                     metadata: n.metadata,
                   }))}
@@ -348,35 +394,31 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     navigate('/dashboard');
                     setHighlightedNotificationId(null);
                   }}
-                  onMarkAsRead={(id) => handleMarkAsRead(Number.parseInt(id, 10))}
+                  onMarkAsRead={(id) => handleMarkAsRead(parseInt(id))}
                   onMarkAllAsRead={handleMarkAllAsRead}
-                  onDelete={(id) => handleDeleteNotification(Number.parseInt(id, 10))}
+                  onDelete={(id) => handleDeleteNotification(parseInt(id))}
                   onDeleteAll={handleDeleteAllNotifications}
                   isDarkMode={isDarkMode}
                   highlightedNotificationId={highlightedNotificationId || undefined}
                   actionCallbacks={{
-                    onNavigateToAppointment: (appointmentId) => {
+                    onNavigateToAppointment: async (appointmentId) => {
                       navigate('/dashboard');
                       setShowNotifications(false);
-                      const go = async () => {
-                        try {
-                          const id = typeof appointmentId === 'string' ? Number.parseInt(appointmentId, 10) : appointmentId;
-                          const response = await marcacoesApi.obterPorId(id);
-                          const appointment = mapApiToAppointment(response);
-                          setSelectedAppointment(appointment);
-                          setShowDetailsDialog(true);
-                        } catch (error) {
-                          console.error('Erro ao navegar para marcação por notificação (utente):', error);
-                          toast.error(t('dashboard.errors.findAppointment'));
-                        }
-                      };
-                      void go();
+                      try {
+                        const id = typeof appointmentId === 'string' ? parseInt(appointmentId) : appointmentId;
+                        const response = await marcacoesApi.obterPorId(id);
+                        const appointment = mapApiToAppointment(response);
+                        setSelectedAppointment(appointment);
+                        setShowDetailsDialog(true);
+                      } catch (e) {
+                        toast.error('Não foi possível encontrar a marcação');
+                      }
                     },
-                    onNavigateToHistory: () => {
+                    onNavigateToHistory: async () => {
                       navigate('/dashboard/history');
                       setShowNotifications(false);
                     },
-                    onNavigateToDocument: () => toast.info(t('dashboard.userHome.messages.documentViewInDevelopment')),
+                    onNavigateToDocument: () => toast.info('Em desenvolvimento'),
                     onNavigateToCancelledSlot: (dateStr, time) => {
                       navigate('/dashboard');
                       setShowNotifications(false);
@@ -390,12 +432,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               } />
 
               {/* Placeholders */}
-              <Route path="/balneario" element={renderPlaceholder(t('dashboard.userHome.placeholders.balnearioAppointments'))} />
-              <Route path="/balneario-sobre" element={renderPlaceholder(t('dashboard.userHome.placeholders.balnearioAbout'))} />
-              <Route path="/voluntariado" element={renderPlaceholder(t('dashboard.userHome.placeholders.volunteeringSignup'))} />
-              <Route path="/voluntariado-sobre" element={renderPlaceholder(t('dashboard.userHome.placeholders.volunteeringAbout'))} />
-              <Route path="/settings" element={renderPlaceholder(t('dashboard.userHome.placeholders.settings'))} />
-              <Route path="*" element={renderPlaceholder(t('dashboard.userHome.placeholders.notFound'))} />
+              <Route path="/balneario" element={renderPlaceholder('Balneário - Marcações')} />
+              <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
+              <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
+              <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
+              <Route path="/settings" element={renderPlaceholder('Definições')} />
+              <Route path="*" element={renderPlaceholder('Página não encontrada')} />
             </Routes>
           </motion.div>
         </AnimatePresence>
@@ -452,6 +494,33 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           existingAppointments={[...allAppointments, ...blockedAppointments]}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => {
+        if (!open) {
+          setPendingPath(null);
+          setShowLeaveConfirm(false);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPendingPath(null);
+              setShowLeaveConfirm(false);
+            }}>
+              Ficar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

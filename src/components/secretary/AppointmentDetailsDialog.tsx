@@ -515,6 +515,7 @@ export function AppointmentDetailsDialog({
 
       toast.success(t('appointmentDetails.rescheduledSuccess'));
       setShowRescheduleDialog(false);
+      onClose();
     } catch (error) {
       console.error("Erro ao reagendar:", error);
       toast.error(t('appointmentDetails.rescheduledFailed'));

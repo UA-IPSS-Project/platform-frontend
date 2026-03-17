@@ -343,6 +343,7 @@
     }
   },
   "common": {
+    "confirmLogout": "Tem a certeza que quer sair?",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
@@ -435,7 +436,10 @@
     "acceptTermsPrefix": "Aceito os"
   },
   "profile": {
+    "title": "Perfil do Utilizador",
     "loading": "A carregar...",
+    "fullName": "Nome Completo",
+    "birthDate": "Data de Nascimento",
     "changePassword": "Mudar Palavra-passe",
     "passwordShort": "Palavra-passe",
     "phone": "Telemóvel",
@@ -444,7 +448,7 @@
     "postalCode": "Código Postal",
     "profession": "Profissão",
     "workLocation": "Local de Emprego",
-    "workAddress": "Morada do Emprego",
+    "workAddress": "Freguesia de Emprego",
     "workPhone": "Telefone do Emprego",
     "sections": {
       "personal": "Informação Pessoal",
@@ -469,6 +473,12 @@
     "errors": {
       "loadProfile": "Erro ao carregar dados do perfil",
       "updateProfile": "Erro ao atualizar perfil"
+    },
+    "unsaved": {
+      "title": "Alterações por guardar",
+      "description": "Tem mudanças por guardar. Deseja descartá-las?",
+      "stay": "Ficar",
+      "discard": "Descartar"
     }
   },
   "history": {

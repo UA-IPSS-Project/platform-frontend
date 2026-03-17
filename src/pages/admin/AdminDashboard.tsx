@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, Settings2, Save, Package2, CalendarDays, Package, Truck, Wrench, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,10 +18,13 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 
-type AdminView = 'overview' | 'slots' | 'catalogs';
+type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -22,9 +35,13 @@ interface AdminDashboardProps {
 const slotTypes = [
     {
         tipo: 'SECRETARIA' as const,
+        titulo: 'Agenda da Secretaria',
+        descricao: 'Define quantas marcações da secretaria podem coexistir no mesmo horário.',
     },
     {
         tipo: 'BALNEARIO' as const,
+        titulo: 'Agenda do Balneário',
+        descricao: 'Controla a lotação operacional dos slots de marcação do balneário.',
     },
 ];
 
@@ -37,21 +54,20 @@ function AdminOverview({
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
 }>) {
-    const { t } = useTranslation();
     const managementAreas = [
         {
-            title: t('dashboard.admin.overview.managementAreas.slots.title'),
-            description: t('dashboard.admin.overview.managementAreas.slots.description'),
+            title: 'Slots por marcação',
+            description: 'Define a capacidade de cada agenda por horário e controla a lotação operacional.',
             icon: Settings2,
             action: onOpenSlots,
-            actionLabel: t('dashboard.admin.overview.managementAreas.slots.actionLabel'),
+            actionLabel: 'Gerir slots',
         },
         {
-            title: t('dashboard.admin.overview.managementAreas.catalogs.title'),
-            description: t('dashboard.admin.overview.managementAreas.catalogs.description'),
+            title: 'Catálogos administrativos',
+            description: 'Cria, edita e remove materiais, transportes e tipos de manutenção sem acesso às requisições.',
             icon: Package2,
             action: onOpenCatalogs,
-            actionLabel: t('dashboard.admin.overview.managementAreas.catalogs.actionLabel'),
+            actionLabel: 'Abrir catálogo',
         },
     ];
 
@@ -112,18 +128,17 @@ function SlotsManagement({
     onChange: (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => void;
     onSave: () => void;
 }>) {
-    const { t } = useTranslation();
     return (
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
                 <div>
                     <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                         <Settings2 className="w-4 h-4" />
-                        {t('dashboard.admin.slots.operationalConfiguration')}
+                        Configuração operacional
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">{t('dashboard.admin.slots.title')}</h2>
+                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Capacidade de marcações por slot</h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-                        {t('dashboard.admin.slots.description')}
+                        Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.
                     </p>
                 </div>
 
@@ -134,15 +149,13 @@ function SlotsManagement({
                             className="rounded-2xl border border-gray-200/80 bg-white/70 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/50"
                         >
                             <div className="space-y-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{slotType.tipo === 'SECRETARIA' ? t('dashboard.admin.slots.secretaryScheduleTitle') : t('dashboard.admin.slots.balnearioScheduleTitle')}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{slotType.tipo === 'SECRETARIA'
-                                    ? t('dashboard.admin.slots.secretaryScheduleDescription')
-                                    : t('dashboard.admin.slots.balnearioScheduleDescription')}</p>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{slotType.titulo}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{slotType.descricao}</p>
                             </div>
 
                             <div className="mt-5 space-y-2">
                                 <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {t('dashboard.admin.slots.maxPerSlot')}
+                                    Máximo por slot
                                 </Label>
                                 <Input
                                     id={`slot-${slotType.tipo}`}
@@ -166,7 +179,7 @@ function SlotsManagement({
                         className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
                     >
                         <Save className="w-4 h-4" />
-                        {isSavingSlots ? t('dashboard.admin.slots.saving') : t('dashboard.admin.slots.saveConfiguration')}
+                        {isSavingSlots ? 'A guardar...' : 'Guardar configuração'}
                     </Button>
                 </div>
             </div>
@@ -175,8 +188,41 @@ function SlotsManagement({
 }
 
 export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Readonly<AdminDashboardProps>) {
+    const { user: authUser } = useAuth();
     const { t } = useTranslation();
-    const [currentView, setCurrentView] = useState<AdminView>('overview');
+    const [currentView, setCurrentView] = usePersistentState<AdminView>('adminDashboardView', 'overview');
+    const [userData, setUserData] = useState({
+        name: authUser?.nome || '',
+        nif: authUser?.nif || '',
+        contact: authUser?.telefone || '',
+        email: authUser?.email || '',
+    });
+    const [profileIsDirty, setProfileIsDirty] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<AdminView | null>(null);
+
+    const handleProfileDirtyChange = (isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    };
+
+    const safeSetView = (view: AdminView) => {
+        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+            setPendingNavigation(view);
+            setShowLeaveConfirm(true);
+        } else {
+            setCurrentView(view);
+        }
+    };
+
+    const confirmLeaveProfile = () => {
+        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+        setProfileIsDirty(false);
+        setShowLeaveConfirm(false);
+        if (pendingNavigation) {
+            setCurrentView(pendingNavigation);
+            setPendingNavigation(null);
+        }
+    };
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
         BALNEARIO: 2,
@@ -199,7 +245,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             });
         } catch (error) {
             console.error('Erro ao carregar configuração de slots:', error);
-            toast.error(t('dashboard.admin.errors.loadSlotConfig'));
+            toast.error('Não foi possível carregar a configuração de slots');
         } finally {
             setIsLoadingSlots(false);
         }
@@ -244,66 +290,85 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA),
                 calendarioApi.atualizarConfiguracaoSlot('BALNEARIO', slotCapacities.BALNEARIO),
             ]);
-            toast.success(t('dashboard.admin.messages.slotConfigUpdated'));
+            toast.success('Configuração de slots atualizada com sucesso');
             await loadSlotCapacities();
         } catch (error) {
             console.error('Erro ao guardar configuração de slots:', error);
-            toast.error(t('dashboard.admin.errors.saveSlotConfig'));
+            toast.error('Não foi possível guardar a configuração de slots');
         } finally {
             setIsSavingSlots(false);
         }
     };
 
+    useEffect(() => {
+        setUserData({
+            name: authUser?.nome || '',
+            nif: authUser?.nif || '',
+            contact: authUser?.telefone || '',
+            email: authUser?.email || '',
+        });
+    }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone]);
+
+    const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
+        setUserData(updatedUser);
+    };
+
     const summaryCards = useMemo(() => [
         {
-            title: t('dashboard.admin.summary.slots.title'),
+            title: 'Slots (Secretaria/Balneário)',
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
-            description: t('dashboard.admin.summary.slots.description'),
+            description: 'capacidade por horário',
             icon: CalendarDays,
             iconClassName: 'bg-violet-500/20 text-violet-300',
         },
         {
-            title: t('dashboard.admin.summary.materials.title'),
+            title: 'Materiais',
             value: catalogCounts.materiais,
-            description: t('dashboard.admin.summary.materials.description'),
+            description: 'itens no catálogo',
             icon: Package,
             iconClassName: 'bg-blue-500/20 text-blue-300',
         },
         {
-            title: t('dashboard.admin.summary.transports.title'),
+            title: 'Transportes',
             value: catalogCounts.transportes,
-            description: t('dashboard.admin.summary.transports.description'),
+            description: 'transportes no catálogo',
             icon: Truck,
             iconClassName: 'bg-emerald-500/20 text-emerald-300',
         },
         {
-            title: t('dashboard.admin.summary.maintenanceTypes.title'),
+            title: 'Tipos de manutenção',
             value: catalogCounts.tiposManutencao,
-            description: t('dashboard.admin.summary.maintenanceTypes.description'),
+            description: 'tipos disponíveis',
             icon: Wrench,
             iconClassName: 'bg-fuchsia-500/20 text-fuchsia-300',
         },
-    ], [slotCapacities, catalogCounts, t]);
+    ], [slotCapacities, catalogCounts]);
 
     const AdminNavigation = (
         <>
             <Button
                 variant={currentView === 'overview' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('overview')}
+                onClick={() => safeSetView('overview')}
+                aria-label="Ir para Dashboard"
+                aria-current={currentView === 'overview' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'overview' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 {t('dashboard.admin.navigation.dashboard')}
             </Button>
             <Button
                 variant={currentView === 'slots' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('slots')}
+                onClick={() => safeSetView('slots')}
+                aria-label="Ir para Slots"
+                aria-current={currentView === 'slots' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'slots' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 {t('dashboard.admin.navigation.slots')}
             </Button>
             <Button
                 variant={currentView === 'catalogs' ? 'default' : 'ghost'}
-                onClick={() => setCurrentView('catalogs')}
+                onClick={() => safeSetView('catalogs')}
+                aria-label="Ir para Catálogos"
+                aria-current={currentView === 'catalogs' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'catalogs' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
                 {t('dashboard.admin.navigation.catalogs')}
@@ -312,9 +377,11 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
     );
 
     const viewDescriptions: Record<AdminView, string> = {
-        overview: t('dashboard.admin.viewDescriptions.overview'),
-        slots: t('dashboard.admin.viewDescriptions.slots'),
-        catalogs: t('dashboard.admin.viewDescriptions.catalogs'),
+        overview: 'Este painel serve apenas para administração operacional. O admin gere slots, materiais, transportes e tipos de manutenção.',
+        slots: 'Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.',
+        catalogs: 'Cria, edita e remove materiais, transportes e tipos de manutenção usados nas requisições.',
+        profile: '',
+        settings: '',
     };
 
     const renderAdminContent = () => {
@@ -323,9 +390,9 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 <div className="flex flex-col gap-1">
                     <p className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
                         <ShieldCheck className="w-4 h-4" />
-                        {t('dashboard.admin.administrationOnlyArea')}
+                        Área reservada à administração
                     </p>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.title')}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Painel de Administração</h1>
                     <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
                         {viewDescriptions[currentView]}
                     </p>
@@ -334,8 +401,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 {currentView === 'overview' ? (
                     <AdminOverview
                         summaryCards={summaryCards}
-                        onOpenSlots={() => setCurrentView('slots')}
-                        onOpenCatalogs={() => setCurrentView('catalogs')}
+                        onOpenSlots={() => safeSetView('slots')}
+                        onOpenCatalogs={() => safeSetView('catalogs')}
                     />
                 ) : null}
 
@@ -349,6 +416,25 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                     />
                 ) : null}
 
+                {currentView === 'profile' ? (
+                    <ProfilePage
+                        user={{ id: authUser?.id || 0, ...userData }}
+                        onBack={() => setCurrentView('overview')}
+                        onUpdateUser={handleUpdateUser}
+                        isDarkMode={isDarkMode}
+                        onDirtyChange={handleProfileDirtyChange}
+                    />
+                ) : null}
+
+                {currentView === 'settings' ? (
+                    <div className="flex items-center justify-center h-[400px]">
+                        <div className="text-center">
+                            <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">Definições</h2>
+                            <p className="text-gray-500">Em desenvolvimento</p>
+                        </div>
+                    </div>
+                ) : null}
+
                 {currentView === 'catalogs' ? (
                     <RequisitionsCatalogManagement />
                 ) : null}
@@ -357,6 +443,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
     };
 
     return (
+        <>
         <DashboardLayout
             isDarkMode={isDarkMode}
             onToggleDarkMode={onToggleDarkMode}
@@ -364,15 +451,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             onMenuToggle={() => {}}
             roleTitle={t('dashboard.admin.roleTitle')}
             navigationContent={AdminNavigation}
-            notifications={[]}
-            unreadCount={0}
-            showNotifications={false}
-            onToggleNotifications={() => {}}
-            onMarkAsRead={() => {}}
-            onMarkAllAsRead={() => {}}
-            onDeleteNotification={() => {}}
-            onDeleteAllNotifications={() => {}}
-            onNavigateToNotifications={() => {}}
+            onNavigateToProfile={() => setCurrentView('profile')}
+            onNavigateToSettings={() => safeSetView('settings')}
         >
             <AnimatePresence mode="wait">
                 <motion.div
@@ -386,5 +466,23 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 </motion.div>
             </AnimatePresence>
         </DashboardLayout>
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Tem mudanças por guardar. Deseja descartá-las?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+                  <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                      Descartar
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+        </>
     );
 }

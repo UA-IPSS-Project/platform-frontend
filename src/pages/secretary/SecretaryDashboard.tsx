@@ -15,7 +15,7 @@ import { DayScheduleDialog } from '../../components/secretary/DayScheduleDialog'
 import { Sidebar } from '../../components/layout/Sidebar';
 import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleDialog';
 import { UserManagement } from '../../components/secretary/UserManagement';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,8 +24,19 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface SecretaryDashboardProps {
   user: {
@@ -40,8 +51,8 @@ interface SecretaryDashboardProps {
 }
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
-  const { t } = useTranslation();
   const { user: authUser, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
 
   const {
     appointments,
@@ -94,10 +105,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     sessionStorage.setItem('secretary_currentDate', currentDate.toISOString());
   }, [currentDate]);
-  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-    const saved = localStorage.getItem('secretaryDashboardView');
-    return saved ? [saved as ViewType] : ['home'];
-  });
+  const [viewHistory, setViewHistory] = usePersistentState<ViewType[]>(
+    'secretaryDashboardViewHistory',
+    () => {
+      const legacySaved = localStorage.getItem('secretaryDashboardView');
+      return legacySaved ? [legacySaved as ViewType] : ['home'];
+    }
+  );
 
   const currentView = viewHistory[viewHistory.length - 1] || 'home';
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -106,8 +120,31 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+
+  const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  }, []);
+
   const navigateTo = (view: ViewType) => {
-    setViewHistory(prev => [...prev, view]);
+    if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+      setPendingNavigation(view);
+      setShowLeaveConfirm(true);
+    } else {
+      setViewHistory(prev => [...prev, view]);
+    }
+  };
+
+  const confirmLeaveProfile = () => {
+    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    if (pendingNavigation) {
+      setViewHistory(prev => [...prev, pendingNavigation]);
+      setPendingNavigation(null);
+    }
   };
 
   const navigateBack = () => {
@@ -132,7 +169,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       );
       setHistoryAppointments((Array.isArray(data) ? data : []).map(mapApiToAppointment));
     } catch (error) {
-      toast.error(t('dashboard.errors.loadHistory'));
+      toast.error('Erro ao carregar histórico');
     }
   };
 
@@ -157,10 +194,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     if (currentView === 'appointments') refreshCurrentWeek(currentDate);
   }, [currentView, refreshCurrentWeek, currentDate]);
-
-  useEffect(() => {
-    localStorage.setItem('secretaryDashboardView', currentView);
-  }, [currentView]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -191,14 +224,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setSelectedAppointment(freshAppointment);
       setShowDetailsDialog(true);
     } catch (error) {
-      toast.error(t('dashboard.errors.loadLatestAppointment'));
+      toast.error('Não foi possível carregar os dados mais recentes da marcação.');
       refreshCurrentWeek(currentDate);
     }
   };
 
   const handleCancelAppointment = (id: string, reason: string) => {
     updateAppointmentOptimistically(id, { status: 'cancelled', cancellationReason: reason });
-    toast.success(t('dashboard.messages.appointmentCancelled'));
+    toast.success('Marcação cancelada e utente notificado com o motivo');
     refreshCurrentWeek(currentDate);
   };
 
@@ -212,27 +245,27 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     <div className="flex items-center justify-center h-[600px]">
       <div className="text-center">
         <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
-          {view === 'requisitions' && t('dashboard.requisitions')}
-          {view === 'sections' && t('dashboard.sections')}
-          {view === 'management' && t('dashboard.management')}
-          {view === 'settings' && t('dashboard.settings')}
-          {view === 'more' && t('dashboard.more')}
-          {view === 'administrative' && t('dashboard.administrativeArea')}
-          {view === 'material' && t('dashboard.requisitionsMaterial')}
-          {view === 'manutencao' && t('dashboard.requisitionsMaintenance')}
-          {view === 'transportes' && t('dashboard.requisitionsTransport')}
-          {view === 'urgente' && t('dashboard.requisitionsHighPriority')}
-          {view === 'balneario' && t('dashboard.servicesBalneario')}
-          {view === 'escola' && t('dashboard.servicesSchool')}
-          {view === 'valencias' && t('dashboard.services')}
-          {view === 'candidaturas' && t('dashboard.applications')}
-          {view === 'creche' && t('dashboard.applicationsCreche')}
-          {view === 'catl' && t('dashboard.applicationsCatl')}
-          {view === 'erpi' && t('dashboard.applicationsErpi')}
-          {view === 'reports' && t('dashboard.reports')}
+          {view === 'requisitions' && 'Requisições'}
+          {view === 'sections' && 'Secções'}
+          {view === 'management' && 'Gestão'}
+          {view === 'settings' && 'Definições'}
+          {view === 'more' && 'Mais'}
+          {view === 'administrative' && 'Área Administrativa'}
+          {view === 'material' && 'Requisições - Material'}
+          {view === 'manutencao' && 'Requisições - Manutenção'}
+          {view === 'transportes' && 'Requisições - Transporte'}
+          {view === 'urgente' && 'Requisições - Prioridade Alta'}
+          {view === 'balneario' && 'Valências - Balneário'}
+          {view === 'escola' && 'Valências - Escola'}
+          {view === 'valencias' && 'Valências'}
+          {view === 'candidaturas' && 'Candidaturas'}
+          {view === 'creche' && 'Candidaturas - Creche'}
+          {view === 'catl' && 'Candidaturas - CATL'}
+          {view === 'erpi' && 'Candidaturas - ERPI'}
+          {view === 'reports' && 'Relatórios'}
           {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
-        <p className="text-gray-500 dark:text-gray-500">{t('dashboard.inDevelopment')}</p>
+        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
       </div>
     </div>
   );
@@ -240,12 +273,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const SecretaryNavigation = (
     <>
       <NavDropdown
-        label={t('dashboard.requisitions')}
+        label={t('sidebar.requisitions')}
         items={[
-          { id: 'material', label: t('dashboard.material') },
-          { id: 'manutencao', label: t('dashboard.maintenance') },
-          { id: 'transportes', label: t('dashboard.transport') },
-          { id: 'urgente', label: t('dashboard.highPriority') },
+          { id: 'material', label: t('sidebar.material') },
+          { id: 'manutencao', label: t('sidebar.maintenance') },
+          { id: 'transportes', label: t('sidebar.transport') },
+          { id: 'urgente', label: t('sidebar.highPriority') },
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -253,10 +286,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       />
 
       <NavDropdown
-        label={t('dashboard.services')}
+        label={t('sidebar.services')}
         items={[
-          { id: 'balneario', label: t('dashboard.balneario') },
-          { id: 'escola', label: t('dashboard.school') },
+          { id: 'balneario', label: t('sidebar.balneario') },
+          { id: 'escola', label: t('sidebar.school') },
         ]}
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -268,13 +301,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('appointments')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        {t('dashboard.appointments')}
+        {t('sidebar.appointments')}
       </Button>
 
       <NavDropdown
-        label={t('dashboard.applications')}
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: t('dashboard.creche') },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -288,7 +321,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('reports')}
         className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        {t('dashboard.reports')}
+        {t('sidebar.reports')}
       </Button>
 
       <Button
@@ -296,7 +329,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('management')}
         className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        {t('dashboard.management')}
+        {t('sidebar.management')}
       </Button>
     </>
   );
@@ -310,6 +343,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onMenuToggle={() => setSidebarOpen(true)}
         roleTitle={t('dashboard.secretary')}
         navigationContent={SecretaryNavigation}
+        onNavigateToProfile={() => navigateTo('profile')}
+        onNavigateToSettings={() => navigateTo('settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}
@@ -423,6 +458,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
+                onDirtyChange={handleProfileDirtyChange}
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
@@ -457,14 +493,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                       setSelectedAppointment(appointment);
                       setShowDetailsDialog(true);
                     } catch (e) {
-                      toast.error(t('dashboard.errors.findAppointment'));
+                      toast.error('Não foi possível encontrar a marcação');
                     }
                   },
                   onNavigateToHistory: async () => {
                     navigateTo('history');
                     setShowNotifications(false);
                   },
-                  onNavigateToDocument: () => toast.info(t('dashboard.messages.documentsViewInDevelopment')),
+                  onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
                   onNavigateToCancelledSlot: (dateStr, time) => {
                     navigateTo('appointments');
                     setShowNotifications(false);
@@ -553,6 +589,23 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           }}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

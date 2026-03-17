@@ -4,7 +4,7 @@ import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { NotificationsPage } from '../NotificationsPage';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import BalnearioHome from '../../components/balneario/BalnearioHome';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
@@ -21,7 +21,18 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface BalnearioDashboardProps {
     onLogout: () => void;
@@ -30,8 +41,8 @@ interface BalnearioDashboardProps {
 }
 
 export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: BalnearioDashboardProps) {
-    const { t } = useTranslation();
     const { user: authUser } = useAuth();
+    const { t } = useTranslation();
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -87,22 +98,48 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         sessionStorage.setItem('balneario_currentDate', currentDate.toISOString());
     }, [currentDate]);
 
-    const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-        const saved = localStorage.getItem('balnearioDashboardView');
-        return saved ? [saved as ViewType] : ['home'];
-    });
+    const [viewHistory, setViewHistory] = usePersistentState<ViewType[]>(
+        'balnearioDashboardViewHistory',
+        () => {
+            const legacySaved = localStorage.getItem('balnearioDashboardView');
+            return legacySaved ? [legacySaved as ViewType] : ['home'];
+        }
+    );
 
     const currentView = viewHistory[viewHistory.length - 1] || 'home';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
     const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+    const [profileIsDirty, setProfileIsDirty] = useState(false);
+    const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+
+    const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
+        setProfileIsDirty(isDirty);
+    }, []);
+    const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
 
     const navigateTo = (view: ViewType) => {
-        setViewHistory(prev => [...prev, view]);
+        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+            setPendingNavigation(view);
+            setShowLeaveConfirm(true);
+        } else {
+            setViewHistory(prev => [...prev, view]);
+        }
+    };
+
+    const confirmLeaveProfile = () => {
+        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+        setProfileIsDirty(false);
+        setShowLeaveConfirm(false);
+        if (pendingNavigation) {
+            setViewHistory(prev => [...prev, pendingNavigation]);
+            setPendingNavigation(null);
+        }
     };
 
     const navigateBack = () => {
@@ -124,7 +161,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
             setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
         } catch {
-            toast.error(t('dashboard.errors.loadHistory'));
+            toast.error('Erro ao carregar histórico');
         }
     };
 
@@ -155,10 +192,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         return () => clearInterval(interval);
     }, [currentView, refreshCurrentWeek, currentDate]);
 
-    useEffect(() => {
-        localStorage.setItem('balnearioDashboardView', currentView);
-    }, [currentView]);
-
     const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
         setUserData(updatedUser);
     };
@@ -183,14 +216,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             setSelectedAppointment(freshAppointment);
             setShowDetailsDialog(true);
         } catch (error) {
-            toast.error(t('dashboard.errors.loadLatestAppointment'));
+            toast.error('Não foi possível carregar os dados mais recentes da marcação.');
             refreshCurrentWeek(currentDate);
         }
     };
 
     const handleCancelAppointment = (id: string, reason: string) => {
         updateAppointmentOptimistically(id, { status: 'cancelled', cancellationReason: reason });
-        toast.success(t('dashboard.messages.appointmentCancelledSimple'));
+        toast.success('Marcação cancelada com sucesso');
         refreshCurrentWeek(currentDate);
     };
 
@@ -198,15 +231,15 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         <div className="flex items-center justify-center h-[600px]">
             <div className="text-center">
                 <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
-                    {view === 'requisitions' && t('dashboard.requisitions')}
-                    {view === 'appointments' && t('dashboard.appointments')}
-                    {view === 'consumos' && t('dashboard.consumption')}
-                    {view === 'reports' && t('dashboard.reports')}
-                    {view === 'settings' && t('dashboard.settings')}
-                    {view === 'administrative' && t('dashboard.administrativeArea')}
+                    {view === 'requisitions' && 'Requisições'}
+                    {view === 'appointments' && 'Marcações'}
+                    {view === 'consumos' && 'Consumos'}
+                    {view === 'reports' && 'Relatórios'}
+                    {view === 'settings' && 'Definições'}
+                    {view === 'administrative' && 'Área Administrativa'}
                     {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-500">{t('dashboard.pageInDevelopment')}</p>
+                <p className="text-gray-500 dark:text-gray-500">Página em desenvolvimento</p>
             </div>
         </div>
     );
@@ -218,7 +251,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('appointments')}
                 className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                {t('dashboard.appointments')}
+                {t('sidebar.appointments')}
             </Button>
 
             <Button
@@ -226,7 +259,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('consumos')}
                 className={`text-sm ${currentView === 'consumos' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                {t('dashboard.consumption')}
+                {t('sidebar.consumption')}
             </Button>
 
             <Button
@@ -234,7 +267,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('requisitions')}
                 className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                {t('dashboard.requisitions')}
+                {t('sidebar.requisitions')}
             </Button>
 
             <Button
@@ -242,7 +275,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('reports')}
                 className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                {t('dashboard.reports')}
+                {t('sidebar.reports')}
             </Button>
         </>
     );
@@ -256,6 +289,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onMenuToggle={() => setSidebarOpen(true)}
                 roleTitle={t('dashboard.balneario')}
                 navigationContent={BalnearioNavigation}
+                onNavigateToProfile={() => navigateTo('profile')}
+                onNavigateToSettings={() => navigateTo('settings')}
                 notifications={notifications}
                 unreadCount={unreadCount}
                 showNotifications={showNotifications}
@@ -305,6 +340,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                             appointmentType="BALNEARIO"
                                             highlightedSlot={highlightedSlot}
                                             onBlockSchedule={() => setShowBlockedDialog(true)}
+                                            refreshTrigger={blockRefreshTrigger}
                                         />
                                     </div>
                                     <div className="space-y-6 lg:sticky lg:top-24">
@@ -331,6 +367,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 onBack={navigateBack}
                                 onUpdateUser={handleUpdateUser}
                                 isDarkMode={isDarkMode}
+                                onDirtyChange={handleProfileDirtyChange}
                             />
                         ) : currentView === 'notificacoes' ? (
                             <NotificationsPage
@@ -363,7 +400,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                         navigateTo('history');
                                         setShowNotifications(false);
                                     },
-                                    onNavigateToDocument: () => toast.info(t('dashboard.messages.documentsViewInDevelopment')),
+                                    onNavigateToDocument: () => toast.info('A funcionalidade de visualização de documentos está em desenvolvimento.'),
                                     onNavigateToCancelledSlot: (dateStr, time) => {
                                         navigateTo('appointments');
                                         setShowNotifications(false);
@@ -457,9 +494,29 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     onOpenChange={setShowBlockedDialog}
                     appointments={appointments}
                     tipo="BALNEARIO"
-                    onSuccess={() => refreshCurrentWeek(currentDate)}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        setBlockRefreshTrigger(prev => prev + 1);
+                    }}
                 />
             )}
+
+            <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem mudanças por guardar. Deseja descartá-las?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                            Descartar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
