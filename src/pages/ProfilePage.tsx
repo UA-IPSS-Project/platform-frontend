@@ -384,9 +384,9 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         </button>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-5 sm:p-8">
           {/* Header */}
-          <div className="flex items-start justify-between mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                 <UserIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
@@ -397,10 +397,10 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
               </div>
             </div>
             {!isEditing && (
-              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
+              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${isMobile ? 'w-full justify-center' : ''}`}
+                  className="w-full sm:w-auto justify-center border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
@@ -408,7 +408,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                 </Button>
                 <Button
                   onClick={() => { setBaseData({ ...formData }); setIsEditing(true); }}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
                   disabled={loading}
                 >
                   {t('common.edit')}
