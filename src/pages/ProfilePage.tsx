@@ -424,9 +424,9 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
 
               {expanded.personal && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Nome Completo', formData.fullName, 'fullName', false, t('profile.placeholders.nameUnavailable'), 'md:col-span-2')}
+                  {renderField(t('profile.fullName'), formData.fullName, 'fullName', false, t('profile.placeholders.nameUnavailable'), 'md:col-span-2')}
                   {renderField('NIF', formData.nif, 'nif', false)}
-                  {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
+                  {renderField(t('profile.birthDate'), formData.dateOfBirth, 'dateOfBirth', false)}
                   {renderField('Email', formData.email, 'email', false, t('profile.placeholders.emailUnavailable'), 'md:col-span-2')}
                   {renderField(t('profile.phone'), formData.phonePersonal, 'phonePersonal', true, t('profile.placeholders.addContact'))}
                 </div>

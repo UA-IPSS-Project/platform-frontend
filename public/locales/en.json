@@ -343,6 +343,7 @@
     }
   },
   "common": {
+    "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",
     "edit": "Edit",
     "save": "Save",
@@ -437,6 +438,8 @@
   "profile": {
     "title": "User Profile",
     "loading": "Loading...",
+    "fullName": "Full Name",
+    "birthDate": "Date of Birth",
     "changePassword": "Change Password",
     "passwordShort": "Password",
     "phone": "Phone",

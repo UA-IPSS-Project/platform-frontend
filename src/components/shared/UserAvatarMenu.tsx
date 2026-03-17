@@ -1,5 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { LogOutIcon, UserIcon, SettingsIcon } from './CustomIcons';
+import { useTranslation } from 'react-i18next';
 
 function getInitials(nome: string): string {
     const parts = nome.trim().split(/\s+/).filter(Boolean);
@@ -17,10 +18,11 @@ interface UserAvatarMenuProps {
 }
 
 export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout }: UserAvatarMenuProps) {
-    const displayName = nome.trim() || 'Utilizador';
+    const { t } = useTranslation();
+    const displayName = nome.trim() || t('dashboard.user');
 
     const handleLogout = () => {
-        const shouldLogout = window.confirm('Tem a certeza que quer sair?');
+        const shouldLogout = window.confirm(t('common.confirmLogout'));
         if (shouldLogout) {
             onLogout();
         }
@@ -31,11 +33,11 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
             <DropdownMenu.Trigger asChild>
                 <button
                     className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 transition-colors overflow-hidden shrink-0"
-                    aria-label={`Abrir menu do utilizador: ${displayName}`}
+                    aria-label={`${t('header.language')}: ${displayName}`}
                     title={displayName}
                 >
                     {photoUrl ? (
-                        <img src={photoUrl} alt={`Fotografia de ${displayName}`} className="w-full h-full object-cover" />
+                        <img src={photoUrl} alt={displayName} className="w-full h-full object-cover" />
                     ) : (
                         <span>{getInitials(displayName)}</span>
                     )}
@@ -57,31 +59,31 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
 
                     <DropdownMenu.Item
                         onSelect={onProfile}
-                        aria-label="Abrir perfil"
+                        aria-label={t('sidebar.profile')}
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
                     >
                         <UserIcon className="w-4 h-4 shrink-0" />
-                        Perfil
+                        {t('sidebar.profile')}
                     </DropdownMenu.Item>
 
                     <DropdownMenu.Item
                         onSelect={onSettings}
-                        aria-label="Abrir definições"
+                        aria-label={t('sidebar.settings')}
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
                     >
                         <SettingsIcon className="w-4 h-4 shrink-0" />
-                        Definições
+                        {t('sidebar.settings')}
                     </DropdownMenu.Item>
 
                     <DropdownMenu.Separator className="my-1 h-px bg-gray-100 dark:bg-gray-800" />
 
                     <DropdownMenu.Item
                         onSelect={handleLogout}
-                        aria-label="Terminar sessão"
+                        aria-label={t('header.logout')}
                         className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer select-none outline-none transition-colors"
                     >
                         <LogOutIcon className="w-4 h-4 shrink-0" />
-                        Sair
+                        {t('header.logout')}
                     </DropdownMenu.Item>
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>

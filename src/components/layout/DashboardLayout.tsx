@@ -78,7 +78,7 @@ export function DashboardLayout({
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
-                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200" aria-label="Abrir menu lateral" aria-expanded={false}>
+                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200" aria-label={t('sidebar.closeSidebar')} aria-expanded={false}>
                                     <MenuIcon className="w-5 h-5" aria-hidden="true" />
                                 </Button>
                                 <span className="text-gray-700 dark:text-gray-200 font-medium hidden sm:inline-block">
@@ -87,7 +87,7 @@ export function DashboardLayout({
                             </div>
 
                             {/* Central Navigation Area - Injected depending on role */}
-                            <nav className="hidden md:flex items-center gap-1" aria-label="Navegação principal">
+                            <nav className="hidden md:flex items-center gap-1" aria-label={t('sidebar.menu')}>
                                 {navigationContent}
                             </nav>
 
@@ -98,7 +98,7 @@ export function DashboardLayout({
                                         size="icon"
                                         className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                                         onClick={() => onToggleNotifications(!showNotifications)}
-                                        aria-label={unreadCount > 0 ? `Notificações — ${unreadCount} não lidas` : 'Notificações'}
+                                        aria-label={t('sidebar.notifications')}
                                         aria-expanded={showNotifications}
                                         aria-haspopup="true"
                                     >

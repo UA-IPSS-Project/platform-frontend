@@ -343,6 +343,7 @@
     }
   },
   "common": {
+    "confirmLogout": "Tem a certeza que quer sair?",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
@@ -437,6 +438,8 @@
   "profile": {
     "title": "Perfil do Utilizador",
     "loading": "A carregar...",
+    "fullName": "Nome Completo",
+    "birthDate": "Data de Nascimento",
     "changePassword": "Mudar Palavra-passe",
     "passwordShort": "Palavra-passe",
     "phone": "Telemóvel",
@@ -445,7 +448,7 @@
     "postalCode": "Código Postal",
     "profession": "Profissão",
     "workLocation": "Local de Emprego",
-    "workAddress": "Morada do Emprego",
+    "workAddress": "Freguesia de Emprego",
     "workPhone": "Telefone do Emprego",
     "sections": {
       "personal": "Informação Pessoal",
