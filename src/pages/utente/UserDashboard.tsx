@@ -163,8 +163,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
   const confirmLeaveProfile = () => {
     const nextPath = pendingPath;
+    const draftStorageKey = getProfileDraftStorageKey(authUser?.id || 0);
 
-    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
     setProfileIsDirty(false);
     setShowLeaveConfirm(false);
     setPendingPath(null);
@@ -172,6 +172,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (nextPath) {
       navigate(nextPath);
     }
+
+    // Remove draft after navigation to avoid being recreated by the profile page
+    // effect while it is still mounted during the transition.
+    requestAnimationFrame(() => {
+      sessionStorage.removeItem(draftStorageKey);
+    });
   };
 
   const handleNavigate = (view: string) => {
