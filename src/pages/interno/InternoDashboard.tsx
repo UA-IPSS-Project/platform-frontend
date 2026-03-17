@@ -3,6 +3,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
+import { useTranslation } from 'react-i18next';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,6 +25,7 @@ type InternoView = 'home' | 'profile' | 'settings';
 
 export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: InternoDashboardProps) {
     const { user: authUser } = useAuth();
+    const { t } = useTranslation();
     const [currentView, setCurrentView] = usePersistentState<InternoView>('internoDashboardView', 'home');
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
@@ -112,8 +114,8 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
             isDarkMode={isDarkMode}
             onToggleDarkMode={onToggleDarkMode}
             onLogout={onLogout}
-            roleTitle="Equipa Interna"
-            navigationContent={<div className="text-gray-500 p-4">Menu Em Desenvolvimento</div>}
+            roleTitle={t('dashboard.internalTeam')}
+            navigationContent={<div className="text-gray-500 p-4">{t('dashboard.menuInDevelopment')}</div>}
             onMenuToggle={() => { }}
             onNavigateToProfile={() => setCurrentView('profile')}
             onNavigateToSettings={() => safeSetView('settings')}

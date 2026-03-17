@@ -22,6 +22,7 @@ import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
+import { useTranslation } from 'react-i18next';
 
 type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
 
@@ -188,6 +189,7 @@ function SlotsManagement({
 
 export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Readonly<AdminDashboardProps>) {
     const { user: authUser } = useAuth();
+    const { t } = useTranslation();
     const [currentView, setCurrentView] = usePersistentState<AdminView>('adminDashboardView', 'overview');
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
@@ -351,7 +353,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 aria-current={currentView === 'overview' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'overview' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Dashboard
+                {t('dashboard.admin.navigation.dashboard')}
             </Button>
             <Button
                 variant={currentView === 'slots' ? 'default' : 'ghost'}
@@ -360,7 +362,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 aria-current={currentView === 'slots' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'slots' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Slots
+                {t('dashboard.admin.navigation.slots')}
             </Button>
             <Button
                 variant={currentView === 'catalogs' ? 'default' : 'ghost'}
@@ -369,7 +371,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 aria-current={currentView === 'catalogs' ? 'page' : undefined}
                 className={`text-sm ${currentView === 'catalogs' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Catálogos
+                {t('dashboard.admin.navigation.catalogs')}
             </Button>
         </>
     );
@@ -447,7 +449,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             onToggleDarkMode={onToggleDarkMode}
             onLogout={onLogout}
             onMenuToggle={() => {}}
-            roleTitle="Administrador"
+            roleTitle={t('dashboard.admin.roleTitle')}
             navigationContent={AdminNavigation}
             onNavigateToProfile={() => setCurrentView('profile')}
             onNavigateToSettings={() => safeSetView('settings')}

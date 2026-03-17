@@ -22,6 +22,7 @@ import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointment
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
+import { useTranslation } from 'react-i18next';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -41,6 +42,7 @@ interface BalnearioDashboardProps {
 
 export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: BalnearioDashboardProps) {
     const { user: authUser } = useAuth();
+    const { t } = useTranslation();
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -249,7 +251,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('appointments')}
                 className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Marcações
+                {t('sidebar.appointments')}
             </Button>
 
             <Button
@@ -257,7 +259,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('consumos')}
                 className={`text-sm ${currentView === 'consumos' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Consumos
+                {t('sidebar.consumption')}
             </Button>
 
             <Button
@@ -265,7 +267,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('requisitions')}
                 className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Requisições
+                {t('sidebar.requisitions')}
             </Button>
 
             <Button
@@ -273,7 +275,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onClick={() => navigateTo('reports')}
                 className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
             >
-                Relatórios
+                {t('sidebar.reports')}
             </Button>
         </>
     );
@@ -285,7 +287,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onToggleDarkMode={onToggleDarkMode}
                 onLogout={onLogout}
                 onMenuToggle={() => setSidebarOpen(true)}
-                roleTitle="Balneário"
+                roleTitle={t('dashboard.balneario')}
                 navigationContent={BalnearioNavigation}
                 onNavigateToProfile={() => navigateTo('profile')}
                 onNavigateToSettings={() => navigateTo('settings')}

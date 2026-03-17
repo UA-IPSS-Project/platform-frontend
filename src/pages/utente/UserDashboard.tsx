@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +46,7 @@ interface UserDashboardProps {
 
 export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
   const { user: authUser } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [userData, setUserData] = useState(user);
@@ -253,13 +255,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onClick={() => navigateWithGuard('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Secretaria
+        {t('sidebar.secretary')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -276,7 +278,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Utente"
+        roleTitle={t('dashboard.user')}
         navigationContent={UserNavigation}
         onNavigateToProfile={() => navigateWithGuard('/dashboard/profile')}
         onNavigateToSettings={() => navigateWithGuard('/dashboard/settings')}
