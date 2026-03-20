@@ -11,6 +11,12 @@ import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIco
 import { Appointment } from '../../types';
 import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
+// Helper: Plus icon for add button
+function PlusIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeWidth="2" d="M8 3v10M3 8h10"/></svg>
+  );
+}
 import { useTranslation } from 'react-i18next';
 
 interface WeeklyScheduleProps {
@@ -78,6 +84,39 @@ const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: strin
 
 export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
   const { i18n } = useTranslation();
+
+  // Helper function to get status-based styles (must be outside JSX)
+  const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
+    const normalizedStatus = (status || '').toLowerCase();
+    const statusStyles: Record<string, string> = {
+      'completed': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'concluded': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'done': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'cancelled': isInteractive
+        ? 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 hover:bg-red-200 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700 dark:hover:bg-red-900/50'
+        : 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700',
+      'in-progress': isInteractive
+        ? 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 hover:bg-violet-200 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700 dark:hover:bg-violet-900/50'
+        : 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700',
+      'scheduled': isInteractive
+        ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+        : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700',
+      'warning': isInteractive
+        ? 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/50'
+        : 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+      'no-show': 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 cursor-not-allowed dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+    };
+    const defaultStyle = isInteractive
+      ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+      : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
+    return statusStyles[normalizedStatus] || defaultStyle;
+  };
   const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
   const currentLocale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const weekdaysShort = i18n.language.startsWith('en') ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
@@ -1245,19 +1284,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     const booked = slotAppointments.length >= slotCapacity;
                     const inPast = isSlotInPast(day, time);
                     const appointment = slotAppointments[0];
-                    // Verificar se é marcação própria: tem NIF preenchido E corresponde ao utente
-                    // OU está no array appointments (que contém apenas marcações do utente)
                     const isOwn = appointment && (
                       (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
                       appointments.some(a => a.id === appointment.id)
                     );
-
                     const isBlockedAdmin = isSlotBlockedSync(day, time);
                     const isHolidayDay = isHoliday(day);
-                    // Clientes só podem clicar nas suas próprias marcações
-                    // Admin bloqueado também conta como blocked
                     const blocked = ((slotAppointments.length > 0) && isClient && !isOwn) || isBlockedAdmin;
-
+                    const slotId = getSlotId(day, time);
+                    const isActiveHighlight = activeHighlight === slotId;
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                     const available = isDarkMode
                       ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600 cursor-pointer'
@@ -1269,163 +1304,240 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       ? 'border-gray-800 bg-gray-900/60 text-gray-500 cursor-not-allowed'
                       : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
 
-                    // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
-                    // Helper function to get status-based styles
-                    const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
-                      const normalizedStatus = (status || '').toLowerCase();
-                      const statusStyles: Record<string, string> = {
-                        'completed': isInteractive
-                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-                        'concluded': isInteractive
-                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-                        'done': isInteractive
-                          ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-                          : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-                        'cancelled': isInteractive
-                          ? 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 hover:bg-red-200 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700 dark:hover:bg-red-900/50'
-                          : 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700',
-                        'in-progress': isInteractive
-                          ? 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 hover:bg-violet-200 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700 dark:hover:bg-violet-900/50'
-                          : 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700',
-                        'scheduled': isInteractive
-                          ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
-                          : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700',
-                        'warning': isInteractive
-                          ? 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/50'
-                          : 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
-                        'no-show': 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 cursor-not-allowed dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
-                      };
-                      const defaultStyle = isInteractive
-                        ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
-                        : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
-                      return statusStyles[normalizedStatus] || defaultStyle;
+                    // Expanded state for mobile/tap
+                    const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
+                    const isMobile = useIsMobile();
+                    const isExpanded = expandedSlots[slotId];
+
+                    // Helper to expand/collapse slot on mobile
+                    const handleExpandSlot = (id: string) => {
+                      setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
                     };
 
-                    // Determine appointment styles based on state
-                    let appointmentStyles: string;
-                    if (appointment?.status === 'reserved') {
-                      appointmentStyles = isDarkMode
-                        ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed';
-                    } else if (blocked) {
-                      appointmentStyles = isDarkMode
-                        ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
-                    } else {
-                      const isInteractive = !!(isClient && isOwn);
-                      appointmentStyles = getStatusStyle(appointment?.status, isInteractive);
+                    // Helper: render all mini-cells and add button
+                    const renderExpandedSlot = () => (
+                      <div className="w-full h-full flex flex-col gap-1">
+                        {Array.from({ length: slotCapacity }).map((_, splitIndex) => {
+                          const splitAppointment = slotAppointments[splitIndex];
+                          if (!splitAppointment) {
+                            // Show add button if not booked and not in past/blocked
+                            if (!booked && !inPast && !blocked && splitIndex === slotAppointments.length) {
+                              return (
+                                <button
+                                  key={`add-${splitIndex}`}
+                                  className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1 px-2 text-xs font-medium hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    onCreateAppointment(day, time);
+                                  }}
+                                  aria-label={tt('Criar nova marcação', 'Create new appointment')}
+                                >
+                                  <PlusIcon className="w-4 h-4" /> {tt('Nova', 'New')}
+                                </button>
+                              );
+                            }
+                            return (
+                              <div
+                                key={`empty-${splitIndex}`}
+                                className="rounded border border-dashed border-gray-300/40 dark:border-gray-700/50 min-h-[24px]"
+                                aria-hidden="true"
+                              />
+                            );
+                          }
+                          const splitIsOwn =
+                            (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
+                            appointments.some(a => a.id === splitAppointment.id);
+                          const displayText = splitAppointment.status === 'no-show'
+                            ? 'Faltou'
+                            : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
+                          return (
+                            <div
+                              key={`${splitAppointment.id}-${splitIndex}`}
+                              className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20"
+                              aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
+                            >
+                              <span className="truncate block">{displayText}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+
+                    // Single-capacity slot: keep default button
+                    if (slotCapacity === 1) {
+                      // ...existing code for single slot...
+                      let appointmentStyles: string;
+                      if (appointment?.status === 'reserved') {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed';
+                      } else if (blocked) {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      } else {
+                        const isInteractive = !!(isClient && isOwn);
+                        appointmentStyles = getStatusStyle(appointment?.status, isInteractive);
+                      }
+                      const getSlotTooltip = (): string => {
+                        if (!appointment) {
+                          if (isHolidayDay) return tt('Feriado', 'Holiday');
+                          return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
+                        }
+                        if (appointment.status === 'reserved') {
+                          return tt('Slot reservado - clique para atualizar', 'Reserved slot - click to refresh');
+                        }
+                        if (blocked) {
+                          return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
+                        }
+                        if (isClient && isOwn) {
+                          return tt('Sua marcação - clique para ver detalhes', 'Your appointment - click to view details');
+                        }
+                        if (inPast) {
+                          return tt('Marcação histórica - clique para ver detalhes', 'Past appointment - click to view details');
+                        }
+                        return tt('Clique para ver detalhes', 'Click to view details');
+                      };
+                      return (
+                        <button
+                          key={idx}
+                          id={slotId}
+                          onClick={() => handleSlotClick(day, time)}
+                          disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
+                          title={getSlotTooltip()}
+                          className={`${base} ${inPast && !appointment
+                            ? pastSlot
+                            : isHolidayDay && !appointment
+                              ? holidaySlot
+                              : booked
+                                ? appointmentStyles
+                                : available
+                            } ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                        >
+                          {/* ...existing single slot rendering... */}
+                          {(() => {
+                            if (isBlockedAdmin) {
+                              if (inPast) return null;
+                              return (
+                                <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
+                                  <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
+                                  {!isMobile && tt('Indisponível', 'Unavailable')}
+                                </div>
+                              );
+                            }
+                            if (appointment?.status === 'reserved') {
+                              return (
+                                <div className="flex items-center justify-center w-full h-full">
+                                  <span className="text-[10px] font-medium truncate leading-none px-0.5">
+                                    {tt('Reservado', 'Reserved')}
+                                  </span>
+                                </div>
+                              );
+                            }
+                            if (slotAppointments.length > 0 && !blocked) {
+                              return (
+                                <div className="w-full h-full flex items-center">
+                                  <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                                    {slotAppointments[0].patientName}
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </button>
+                      );
                     }
 
-                    // Compute tooltip title in a separate statement to avoid nested ternary
-                    const getSlotTooltip = (): string => {
-                      if (!appointment) {
+                    // Multi-capacity slot: expand on hover/tap ONLY if there is at least one appointment
+                    if (slotCapacity > 1 && slotAppointments.length > 0) {
+                      // Desktop: use Popover on hover
+                      if (!isMobile) {
+                        return (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                key={idx}
+                                id={slotId}
+                                className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                                disabled={inPast || isHolidayDay || blocked}
+                                aria-label={tt('Expandir marcações', 'Expand appointments')}
+                              >
+                                {/* Show mini-cells summary (first N names or count) */}
+                                <div className="flex flex-col gap-0.5 items-stretch w-full">
+                                  {slotAppointments.slice(0, 2).map(apt => (
+                                    <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
+                                  ))}
+                                  {slotAppointments.length > 2 && (
+                                    <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
+                                  )}
+                                </div>
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent align="center" className="min-w-[180px] max-w-xs p-2">
+                              {renderExpandedSlot()}
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      } else {
+                        // Mobile: tap to expand/collapse
+                        return (
+                          <div key={idx} className="relative">
+                            <button
+                              id={slotId}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              disabled={inPast || isHolidayDay || blocked}
+                              aria-label={tt('Expandir marcações', 'Expand appointments')}
+                              onClick={() => handleExpandSlot(slotId)}
+                            >
+                              <div className="flex flex-col gap-0.5 items-stretch w-full">
+                                {slotAppointments.slice(0, 2).map(apt => (
+                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
+                                ))}
+                                {slotAppointments.length > 2 && (
+                                  <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
+                                )}
+                              </div>
+                            </button>
+                            {isExpanded && (
+                              <div className="absolute z-10 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg p-2 mt-1">
+                                {renderExpandedSlot()}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                    }
+                    // Multi-capacity slot but empty: behave like single slot (no expansion, direct create)
+                    if (slotCapacity > 1 && slotAppointments.length === 0) {
+                      // Reuse single slot logic for empty multi-capacity slots
+                      let appointmentStyles: string;
+                      if (isBlockedAdmin) {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      } else {
+                        appointmentStyles = available;
+                      }
+                      const getSlotTooltip = (): string => {
                         if (isHolidayDay) return tt('Feriado', 'Holiday');
                         return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
-                      }
-                      if (appointment.status === 'reserved') {
-                        return tt('Slot reservado - clique para atualizar', 'Reserved slot - click to refresh');
-                      }
-                      if (blocked) {
-                        return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
-                      }
-                      if (isClient && isOwn) {
-                        return tt('Sua marcação - clique para ver detalhes', 'Your appointment - click to view details');
-                      }
-                      if (inPast) {
-                        return tt('Marcação histórica - clique para ver detalhes', 'Past appointment - click to view details');
-                      }
-                      return tt('Clique para ver detalhes', 'Click to view details');
-                    };
-
-                    // Gerar ID estável para este slot
-                    const slotId = getSlotId(day, time);
-                    const isActiveHighlight = activeHighlight === slotId;
-
-                    return (
-                      <button
-                        key={idx}
-                        id={slotId}
-                        onClick={() => handleSlotClick(day, time)}
-                        disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
-                        title={getSlotTooltip()}
-                        className={`${base} ${inPast && !appointment
-                          ? pastSlot
-                          : isHolidayDay && !appointment
-                            ? holidaySlot
-                            : booked
-                              ? appointmentStyles
-                              : available
-                          } ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                      >
-                        {(() => {
-                          // Render blocked status (Administrative)
-                          if (isBlockedAdmin) {
-                            // Se estiver no passado, não mostrar "Indisponível", apenas estilo desativado (retornar null deixa cair no default)
-                            if (inPast) return null;
-
-                            return (
-                              <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
-                                <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
-                                {!isMobile && tt('Indisponível', 'Unavailable')}
-                              </div>
-                            );
-                          }
-
-                          // Render reserved status
-                          if (appointment?.status === 'reserved') {
-                            return (
-                              <div className="flex items-center justify-center w-full h-full">
-                                <span className="text-[10px] font-medium truncate leading-none px-0.5">
-                                  {tt('Reservado', 'Reserved')}
-                                </span>
-                              </div>
-                            );
-                          }
-
-                          // Render appointment details if not blocked
-                          if (slotAppointments.length > 0 && !blocked) {
-                            return (
-                              <div className="w-full h-full grid gap-1" style={{ gridTemplateRows: `repeat(${slotCapacity}, minmax(0, 1fr))` }}>
-                                {Array.from({ length: slotCapacity }).map((_, splitIndex) => {
-                                  const splitAppointment = slotAppointments[splitIndex];
-
-                                  if (!splitAppointment) {
-                                    return (
-                                      <div
-                                        key={`empty-${splitIndex}`}
-                                        className="rounded border border-dashed border-gray-300/40 dark:border-gray-700/50"
-                                        aria-hidden="true"
-                                      />
-                                    );
-                                  }
-
-                                  const splitIsOwn =
-                                    (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
-                                    appointments.some(a => a.id === splitAppointment.id);
-                                  const displayText = splitAppointment.status === 'no-show'
-                                    ? 'Faltou'
-                                    : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
-
-                                  return (
-                                    <div
-                                      key={`${splitAppointment.id}-${splitIndex}`}
-                                      className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20"
-                                      aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
-                                    >
-                                      <span className="truncate block">{displayText}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
-                      </button>
-                    );
+                      };
+                      return (
+                        <button
+                          key={idx}
+                          id={slotId}
+                          onClick={() => handleSlotClick(day, time)}
+                          disabled={inPast || isHolidayDay}
+                          title={getSlotTooltip()}
+                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                        >
+                          {/* Empty slot: show nothing inside */}
+                        </button>
+                      );
+                    }
+                    // fallback
+                    return null;
                   })}
                 </div>
               ))}
