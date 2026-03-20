@@ -17,26 +17,35 @@ interface LoginFormProps {
 export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) {
   const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
+  const [employeeEmailPrefix, setEmployeeEmailPrefix] = useState('');
+  const [employeeEmailDomain, setEmployeeEmailDomain] = useState('@florinhasdovouga.pt');
+  const [isEditingDomain, setIsEditingDomain] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
   const { login } = useAuth();
 
+  const employeeIdentifier = `${employeeEmailPrefix}${employeeEmailDomain}`;
+  const normalizedEmployeeIdentifier = employeeIdentifier.trim();
+
   const validateForm = () => {
     const newErrors: { identifier?: string; password?: string } = {};
 
-    if (!identifier.trim()) {
+    const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
+
+    if (!currentIdentifier) {
       newErrors.identifier = t('auth.requiredField');
-    } else if (loginType === 'user' && !/^\d{9}$/.test(identifier.trim())) {
+    } else if (loginType === 'user' && !/^\d{9}$/.test(currentIdentifier)) {
       newErrors.identifier = t('auth.onlyNumbersAllowed');
     } else if (loginType === 'employee') {
-      // For employees, validate that it's an email ending with @florinhasdovouga.pt
-      if (!identifier.includes('@')) {
+      if (!currentIdentifier.includes('@')) {
         newErrors.identifier = t('auth.invalidInstitutionalEmail');
-      } else if (!identifier.endsWith('@florinhasdovouga.pt')) {
+      } else if (!/^@?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(employeeEmailDomain.replace(/^@/, ''))) {
+        newErrors.identifier = t('auth.invalidInstitutionalEmail');
+      } else if (!currentIdentifier.endsWith(employeeEmailDomain)) {
         newErrors.identifier = t('auth.useInstitutionalEmail');
-      } else if (!/^[^@\s]+@florinhasdovouga\.pt$/.test(identifier.trim())) {
+      } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(currentIdentifier)) {
         newErrors.identifier = t('auth.invalidInstitutionalEmail');
       }
     }
@@ -59,7 +68,8 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
 
     try {
       const tipoLogin = loginType === 'user' ? 'utente' : 'funcionario';
-      await login(identifier, password, tipoLogin);
+      const submitIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier;
+      await login(submitIdentifier, password, tipoLogin);
       toast.success(t('auth.loginSuccess'));
     } catch (error: any) {
       toast.error(error.message || t('auth.invalidCredentials'));
@@ -70,6 +80,9 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
   const handleToggle = (value: 'user' | 'employee') => {
     setLoginType(value);
     setIdentifier('');
+    setEmployeeEmailPrefix('');
+    setEmployeeEmailDomain('@florinhasdovouga.pt');
+    setIsEditingDomain(false);
     setPassword('');
     setErrors({});
   };
@@ -102,20 +115,48 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
             {loginType === 'user' ? t('auth.nif') : t('auth.institutionalEmail')}
           </Label>
           {loginType === 'employee' ? (
-            <div className="flex items-center gap-2 rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 h-10 focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-0 transition-all">
-              <Input
+            <div className={`flex items-center gap-2 rounded-md border bg-gray-50 dark:bg-gray-700 px-3 h-10 transition-all focus-within:ring-2 focus-within:ring-purple-500 ${errors.identifier ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}>
+              <input
                 id="identifier"
                 type="text"
-                placeholder="nome.personalizado"
-                value={identifier.endsWith('@florinhasdovouga.pt') ? identifier.slice(0, -20) : identifier}
+                placeholder={t('auth.employeeEmailPrefixPlaceholder')}
+                value={employeeEmailPrefix}
                 onChange={(e) => {
-                  const prefix = e.target.value.split('@')[0];
-                  setIdentifier(prefix + '@florinhasdovouga.pt');
+                  const prefix = e.target.value.replace(/@.*/, '');
+                  setEmployeeEmailPrefix(prefix);
                   if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
-                className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 h-full"
+                className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 h-full min-w-0"
               />
-              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 whitespace-nowrap">@florinhasdovouga.pt</span>
+              {isEditingDomain ? (
+                <input
+                  type="text"
+                  placeholder={t('auth.employeeEmailDomainPlaceholder')}
+                  value={employeeEmailDomain}
+                  onChange={(e) => {
+                    const rawDomain = e.target.value.trim();
+                    setEmployeeEmailDomain(rawDomain.startsWith('@') || rawDomain.length === 0 ? rawDomain : `@${rawDomain}`);
+                    if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+                  }}
+                  onBlur={() => {
+                    if (!employeeEmailDomain || employeeEmailDomain === '@') {
+                      setEmployeeEmailDomain('@florinhasdovouga.pt');
+                    }
+                    setIsEditingDomain(false);
+                  }}
+                  className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm text-gray-500 dark:text-gray-400 font-medium w-44 shrink-0"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDomain(true)}
+                  className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 whitespace-nowrap hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  aria-label={t('auth.institutionalEmail')}
+                >
+                  {employeeEmailDomain}
+                </button>
+              )}
             </div>
           ) : (
             <Input

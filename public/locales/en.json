@@ -442,6 +442,8 @@
     "birthDate": "Date of Birth",
     "contact": "Contact",
     "institutionalEmailLabel": "Institutional Email",
+    "employeeEmailPrefixPlaceholder": "name.custom",
+    "employeeEmailDomainPlaceholder": "@domain.com",
     "fillNameFirst": "(Fill in your name first)",
     "other": "Other",
     "role": "Role",
