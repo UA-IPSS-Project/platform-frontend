@@ -39,11 +39,37 @@ interface SlotNavigatorState {
   slots: Array<Appointment | null>;
 }
 
-const generateTimeSlots = () => {
+
+
+// Custom slot generator for BALNEARIO
+const generateBalnearioTimeSlots = () => {
+  const slots: string[] = [];
+  // 9:00 to 10:00 (9:00, 9:30, 10:00)
+  for (let t = 9 * 60; t <= 10 * 60; t += 30) {
+    const hour = Math.floor(t / 60);
+    const minute = t % 60;
+    slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+  }
+  // 11:00 and 11:30
+  slots.push('11:00');
+  slots.push('11:30');
+  // 14:00 to 16:30 (14:00, 14:30, 15:00, 15:30, 16:00, 16:30)
+  for (let t = 14 * 60; t <= 16 * 60 + 30; t += 30) {
+    slots.push(`${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`);
+  }
+  return slots;
+};
+
+// Modular slot generator: intervalMinutes (default 15)
+const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: string) => {
+  if (appointmentType === 'BALNEARIO') {
+    return generateBalnearioTimeSlots();
+  }
   const slots = [];
   for (let hour = 9; hour < 17; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      if (hour === 16 && minute > 45) break;
+    for (let minute = 0; minute < 60; minute += intervalMinutes) {
+      // For 16:00, only allow up to 16:45 for 15min, or 16:30 for 30min
+      if (hour === 16 && ((intervalMinutes === 15 && minute > 45) || (intervalMinutes === 30 && minute > 30))) break;
       slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
     }
   }
@@ -119,7 +145,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const weekDays = getWeekDays(validCurrentDate);
-  const timeSlots = generateTimeSlots();
+  // Use custom slots for balneário, 15min otherwise
+  const slotInterval = appointmentType === 'BALNEARIO' ? 30 : 15;
+  const timeSlots = generateTimeSlots(slotInterval, appointmentType);
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);

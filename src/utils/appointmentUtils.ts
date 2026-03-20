@@ -17,8 +17,13 @@ export const mapApiToAppointment = (m: any): Appointment => {
     const dateTime = new Date(m.data);
     const utente = m.marcacaoSecretaria?.utente;
     const isBalneario = m.marcacaoBalneario != null;
-
     const status = mapStatusFromApiToUi(m.estado);
+
+    // Modulariza a lógica de duração
+    const getAppointmentDuration = () => {
+        if (isBalneario) return 30;
+        return 15;
+    };
 
     const determinePatientName = () => {
         if (status === 'reserved') return 'reserved';
@@ -31,7 +36,7 @@ export const mapApiToAppointment = (m: any): Appointment => {
         version: m.version,
         date: dateTime,
         time: dateTime.toTimeString().slice(0, 5),
-        duration: 15,
+        duration: getAppointmentDuration(),
         patientNIF: status === 'reserved' ? '' : (isBalneario ? 'Anónimo (Balneário)' : (utente?.nif || 'N/A')),
         patientName: determinePatientName(),
         patientContact: status === 'reserved' ? '' : (isBalneario ? '' : (utente?.telefone || 'N/A')),
