@@ -39,11 +39,14 @@ interface SlotNavigatorState {
   slots: Array<Appointment | null>;
 }
 
-const generateTimeSlots = () => {
+
+// Modular slot generator: intervalMinutes (default 15)
+const generateTimeSlots = (intervalMinutes: number = 15) => {
   const slots = [];
   for (let hour = 9; hour < 17; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      if (hour === 16 && minute > 45) break;
+    for (let minute = 0; minute < 60; minute += intervalMinutes) {
+      // For 16:00, only allow up to 16:45 for 15min, or 16:30 for 30min
+      if (hour === 16 && ((intervalMinutes === 15 && minute > 45) || (intervalMinutes === 30 && minute > 30))) break;
       slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
     }
   }
@@ -119,7 +122,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const weekDays = getWeekDays(validCurrentDate);
-  const timeSlots = generateTimeSlots();
+  // Use 30min slots for balneário, 15min otherwise
+  const slotInterval = appointmentType === 'BALNEARIO' ? 30 : 15;
+  const timeSlots = generateTimeSlots(slotInterval);
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);

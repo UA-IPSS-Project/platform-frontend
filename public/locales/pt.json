@@ -8,6 +8,8 @@
     "en": "EN"
   },
   "appointmentDialog": {
+    "durationLabel": "Duração da marcação",
+    "durationBalneario": "Duração padrão para balneário: 30 minutos",
     "title": "Novo Agendamento",
     "description": "Preencha os dados do utente para criar uma nova marcação",
     "at": "às",
