@@ -66,7 +66,7 @@ export function BalnearioAppointmentDetailsDialog({
         if (details?.roupas) {
             details.roupas.forEach(roupa => {
                 const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS];
-                if (allOptions.includes(roupa.categoria)) {
+                if (allOptions.some(opt => opt.value === roupa.categoria)) {
                     initial[roupa.categoria] = true;
                 }
             });
@@ -269,6 +269,15 @@ export function BalnearioAppointmentDetailsDialog({
                             {getStatusBadge(appointment.status)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
+                        {/* Duração da marcação balneário */}
+                        <div className="mt-2 flex items-center gap-2">
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                {t('appointmentDialog.durationLabel', 'Duração da marcação')}
+                            </Label>
+                            <Badge color="purple" className="text-xs">
+                                {t('appointmentDialog.durationBalneario', 'Duração padrão para balneário: 30 minutos')}
+                            </Badge>
+                        </div>
                     </div>
                     <button
                         onClick={onClose}
