@@ -53,8 +53,8 @@ const generateBalnearioTimeSlots = () => {
   // 11:00 and 11:30
   slots.push('11:00');
   slots.push('11:30');
-  // 14:00 to 16:30 (14:00, 14:30, 15:00, 15:30, 16:00)
-  for (let t = 14 * 60; t <= 16 * 60; t += 30) {
+  // 14:00 to 16:30 (14:00, 14:30, 15:00, 15:30, 16:00, 16:30)
+  for (let t = 14 * 60; t <= 16 * 60 + 30; t += 30) {
     slots.push(`${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`);
   }
   return slots;
