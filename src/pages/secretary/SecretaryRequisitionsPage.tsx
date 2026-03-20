@@ -84,6 +84,12 @@ const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
 
 type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
 
+type RequisicaoConflito = {
+  id: number;
+  criadoPorNome: string;
+  criadoEm?: string;
+};
+
 const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
   { value: 'GERAL', label: 'requisitions.labels.general' },
   { value: 'MATERIAL', label: 'requisitions.labels.material' },
@@ -302,6 +308,9 @@ export function SecretaryRequisitionsPage({
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
+  const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
+  const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
+  const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
@@ -736,6 +745,7 @@ export function SecretaryRequisitionsPage({
       }
       if (key === 'numeroPassageiros') mapped.numeroPassageiros = value;
       if (key === 'transporteIds') mapped.transporteIds = value;
+      if (key === 'transporteId') mapped.transporteIds = value;
     });
 
     return mapped;
@@ -1044,6 +1054,9 @@ export function SecretaryRequisitionsPage({
   };
 
   const handleOpenRequisicao = async (req: RequisicaoResponse) => {
+    setConflitoDialogOpen(false);
+    setConflitosPendentes([]);
+    setConflitoTransportesNomes([]);
     setOpenedRequisicaoId(req.id);
 
     // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
@@ -1083,6 +1096,70 @@ export function SecretaryRequisitionsPage({
     if (!estadosPermitidos.includes(estadoEdicao)) {
       toast.error(t('requisitions.errors.invalidFinalState'));
       return;
+    }
+
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
+      const transportesSelecionados = getRequisicaoTransportes(selectedRequisicao);
+      const idsSelecionados = new Set(
+        transportesSelecionados
+          .map((transporte) => transporte.id)
+          .filter((id): id is number => typeof id === 'number'),
+      );
+
+      if (idsSelecionados.size > 0) {
+        try {
+          const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
+          const conflitos = (Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [])
+            .filter((outra) => outra.id !== selectedRequisicao.id)
+            .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+            .filter((outra) => {
+              const transportesOutra = getRequisicaoTransportes(outra);
+              const partilhaTransporte = transportesOutra.some(
+                (transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id),
+              );
+
+              if (!partilhaTransporte) {
+                return false;
+              }
+
+              if (!selectedRequisicao.dataHoraSaida
+                || !selectedRequisicao.dataHoraRegresso
+                || !outra.dataHoraSaida
+                || !outra.dataHoraRegresso) {
+                return true;
+              }
+
+              return periodsOverlap(
+                selectedRequisicao.dataHoraSaida,
+                selectedRequisicao.dataHoraRegresso,
+                outra.dataHoraSaida,
+                outra.dataHoraRegresso,
+              );
+            });
+
+          if (conflitos.length > 0) {
+            const transportesConflitantesNomes = Array.from(new Set(
+              transportesSelecionados
+                .filter((transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id))
+                .map((transporte) => formatTransporteDisplay(transporte)),
+            ));
+
+            setConflitosPendentes(
+              conflitos.map((conflito) => ({
+                id: conflito.id,
+                criadoPorNome: conflito.criadoPor?.nome || 'Utilizador sem nome',
+                criadoEm: conflito.criadoEm,
+              })),
+            );
+            setConflitoTransportesNomes(transportesConflitantesNomes);
+            setConflitoDialogOpen(true);
+            return;
+          }
+        } catch (error: any) {
+          toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+          return;
+        }
+      }
     }
 
     try {
@@ -1193,6 +1270,25 @@ export function SecretaryRequisitionsPage({
     () => getEstadosVisiveisNoSeletor(selectedRequisicao?.estado),
     [selectedRequisicao?.estado],
   );
+
+  const handleContinuarAceitacaoComConflitos = async () => {
+    if (!openedRequisicaoId) return;
+
+    try {
+      setUpdatingEstadoId(openedRequisicaoId);
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      toast.success(t('requisitions.messages.statusUpdated'));
+      setConflitoDialogOpen(false);
+      setConflitosPendentes([]);
+      setConflitoTransportesNomes([]);
+      await fetchRequisicoes();
+      setOpenedRequisicaoId(null);
+    } catch (error: any) {
+      toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+    } finally {
+      setUpdatingEstadoId(null);
+    }
+  };
 
   const podeAtualizarEstado = useMemo(
     () => estadosPermitidosSelecionados.length > 0,
@@ -2313,7 +2409,17 @@ export function SecretaryRequisitionsPage({
         </GlassCard>
       </div>
 
-      <Dialog open={openedRequisicaoId !== null} onOpenChange={(open) => !open && setOpenedRequisicaoId(null)}>
+      <Dialog
+        open={openedRequisicaoId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenedRequisicaoId(null);
+            setConflitoDialogOpen(false);
+            setConflitosPendentes([]);
+            setConflitoTransportesNomes([]);
+          }
+        }}
+      >
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
           <DialogHeader>
             <DialogTitle>{t('requisitions.ui.requestDetails')}</DialogTitle>
@@ -2448,6 +2554,80 @@ export function SecretaryRequisitionsPage({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={conflitoDialogOpen} onOpenChange={setConflitoDialogOpen}>
+        <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+          <DialogHeader>
+            <DialogTitle>Conflitos de transporte detetados</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Existem outras requisições que envolvem o ou os veículos {conflitoTransportesNomes.join(', ')}.
+            </p>
+
+            <div className="space-y-2">
+              {conflitosPendentes.map((conflito) => {
+                const dataPedido = conflito.criadoEm
+                  ? new Date(conflito.criadoEm).toLocaleString(locale)
+                  : 'Data indisponível';
+
+                return (
+                  <div key={conflito.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-gray-700 p-2">
+                    <span className="text-sm text-gray-800 dark:text-gray-200">
+                      {conflito.criadoPorNome} - {dataPedido}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => {
+                        const requisicaoConflito = requisicoes.find((req) => req.id === conflito.id);
+                        if (requisicaoConflito) {
+                          await handleOpenRequisicao(requisicaoConflito);
+                        } else {
+                          try {
+                            const requisicaoDetalhe = await requisicoesApi.obterPorId(conflito.id);
+                            setRequisicoes((prev) => {
+                              if (prev.some((item) => item.id === requisicaoDetalhe.id)) {
+                                return prev;
+                              }
+                              return [requisicaoDetalhe, ...prev];
+                            });
+                            await handleOpenRequisicao(requisicaoDetalhe);
+                          } catch (error: any) {
+                            toast.error(error?.message || t('requisitions.errors.loadFailed'));
+                          }
+                        }
+                      }}
+                    >
+                      Ver requisição
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setConflitoDialogOpen(false)}
+                disabled={updatingEstadoId === openedRequisicaoId}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleContinuarAceitacaoComConflitos}
+                disabled={updatingEstadoId === openedRequisicaoId}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {updatingEstadoId === openedRequisicaoId ? t('common.saving') : 'Continuar com o Aceitar Requisição'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
