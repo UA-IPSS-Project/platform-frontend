@@ -1317,54 +1317,52 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     };
 
                     // Helper: render all mini-cells as clickable buttons and add button
-                    const renderExpandedSlot = () => (
-                      <div className="w-full h-full flex flex-col gap-1">
-                        {Array.from({ length: slotCapacity }).map((_, splitIndex) => {
-                          const splitAppointment = slotAppointments[splitIndex];
-                          if (!splitAppointment) {
-                            // Show add button if not booked and not in past/blocked
-                            if (!booked && !inPast && !blocked && splitIndex === slotAppointments.length) {
-                              return (
-                                <button
-                                  key={`add-${splitIndex}`}
-                                  className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
-                                  style={{ minHeight: '38px', height: '38px' }}
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    onCreateAppointment(day, time);
-                                  }}
-                                  aria-label={tt('Criar nova marcação', 'Create new appointment')}
-                                >
-                                  <PlusIcon className="w-5 h-5" />
-                                </button>
-                              );
-                            }
-                            return null;
-                          }
-                          const splitIsOwn =
-                            (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
-                            appointments.some(a => a.id === splitAppointment.id);
-                          const displayText = splitAppointment.status === 'no-show'
-                            ? 'Faltou'
-                            : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
-                          return (
+                    const renderExpandedSlot = () => {
+                      // Only expand to number of appointments + 1 (for '+'), not full slotCapacity
+                      const showAddButton = !booked && !inPast && !blocked && slotAppointments.length < slotCapacity;
+                      const expandedCount = slotAppointments.length + (showAddButton ? 1 : 0);
+                      return (
+                        <div className="w-full h-full flex flex-col gap-1">
+                          {slotAppointments.map((splitAppointment, splitIndex) => {
+                            const splitIsOwn =
+                              (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
+                              appointments.some(a => a.id === splitAppointment.id);
+                            const displayText = splitAppointment.status === 'no-show'
+                              ? 'Faltou'
+                              : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
+                            return (
+                              <button
+                                key={`${splitAppointment.id}-${splitIndex}`}
+                                className="text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                                style={{ minHeight: '38px', height: '38px' }}
+                                aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  onViewAppointment(splitAppointment);
+                                }}
+                                type="button"
+                              >
+                                <span className="truncate block">{displayText}</span>
+                              </button>
+                            );
+                          })}
+                          {showAddButton && (
                             <button
-                              key={`${splitAppointment.id}-${splitIndex}`}
-                              className="text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                              key={`add-${slotAppointments.length}`}
+                              className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
                               style={{ minHeight: '38px', height: '38px' }}
-                              aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
                               onClick={e => {
                                 e.stopPropagation();
-                                onViewAppointment(splitAppointment);
+                                onCreateAppointment(day, time);
                               }}
-                              type="button"
+                              aria-label={tt('Criar nova marcação', 'Create new appointment')}
                             >
-                              <span className="truncate block">{displayText}</span>
+                              <PlusIcon className="w-5 h-5" />
                             </button>
-                          );
-                        })}
-                      </div>
-                    );
+                          )}
+                        </div>
+                      );
+                    };
 
                     // Single-capacity slot: keep default button
                     if (slotCapacity === 1) {
@@ -1457,6 +1455,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       if (!isMobile) {
                         // Desktop: expand inline on hover (usando estado global hoveredSlot)
                         const expanded = hoveredSlot === slotId;
+                        // Height: number of appointments + 1 (if add button), each 38px + gap
+                        const showAddButton = !booked && !inPast && !blocked && slotAppointments.length < slotCapacity;
+                        const expandedCount = slotAppointments.length + (showAddButton ? 1 : 0);
                         return (
                           <div
                             key={idx}
@@ -1464,7 +1465,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             onMouseEnter={() => setHoveredSlot(slotId)}
                             onMouseLeave={() => setHoveredSlot(null)}
-                            style={{ minHeight: expanded ? `${slotCapacity * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
+                            style={{ minHeight: expanded ? `${expandedCount * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
                           >
                             {expanded ? (
                               renderExpandedSlot()
@@ -1501,7 +1502,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               </div>
                             </button>
                             {isExpanded && (
-                              <div className="absolute z-10 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg p-2 mt-1">
+                              <div
+                                className="absolute z-10 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg p-2 mt-1"
+                                style={{ minHeight: `${(slotAppointments.length + ((!booked && !inPast && !blocked && slotAppointments.length < slotCapacity) ? 1 : 0)) * 40 + 12}px` }}
+                              >
                                 {renderExpandedSlot()}
                               </div>
                             )}
