@@ -9,6 +9,7 @@ interface User {
   nif?: string;
   telefone?: string;
   active: boolean;
+  requiresPasswordSetup: boolean;
 }
 
 interface AuthContextType {
@@ -72,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           nif: userData.nif,
           telefone: userData.telefone,
           active: userData.active,
+          requiresPasswordSetup: Boolean(userData.requiresPasswordSetup),
         };
         setUser(updatedUser);
         setIsAuthenticated(true);
@@ -161,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       nif: data.nif,
       telefone: data.telefone,
       active: data.active,
+      requiresPasswordSetup: Boolean(data.requiresPasswordSetup),
     };
 
     setUser(userData);
@@ -259,7 +262,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await authApi.updatePassword(password, termsAccepted);
 
       if (user) {
-        const updated = { ...user, active: true };
+        const updated = { ...user, active: true, requiresPasswordSetup: false };
         setUser(updated);
         localStorage.setItem('user', JSON.stringify(updated));
       }

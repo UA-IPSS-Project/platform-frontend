@@ -7,6 +7,17 @@
     "pt": "PT",
     "en": "EN"
   },
+  "api": {
+    "errors": {
+      "serviceUnavailable": "Serviço temporariamente indisponível. Tente novamente em instantes.",
+      "notFound": "Recurso não encontrado.",
+      "requestFailed": "Não foi possível concluir o pedido.",
+      "communicationError": "Ocorreu um erro ao comunicar com o servidor.",
+      "sessionExpired": "Sessão expirada ou inválida. Inicie sessão novamente.",
+      "accessDenied": "Acesso negado ou token de segurança inválido. Atualize a sessão.",
+      "invalidJson": "Resposta inválida do servidor"
+    }
+  },
   "appointmentDialog": {
     "durationLabel": "Duração da marcação",
     "durationBalneario": "Duração padrão para balneário: 30 minutos",
@@ -442,6 +453,8 @@
     "birthDate": "Data de Nascimento",
     "contact": "Contacto",
     "institutionalEmailLabel": "Email Institucional",
+    "employeeEmailPrefixPlaceholder": "nome.personalizado",
+    "employeeEmailDomainPlaceholder": "@dominio.pt",
     "fillNameFirst": "(Preencha o nome primeiro)",
     "other": "Outro",
     "role": "Função",
