@@ -8,6 +8,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
 import { useTranslation } from 'react-i18next';
+import { validateEmployeeLoginEmail } from '../../lib/validations';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -39,14 +40,9 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     } else if (loginType === 'user' && !/^\d{9}$/.test(currentIdentifier)) {
       newErrors.identifier = t('auth.onlyNumbersAllowed');
     } else if (loginType === 'employee') {
-      if (!currentIdentifier.includes('@')) {
-        newErrors.identifier = t('auth.invalidInstitutionalEmail');
-      } else if (!/^@?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(employeeEmailDomain.replace(/^@/, ''))) {
-        newErrors.identifier = t('auth.invalidInstitutionalEmail');
-      } else if (!currentIdentifier.endsWith(employeeEmailDomain)) {
-        newErrors.identifier = t('auth.useInstitutionalEmail');
-      } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(currentIdentifier)) {
-        newErrors.identifier = t('auth.invalidInstitutionalEmail');
+      const employeeEmailValidation = validateEmployeeLoginEmail(currentIdentifier, employeeEmailDomain);
+      if (!employeeEmailValidation.valid) {
+        newErrors.identifier = t(`auth.${employeeEmailValidation.errorKey}`);
       }
     }
 

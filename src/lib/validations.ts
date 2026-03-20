@@ -8,6 +8,15 @@ export interface ValidationResult {
     error?: string;
 }
 
+export type EmployeeLoginEmailValidationError =
+    | 'invalidInstitutionalEmail'
+    | 'useInstitutionalEmail';
+
+export interface EmployeeLoginEmailValidationResult {
+    valid: boolean;
+    errorKey?: EmployeeLoginEmailValidationError;
+}
+
 export const CALENDAR_YEAR_MIN = 1900;
 
 export const getCalendarYearMax = (): number => new Date().getFullYear() + 10;
@@ -101,6 +110,37 @@ export const validateContact = (contact: string): boolean => {
  */
 export const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+/**
+ * Validates employee login email against a configurable institutional domain.
+ * Returns error keys so UI can translate messages with i18n.
+ */
+export const validateEmployeeLoginEmail = (
+    identifier: string,
+    domain: string
+): EmployeeLoginEmailValidationResult => {
+    const normalizedIdentifier = identifier.trim();
+    const normalizedDomain = domain.trim();
+
+    if (!normalizedIdentifier.includes('@')) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    // Domain must look like "@example.com" (single @ prefix is required).
+    if (!/^@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(normalizedDomain)) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    if (!normalizedIdentifier.endsWith(normalizedDomain)) {
+        return { valid: false, errorKey: 'useInstitutionalEmail' };
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedIdentifier)) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    return { valid: true };
 };
 
 /**
