@@ -18,6 +18,7 @@ function CustomCaption({ displayMonth }: CaptionProps) {
 
   const [yearInput, setYearInput] = React.useState(String(displayMonth.getFullYear()));
   const [yearError, setYearError] = React.useState<string | null>(null);
+  const yearErrorId = React.useId();
 
   React.useEffect(() => {
     setYearInput(String(displayMonth.getFullYear()));
@@ -95,6 +96,7 @@ function CustomCaption({ displayMonth }: CaptionProps) {
         <input
           aria-label="Ano"
           aria-invalid={Boolean(yearError)}
+          aria-describedby={yearError ? yearErrorId : undefined}
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -109,6 +111,16 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           )}
         />
       </div>
+      {yearError && (
+        <p
+          id={yearErrorId}
+          role="alert"
+          aria-live="polite"
+          className="text-xs text-red-600 dark:text-red-400 text-center px-1"
+        >
+          {yearError}
+        </p>
+      )}
     </div>
   );
 }
