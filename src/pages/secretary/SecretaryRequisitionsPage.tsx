@@ -46,7 +46,15 @@ const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string 
   { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
 ];
 
-const ESTADO_FINAL_OPTIONS = new Set<RequisicaoEstado>(['ACEITE', 'RECUSADA']);
+const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
+  if (estadoAtual === 'ENVIADA') {
+    return ['EM_ANALISE'];
+  }
+  if (estadoAtual === 'EM_ANALISE') {
+    return ['ACEITE', 'RECUSADA'];
+  }
+  return [];
+};
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
   { value: 'BAIXA', label: 'requisitions.labels.low' },
@@ -1022,28 +1030,39 @@ export function SecretaryRequisitionsPage({
     handleSelectTab(tab);
   };
 
-  const handleOpenRequisicao = (req: RequisicaoResponse) => {
+  const handleOpenRequisicao = async (req: RequisicaoResponse) => {
     setOpenedRequisicaoId(req.id);
-    const estadoSecretaria = ESTADO_SECRETARIA_OPTIONS.some((opt) => opt.value === req.estado)
-      ? req.estado
-      : 'EM_ANALISE';
-    setEstadoEdicao(estadoSecretaria);
+
+    // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
+    if (req.estado === 'ENVIADA') {
+      try {
+        setUpdatingEstadoId(req.id);
+        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
+        await fetchRequisicoes();
+        setEstadoEdicao('ACEITE');
+      } catch (error: any) {
+        toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+        setEstadoEdicao('EM_ANALISE');
+      } finally {
+        setUpdatingEstadoId(null);
+      }
+      return;
+    }
+
+    const estadosPermitidos = getEstadosPermitidosTransicao(req.estado);
+    setEstadoEdicao(estadosPermitidos[0] ?? req.estado);
   };
 
   const handleAtualizarEstado = async () => {
     if (!openedRequisicaoId || !selectedRequisicao) return;
 
-    if (selectedRequisicao.estado !== 'EM_ANALISE') {
+    const estadosPermitidos = getEstadosPermitidosTransicao(selectedRequisicao.estado);
+    if (estadosPermitidos.length === 0) {
       toast.error(t('requisitions.errors.onlyPendingDecision'));
       return;
     }
 
-    if (estadoEdicao === 'EM_ANALISE') {
-      toast.error(t('requisitions.errors.chooseFinalState'));
-      return;
-    }
-
-    if (!ESTADO_FINAL_OPTIONS.has(estadoEdicao)) {
+    if (!estadosPermitidos.includes(estadoEdicao)) {
       toast.error(t('requisitions.errors.invalidFinalState'));
       return;
     }
@@ -1147,9 +1166,14 @@ export function SecretaryRequisitionsPage({
     [requisicoes, openedRequisicaoId],
   );
 
+  const estadosPermitidosSelecionados = useMemo(
+    () => getEstadosPermitidosTransicao(selectedRequisicao?.estado),
+    [selectedRequisicao?.estado],
+  );
+
   const podeAtualizarEstado = useMemo(
-    () => selectedRequisicao?.estado === 'EM_ANALISE',
-    [selectedRequisicao],
+    () => estadosPermitidosSelecionados.length > 0,
+    [estadosPermitidosSelecionados],
   );
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
@@ -2370,9 +2394,11 @@ export function SecretaryRequisitionsPage({
                   disabled={!podeAtualizarEstado}
                   className={selectFieldClassName}
                 >
-                  {ESTADO_SECRETARIA_OPTIONS.map((option) => (
+                  {ESTADO_SECRETARIA_OPTIONS
+                    .filter((option) => estadosPermitidosSelecionados.includes(option.value))
+                    .map((option) => (
                     <option key={option.value} value={option.value}>{t(option.label)}</option>
-                  ))}
+                    ))}
                 </select>
                 {!podeAtualizarEstado && (
                   <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
