@@ -7,6 +7,17 @@
     "pt": "PT",
     "en": "EN"
   },
+  "api": {
+    "errors": {
+      "serviceUnavailable": "Service temporarily unavailable. Please try again shortly.",
+      "notFound": "Resource not found.",
+      "requestFailed": "Unable to complete the request.",
+      "communicationError": "An error occurred while communicating with the server.",
+      "sessionExpired": "Session expired or invalid. Please sign in again.",
+      "accessDenied": "Access denied or invalid security token. Refresh your session.",
+      "invalidJson": "Invalid JSON response from server"
+    }
+  },
   "appointmentDialog": {
     "durationLabel": "Appointment duration",
     "durationBalneario": "Default duration for bathhouse: 30 minutes",

@@ -1,4 +1,6 @@
 // API Base URL
+import i18n from '../../../i18n';
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export interface ApiRequestError extends Error {
@@ -7,10 +9,10 @@ export interface ApiRequestError extends Error {
 }
 
 const getFriendlyHttpErrorMessage = (status: number): string => {
-    if (status >= 500) return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
-    if (status === 404) return 'Recurso não encontrado.';
-    if (status >= 400) return 'Não foi possível concluir o pedido.';
-    return 'Ocorreu um erro ao comunicar com o servidor.';
+    if (status >= 500) return i18n.t('api.errors.serviceUnavailable');
+    if (status === 404) return i18n.t('api.errors.notFound');
+    if (status >= 400) return i18n.t('api.errors.requestFailed');
+    return i18n.t('api.errors.communicationError');
 };
 
 const isLikelyHtmlResponse = (text: string, contentType: string | null): boolean => {
@@ -83,13 +85,13 @@ export async function apiRequest<T>(
         // Check if response is ok
         if (!response.ok) {
             const isAuthError = response.status === 401 || response.status === 403;
-            let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
+            let errorMessage = i18n.t('api.errors.communicationError');
             let parsedErrorData: any = null;
 
             if (response.status === 401) {
-                errorMessage = 'Sessão expirada ou inválida. Inicie sessão novamente.';
+                errorMessage = i18n.t('api.errors.sessionExpired');
             } else if (response.status === 403) {
-                errorMessage = 'Acesso negado ou token de segurança inválido. Atualize a sessão.';
+                errorMessage = i18n.t('api.errors.accessDenied');
             }
 
             try {
@@ -160,7 +162,7 @@ export async function apiRequest<T>(
         } catch (parseError) {
             console.error('JSON Parse Error:', parseError);
             console.error('Response text:', text.substring(0, 500)); // Log first 500 chars
-            throw new Error('Invalid JSON response from server');
+            throw new Error(i18n.t('api.errors.invalidJson'));
         }
     } catch (error) {
         console.error('API request failed:', error);
