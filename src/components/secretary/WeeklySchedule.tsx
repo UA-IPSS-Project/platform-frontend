@@ -1470,14 +1470,56 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             {expanded ? (
                               renderExpandedSlot()
                             ) : (
-                              <div className="flex flex-col gap-0.5 items-stretch w-full">
-                                {slotAppointments.slice(0, 2).map(apt => (
-                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
-                                ))}
-                                {slotAppointments.length > 2 && (
-                                  <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
-                                )}
-                              </div>
+                              (() => {
+                                const total = slotAppointments.length;
+                                if (total === 1) {
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full">
+                                      <span
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 h-full flex items-center"
+                                        style={{height: '100%'}}
+                                      >
+                                        {slotAppointments[0].patientName}
+                                      </span>
+                                    </div>
+                                  );
+                                } else if (total === 2) {
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
+                                      {slotAppointments.slice(0, 2).map((apt, i) => (
+                                        <span
+                                          key={apt.id}
+                                          className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 flex items-center"
+                                          style={{height: '50%'}}
+                                        >
+                                          {apt.patientName}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  );
+                                } else if (total > 2) {
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
+                                      {slotAppointments.slice(0, 2).map((apt, i) => (
+                                        <span
+                                          key={apt.id}
+                                          className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 flex items-center"
+                                          style={{height: '33.33%'}}
+                                        >
+                                          {apt.patientName}
+                                        </span>
+                                      ))}
+                                      <span
+                                        className="text-xs text-gray-400 flex items-center justify-center font-semibold bg-white/10 dark:bg-black/10 rounded flex-1 min-h-0"
+                                        style={{height: '33.33%'}}
+                                      >
+                                        +{slotAppointments.length - 2} {tt('mais', 'more')}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()
                             )}
                           </div>
                         );
