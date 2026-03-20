@@ -805,7 +805,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 </span>
                                             </td>
                                             <td className="py-3 text-left">
-                                                {!user.active && (
+                                                {!user.active && !user.createdBySecretaria && (
                                                     <Button
                                                         size="sm"
                                                         className="bg-purple-600 hover:bg-purple-700 text-white h-7 text-xs"
