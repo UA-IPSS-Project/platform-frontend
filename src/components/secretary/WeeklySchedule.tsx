@@ -1327,24 +1327,19 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               return (
                                 <button
                                   key={`add-${splitIndex}`}
-                                  className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1 px-2 text-xs font-medium hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                                  className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                                  style={{ minHeight: '38px', height: '38px' }}
                                   onClick={e => {
                                     e.stopPropagation();
                                     onCreateAppointment(day, time);
                                   }}
                                   aria-label={tt('Criar nova marcação', 'Create new appointment')}
                                 >
-                                  <PlusIcon className="w-4 h-4" /> {tt('Nova', 'New')}
+                                  <PlusIcon className="w-5 h-5" />
                                 </button>
                               );
                             }
-                            return (
-                              <div
-                                key={`empty-${splitIndex}`}
-                                className="rounded border border-dashed border-gray-300/40 dark:border-gray-700/50 min-h-[24px]"
-                                aria-hidden="true"
-                              />
-                            );
+                            return null;
                           }
                           const splitIsOwn =
                             (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
@@ -1355,7 +1350,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           return (
                             <button
                               key={`${splitAppointment.id}-${splitIndex}`}
-                              className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                              className="text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                              style={{ minHeight: '38px', height: '38px' }}
                               aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
                               onClick={e => {
                                 e.stopPropagation();
@@ -1468,7 +1464,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             onMouseEnter={() => setHoveredSlot(slotId)}
                             onMouseLeave={() => setHoveredSlot(null)}
-                            style={{ minHeight: expanded ? `${slotCapacity * 28 + 8}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
+                            style={{ minHeight: expanded ? `${slotCapacity * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
                           >
                             {expanded ? (
                               renderExpandedSlot()
