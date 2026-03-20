@@ -30,8 +30,15 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       newErrors.identifier = t('auth.requiredField');
     } else if (loginType === 'user' && !/^\d{9}$/.test(identifier.trim())) {
       newErrors.identifier = t('auth.onlyNumbersAllowed');
-    } else if (loginType === 'employee' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier.trim())) {
-      newErrors.identifier = t('auth.invalidInstitutionalEmail');
+    } else if (loginType === 'employee') {
+      // For employees, validate that it's an email ending with @florinhasdovouga.pt
+      if (!identifier.includes('@')) {
+        newErrors.identifier = t('auth.invalidInstitutionalEmail');
+      } else if (!identifier.endsWith('@florinhasdovouga.pt')) {
+        newErrors.identifier = t('auth.useInstitutionalEmail');
+      } else if (!/^[^@\s]+@florinhasdovouga\.pt$/.test(identifier.trim())) {
+        newErrors.identifier = t('auth.invalidInstitutionalEmail');
+      }
     }
 
     if (!password) {
@@ -94,20 +101,38 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
           <Label htmlFor="identifier" className="text-gray-700 dark:text-gray-300">
             {loginType === 'user' ? t('auth.nif') : t('auth.institutionalEmail')}
           </Label>
-          <Input
-            id="identifier"
-            type="text"
-            placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
-            value={identifier}
-            maxLength={loginType === 'user' ? 9 : undefined}
-            onChange={(e) => {
-              const value = loginType === 'user' ? e.target.value.replace(/\D/g, '') : e.target.value;
-              setIdentifier(value);
-              if (errors.identifier) setErrors({ ...errors, identifier: undefined });
-            }}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
-              }`}
-          />
+          {loginType === 'employee' ? (
+            <div className="flex items-center gap-2 rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 h-10 focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-0 transition-all">
+              <Input
+                id="identifier"
+                type="text"
+                placeholder="nome.personalizado"
+                value={identifier.endsWith('@florinhasdovouga.pt') ? identifier.slice(0, -20) : identifier}
+                onChange={(e) => {
+                  const prefix = e.target.value.split('@')[0];
+                  setIdentifier(prefix + '@florinhasdovouga.pt');
+                  if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+                }}
+                className="flex-1 bg-transparent border-0 outline-none text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 h-full"
+              />
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 whitespace-nowrap">@florinhasdovouga.pt</span>
+            </div>
+          ) : (
+            <Input
+              id="identifier"
+              type="text"
+              placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
+              value={identifier}
+              maxLength={loginType === 'user' ? 9 : undefined}
+              onChange={(e) => {
+                const value = loginType === 'user' ? e.target.value.replace(/\D/g, '') : e.target.value;
+                setIdentifier(value);
+                if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+              }}
+              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
+                }`}
+            />
+          )}
           {errors.identifier && (
             <p className="text-red-500 text-sm">{errors.identifier}</p>
           )}
