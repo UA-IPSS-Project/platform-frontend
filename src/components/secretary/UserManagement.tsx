@@ -494,8 +494,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <SelectItem value="UTENTE">{t('userManagement.roles.userCommon')}</SelectItem>
                                                 <SelectItem value="SECRETARIA">{t('userManagement.roles.secretary')}</SelectItem>
                                                 <SelectItem value="BALNEARIO">{t('userManagement.roles.balneario')}</SelectItem>
+                                                <SelectItem value="ESCOLA">{t('userManagement.roles.school')}</SelectItem>
                                                 <SelectItem value="INTERNO">{t('userManagement.roles.internals')}</SelectItem>
-                                                <SelectItem value="ADMIN">{t('userManagement.roles.admin')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -791,7 +791,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                         'SECRETARIA': t('userManagement.roles.secretary'),
                                                         'BALNEARIO': t('userManagement.roles.balneario'),
                                                         'ESCOLA': t('userManagement.roles.school'),
-                                                        'INTERNOS': t('userManagement.roles.internals'),
+                                                        'INTERNO': t('userManagement.roles.internals'),
                                                         'OUTRO': t('userManagement.roles.other')
                                                     } as Record<string, string>)[user.funcao] || user.funcao
                                                 ) : '-'}

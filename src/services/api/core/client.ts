@@ -6,6 +6,19 @@ export interface ApiRequestError extends Error {
     fieldErrors?: Record<string, string>;
 }
 
+const getFriendlyHttpErrorMessage = (status: number): string => {
+    if (status >= 500) return 'Serviço temporariamente indisponível. Tente novamente em instantes.';
+    if (status === 404) return 'Recurso não encontrado.';
+    if (status >= 400) return 'Não foi possível concluir o pedido.';
+    return 'Ocorreu um erro ao comunicar com o servidor.';
+};
+
+const isLikelyHtmlResponse = (text: string, contentType: string | null): boolean => {
+    if (contentType?.toLowerCase().includes('text/html')) return true;
+    const trimmed = text.trim().toLowerCase();
+    return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<body');
+};
+
 // Helper to get cookie by name
 export const getCookie = (name: string): string | null => {
     if (!document.cookie) {
@@ -81,38 +94,43 @@ export async function apiRequest<T>(
 
             try {
                 const text = await response.text();
+                const contentType = response.headers.get('content-type');
 
-                try {
-                    // Try to parse as JSON
-                    const errorData = JSON.parse(text);
-                    parsedErrorData = errorData;
+                if (isLikelyHtmlResponse(text, contentType) && !isAuthError) {
+                    errorMessage = getFriendlyHttpErrorMessage(response.status);
+                } else {
+                    try {
+                        // Try to parse as JSON
+                        const errorData = JSON.parse(text);
+                        parsedErrorData = errorData;
 
-                    if (errorData.message && !isAuthError) {
-                        errorMessage = errorData.message;
+                        if (errorData.message && !isAuthError) {
+                            errorMessage = errorData.message;
 
-                        // Handle validation errors specifically
-                        if (errorData.errors && typeof errorData.errors === 'object') {
-                            const details = Object.values(errorData.errors).join('; ');
-                            if (details) {
-                                errorMessage += `: ${details}`;
+                            // Handle validation errors specifically
+                            if (errorData.errors && typeof errorData.errors === 'object') {
+                                const details = Object.values(errorData.errors).join('; ');
+                                if (details) {
+                                    errorMessage += `: ${details}`;
+                                }
                             }
                         }
-                    }
-                    else if (errorData.error && !isAuthError) {
-                        // Legacy/Fallback error field
-                        errorMessage = errorData.error;
-                    }
-                } catch {
-                    // If not JSON, try to use text content if it's short
-                    if (text && text.length < 200 && !isAuthError) {
-                        errorMessage = text;
-                    } else if (!isAuthError) {
-                        errorMessage = `Erro ${response.status}: Não foi possível processar a resposta do servidor.`;
+                        else if (errorData.error && !isAuthError) {
+                            // Legacy/Fallback error field
+                            errorMessage = errorData.error;
+                        }
+                    } catch {
+                        // If not JSON, try to use text content if it's short and plain text
+                        if (text && text.length < 200 && !isAuthError) {
+                            errorMessage = text;
+                        } else if (!isAuthError) {
+                            errorMessage = getFriendlyHttpErrorMessage(response.status);
+                        }
                     }
                 }
             } catch {
                 if (!isAuthError) {
-                    errorMessage = `Erro de conexão (${response.status})`;
+                    errorMessage = getFriendlyHttpErrorMessage(response.status);
                 }
             }
 
