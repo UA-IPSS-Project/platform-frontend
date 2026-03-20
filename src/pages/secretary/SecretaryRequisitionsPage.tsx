@@ -56,6 +56,16 @@ const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): Requisic
   return [];
 };
 
+const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
+  if (estadoAtual === 'ENVIADA') {
+    return ['EM_ANALISE'];
+  }
+  if (estadoAtual === 'EM_ANALISE') {
+    return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
+  }
+  return [];
+};
+
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
   { value: 'BAIXA', label: 'requisitions.labels.low' },
   { value: 'MEDIA', label: 'requisitions.labels.medium' },
@@ -1039,7 +1049,7 @@ export function SecretaryRequisitionsPage({
         setUpdatingEstadoId(req.id);
         await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
         await fetchRequisicoes();
-        setEstadoEdicao('ACEITE');
+        setEstadoEdicao('EM_ANALISE');
       } catch (error: any) {
         toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
         setEstadoEdicao('EM_ANALISE');
@@ -1059,6 +1069,11 @@ export function SecretaryRequisitionsPage({
     const estadosPermitidos = getEstadosPermitidosTransicao(selectedRequisicao.estado);
     if (estadosPermitidos.length === 0) {
       toast.error(t('requisitions.errors.onlyPendingDecision'));
+      return;
+    }
+
+    if (estadoEdicao === selectedRequisicao.estado) {
+      toast.error(t('requisitions.errors.chooseFinalState'));
       return;
     }
 
@@ -1168,6 +1183,11 @@ export function SecretaryRequisitionsPage({
 
   const estadosPermitidosSelecionados = useMemo(
     () => getEstadosPermitidosTransicao(selectedRequisicao?.estado),
+    [selectedRequisicao?.estado],
+  );
+
+  const estadosVisiveisSelecionados = useMemo(
+    () => getEstadosVisiveisNoSeletor(selectedRequisicao?.estado),
     [selectedRequisicao?.estado],
   );
 
@@ -2395,7 +2415,7 @@ export function SecretaryRequisitionsPage({
                   className={selectFieldClassName}
                 >
                   {ESTADO_SECRETARIA_OPTIONS
-                    .filter((option) => estadosPermitidosSelecionados.includes(option.value))
+                    .filter((option) => estadosVisiveisSelecionados.includes(option.value))
                     .map((option) => (
                     <option key={option.value} value={option.value}>{t(option.label)}</option>
                     ))}
