@@ -63,7 +63,10 @@ const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): Requisicao
   if (estadoAtual === 'EM_ANALISE') {
     return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
   }
-  return [];
+  if (estadoAtual) {
+    return [estadoAtual];
+  }
+  return ['EM_ANALISE'];
 };
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
