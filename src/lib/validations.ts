@@ -8,6 +8,10 @@ export interface ValidationResult {
     error?: string;
 }
 
+export const CALENDAR_YEAR_MIN = 1900;
+
+export const getCalendarYearMax = (): number => new Date().getFullYear() + 10;
+
 export interface PasswordValidation {
     minLength: boolean;
     hasUpperLower: boolean;
@@ -169,4 +173,23 @@ export const formatDate = (date: Date): string => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+};
+
+/**
+ * Validates a calendar year input.
+ * Rules: numeric only, exactly 4 digits, and within supported calendar bounds.
+ */
+export const validateCalendarYear = (yearInput: string): ValidationResult => {
+    if (!/^\d{4}$/.test(yearInput)) {
+        return { valid: false, error: 'O ano deve ter exatamente 4 dígitos numéricos' };
+    }
+
+    const year = Number(yearInput);
+    const maxYear = getCalendarYearMax();
+
+    if (year < CALENDAR_YEAR_MIN || year > maxYear) {
+        return { valid: false, error: `O ano deve estar entre ${CALENDAR_YEAR_MIN} e ${maxYear}` };
+    }
+
+    return { valid: true };
 };

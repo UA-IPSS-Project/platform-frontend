@@ -5,6 +5,7 @@ import { DayPicker, CaptionProps, useNavigation } from "react-day-picker";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
+import { validateCalendarYear } from "../../lib/validations";
 
 import { GlassCard } from "./glass-card";
 
@@ -15,10 +16,13 @@ function CustomCaption({ displayMonth }: CaptionProps) {
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ];
 
-  const currentYear = new Date().getFullYear();
-  // Gerar anos de 1900 até o ano atual mais 11 para abranger o futuro
-  const yearCount = currentYear - 1900 + 11;
-  const years = Array.from({ length: yearCount }, (_, i) => 1900 + i);
+  const [yearInput, setYearInput] = React.useState(String(displayMonth.getFullYear()));
+  const [yearError, setYearError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setYearInput(String(displayMonth.getFullYear()));
+    setYearError(null);
+  }, [displayMonth]);
 
   const handleMonthChange = (monthIndex: string) => {
     const newDate = new Date(displayMonth);
@@ -30,6 +34,42 @@ function CustomCaption({ displayMonth }: CaptionProps) {
     const newDate = new Date(displayMonth);
     newDate.setFullYear(parseInt(year));
     goToMonth?.(newDate);
+  };
+
+  const handleYearInputChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 4);
+    setYearInput(digitsOnly);
+
+    if (digitsOnly.length < 4) {
+      setYearError(null);
+      return;
+    }
+
+    const validation = validateCalendarYear(digitsOnly);
+    if (!validation.valid) {
+      setYearError(validation.error ?? null);
+      return;
+    }
+
+    setYearError(null);
+    handleYearChange(digitsOnly);
+  };
+
+  const handleYearInputBlur = () => {
+    if (yearInput.length === 0) {
+      setYearInput(String(displayMonth.getFullYear()));
+      setYearError(null);
+      return;
+    }
+
+    const validation = validateCalendarYear(yearInput);
+    if (!validation.valid) {
+      setYearError(validation.error ?? null);
+      return;
+    }
+
+    setYearError(null);
+    handleYearChange(yearInput);
   };
 
   return (
@@ -52,19 +92,22 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           ))}
         </select>
 
-        <select
+        <input
           aria-label="Ano"
-          value={displayMonth.getFullYear()}
-          onChange={(e) => handleYearChange(e.target.value)}
-          className="flex h-9 w-[90px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
-          style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
-        >
-          {years.reverse().map((year) => (
-            <option key={year} value={year} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 cursor-pointer">
-              {year}
-            </option>
-          ))}
-        </select>
+          aria-invalid={Boolean(yearError)}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={4}
+          value={yearInput}
+          onChange={(e) => handleYearInputChange(e.target.value)}
+          onBlur={handleYearInputBlur}
+          title={yearError ?? "Insira um ano com 4 dígitos"}
+          className={cn(
+            "flex h-9 w-[90px] items-center justify-center whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-center",
+            yearError && "border-red-500 ring-1 ring-red-500"
+          )}
+        />
       </div>
     </div>
   );
