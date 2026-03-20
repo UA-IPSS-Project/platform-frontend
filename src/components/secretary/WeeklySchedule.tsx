@@ -132,6 +132,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   today.setHours(0, 0, 0, 0);
 
   // Campo Ano como Select
+    // Estado global para hover de slot (expansão inline)
+    const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
   const [quickYear, setQuickYear] = useState(today.getFullYear());
   const [quickMonth, setQuickMonth] = useState(today.getMonth());
   const [quickDay, setQuickDay] = useState(today.getDate());
@@ -1314,7 +1316,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
                     };
 
-                    // Helper: render all mini-cells and add button
+                    // Helper: render all mini-cells as clickable buttons and add button
                     const renderExpandedSlot = () => (
                       <div className="w-full h-full flex flex-col gap-1">
                         {Array.from({ length: slotCapacity }).map((_, splitIndex) => {
@@ -1351,13 +1353,18 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             ? 'Faltou'
                             : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
                           return (
-                            <div
+                            <button
                               key={`${splitAppointment.id}-${splitIndex}`}
-                              className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20"
+                              className="text-left truncate font-semibold text-[11px] leading-tight px-1 py-0.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
                               aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
+                              onClick={e => {
+                                e.stopPropagation();
+                                onViewAppointment(splitAppointment);
+                              }}
+                              type="button"
                             >
                               <span className="truncate block">{displayText}</span>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -1449,38 +1456,36 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       );
                     }
 
-                    // Multi-capacity slot: expand on hover/tap ONLY if there is at least one appointment
+                    // Multi-capacity slot: expand inline on hover (desktop), tap to expand (mobile)
                     if (slotCapacity > 1 && slotAppointments.length > 0) {
-                      // Desktop: use Popover on hover
                       if (!isMobile) {
+                        // Desktop: expand inline on hover (usando estado global hoveredSlot)
+                        const expanded = hoveredSlot === slotId;
                         return (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button
-                                key={idx}
-                                id={slotId}
-                                className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                                disabled={inPast || isHolidayDay || blocked}
-                                aria-label={tt('Expandir marcações', 'Expand appointments')}
-                              >
-                                {/* Show mini-cells summary (first N names or count) */}
-                                <div className="flex flex-col gap-0.5 items-stretch w-full">
-                                  {slotAppointments.slice(0, 2).map(apt => (
-                                    <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
-                                  ))}
-                                  {slotAppointments.length > 2 && (
-                                    <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
-                                  )}
-                                </div>
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent align="center" className="min-w-[180px] max-w-xs p-2">
-                              {renderExpandedSlot()}
-                            </PopoverContent>
-                          </Popover>
+                          <div
+                            key={idx}
+                            id={slotId}
+                            className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            onMouseEnter={() => setHoveredSlot(slotId)}
+                            onMouseLeave={() => setHoveredSlot(null)}
+                            style={{ minHeight: expanded ? `${slotCapacity * 28 + 8}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
+                          >
+                            {expanded ? (
+                              renderExpandedSlot()
+                            ) : (
+                              <div className="flex flex-col gap-0.5 items-stretch w-full">
+                                {slotAppointments.slice(0, 2).map(apt => (
+                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
+                                ))}
+                                {slotAppointments.length > 2 && (
+                                  <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         );
                       } else {
-                        // Mobile: tap to expand/collapse
+                        // Mobile: tap to expand/collapse (mantém comportamento anterior)
                         return (
                           <div key={idx} className="relative">
                             <button
