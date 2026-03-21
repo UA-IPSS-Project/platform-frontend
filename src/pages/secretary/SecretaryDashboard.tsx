@@ -328,8 +328,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       <NavDropdown
         label={t('sidebar.management')}
         items={[
-          { id: 'management', label: 'Utilizadores' },
-          { id: 'admin-area', label: 'Plataforma' },
+          { id: 'management', label: t('userManagement.title') },
+          { id: 'admin-area', label: t('userManagement.title2') },
         ]}
         isActive={['management', 'admin-area'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
