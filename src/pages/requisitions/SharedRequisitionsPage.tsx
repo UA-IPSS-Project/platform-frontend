@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangleIcon, ChevronDown, ChevronLeft, ChevronUp, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -60,6 +60,9 @@ import {
   previousDateInput,
   toIsoFromDateOnly,
 } from './sharedRequisitions.helpers';
+import { RequisitionsStatsCards } from './components/RequisitionsStatsCards';
+import { RequisitionsConflictDialog } from './components/RequisitionsConflictDialog';
+import { RequisitionsCreateMaterialDialog } from './components/RequisitionsCreateMaterialDialog';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -1821,97 +1824,11 @@ export function SharedRequisitionsPage({
 
   return (
     <div className="max-w-[1600px] mx-auto space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
-        <GlassCard className="p-0 overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => handleCardShortcut('GERAL')}
-            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label={t('requisitions.ui.goToGeneralRequests')}
-          >
-            <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.requests')}</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.total}</p>
-            </div>
-            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <ClipboardListIcon className="w-5 h-5 text-blue-700 dark:text-blue-300" />
-            </div>
-          </Button>
-        </GlassCard>
-
-        <GlassCard className="hidden md:block p-0 overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => handleCardShortcut('URGENTE')}
-            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label={t('requisitions.ui.goToUrgentRequests')}
-          >
-            <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.urgent')}</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.urgentes}</p>
-            </div>
-            <div className="h-10 w-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <AlertTriangleIcon className="w-5 h-5 text-red-700 dark:text-red-300" />
-            </div>
-          </Button>
-        </GlassCard>
-
-        <GlassCard className="hidden xl:block p-0 overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => handleCardShortcut('MATERIAL')}
-            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label={t('requisitions.ui.goToMaterialRequests')}
-          >
-            <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.material')}</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.material}</p>
-            </div>
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-              <PackageIcon className="w-5 h-5 text-indigo-700 dark:text-indigo-300" />
-            </div>
-          </Button>
-        </GlassCard>
-
-        <GlassCard className="hidden xl:block p-0 overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => handleCardShortcut('MANUTENCAO')}
-            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label={t('requisitions.ui.goToMaintenanceRequests')}
-          >
-            <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.maintenance')}</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.manutencao}</p>
-            </div>
-            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <WrenchIcon className="w-5 h-5 text-amber-700 dark:text-amber-300" />
-            </div>
-          </Button>
-        </GlassCard>
-
-        <GlassCard className="hidden md:block p-0 overflow-hidden">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => handleCardShortcut('TRANSPORTE')}
-            className="w-full h-full p-4 justify-between rounded-none hover:bg-gray-50 dark:hover:bg-gray-800"
-            aria-label={t('requisitions.ui.goToTransportRequests')}
-          >
-            <div className="text-left">
-              <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.transport')}</p>
-              <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">{stats.transporte}</p>
-            </div>
-            <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-              <TruckIcon className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
-            </div>
-          </Button>
-        </GlassCard>
-      </div>
+      <RequisitionsStatsCards
+        stats={stats}
+        onCardShortcut={handleCardShortcut}
+        t={t}
+      />
 
       <div className="lg:hidden space-y-6">
         <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
@@ -2459,150 +2376,46 @@ export function SharedRequisitionsPage({
       </Dialog>
 
       {canManageRequests && (
-        <Dialog open={conflitoDialogOpen} onOpenChange={setConflitoDialogOpen}>
-        <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>Conflitos de transporte detetados</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              {conflitoDialogMode === 'blocked'
-                ? `Já existe uma requisição aceite que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
-                : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
-            </p>
-
-            {conflitoDialogMode === 'blocked' && (
-              <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
-                Impossível aceitar esta marcação porque já existe uma marcação aceite com este(s) veículo(s).
-              </p>
-            )}
-
-            <div className="space-y-2">
-              {conflitosPendentes.map((conflito) => {
-                const dataPedido = conflito.criadoEm
-                  ? new Date(conflito.criadoEm).toLocaleString(locale)
-                  : 'Data indisponível';
-
-                return (
-                  <div key={conflito.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-gray-700 p-2">
-                    <span className="text-sm text-gray-800 dark:text-gray-200">
-                      {conflito.criadoPorNome} - {dataPedido}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={async () => abrirRequisicaoPorId(conflito.id)}
-                    >
-                      Ver requisição
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex justify-end gap-2">
-              {conflitoDialogMode === 'blocked' ? (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      limparEstadoConflito();
-                      setOpenedRequisicaoId(null);
-                    }}
-                    disabled={updatingEstadoId === openedRequisicaoId}
-                  >
-                    Fechar requisição
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setConflitoDialogOpen(false)}
-                    disabled={updatingEstadoId === openedRequisicaoId}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleContinuarAceitacaoComConflitos}
-                    disabled={updatingEstadoId === openedRequisicaoId}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
-                    {updatingEstadoId === openedRequisicaoId ? t('common.saving') : 'Continuar com o Aceitar Requisição'}
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-        </Dialog>
+        <RequisitionsConflictDialog
+          open={conflitoDialogOpen}
+          onOpenChange={setConflitoDialogOpen}
+          conflitosPendentes={conflitosPendentes}
+          conflitoTransportesNomes={conflitoTransportesNomes}
+          conflitoDialogMode={conflitoDialogMode}
+          locale={locale}
+          updatingEstadoId={updatingEstadoId}
+          openedRequisicaoId={openedRequisicaoId}
+          onOpenRequisicao={abrirRequisicaoPorId}
+          onCloseRequisicao={() => {
+            limparEstadoConflito();
+            setOpenedRequisicaoId(null);
+          }}
+          onCancel={() => setConflitoDialogOpen(false)}
+          onContinueAccept={handleContinuarAceitacaoComConflitos}
+          savingLabel={t('common.saving')}
+        />
       )}
 
-      <Dialog open={createMaterialDialogOpen} onOpenChange={setCreateMaterialDialogOpen}>
-        <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>{t('requisitions.ui.newMaterial')}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            <div>
-                <label htmlFor="novo-material-nome" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.name')}</label>
-                <Input id="novo-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} placeholder={t('requisitions.ui.materialNamePlaceholder')} />
-            </div>
-            <div>
-                <label htmlFor="novo-material-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.descriptionOptional')}</label>
-                <Textarea id="novo-material-descricao" className={textareaFieldClassName} value={novoMaterialDescricao} onChange={(e) => setNovoMaterialDescricao(e.target.value)} placeholder={t('requisitions.ui.materialDescriptionPlaceholder')} />
-            </div>
-            <div>
-                <label htmlFor="novo-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.category')}</label>
-              <select
-                id="novo-material-categoria"
-                value={novoMaterialCategoria}
-                onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
-                className={selectFieldClassName}
-              >
-                {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{t(option.label)}</option>
-                ))}
-              </select>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                  <label htmlFor="novo-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.attribute')}</label>
-                <Input
-                  id="novo-material-atributo"
-                  className={inputFieldClassName}
-                  value={novoMaterialAtributo}
-                  onChange={(e) => setNovoMaterialAtributo(e.target.value)}
-                  placeholder={t('requisitions.ui.attributePlaceholder')}
-                />
-              </div>
-              <div>
-                <label htmlFor="novo-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.attributeValue')}</label>
-                <Input
-                  id="novo-material-valor-atributo"
-                  className={inputFieldClassName}
-                  value={novoMaterialValorAtributo}
-                  onChange={(e) => setNovoMaterialValorAtributo(e.target.value)}
-                  placeholder={t('requisitions.ui.attributeValuePlaceholder')}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setCreateMaterialDialogOpen(false)} disabled={submittingMaterial}>
-                {t('appointmentDialog.actions.cancel')}
-              </Button>
-              <Button onClick={handleCriarMaterialCatalogo} disabled={submittingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {submittingMaterial ? t('requisitions.ui.creating') : t('requisitions.ui.createMaterial')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RequisitionsCreateMaterialDialog
+        open={createMaterialDialogOpen}
+        onOpenChange={setCreateMaterialDialogOpen}
+        inputFieldClassName={inputFieldClassName}
+        textareaFieldClassName={textareaFieldClassName}
+        novoMaterialNome={novoMaterialNome}
+        novoMaterialDescricao={novoMaterialDescricao}
+        novoMaterialCategoria={novoMaterialCategoria}
+        novoMaterialAtributo={novoMaterialAtributo}
+        novoMaterialValorAtributo={novoMaterialValorAtributo}
+        submittingMaterial={submittingMaterial}
+        onChangeNome={setNovoMaterialNome}
+        onChangeDescricao={setNovoMaterialDescricao}
+        onChangeCategoria={setNovoMaterialCategoria}
+        onChangeAtributo={setNovoMaterialAtributo}
+        onChangeValorAtributo={setNovoMaterialValorAtributo}
+        onCancel={() => setCreateMaterialDialogOpen(false)}
+        onCreate={handleCriarMaterialCatalogo}
+        t={t}
+      />
     </div>
   );
 }
