@@ -143,6 +143,7 @@ export function SharedRequisitionsPage({
   const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
   const [expandedManutencaoItems, setExpandedManutencaoItems] = useState<Record<string, boolean>>({});
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
+  const [manutencaoItemObservacoes, setManutencaoItemObservacoes] = useState<Record<number, string>>({});
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -674,6 +675,13 @@ export function SharedRequisitionsPage({
     }
   };
 
+  const updateManutencaoItemObservacao = (itemId: number, observacao: string) => {
+    setManutencaoItemObservacoes((prev) => ({
+      ...prev,
+      [itemId]: observacao,
+    }));
+  };
+
   const toggleVariante = (materialId: number, checked: boolean) => {
     setMaterialLinhas((prev) => {
       const materialIdStr = String(materialId);
@@ -742,6 +750,8 @@ export function SharedRequisitionsPage({
     setExpandedMaterialItems({});
     setExpandedTransporteCategorias({});
     setExpandedTransporteDetalhes({});
+    setSelectedManutencaoItemIds([]);
+    setManutencaoItemObservacoes({});
     setCreateErrors({});
     setCreateTouched({});
     setTipo(initialTipo ?? 'MATERIAL');
@@ -843,10 +853,20 @@ export function SharedRequisitionsPage({
           transporteIds: selectedTransportIds.map(Number),
         });
       } else {
+        // Build maintenance items with observations
+        const manutencaoItensPayload = selectedManutencaoItemIds.map((itemId) => {
+          const item = manutencaoItems.find((m) => m.id === itemId);
+          const observacaoKey = item ? `${item.categoria}-${item.espaco}` : '';
+          return {
+            itemId,
+            observacoes: manutencaoItemObservacoes[observacaoKey] || undefined,
+          };
+        });
+
         await requisicoesApi.criarManutencao({
           ...payloadBase,
           assunto: assunto.trim() || undefined,
-          manutencaoItemIds: selectedManutencaoItemIds.length > 0 ? selectedManutencaoItemIds : undefined,
+          manutencaoItens: manutencaoItensPayload.length > 0 ? manutencaoItensPayload : undefined,
         });
       }
 
@@ -1938,9 +1958,11 @@ export function SharedRequisitionsPage({
                 expandedManutencaoCategorias={expandedManutencaoCategorias}
                 expandedManutencaoItems={expandedManutencaoItems}
                 selectedManutencaoItemIds={selectedManutencaoItemIds}
+                manutencaoItemObservacoes={manutencaoItemObservacoes}
                 onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
                 onToggleItemVisibility={toggleManutencaoItemVisibility}
                 onToggleItem={toggleManutencaoItem}
+                onUpdateObservacao={updateManutencaoItemObservacao}
                 t={t}
               />
             </div>

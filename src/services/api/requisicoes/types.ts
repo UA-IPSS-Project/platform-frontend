@@ -153,9 +153,14 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
   transporteIds: number[];
 }
 
+export interface ManutencaoItemRequestPayload {
+  itemId: number;
+  observacoes?: string;
+}
+
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
   assunto?: string;
-  manutencaoItemIds?: number[];
+  manutencaoItens?: ManutencaoItemRequestPayload[];
 }
 
 export interface AtualizarEstadoRequisicaoRequest {
