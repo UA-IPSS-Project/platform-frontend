@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { CalendarDays, Package, Truck, Wrench, Settings2, Save, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -12,32 +11,31 @@ import { calendarioApi, requisicoesApi } from '../../services/api';
 const slotTypes = [
     {
         tipo: 'SECRETARIA' as const,
-        tituloKey: 'admin.slotsManagement.secretaryScheduleTitle',
-        descricaoKey: 'admin.slotsManagement.secretaryScheduleDescription',
+        titulo: 'Agenda da Secretaria',
+        descricao: 'Define quantas marcações da secretaria podem coexistir no mesmo horário.',
     },
     {
         tipo: 'BALNEARIO' as const,
-        tituloKey: 'admin.slotsManagement.balnearioScheduleTitle',
-        descricaoKey: 'admin.slotsManagement.balnearioScheduleDescription',
+        titulo: 'Agenda do Balneário',
+        descricao: 'Controla a lotação operacional dos slots de marcação do balneário.',
     },
 ];
 
 function AdminOverview({
     summaryCards,
 }: Readonly<{
-    summaryCards: Array<{ titleKey: string; value: number | string; descriptionKey: string; icon: LucideIcon; iconClassName: string }>;
+    summaryCards: Array<{ title: string; value: number | string; description: string; icon: LucideIcon; iconClassName: string }>;
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
 }>) {
-    const { t } = useTranslation();
     return (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => (
-                <GlassCard key={card.titleKey} className="p-6 flex items-start justify-between">
+                <GlassCard key={card.title} className="p-6 flex items-start justify-between">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{t(card.titleKey)}</p>
+                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
                         <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t(card.descriptionKey)}</p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
                     </div>
                     <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
                         <card.icon className="w-6 h-6" />
@@ -61,18 +59,17 @@ function SlotsManagement({
     onChange: (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => void;
     onSave: () => void;
 }>) {
-    const { t } = useTranslation();
     return (
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
                 <div>
                     <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                         <Settings2 className="w-4 h-4" />
-                        {t('admin.slotsManagement.operationalConfiguration')}
+                        Configuração operacional
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">{t('admin.slotsManagement.title')}</h2>
+                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Capacidade de marcações por slot</h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-                        {t('admin.slotsManagement.description')}
+                        Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.
                     </p>
                 </div>
 
@@ -83,13 +80,13 @@ function SlotsManagement({
                             className="rounded-2xl border border-gray-200/80 bg-white/70 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/50"
                         >
                             <div className="space-y-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t(slotType.tituloKey)}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t(slotType.descricaoKey)}</p>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{slotType.titulo}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{slotType.descricao}</p>
                             </div>
 
                             <div className="mt-5 space-y-2">
                                 <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {t('admin.slotsManagement.maxPerSlot')}
+                                    Máximo por slot
                                 </Label>
                                 <Input
                                     id={`slot-${slotType.tipo}`}
@@ -113,7 +110,7 @@ function SlotsManagement({
                         className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
                     >
                         <Save className="w-4 h-4" />
-                        {isSavingSlots ? t('admin.slotsManagement.saving') : t('admin.slotsManagement.saveConfiguration')}
+                        {isSavingSlots ? 'A guardar...' : 'Guardar configuração'}
                     </Button>
                 </div>
             </div>
@@ -122,7 +119,6 @@ function SlotsManagement({
 }
 
 export function SecretaryAdminArea() {
-    const { t } = useTranslation();
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
         BALNEARIO: 2,
@@ -200,30 +196,30 @@ export function SecretaryAdminArea() {
 
     const summaryCards = useMemo(() => [
         {
-            titleKey: 'admin.cards.slots.title',
+            title: 'Slots (Secretaria/Balneário)',
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
-            descriptionKey: 'admin.cards.slots.description',
+            description: 'capacidade por horário',
             icon: CalendarDays,
             iconClassName: 'bg-violet-500/20 text-violet-300',
         },
         {
-            titleKey: 'admin.cards.materials.title',
+            title: 'Materiais',
             value: catalogCounts.materiais,
-            descriptionKey: 'admin.cards.materials.description',
+            description: 'itens no catálogo',
             icon: Package,
             iconClassName: 'bg-blue-500/20 text-blue-300',
         },
         {
-            titleKey: 'admin.cards.transports.title',
+            title: 'Transportes',
             value: catalogCounts.transportes,
-            descriptionKey: 'admin.cards.transports.description',
+            description: 'transportes no catálogo',
             icon: Truck,
             iconClassName: 'bg-emerald-500/20 text-emerald-300',
         },
         {
-            titleKey: 'admin.cards.maintenanceTypes.title',
+            title: 'Tipos de manutenção',
             value: catalogCounts.tiposManutencao,
-            descriptionKey: 'admin.cards.maintenanceTypes.description',
+            description: 'tipos disponíveis',
             icon: Wrench,
             iconClassName: 'bg-fuchsia-500/20 text-fuchsia-300',
         },
@@ -234,11 +230,11 @@ export function SecretaryAdminArea() {
             <div className="flex flex-col gap-1">
                 <p className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
                     <ShieldCheck className="w-4 h-4" />
-                    {t('admin.administrationOnlyArea', 'Área reservada à administração')}
+                    Área reservada à administração
                 </p>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.title', 'Gestão Administrativa')}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestão Administrativa</h1>
                 <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                    {t('admin.areaDescription', 'Área de gestão de slots, catálogos e capacidades operacionais da secretaria.')}
+                    Área de gestão de slots, catálogos e capacidades operacionais da secretaria.
                 </p>
             </div>
             <AdminOverview
