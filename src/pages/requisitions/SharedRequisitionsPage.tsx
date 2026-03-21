@@ -1215,7 +1215,7 @@ export function SharedRequisitionsPage({
     const grupos = new Map<MaterialCategoria, Array<{
       rowId: string;
       descricao: string;
-      quantidade: string;
+      quantidade: number;
     }>>();
 
     materialLinhas.forEach((linha) => {
@@ -1227,7 +1227,7 @@ export function SharedRequisitionsPage({
       grupoAtual.push({
         rowId: linha.rowId,
         descricao,
-        quantidade: linha.quantidade,
+        quantidade: Number(linha.quantidade || 0),
       });
 
       grupos.set(categoria, grupoAtual);

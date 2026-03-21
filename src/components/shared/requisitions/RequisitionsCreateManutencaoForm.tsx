@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Checkbox } from '../../ui/checkbox';
-import { ManutencaoItem } from '../../../services/api';
+import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
   MANUTENCAO_CATEGORIA_DISPLAY_LABELS,
@@ -10,12 +10,12 @@ import {
 
 interface RequisitionsCreateManutencaoFormProps {
   manutencaoItems: ManutencaoItem[];
-  expandedManutencaoCategorias: Record<string, boolean>;
-  onToggleCategoriaExpansion: (categoria: string) => void;
+  expandedManutencaoCategorias: Record<ManutencaoCategoria, boolean>;
+  onToggleCategoriaExpansion: (categoria: ManutencaoCategoria) => void;
   onToggleItem: (itemId: number, checked: boolean) => void;
   selectedManutencaoItemIds: number[];
-  manutencaoObservacoesPorCategoria: Record<string, string>;
-  onUpdateObservacaoCategoria: (categoria: string, observacao: string) => void;
+  manutencaoObservacoesPorCategoria: Record<ManutencaoCategoria, string>;
+  onUpdateObservacaoCategoria: (categoria: ManutencaoCategoria, observacao: string) => void;
   t: (key: string) => string;
 }
 
