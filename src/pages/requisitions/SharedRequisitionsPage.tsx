@@ -138,12 +138,10 @@ export function SharedRequisitionsPage({
   const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
-  const [assunto, setAssunto] = useState('');
   const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
   const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
-  const [expandedManutencaoItems, setExpandedManutencaoItems] = useState<Record<string, boolean>>({});
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
-  const [manutencaoItemObservacoes, setManutencaoItemObservacoes] = useState<Record<number, string>>({});
+  const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -663,10 +661,6 @@ export function SharedRequisitionsPage({
     setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
   };
 
-  const toggleManutencaoItemVisibility = (itemKey: string) => {
-    setExpandedManutencaoItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
-  };
-
   const toggleManutencaoItem = (itemId: number, checked: boolean) => {
     if (checked) {
       setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
@@ -675,10 +669,10 @@ export function SharedRequisitionsPage({
     }
   };
 
-  const updateManutencaoItemObservacao = (itemId: number, observacao: string) => {
-    setManutencaoItemObservacoes((prev) => ({
+  const updateManutencaoObservacaoCategoria = (categoria: string, observacao: string) => {
+    setManutencaoObservacoesPorCategoria((prev) => ({
       ...prev,
-      [itemId]: observacao,
+      [categoria]: observacao,
     }));
   };
 
@@ -746,12 +740,11 @@ export function SharedRequisitionsPage({
     setCondutorTransporte('');
     setSelectedTransportIds([]);
     setTransportSelectionMode('auto');
-    setAssunto('');
     setExpandedMaterialItems({});
     setExpandedTransporteCategorias({});
     setExpandedTransporteDetalhes({});
     setSelectedManutencaoItemIds([]);
-    setManutencaoItemObservacoes({});
+    setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
     setCreateTouched({});
     setTipo(initialTipo ?? 'MATERIAL');
@@ -853,19 +846,17 @@ export function SharedRequisitionsPage({
           transporteIds: selectedTransportIds.map(Number),
         });
       } else {
-        // Build maintenance items with observations
         const manutencaoItensPayload = selectedManutencaoItemIds.map((itemId) => {
           const item = manutencaoItems.find((m) => m.id === itemId);
-          const observacaoKey = item ? `${item.categoria}-${item.espaco}` : '';
+          const observacaoCategoria = item ? item.categoria : '';
           return {
             itemId,
-            observacoes: manutencaoItemObservacoes[observacaoKey] || undefined,
+            observacoes: manutencaoObservacoesPorCategoria[observacaoCategoria] || undefined,
           };
         });
 
         await requisicoesApi.criarManutencao({
           ...payloadBase,
-          assunto: assunto.trim() || undefined,
           manutencaoItens: manutencaoItensPayload.length > 0 ? manutencaoItensPayload : undefined,
         });
       }
@@ -1949,20 +1940,14 @@ export function SharedRequisitionsPage({
 
           {tipo === 'MANUTENCAO' && (
             <div className="space-y-4">
-              <div>
-                <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.subjectOptional')}</label>
-                <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder={t('requisitions.ui.subjectPlaceholder')} />
-              </div>
               <RequisitionsCreateManutencaoForm
                 manutencaoItems={manutencaoItems}
                 expandedManutencaoCategorias={expandedManutencaoCategorias}
-                expandedManutencaoItems={expandedManutencaoItems}
                 selectedManutencaoItemIds={selectedManutencaoItemIds}
-                manutencaoItemObservacoes={manutencaoItemObservacoes}
+                manutencaoObservacoesPorCategoria={manutencaoObservacoesPorCategoria}
                 onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
-                onToggleItemVisibility={toggleManutencaoItemVisibility}
                 onToggleItem={toggleManutencaoItem}
-                onUpdateObservacao={updateManutencaoItemObservacao}
+                onUpdateObservacaoCategoria={updateManutencaoObservacaoCategoria}
                 t={t}
               />
             </div>
