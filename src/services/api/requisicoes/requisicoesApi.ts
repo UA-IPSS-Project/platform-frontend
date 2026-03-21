@@ -7,6 +7,7 @@ import {
   CriarRequisicaoTransporteRequest,
   CriarTipoManutencaoCatalogoRequest,
   CriarTransporteCatalogoRequest,
+  ManutencaoItem,
   MaterialCatalogo,
   RequisicaoEstado,
   RequisicaoFilters,
@@ -57,6 +58,8 @@ export const requisicoesApi = {
     }),
 
   listarTransportes: () => apiRequest<TransporteCatalogo[]>('/api/requisicoes/transportes'),
+
+  listarManutencaoItems: () => apiRequest<ManutencaoItem[]>('/api/requisicoes/manutencao-items'),
 
   listarTiposManutencao: () => apiRequest<TipoManutencaoCatalogo[]>('/api/requisicoes/tipos-manutencao'),
 
