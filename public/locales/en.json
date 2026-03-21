@@ -786,6 +786,7 @@
       "addOneMaterial": "Add at least one material with a valid quantity.",
       "invalidPassengers": "Provide a valid number of passengers.",
       "selectOneVehicle": "Select at least one vehicle.",
+      "dateCannotBePast": "Date/time cannot be in the past.",
       "returnAfterDeparture": "Return date/time must be after departure date/time.",
       "missingAuthenticatedUser": "Could not identify the authenticated user.",
       "createFailed": "Error creating request.",

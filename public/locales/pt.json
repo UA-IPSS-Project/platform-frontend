@@ -786,6 +786,7 @@
       "addOneMaterial": "Adicione pelo menos um material com quantidade válida.",
       "invalidPassengers": "Indique um número de passageiros válido.",
       "selectOneVehicle": "Selecione pelo menos uma viatura.",
+      "dateCannotBePast": "A data/hora não pode estar no passado.",
       "returnAfterDeparture": "A data/hora de regresso deve ser posterior à data/hora de saída.",
       "missingAuthenticatedUser": "Não foi possível identificar o utilizador autenticado.",
       "createFailed": "Erro ao criar requisição.",

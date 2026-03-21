@@ -190,6 +190,15 @@ const composeDateTime = (date?: string, time?: string): string | undefined => {
   return `${date}T${time}`;
 };
 
+const isDateInputInPast = (dateInput?: string): boolean => {
+  const parsed = parseDateInput(dateInput);
+  if (!parsed) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed < today;
+};
+
 const toValidDate = (dateTime?: string): Date | undefined => {
   if (!dateTime) return undefined;
   const parsed = new Date(dateTime);
@@ -691,6 +700,31 @@ export function SecretaryRequisitionsPage({
     if (field === 'horaSaida' && !horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !horaRegresso) return t('requisitions.errors.requiredField');
+
+    if ((field === 'dataSaida' || field === 'horaSaida') && dataSaida && isDateInputInPast(dataSaida)) {
+      return t('requisitions.errors.dateCannotBePast');
+    }
+
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && dataRegresso && isDateInputInPast(dataRegresso)) {
+      return t('requisitions.errors.dateCannotBePast');
+    }
+
+    const now = new Date();
+    const saidaDateTime = composeDateTime(dataSaida, horaSaida);
+    if ((field === 'dataSaida' || field === 'horaSaida') && saidaDateTime) {
+      const saidaDate = new Date(saidaDateTime);
+      if (!Number.isNaN(saidaDate.getTime()) && saidaDate < now) {
+        return t('requisitions.errors.dateCannotBePast');
+      }
+    }
+
+    const regressoDateTime = composeDateTime(dataRegresso, horaRegresso);
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && regressoDateTime) {
+      const regressoDate = new Date(regressoDateTime);
+      if (!Number.isNaN(regressoDate.getTime()) && regressoDate < now) {
+        return t('requisitions.errors.dateCannotBePast');
+      }
+    }
 
     if (field === 'numeroPassageiros') {
       if (!numeroPassageiros) return t('requisitions.errors.requiredField');
@@ -1684,12 +1718,10 @@ export function SecretaryRequisitionsPage({
                         if (!dataRegresso) {
                           setDataRegresso(value);
                         }
-                        if (createTouched.dataSaida) {
-                          validateAndSetField('dataSaida');
-                        }
-                        if (createTouched.dataRegresso) {
-                          validateAndSetField('dataRegresso');
-                        }
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
                       }}
                       buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
                     />
@@ -1705,9 +1737,10 @@ export function SecretaryRequisitionsPage({
                       value={horaSaida}
                       onChange={(e) => {
                         setHoraSaida(e.target.value);
-                        if (createTouched.horaSaida) {
-                          validateAndSetField('horaSaida');
-                        }
+                        validateAndSetField('horaSaida');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
                       }}
                       onBlur={() => validateAndSetField('horaSaida', true)}
                     />
@@ -1721,12 +1754,10 @@ export function SecretaryRequisitionsPage({
                       value={dataRegresso}
                       onChange={(value) => {
                         setDataRegresso(value);
-                        if (createTouched.dataRegresso) {
-                          validateAndSetField('dataRegresso');
-                        }
-                        if (createTouched.horaRegresso) {
-                          validateAndSetField('horaRegresso');
-                        }
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
                       }}
                       buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
                     />
@@ -1742,9 +1773,10 @@ export function SecretaryRequisitionsPage({
                       value={horaRegresso}
                       onChange={(e) => {
                         setHoraRegresso(e.target.value);
-                        if (createTouched.horaRegresso) {
-                          validateAndSetField('horaRegresso');
-                        }
+                        validateAndSetField('horaRegresso');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
                       }}
                       onBlur={() => validateAndSetField('horaRegresso', true)}
                     />
