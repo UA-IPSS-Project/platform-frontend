@@ -30,64 +30,21 @@ function AdminOverview({
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
 }>) {
-    const managementAreas = [
-        {
-            title: 'Slots por marcação',
-            description: 'Define a capacidade de cada agenda por horário e controla a lotação operacional.',
-            icon: Settings2,
-            action: onOpenSlots,
-            actionLabel: 'Gerir slots',
-        },
-        {
-            title: 'Catálogos administrativos',
-            description: 'Cria, edita e remove materiais, transportes e tipos de manutenção sem acesso às requisições.',
-            icon: Package2,
-            action: onOpenCatalogs,
-            actionLabel: 'Abrir catálogo',
-        },
-    ];
-
     return (
-        <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {summaryCards.map((card) => (
-                    <GlassCard key={card.title} className="p-6 flex items-start justify-between">
-                        <div>
-                            <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
-                            <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
-                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
-                        </div>
-                        <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
-                            <card.icon className="w-6 h-6" />
-                        </div>
-                    </GlassCard>
-                ))}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-                {managementAreas.map((area) => {
-                    const Icon = area.icon;
-                    return (
-                        <GlassCard key={area.title} className="p-6 flex flex-col justify-between">
-                            <div className="space-y-4">
-                                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                                    <Icon className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{area.title}</h2>
-                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{area.description}</p>
-                                </div>
-                            </div>
-                            <div className="mt-6">
-                                <Button onClick={area.action} className="bg-purple-600 text-white hover:bg-purple-700">
-                                    {area.actionLabel}
-                                </Button>
-                            </div>
-                        </GlassCard>
-                    );
-                })}
-            </div>
-        </>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {summaryCards.map((card) => (
+                <GlassCard key={card.title} className="p-6 flex items-start justify-between">
+                    <div>
+                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
+                        <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                    </div>
+                    <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
+                        <card.icon className="w-6 h-6" />
+                    </div>
+                </GlassCard>
+            ))}
+        </div>
     );
 }
 
