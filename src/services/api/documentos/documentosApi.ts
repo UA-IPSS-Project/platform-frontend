@@ -1,4 +1,3 @@
-
 import { apiRequest, API_BASE_URL, getCookie } from '../core/client';
 import { DocumentoDTO, PesquisaDocumentosParams } from './types';
 export const documentosApi = {
@@ -44,6 +43,26 @@ export const documentosApi = {
         }
 
         return uploadedDocs;
+    },
+
+        // Notificar utente sobre documentos inválidos
+    notificarDocumentosInvalidos: async (marcacaoId: number, observacoes: string) => {
+        const xsrfToken = getCookie('XSRF-TOKEN');
+        const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (xsrfToken) {
+            headers['X-XSRF-TOKEN'] = xsrfToken;
+        }
+        const body = new URLSearchParams({ observacoes });
+        const response = await fetch(`${API_BASE_URL}/api/documentos/marcacao/${marcacaoId}/notificar-invalidos`, {
+            method: 'POST',
+            credentials: 'include',
+            headers,
+            body,
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erro ao notificar utente: ${errorText}`);
+        }
     },
 
     // Listar documentos de uma marcação

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
@@ -9,7 +10,7 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon } from '../shared/CustomIcons';
+import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
@@ -146,7 +147,7 @@ export function AppointmentDetailsDialog({
     }));
   };
 
-  const handleNotifyInvalid = () => {
+  const handleNotifyInvalid = async () => {
     if (selectedDocs.length === 0) {
       toast.error(t('appointmentDetails.selectAtLeastOneDocument'));
       return;
@@ -159,20 +160,16 @@ export function AppointmentDetailsDialog({
       return;
     }
 
-    const updatedDocuments = appointment.documents?.map((doc, index) => ({
-      ...doc,
-      invalid: selectedDocs.includes(index) ? true : doc.invalid,
-      reason: selectedDocs.includes(index) ? invalidReasons[index] : doc.reason,
-    }));
-
-    onUpdate(appointment.id, {
-      documents: updatedDocuments,
-      status: 'warning',
-    });
-
-    toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
-    setSelectedDocs([]);
-    setInvalidReasons({});
+    // Junta todos os motivos em um texto único
+    const motivos = selectedDocs.map(index => `Documento: ${appointment.documents?.[index]?.name || ''} - Motivo: ${invalidReasons[index]}`).join('\n');
+    try {
+      await documentosApi.notificarDocumentosInvalidos(parseInt(appointment.id), motivos);
+      toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
+      setSelectedDocs([]);
+      setInvalidReasons({});
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao notificar utente.');
+    }
   };
 
   const handleCancelAppointment = async () => {
@@ -579,6 +576,23 @@ export function AppointmentDetailsDialog({
     return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
   }
 
+
+  function handleNotificarDocumentoInvalido(doc: DocumentoDTO) {
+    const motivo = window.prompt(t('appointmentDetails.invalidReasonPrompt', 'Indique o motivo do documento ser inválido:'));
+    if (!motivo || !motivo.trim()) {
+      toast.error(t('appointmentDetails.addReasonForEachDocument', 'Indique o motivo.'));
+      return;
+    }
+    documentosApi
+      .notificarDocumentosInvalidos(parseInt(appointment.id), `Documento: ${doc.nomeOriginal} - Motivo: ${motivo}`)
+      .then(() => {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments', 'Utente notificado.'));
+      })
+      .catch((error: any) => {
+        toast.error(error.message || 'Erro ao notificar utente.');
+      });
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
@@ -747,35 +761,104 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPreview(doc.nomeOriginal) && (
-                          <button
-                            type="button"
-                            onClick={() => documentosApi.previewDocumento(doc.id)}
-                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                            title={t('appointmentDetails.previewDocument', 'Visualizar')}
-                            aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
-                          >
-                            <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          </button>
+                        {hasPreview(doc.nomeOriginal) ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => documentosApi.previewDocumento(doc.id)}
+                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                              title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                              aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            >
+                              <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadDocumento(doc)}
+                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                              title="Download"
+                            >
+                              <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                            </button>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                  >
+                                    <BellIcon className="w-4 h-4" />
+                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                  </button>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                  >
+                                    <BellIcon className="w-4 h-4" />
+                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                  </button>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadDocumento(doc)}
-                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                        {isEditable && (
-                          <button
-                            type="button"
-                            onClick={() => handleRemoverDocumento(doc)}
-                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                            title={t('appointmentDetails.removeDocument')}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </button>
-                        )}
+
+
                       </div>
                     </div>
                   ))}
