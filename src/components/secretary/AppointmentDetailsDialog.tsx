@@ -822,15 +822,18 @@ export function AppointmentDetailsDialog({
                                     <Trash2 className="w-4 h-4" />
                                     {t('appointmentDetails.removeDocument', 'Apagar')}
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm"
-                                    style={{ color: '#EFBC21', background: 'rgba(239,188,33,0.08)' }}
-                                  >
-                                    <BellIcon className="w-4 h-4" />
-                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
-                                  </button>
+                                  {/* Só mostra o botão de documento inválido se NÃO for utente */}
+                                  {!isClient && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm"
+                                      style={{ color: '#EFBC21', background: 'rgba(239,188,33,0.08)' }}
+                                    >
+                                      <BellIcon className="w-4 h-4" />
+                                      {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                    </button>
+                                  )}
                                 </PopoverContent>
                               </Popover>
                             )}
