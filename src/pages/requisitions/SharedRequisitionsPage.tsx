@@ -109,6 +109,7 @@ export function SharedRequisitionsPage({
   const [filterPrioridade, setFilterPrioridade] = useState<RequisicaoPrioridade | ''>(initialPrioridade ?? '');
   const [filterCriadoPorNome, setFilterCriadoPorNome] = useState('');
   const [filterGeridoPorNome, setFilterGeridoPorNome] = useState('');
+  const [filterCriadoPorTipo, setFilterCriadoPorTipo] = useState<'' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO'>('');
   const [activeTab, setActiveTab] = useState<RequisicoesTab>(() => {
     if (initialPrioridade === 'URGENTE') return 'URGENTE';
     if (initialTipo) return initialTipo;
@@ -159,6 +160,8 @@ export function SharedRequisitionsPage({
     return lista.filter((item) => isRequestVisibleForScope(item));
   };
 
+  const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
+
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
     setFilterPrioridade(initialPrioridade ?? '');
@@ -179,12 +182,14 @@ export function SharedRequisitionsPage({
     prioridade?: RequisicaoPrioridade | '';
     criadoPorNome?: string;
     geridoPorNome?: string;
+    criadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
   }) => {
     const estado = overrides?.estado ?? filterEstado;
     const tipoFiltro = overrides?.tipo ?? filterTipo;
     const prioridadeFiltro = overrides?.prioridade ?? filterPrioridade;
     const criadoPor = overrides?.criadoPorNome ?? filterCriadoPorNome;
     const geridoPor = overrides?.geridoPorNome ?? filterGeridoPorNome;
+    const criadoPorTipo = overrides?.criadoPorTipo ?? filterCriadoPorTipo;
 
     try {
       setLoading(true);
@@ -195,7 +200,10 @@ export function SharedRequisitionsPage({
         criadoPorNome: criadoPor || undefined,
         geridoPorNome: geridoPor || undefined,
       });
-      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
+      const listaScope = applyScopeFilter(Array.isArray(data) ? data : []);
+      const lista = isSecretaryView && criadoPorTipo
+        ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
+        : listaScope;
       setRequisicoes(lista);
       // Reutiliza o resultado já carregado para alimentar o overview mensal,
       // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
@@ -219,7 +227,7 @@ export function SharedRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
-  }, [initialTipo, initialPrioridade]);
+  }, [initialTipo, initialPrioridade, filterCriadoPorTipo, scopeRole, canManageRequests]);
 
   const fetchCatalogo = async () => {
     try {
@@ -902,6 +910,7 @@ export function SharedRequisitionsPage({
     }
     setFilterCriadoPorNome('');
     setFilterGeridoPorNome('');
+    setFilterCriadoPorTipo('');
   };
 
   const handleSelectTab = (tab: RequisicoesTab) => {
@@ -1593,6 +1602,9 @@ export function SharedRequisitionsPage({
                 setFilterCriadoPorNome={setFilterCriadoPorNome}
                 filterGeridoPorNome={filterGeridoPorNome}
                 setFilterGeridoPorNome={setFilterGeridoPorNome}
+                showCreatedByRoleFilter={isSecretaryView}
+                filterCriadoPorTipo={filterCriadoPorTipo}
+                setFilterCriadoPorTipo={setFilterCriadoPorTipo}
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
@@ -1640,6 +1652,9 @@ export function SharedRequisitionsPage({
                   setFilterCriadoPorNome={setFilterCriadoPorNome}
                   filterGeridoPorNome={filterGeridoPorNome}
                   setFilterGeridoPorNome={setFilterGeridoPorNome}
+                  showCreatedByRoleFilter={isSecretaryView}
+                  filterCriadoPorTipo={filterCriadoPorTipo}
+                  setFilterCriadoPorTipo={setFilterCriadoPorTipo}
                   onSearch={() => fetchRequisicoes()}
                   onClearFilters={handleClearFilters}
                   loading={loading}

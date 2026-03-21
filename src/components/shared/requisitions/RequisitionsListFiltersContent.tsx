@@ -24,6 +24,9 @@ interface RequisitionsListFiltersContentProps {
   setFilterCriadoPorNome: (value: string) => void;
   filterGeridoPorNome: string;
   setFilterGeridoPorNome: (value: string) => void;
+  showCreatedByRoleFilter?: boolean;
+  filterCriadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
+  setFilterCriadoPorTipo?: (value: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO') => void;
   onSearch: () => void;
   onClearFilters: () => void;
   loading: boolean;
@@ -47,6 +50,9 @@ export function RequisitionsListFiltersContent({
   setFilterCriadoPorNome,
   filterGeridoPorNome,
   setFilterGeridoPorNome,
+  showCreatedByRoleFilter = false,
+  filterCriadoPorTipo = '',
+  setFilterCriadoPorTipo,
   onSearch,
   onClearFilters,
   loading,
@@ -61,6 +67,7 @@ export function RequisitionsListFiltersContent({
   const prioridadeId = desktop ? 'req-filter-prioridade-desktop' : 'req-filter-prioridade';
   const criadoId = desktop ? 'req-filter-criado-por-desktop' : 'req-filter-criado-por';
   const geridoId = desktop ? 'req-filter-gerido-por-desktop' : 'req-filter-gerido-por';
+  const criadoTipoId = desktop ? 'req-filter-criado-tipo-desktop' : 'req-filter-criado-tipo';
 
   const tabsContainerProps = desktop
     ? {
@@ -137,7 +144,7 @@ export function RequisitionsListFiltersContent({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className={`grid grid-cols-1 ${showCreatedByRoleFilter ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
         <div>
           <label htmlFor={estadoId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
           <select
@@ -166,6 +173,24 @@ export function RequisitionsListFiltersContent({
             ))}
           </select>
         </div>
+
+        {showCreatedByRoleFilter && (
+          <div>
+            <label htmlFor={criadoTipoId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByRole')}</label>
+            <select
+              id={criadoTipoId}
+              value={filterCriadoPorTipo}
+              onChange={(e) => setFilterCriadoPorTipo?.(e.target.value as '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO')}
+              className={selectFieldClassName}
+            >
+              <option value="">{t('requisitions.ui.allRoles')}</option>
+              <option value="SECRETARIA">{t('requisitions.ui.roleSecretary')}</option>
+              <option value="ESCOLA">{t('requisitions.ui.roleSchool')}</option>
+              <option value="BALNEARIO">{t('requisitions.ui.roleBalneario')}</option>
+              <option value="INTERNO">{t('requisitions.ui.roleInterno')}</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label htmlFor={criadoId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByName')}</label>
