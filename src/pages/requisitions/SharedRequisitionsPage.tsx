@@ -976,6 +976,54 @@ export function SharedRequisitionsPage({
     };
   };
 
+  const calcularTodosOsConflitosTransporte = (
+    requisicaoAtual: RequisicaoResponse,
+    outrasRequisicoes: RequisicaoResponse[],
+  ): RequisicaoResponse[] => {
+    // Similar to calcularConflitosTransporte, but includes ALL conflicting requisitions
+    // regardless of their state (except CANCELADA), for automatic rejection
+    const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
+    const idsSelecionados = new Set(
+      transportesSelecionados
+        .map((transporte) => transporte.id)
+        .filter((id): id is number => typeof id === 'number'),
+    );
+
+    if (idsSelecionados.size === 0) {
+      return [];
+    }
+
+    const conflitos = outrasRequisicoes
+      .filter((outra) => outra.id !== requisicaoAtual.id)
+      .filter((outra) => outra.estado !== 'CANCELADA') // Don't reject cancelled requests
+      .filter((outra) => {
+        const transportesOutra = getRequisicaoTransportes(outra);
+        const partilhaTransporte = transportesOutra.some(
+          (transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id),
+        );
+
+        if (!partilhaTransporte) {
+          return false;
+        }
+
+        if (!requisicaoAtual.dataHoraSaida
+          || !requisicaoAtual.dataHoraRegresso
+          || !outra.dataHoraSaida
+          || !outra.dataHoraRegresso) {
+          return true;
+        }
+
+        return periodsOverlap(
+          requisicaoAtual.dataHoraSaida,
+          requisicaoAtual.dataHoraRegresso,
+          outra.dataHoraSaida,
+          outra.dataHoraRegresso,
+        );
+      });
+
+    return conflitos;
+  };
+
   const abrirRequisicaoPorId = async (requisicaoId: number): Promise<void> => {
     const requisicaoExistente = requisicoes.find((req) => req.id === requisicaoId);
     if (requisicaoExistente) {
@@ -1187,21 +1235,22 @@ export function SharedRequisitionsPage({
       // First, accept the current request
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
       
-      // Then, automatically reject conflicting transport requests
+      // Then, automatically reject ALL conflicting transport requests regardless of their state
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
           const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
           
-          const resultadoConflitos = calcularConflitosTransporte(
+          // Get ALL conflicting requests (including ENVIADA, EM_ANALISE, etc)
+          const todosOsConflitos = calcularTodosOsConflitosTransporte(
             selectedRequisicao,
             requisicoesList,
           );
 
-          if (resultadoConflitos && resultadoConflitos.conflitosParaMostrar.length > 0) {
-            // Reject all conflicting requests that are not in a final state
-            const rejectPromises = resultadoConflitos.conflitosParaMostrar
-              .filter((conflito) => conflito.estado !== 'RECUSADA' && conflito.estado !== 'CANCELADA')
+          if (todosOsConflitos.length > 0) {
+            // Reject all conflicting requests that are not already RECUSADA
+            const rejectPromises = todosOsConflitos
+              .filter((conflito) => conflito.estado !== 'RECUSADA')
               .map((conflito) =>
                 requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' })
               );
