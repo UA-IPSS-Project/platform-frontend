@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialo
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
 import {
   formatMaterialCategoria,
+  formatManutencaoCategoriaDisplay,
   ESTADO_SECRETARIA_OPTIONS,
   RequisicaoItem,
   formatEstado,
@@ -93,20 +94,12 @@ export function RequisitionDetailsDialog({
       itens: Array<{ id: string; label: string }>;
     }>();
 
-    const categoriaLabel = (categoria?: string) => {
-      if (categoria === 'CATL') return 'CATL';
-      if (categoria === 'RC') return 'R/C';
-      if (categoria === 'PRE_ESCOLAR') return 'Pré Escolar';
-      if (categoria === 'CRECHE') return 'Crech';
-      return categoria || t('requisitions.labels.noCategory');
-    };
-
     items.forEach((item) => {
       if (!item.manutencaoItem) return;
 
       const key = item.manutencaoItem.categoria || 'SEM_CATEGORIA';
       const grupoAtual = grupos.get(key) ?? {
-        categoriaLabel: categoriaLabel(item.manutencaoItem.categoria),
+        categoriaLabel: formatManutencaoCategoriaDisplay(item.manutencaoItem.categoria),
         observacoes: undefined,
         itens: [],
       };

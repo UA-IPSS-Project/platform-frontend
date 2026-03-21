@@ -106,6 +106,89 @@ export const MANUTENCAO_CATEGORIA_OPTIONS: Array<{ value: ManutencaoCategoria; l
   { value: 'CRECHE', label: 'requisitions.labels.maintenanceCategoryDaycare' },
 ];
 
+export const MANUTENCAO_CATEGORIA_ORDER: ManutencaoCategoria[] = ['CATL', 'RC', 'PRE_ESCOLAR', 'CRECHE'];
+
+export const MANUTENCAO_CATEGORIA_DISPLAY_LABELS: Record<ManutencaoCategoria, string> = {
+  CATL: 'CATL',
+  RC: 'R/C',
+  PRE_ESCOLAR: 'Pré Escolar',
+  CRECHE: 'Crech',
+};
+
+export const MANUTENCAO_ESPACOS_POR_CATEGORIA: Record<ManutencaoCategoria, string[]> = {
+  CATL: [
+    'WC masculino',
+    'WC feminino',
+    'Salão',
+    'Salão (palco)',
+  ],
+  RC: [
+    'Parque exterior',
+    'Relvado',
+    'Acolhimento pré',
+    'Acolhimento creche',
+    'Gabinete',
+    'WC deficientes',
+    'WC Rosa',
+    'WC azul',
+    'Gabinete médico',
+    'Oficina',
+    'Corredor + WC',
+    'Biblioteca',
+    'Refeitório',
+    'Lavatórios + Hall',
+    'Elevador',
+    'Escadas acesso 1º',
+  ],
+  PRE_ESCOLAR: [
+    'Sala acolhimento',
+    'Sala de educadoras',
+    'WC deficientes',
+    'WC azul',
+    'WC cor de rosa',
+    'Hall',
+    'Escadas acesso 2º',
+    'Corredor',
+    'Sala Amarela',
+    'Sala Azul',
+    'Sala Verde',
+    'Sala Arco-Íris',
+    'WC',
+    'Parque exterior',
+  ],
+  CRECHE: [
+    'Parque ext. 3º andar',
+    'S. Acolhimento grande',
+    'S. Acollhimento peq.',
+    'WC',
+    'WC azul',
+    'Corredor e hall',
+    'Escadas acesso sotão',
+    'Sala Amarela limão',
+    'Sala Verde Alface',
+    'Sala Vermelha',
+    'Refeitório',
+    'Copa',
+    'Fraldário',
+    'Sala azul turquesa',
+    'Berçário',
+  ],
+};
+
+export const MANUTENCAO_VERIFICACOES_ORDEM = [
+  'Alumínios',
+  'Blackouts',
+  'Madeiras',
+  'Armários',
+  'Aquecedores',
+  'Torneiras',
+  'Eletricidade',
+  'Cabides',
+  'Paredes',
+  'Tetos',
+  'Chão',
+] as const;
+
 export const formatTipo = (tipo: RequisicaoTipo) => {
   const key = TIPO_OPTIONS.find((option) => option.value === tipo)?.label;
   return key ? i18n.t(key) : tipo;
@@ -122,6 +205,12 @@ export const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
   i18n.t(MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria) =>
   i18n.t(MANUTENCAO_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
+
+export const formatManutencaoCategoriaDisplay = (categoria?: ManutencaoCategoria | string) => {
+  if (!categoria) return i18n.t('requisitions.labels.noCategory');
+  const typed = categoria as ManutencaoCategoria;
+  return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? categoria;
+};
 export const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
   i18n.t(TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 
