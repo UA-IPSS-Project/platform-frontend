@@ -3,11 +3,6 @@ import { DocumentoDTO, PesquisaDocumentosParams } from './types';
 export const documentosApi = {
     // Preview inline de documento (abre em nova aba)
     previewDocumento: (documentoId: number) => {
-        const xsrfToken = getCookie('XSRF-TOKEN');
-        const headers: Record<string, string> = {};
-        if (xsrfToken) {
-            headers['X-XSRF-TOKEN'] = xsrfToken;
-        }
         const url = `${API_BASE_URL}/api/documentos/${documentoId}/preview`;
         // Abre em nova aba para visualização inline
         window.open(url, '_blank', 'noopener');
