@@ -2,11 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { Checkbox } from '../../components/ui/checkbox';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
-import { DatePickerField, formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
+import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -59,6 +56,9 @@ import { RequisitionsCreateMaterialDialog } from '../../components/shared/requis
 import { RequisitionDetailsDialog } from '../../components/shared/requisitions/RequisitionDetailsDialog';
 import { RequisitionsListFiltersContent } from '../../components/shared/requisitions/RequisitionsListFiltersContent';
 import { RequisitionsCreateManutencaoForm } from '../../components/shared/requisitions/RequisitionsCreateManutencaoForm';
+import { RequisitionsCreateCommonFields } from '../../components/shared/requisitions/RequisitionsCreateCommonFields';
+import { RequisitionsCreateMaterialForm } from '../../components/shared/requisitions/RequisitionsCreateMaterialForm';
+import { RequisitionsCreateTransportForm } from '../../components/shared/requisitions/RequisitionsCreateTransportForm';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -1357,63 +1357,42 @@ export function SharedRequisitionsPage({
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
-            <select
-              id="req-create-tipo"
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
-              className={selectFieldClassName}
-            >
-              {TIPO_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
-            <select
-              id="req-create-prioridade"
-              value={prioridade}
-              onChange={(e) => setPrioridade(e.target.value as RequisicaoPrioridade)}
-              className={selectFieldClassName}
-            >
-              {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.deadlineDate')}</label>
-            <DatePickerField
-              id="req-create-tempo-limite"
-              value={formatDateInput(tempoLimite)}
-              onChange={(value) => {
-                setTempoLimite(parseDateInput(value));
-                setTempoLimiteManuallyEdited(true);
-              }}
-              placeholder={t('requisitions.ui.selectDate')}
-              buttonClassName="mt-1"
-            />
-            {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
-            )}
-          </div>
-        </div>
-
         <div>
-          <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.description')}</label>
-          <Textarea
-            id="req-create-descricao"
-            className={textareaFieldClassName}
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder={t('requisitions.ui.describeRequest')}
-          />
+          <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
+          <select
+            id="req-create-tipo"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
+            className={selectFieldClassName}
+          >
+            {TIPO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{t(option.label)}</option>
+            ))}
+          </select>
         </div>
+
+        <RequisitionsCreateCommonFields
+          tipo={tipo}
+          descricao={descricao}
+          onChangeDescricao={setDescricao}
+          prioridade={prioridade}
+          onChangePrioridade={setPrioridade}
+          tempoLimite={tempoLimite}
+          onChangeTempoLimite={(value) => {
+            setTempoLimite(value);
+            setTempoLimiteManuallyEdited(true);
+          }}
+          descricaoError={createErrors.descricao}
+          tempoLimiteError={undefined}
+          inputFieldClassName={inputFieldClassName}
+          textareaFieldClassName={textareaFieldClassName}
+          selectFieldClassName={selectFieldClassName}
+          t={t}
+        />
+
+        {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
+        )}
       </div>
 
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
@@ -1422,511 +1401,115 @@ export function SharedRequisitionsPage({
         <div>
           {tipo === 'MATERIAL' && (
             <div className="space-y-3">
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.selectMaterials')}</p>
-                  <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
-                    {t('requisitions.ui.newMaterial')}
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  {MATERIAL_CATEGORIA_OPTIONS.map((categoria) => {
-                    const itemsCategoria = materiaisPorCategoria.get(categoria.value) ?? [];
-                    const isCategoriaExpanded = expandedMaterialCategorias[categoria.value] ?? false;
-
-                    return (
-                      <div
-                        key={categoria.value}
-                        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/60"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleCategoriaExpansion(categoria.value)}
-                          className="w-full px-3 py-2 flex items-center justify-between text-left"
-                        >
-                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            {t(categoria.label)}
-                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({itemsCategoria.length})</span>
-                          </p>
-                          {isCategoriaExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" />
-                          )}
-                        </button>
-
-                        {isCategoriaExpanded && (itemsCategoria.length === 0 ? (
-                          <p className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
-                            {t('requisitions.ui.noItemsInCategory')}
-                          </p>
-                        ) : (
-                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
-                            {itemsCategoria.map((item) => {
-                              const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
-                              const selectedCount = item.variantes.filter((variante) =>
-                                materialLinhas.some((linha) => linha.materialId === String(variante.id)),
-                              ).length;
-                              const itemChecked = selectedCount > 0 || hasPendingSelection;
-                              const isExpanded = itemChecked && expandedMaterialItems[item.itemKey] !== false;
-                              const safeItemKey = encodeURIComponent(item.itemKey);
-
-                              return (
-                                <div key={item.itemKey} className="space-y-2 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                      <div className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-1 -mx-1">
-                                        <Checkbox
-                                          id={`item-toggle-${safeItemKey}`}
-                                          checked={itemChecked}
-                                          onCheckedChange={(checked) => handleItemToggle(item, !!checked)}
-                                        />
-                                        <label
-                                          htmlFor={`item-toggle-${safeItemKey}`}
-                                          className="truncate text-sm text-gray-700 dark:text-gray-200 cursor-pointer select-none"
-                                          title={item.nome}
-                                        >
-                                          {item.nome}
-                                        </label>
-                                      </div>
-
-                                    {itemChecked && (
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="h-7 px-2 text-xs"
-                                        onClick={() => toggleItemAttributesVisibility(item.itemKey)}
-                                      >
-                                        {isExpanded ? t('requisitions.ui.hideAttributes') : t('requisitions.ui.showAttributes')}
-                                      </Button>
-                                    )}
-                                  </div>
-
-                                  {isExpanded && (
-                                    <div className="pl-6 space-y-2 rounded-md border border-gray-200/70 dark:border-gray-700/70 bg-gray-50/70 dark:bg-gray-800/40 p-2">
-                                      {item.variantes.map((variante) => {
-                                        const checked = materialLinhas.some((linha) => linha.materialId === String(variante.id));
-                                        const linhaSelecionada = materialLinhas.find((linha) => linha.materialId === String(variante.id));
-                                        const atributoLabel = variante.atributo && variante.valorAtributo
-                                          ? `${variante.atributo}: ${variante.valorAtributo}`
-                                          : `Variante #${variante.id}`;
-
-                                        return (
-                                          <div key={variante.id} className="grid grid-cols-1 md:grid-cols-[1fr_120px] gap-2 items-center">
-                                            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer">
-                                              <Checkbox
-                                                checked={checked}
-                                                onCheckedChange={(nextChecked) => toggleVariante(variante.id, !!nextChecked)}
-                                              />
-                                              <span>{atributoLabel}</span>
-                                            </label>
-
-                                            {checked && (
-                                              <div>
-                                                <label htmlFor={`qtd-variante-${variante.id}`} className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.quantityShort')}</label>
-                                                <Input
-                                                  id={`qtd-variante-${variante.id}`}
-                                                  type="number"
-                                                  min="1"
-                                                  className={quantityFieldClassName}
-                                                  value={linhaSelecionada?.quantidade ?? '1'}
-                                                  onChange={(event) => updateVarianteQuantidade(variante.id, event.target.value)}
-                                                />
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="flex items-center justify-end">
+                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
+                  {t('requisitions.ui.newMaterial')}
+                </Button>
               </div>
 
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 space-y-2">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.addedMaterials')}</p>
-
-                {materialLinhas.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{t('requisitions.ui.noMaterialsYet')}</p>
-                ) : (
-                  <div className="space-y-4">
-                    {materiaisAdicionadosAgrupados.map((grupo) => (
-                      <div key={grupo.categoria} className="space-y-2">
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t(grupo.label)}</p>
-
-                        <div className="space-y-2">
-                          {grupo.itens.map((item) => (
-                            <div
-                              key={item.rowId}
-                              className="grid grid-cols-[minmax(0,1fr)_88px_auto] gap-2 items-center rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 bg-white dark:bg-gray-900"
-                            >
-                              <p className="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100" title={item.descricao}>
-                                {item.descricao}
-                              </p>
-                              <p className="text-sm text-center text-gray-700 dark:text-gray-300">{item.quantidade}</p>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-8 px-3"
-                                onClick={() => handleRemoveMaterialLinha(item.rowId)}
-                              >
-                                {t('requisitions.ui.remove')}
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span>{t('requisitions.ui.totalRows', { count: materialLinhas.length })}</span>
-                      <span>{t('requisitions.ui.totalUnits', { count: materiaisAdicionadosTotal })}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {createErrors.materialItens && (
-                <p className="text-red-500 text-xs">{createErrors.materialItens}</p>
-              )}
+              <RequisitionsCreateMaterialForm
+                materialLinhas={materialLinhas}
+                expandedMaterialItems={expandedMaterialItems}
+                expandedMaterialCategorias={expandedMaterialCategorias as Partial<Record<string, boolean>>}
+                materiaisPorCategoria={MATERIAL_CATEGORIA_OPTIONS.map((categoria) => ({
+                  categoria: categoria.value,
+                  label: categoria.label,
+                  itens: materiaisPorCategoria.get(categoria.value) ?? [],
+                }))}
+                materiaisAdicionados={[]}
+                materiaisAdicionadosTotal={materiaisAdicionadosTotal}
+                materiaisAdicionadosAgrupados={materiaisAdicionadosAgrupados}
+                onToggleCategoriaExpansion={(categoria) => toggleCategoriaExpansion(categoria as MaterialCategoria)}
+                onToggleItemVisibility={toggleItemAttributesVisibility}
+                onToggleItem={handleItemToggle}
+                onToggleVariante={toggleVariante}
+                onUpdateVarianteQuantidade={updateVarianteQuantidade}
+                onRemoveMaterialLinha={handleRemoveMaterialLinha}
+                quantityFieldClassName={quantityFieldClassName}
+                materiaisError={createErrors.materialItens}
+                t={t}
+              />
             </div>
           )}
 
           {tipo === 'TRANSPORTE' && (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Planeamento da deslocação</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.transportPlanningHint')}</p>
-                </div>
+            <div className="space-y-3">
+              <RequisitionsCreateTransportForm
+                destinoTransporte={destinoTransporte}
+                onChangeDestino={(value) => {
+                  setDestinoTransporte(value);
+                  if (createTouched.destino) validateAndSetField('destino');
+                }}
+                dataSaida={dataSaida}
+                onChangeDataSaida={(value) => {
+                  setDataSaida(value);
+                  validateAndSetField('dataSaida');
+                  validateAndSetField('horaSaida');
+                  validateAndSetField('dataRegresso');
+                  validateAndSetField('horaRegresso');
+                }}
+                horaSaida={horaSaida}
+                onChangeHoraSaida={(value) => {
+                  setHoraSaida(value);
+                  validateAndSetField('horaSaida');
+                  validateAndSetField('dataSaida');
+                  validateAndSetField('dataRegresso');
+                  validateAndSetField('horaRegresso');
+                }}
+                dataRegresso={dataRegresso}
+                onChangeDataRegresso={(value) => {
+                  setDataRegresso(value);
+                  validateAndSetField('dataRegresso');
+                  validateAndSetField('horaRegresso');
+                  validateAndSetField('dataSaida');
+                  validateAndSetField('horaSaida');
+                }}
+                horaRegresso={horaRegresso}
+                onChangeHoraRegresso={(value) => {
+                  setHoraRegresso(value);
+                  validateAndSetField('horaRegresso');
+                  validateAndSetField('dataRegresso');
+                  validateAndSetField('dataSaida');
+                  validateAndSetField('horaSaida');
+                }}
+                numeroPassageiros={numeroPassageiros}
+                onChangeNumeroPassageiros={(value) => {
+                  setNumeroPassageiros(value);
+                  if (createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                }}
+                condutorTransporte={condutorTransporte}
+                onChangeCondutor={setCondutorTransporte}
+                selectedTransportIds={selectedTransportIds}
+                onToggleTransport={(transporteId, checked) => {
+                  toggleSelectedTransport(transporteId, checked);
+                  validateAndSetField('transporteIds', true);
+                }}
+                onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
+                expandedTransporteCategorias={expandedTransporteCategorias}
+                onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
+                expandedTransporteDetalhes={expandedTransporteDetalhes}
+                onToggleTransporteDetalhes={toggleTransporteDetalhes}
+                transportesPorCategoria={transportesPorCategoria}
+                selectedTransportes={selectedTransportes}
+                transportesIndisponiveis={transportesIndisponiveis}
+                recommendedTransportIds={recommendedTransportIds}
+                selectedTransportesCapacidade={selectedTransportesCapacidade}
+                passageirosSolicitados={passageirosSolicitados}
+                lugaresEmFalta={lugaresEmFalta}
+                loadingCatalogo={loadingCatalogo}
+                createErrors={{ transporteIds: createErrors.transporteIds }}
+                inputFieldClassName={inputFieldClassName}
+                selectFieldClassName={selectFieldClassName}
+                onApplySuggestion={handleAplicarSugestaoTransporte}
+                t={t}
+              />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  <div>
-                    <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
-                    <Input
-                      id="req-create-transporte-destino"
-                      className={getFieldClassName(inputFieldClassName, 'destino')}
-                      value={destinoTransporte}
-                      onChange={(e) => {
-                        setDestinoTransporte(e.target.value);
-                        if (createTouched.destino) {
-                          validateAndSetField('destino');
-                        }
-                      }}
-                      onBlur={() => validateAndSetField('destino', true)}
-                      placeholder={t('requisitions.ui.destinationPlaceholder')}
-                    />
-                    {createErrors.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.driverOptional')}</label>
-                    <Input
-                      id="req-create-transporte-condutor"
-                      className={inputFieldClassName}
-                      value={condutorTransporte}
-                      onChange={(e) => setCondutorTransporte(e.target.value)}
-                      placeholder={t('requisitions.ui.driverPlaceholder')}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
-                    <Input
-                      id="req-create-transporte-passageiros"
-                      type="number"
-                      min="1"
-                      className={getFieldClassName(inputFieldClassName, 'numeroPassageiros')}
-                      value={numeroPassageiros}
-                      onChange={(e) => {
-                        setNumeroPassageiros(e.target.value);
-                        if (createTouched.numeroPassageiros) {
-                          validateAndSetField('numeroPassageiros');
-                        }
-                      }}
-                      onBlur={() => validateAndSetField('numeroPassageiros', true)}
-                      placeholder={t('requisitions.ui.passengersPlaceholder')}
-                    />
-                    {createErrors.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
-                  </div>
-
-                  <div className="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                    <div onBlurCapture={() => {
-                      validateAndSetField('dataSaida', true);
-                      validateAndSetField('horaSaida', true);
-                    }}>
-                      <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
-                      <DatePickerField
-                        id="req-create-transporte-data-saida"
-                        value={dataSaida}
-                        onChange={(value) => {
-                          setDataSaida(value);
-                          if (!dataRegresso) {
-                            setDataRegresso(value);
-                          }
-                          validateAndSetField('dataSaida');
-                          validateAndSetField('horaSaida');
-                          validateAndSetField('dataRegresso');
-                          validateAndSetField('horaRegresso');
-                        }}
-                        buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
-                      />
-                      {createErrors.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
-                    </div>
-
-                    <div>
-                      <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')}</label>
-                      <Input
-                        id="req-create-transporte-hora-saida"
-                        type="time"
-                        className={getFieldClassName(inputFieldClassName, 'horaSaida')}
-                        value={horaSaida}
-                        onChange={(e) => {
-                          setHoraSaida(e.target.value);
-                          validateAndSetField('horaSaida');
-                          validateAndSetField('dataSaida');
-                          validateAndSetField('dataRegresso');
-                          validateAndSetField('horaRegresso');
-                        }}
-                        onBlur={() => validateAndSetField('horaSaida', true)}
-                        onBlurCapture={() => validateAndSetField('dataSaida', true)}
-                      />
-                      {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
-                    </div>
-
-                    <div onBlurCapture={() => {
-                      validateAndSetField('dataRegresso', true);
-                      validateAndSetField('horaRegresso', true);
-                    }}>
-                      <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
-                      <DatePickerField
-                        id="req-create-transporte-data-regresso"
-                        value={dataRegresso}
-                        onChange={(value) => {
-                          setDataRegresso(value);
-                          validateAndSetField('dataRegresso');
-                          validateAndSetField('horaRegresso');
-                          validateAndSetField('dataSaida');
-                          validateAndSetField('horaSaida');
-                        }}
-                        buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
-                      />
-                      {createErrors.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
-                    </div>
-
-                    <div>
-                      <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')}</label>
-                      <Input
-                        id="req-create-transporte-hora-regresso"
-                        type="time"
-                        className={getFieldClassName(inputFieldClassName, 'horaRegresso')}
-                        value={horaRegresso}
-                        onChange={(e) => {
-                          setHoraRegresso(e.target.value);
-                          validateAndSetField('horaRegresso');
-                          validateAndSetField('dataRegresso');
-                          validateAndSetField('dataSaida');
-                          validateAndSetField('horaSaida');
-                        }}
-                        onBlur={() => validateAndSetField('horaRegresso', true)}
-                        onBlurCapture={() => validateAndSetField('dataRegresso', true)}
-                      />
-                      {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-3">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.suggestedAndSelectedVehicles')}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.suggestionHint')}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" className="h-8 px-3 text-xs" onClick={handleAplicarSugestaoTransporte}>
-                      {t('requisitions.ui.applySuggestion')}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-sm">
-                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.selectionMode')}</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{transportSelectionMode === 'auto' ? t('requisitions.ui.automatic') : t('requisitions.ui.manual')}</p>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-3 bg-gray-50/80 dark:bg-gray-800/50">
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.passengerCapacity')}</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">{t('requisitions.ui.seatsCount', { count: selectedTransportesCapacidade })}</p>
-                  </div>
-                  <div className={`rounded-lg border px-3 py-3 ${lugaresEmFalta > 0
-                    ? 'border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20'
-                    : 'border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/60 dark:bg-emerald-950/20'
-                    }`}>
-                    <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('requisitions.ui.coverage')}</p>
-                    <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100">
-                      {getCoberturaMensagem(passageirosSolicitados, lugaresEmFalta)}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.capacityHint')}</p>
-
-                {createErrors.transporteIds && (
-                  <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
-                )}
-
-                {transportesIndisponiveis.size > 0 && dataHoraSaidaSelecionada && dataHoraRegressoSelecionada && (
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    {t('requisitions.ui.unavailableVehiclesCount', { count: transportesIndisponiveis.size })}
-                  </p>
-                )}
-
-                {selectedTransportIds.length > 0 && (
-                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-2">
-                    <p className="text-xs uppercase tracking-wide text-emerald-700 dark:text-emerald-300">{t('requisitions.ui.currentSelection')}</p>
-                    <div className="space-y-2">
-                      {selectedTransportes.map((transporte) => (
-                        <div key={transporte.id} className="flex items-center justify-between gap-3 text-sm">
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{t('requisitions.ui.capacityLabel')}: {formatLotacao(transporte.lotacao)}</p>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="h-8 px-3"
-                            onClick={() => toggleSelectedTransport(transporte.id, false)}
-                          >
-                            {t('requisitions.ui.remove')}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {loadingCatalogo && (
-                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                    {t('requisitions.ui.loadingVehicles')}
-                  </div>
-                )}
-
-                {!loadingCatalogo && transportesPorCategoria.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-gray-300 dark:border-gray-700 p-6 text-sm text-gray-500 dark:text-gray-400">
-                    {t('requisitions.ui.noVehiclesInCatalog')}
-                  </div>
-                )}
-
-                {!loadingCatalogo && transportesPorCategoria.length > 0 && (
-                  <div className="space-y-4">
-                    {transportesPorCategoria.map((grupo) => (
-                      <div key={grupo.categoria} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                        <button
-                          type="button"
-                          onClick={() => toggleTransporteCategoriaExpansion(grupo.categoria)}
-                          className="w-full px-4 py-3 flex items-center justify-between text-left"
-                        >
-                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                            {t(grupo.label)}
-                            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.vehiclesCount', { count: grupo.items.length })}</span>
-                          </p>
-                          {expandedTransporteCategorias[grupo.categoria] ? (
-                            <ChevronUp className="w-4 h-4 text-gray-500" />
-                          ) : (
-                            <ChevronDown className="w-4 h-4 text-gray-500" />
-                          )}
-                        </button>
-
-                        {expandedTransporteCategorias[grupo.categoria] && (
-                          <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-3 gap-3">
-                            {grupo.items.map((transporte) => {
-                              const isSelected = selectedTransportIds.includes(String(transporte.id));
-                              const isRecommended = recommendedTransportIds.includes(transporte.id);
-                              const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
-                              const isUnavailable = transportesIndisponiveis.has(transporte.id);
-                                let transporteCardClass = 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
-                                if (isSelected) {
-                                  transporteCardClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm';
-                                } else if (isUnavailable) {
-                                  transporteCardClass = 'border-amber-300 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/10';
-                                }
-
-                              return (
-                                <div
-                                  key={transporte.id}
-                                  className={`rounded-xl border p-4 transition-all ${transporteCardClass}`}
-                                >
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 space-y-1">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
-                                          ? 'bg-emerald-600 text-white'
-                                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                                          }`}>
-                                          {transporte.codigo ?? `#${transporte.id}`}
-                                        </span>
-                                        {isRecommended && (
-                                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                                            {t('requisitions.ui.suggested')}
-                                          </span>
-                                        )}
-                                        {isUnavailable && (
-                                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                                            {t('requisitions.ui.unavailable')}
-                                          </span>
-                                        )}
-                                      </div>
-                                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                                      <p className="text-xs text-gray-600 dark:text-gray-400">{t('requisitions.ui.capacityLabel')}: {formatLotacao(transporte.lotacao)}</p>
-                                      {isUnavailable && (
-                                        <p className="text-xs text-amber-700 dark:text-amber-300">{t('requisitions.ui.overlapWarning')}</p>
-                                      )}
-                                    </div>
-                                    <Checkbox
-                                      checked={isSelected}
-                                      disabled={isUnavailable}
-                                      onCheckedChange={(checked) => {
-                                        toggleSelectedTransport(transporte.id, !!checked);
-                                        validateAndSetField('transporteIds', true);
-                                      }}
-                                    />
-                                  </div>
-
-                                  <div className="mt-3">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className="h-8 px-3 text-xs"
-                                      onClick={() => toggleTransporteDetalhes(transporte.id)}
-                                    >
-                                      {detailsOpen ? t('requisitions.ui.hideDetails') : t('requisitions.ui.details')}
-                                    </Button>
-                                  </div>
-
-                                  {detailsOpen && (
-                                    <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                                      <p>{formatTransporteCategoria(transporte.categoria)}</p>
-                                      <p>{t('requisitions.ui.licensePlate')}: {transporte.matricula ?? t('requisitions.ui.noLicensePlate')}</p>
-                                      <p>{t('requisitions.ui.brandModel')}: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || t('requisitions.ui.notDefined')}</p>
-                                      <p>{t('requisitions.ui.licenseDate')}: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : t('requisitions.ui.notDefined')}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {createErrors.destino && <p className="text-red-500 text-xs">{createErrors.destino}</p>}
+              {createErrors.dataSaida && <p className="text-red-500 text-xs">{createErrors.dataSaida}</p>}
+              {createErrors.horaSaida && <p className="text-red-500 text-xs">{createErrors.horaSaida}</p>}
+              {createErrors.dataRegresso && <p className="text-red-500 text-xs">{createErrors.dataRegresso}</p>}
+              {createErrors.horaRegresso && <p className="text-red-500 text-xs">{createErrors.horaRegresso}</p>}
+              {createErrors.numeroPassageiros && <p className="text-red-500 text-xs">{createErrors.numeroPassageiros}</p>}
             </div>
           )}
 
