@@ -708,8 +708,27 @@ export function AppointmentDetailsDialog({
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <File className="w-5 h-5 text-purple-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                            {doc.nomeOriginal}
+                          <p
+                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] md:max-w-[320px] lg:max-w-[420px]"
+                            title={doc.nomeOriginal}
+                          >
+                            {(() => {
+                              // Espera padrão NIF_TIPO_UUID.extensão
+                              const nome = doc.nomeOriginal;
+                              if (!nome) return '';
+                              const partes = nome.split('_');
+                              if (partes.length < 3) return nome;
+                              const uuidComExt = partes[2];
+                              const dotIdx = uuidComExt.indexOf('.')
+                              let uuid = uuidComExt;
+                              let ext = '';
+                              if (dotIdx !== -1) {
+                                uuid = uuidComExt.substring(0, dotIdx);
+                                ext = uuidComExt.substring(dotIdx);
+                              }
+                              const shortUuid = uuid.substring(0, 8);
+                              return `${partes[0]}_${partes[1]}_${shortUuid}${ext}`;
+                            })()}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}
@@ -717,6 +736,14 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => documentosApi.previewDocumento(doc.id)}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                          title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                        >
+                          <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleDownloadDocumento(doc)}
