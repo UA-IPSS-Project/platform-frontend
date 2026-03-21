@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialo
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
 import {
   formatMaterialCategoria,
-  formatManutencaoCategoria,
   ESTADO_SECRETARIA_OPTIONS,
   RequisicaoItem,
   formatEstado,
@@ -88,20 +87,44 @@ export function RequisitionDetailsDialog({
   };
 
   const groupManutencaoPorCategoria = (items: RequisicaoItem[] = []) => {
-    const grupos = new Map<string, Array<{ id: string; label: string; observacoes?: string }>>();
+    const grupos = new Map<string, {
+      categoriaLabel: string;
+      observacoes?: string;
+      itens: Array<{ id: string; label: string }>;
+    }>();
+
+    const categoriaLabel = (categoria?: string) => {
+      if (categoria === 'CATL') return 'CATL';
+      if (categoria === 'RC') return 'R/C';
+      if (categoria === 'PRE_ESCOLAR') return 'Pré Escolar';
+      if (categoria === 'CRECHE') return 'Crech';
+      return categoria || t('requisitions.labels.noCategory');
+    };
+
     items.forEach((item) => {
       if (!item.manutencaoItem) return;
-      const categoria = formatManutencaoCategoria(item.manutencaoItem.categoria);
-      const key = categoria || t('requisitions.labels.noCategory');
-      const grupoAtual = grupos.get(key) ?? [];
-      grupoAtual.push({
+
+      const key = item.manutencaoItem.categoria || 'SEM_CATEGORIA';
+      const grupoAtual = grupos.get(key) ?? {
+        categoriaLabel: categoriaLabel(item.manutencaoItem.categoria),
+        observacoes: undefined,
+        itens: [],
+      };
+
+      grupoAtual.itens.push({
         id: `${item.id ?? 'sem-id'}-${item.manutencaoItem.id}`,
         label: `${item.manutencaoItem.espaco ?? '—'} - ${item.manutencaoItem.itemVerificacao ?? '—'}`,
-        observacoes: item.observacoes,
       });
+
+      // Observacao e comum a categoria. Guarda apenas uma vez.
+      if (!grupoAtual.observacoes && item.observacoes?.trim()) {
+        grupoAtual.observacoes = item.observacoes.trim();
+      }
+
       grupos.set(key, grupoAtual);
     });
-    return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
+
+    return Array.from(grupos.values());
   };
 
   const materiaisAgrupados = selectedRequisicao?.tipo === 'MATERIAL'
@@ -216,18 +239,16 @@ export function RequisitionDetailsDialog({
                     </div>
 
                     <p className="text-gray-500 dark:text-gray-400 md:col-span-2">Itens de manutenção</p>
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2 grid grid-cols-1 gap-4">
                       {manutencaoAgrupada.length > 0 ? manutencaoAgrupada.map((grupo) => (
-                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
+                        <div key={grupo.categoriaLabel} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoriaLabel}</p>
+                          {grupo.observacoes ? (
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Obs: {grupo.observacoes}</p>
+                          ) : null}
                           <ul className="mt-1 list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
                             {grupo.itens.map((item) => (
-                              <li key={item.id}>
-                                {item.label}
-                                {item.observacoes ? (
-                                  <span className="block text-xs text-gray-500 dark:text-gray-400 ml-4">Obs: {item.observacoes}</span>
-                                ) : null}
-                              </li>
+                              <li key={item.id}>{item.label}</li>
                             ))}
                           </ul>
                         </div>
