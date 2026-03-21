@@ -187,7 +187,29 @@ const getPassengerCapacity = (lotacao?: number): number => {
 
 const composeDateTime = (date?: string, time?: string): string | undefined => {
   if (!date || !time) return undefined;
-  return `${date}T${time}`;
+  const parsedDate = parseDateInput(date) ?? (() => {
+    const fallback = new Date(date);
+    return Number.isNaN(fallback.getTime()) ? undefined : fallback;
+  })();
+
+  if (!parsedDate) return undefined;
+
+  const timeParts = time.split(':');
+  if (timeParts.length < 2) return undefined;
+  const hours = Number(timeParts[0]);
+  const minutes = Number(timeParts[1]);
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return undefined;
+  }
+
+  const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate(), hours, minutes, 0, 0);
+  const yyyy = normalized.getFullYear();
+  const mm = String(normalized.getMonth() + 1).padStart(2, '0');
+  const dd = String(normalized.getDate()).padStart(2, '0');
+  const hh = String(normalized.getHours()).padStart(2, '0');
+  const min = String(normalized.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
 };
 
 const isDateInputInPast = (dateInput?: string): boolean => {
@@ -676,6 +698,19 @@ export function SecretaryRequisitionsPage({
     }
   }, [materialLinhas, createTouched.materialItens]);
 
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE') return;
+
+    const temAlgumValorDataHora = Boolean(dataSaida || horaSaida || dataRegresso || horaRegresso);
+    if (!temAlgumValorDataHora) return;
+
+    // Revalida após atualização de estado para evitar checks com valores antigos no onChange.
+    validateAndSetField('dataSaida');
+    validateAndSetField('horaSaida');
+    validateAndSetField('dataRegresso');
+    validateAndSetField('horaRegresso');
+  }, [tipo, dataSaida, horaSaida, dataRegresso, horaRegresso]);
+
   const setFieldTouched = (field: CreateField) => {
     setCreateTouched((prev) => ({ ...prev, [field]: true }));
   };
@@ -707,23 +742,6 @@ export function SecretaryRequisitionsPage({
 
     if ((field === 'dataRegresso' || field === 'horaRegresso') && dataRegresso && isDateInputInPast(dataRegresso)) {
       return t('requisitions.errors.dateCannotBePast');
-    }
-
-    const now = new Date();
-    const saidaDateTime = composeDateTime(dataSaida, horaSaida);
-    if ((field === 'dataSaida' || field === 'horaSaida') && saidaDateTime) {
-      const saidaDate = new Date(saidaDateTime);
-      if (!Number.isNaN(saidaDate.getTime()) && saidaDate < now) {
-        return t('requisitions.errors.dateCannotBePast');
-      }
-    }
-
-    const regressoDateTime = composeDateTime(dataRegresso, horaRegresso);
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && regressoDateTime) {
-      const regressoDate = new Date(regressoDateTime);
-      if (!Number.isNaN(regressoDate.getTime()) && regressoDate < now) {
-        return t('requisitions.errors.dateCannotBePast');
-      }
     }
 
     if (field === 'numeroPassageiros') {
@@ -1708,7 +1726,10 @@ export function SecretaryRequisitionsPage({
                     />
                   </div>
 
-                  <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
+                  <div onBlurCapture={() => {
+                    validateAndSetField('dataSaida', true);
+                    validateAndSetField('horaSaida', true);
+                  }}>
                     <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-saida"
@@ -1743,11 +1764,15 @@ export function SecretaryRequisitionsPage({
                         validateAndSetField('horaRegresso');
                       }}
                       onBlur={() => validateAndSetField('horaSaida', true)}
+                      onBlurCapture={() => validateAndSetField('dataSaida', true)}
                     />
                     {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
                   </div>
 
-                  <div onBlurCapture={() => validateAndSetField('dataRegresso', true)}>
+                  <div onBlurCapture={() => {
+                    validateAndSetField('dataRegresso', true);
+                    validateAndSetField('horaRegresso', true);
+                  }}>
                     <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-regresso"
@@ -1779,6 +1804,7 @@ export function SecretaryRequisitionsPage({
                         validateAndSetField('horaSaida');
                       }}
                       onBlur={() => validateAndSetField('horaRegresso', true)}
+                      onBlurCapture={() => validateAndSetField('dataRegresso', true)}
                     />
                     {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
                   </div>
