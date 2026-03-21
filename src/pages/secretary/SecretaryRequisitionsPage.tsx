@@ -314,7 +314,6 @@ export function SecretaryRequisitionsPage({
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
   const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
-  const [mostrarMensagemConflitoBloqueante, setMostrarMensagemConflitoBloqueante] = useState(false);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
@@ -1062,7 +1061,6 @@ export function SecretaryRequisitionsPage({
     setConflitosPendentes([]);
     setConflitoTransportesNomes([]);
     setConflitoDialogMode('warning');
-    setMostrarMensagemConflitoBloqueante(false);
     setOpenedRequisicaoId(req.id);
 
     // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
@@ -1162,7 +1160,6 @@ export function SecretaryRequisitionsPage({
             );
             setConflitoTransportesNomes(transportesConflitantesNomes);
             setConflitoDialogMode(conflitosBloqueantes.length > 0 ? 'blocked' : 'warning');
-            setMostrarMensagemConflitoBloqueante(false);
             setConflitoDialogOpen(true);
             return;
           }
@@ -1293,7 +1290,6 @@ export function SecretaryRequisitionsPage({
       setConflitosPendentes([]);
       setConflitoTransportesNomes([]);
       setConflitoDialogMode('warning');
-      setMostrarMensagemConflitoBloqueante(false);
       await fetchRequisicoes();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
@@ -2431,7 +2427,6 @@ export function SecretaryRequisitionsPage({
             setConflitosPendentes([]);
             setConflitoTransportesNomes([]);
             setConflitoDialogMode('warning');
-            setMostrarMensagemConflitoBloqueante(false);
           }
         }}
       >
@@ -2585,7 +2580,7 @@ export function SecretaryRequisitionsPage({
                 : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
             </p>
 
-            {conflitoDialogMode === 'blocked' && mostrarMensagemConflitoBloqueante && (
+            {conflitoDialogMode === 'blocked' && (
               <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
                 Impossível aceitar esta marcação porque já existe uma marcação aceite com este(s) veículo(s).
               </p>
@@ -2645,14 +2640,6 @@ export function SecretaryRequisitionsPage({
                     disabled={updatingEstadoId === openedRequisicaoId}
                   >
                     Fechar requisição
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setMostrarMensagemConflitoBloqueante(true)}
-                    disabled={updatingEstadoId === openedRequisicaoId}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Impossível aceitar
                   </Button>
                 </>
               ) : (
