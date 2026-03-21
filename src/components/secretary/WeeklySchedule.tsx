@@ -1471,10 +1471,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               );
                             }
                             if (slotAppointments.length > 0 && !blocked) {
+                              const apt = slotAppointments[0];
+                              const isOwn = (apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id);
                               return (
                                 <div className="w-full h-full flex items-center">
                                   <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
-                                    {slotAppointments[0].patientName}
+                                    {isClient && isOwn ? tt('Sua marcação', 'Your appointment') : apt.patientName}
                                   </span>
                                 </div>
                               );
