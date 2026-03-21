@@ -117,6 +117,39 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
     return statusStyles[normalizedStatus] || defaultStyle;
   };
+
+  // Helper for mini-cells: only background/text color, no border-l-4
+  const getMiniCellStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
+    const normalizedStatus = (status || '').toLowerCase();
+    const statusStyles: Record<string, string> = {
+      'completed': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'concluded': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'done': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'cancelled': isInteractive
+        ? 'bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-100 dark:hover:bg-red-900/50'
+        : 'bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100',
+      'in-progress': isInteractive
+        ? 'bg-violet-100 text-violet-900 hover:bg-violet-200 dark:bg-violet-900/40 dark:text-violet-100 dark:hover:bg-violet-900/50'
+        : 'bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-100',
+      'scheduled': isInteractive
+        ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
+        : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100',
+      'warning': isInteractive
+        ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/50'
+        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100',
+      'no-show': 'bg-amber-100 text-amber-900 cursor-not-allowed dark:bg-amber-900/40 dark:text-amber-100',
+    };
+    const defaultStyle = isInteractive
+      ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
+      : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100';
+    return statusStyles[normalizedStatus] || defaultStyle;
+  };
   const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
   const currentLocale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const weekdaysShort = i18n.language.startsWith('en') ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
@@ -1330,10 +1363,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             const displayText = splitAppointment.status === 'no-show'
                               ? 'Faltou'
                               : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
+                            // Get status style for each mini-cell
+                            const isInteractive = !!(isClient && splitIsOwn);
+                            const miniCellStatusClass = getMiniCellStatusStyle(splitAppointment.status, isInteractive);
                             return (
                               <button
                                 key={`${splitAppointment.id}-${splitIndex}`}
-                                className="text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                                className={`text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900/40 transition ${miniCellStatusClass}`}
                                 style={{ minHeight: '38px', height: '38px' }}
                                 aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
                                 onClick={e => {
@@ -1486,29 +1522,37 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                 } else if (total === 2) {
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
-                                      {slotAppointments.slice(0, 2).map((apt, i) => (
-                                        <span
-                                          key={apt.id}
-                                          className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 flex items-center"
-                                          style={{height: '50%'}}
-                                        >
-                                          {apt.patientName}
-                                        </span>
-                                      ))}
+                                      {slotAppointments.slice(0, 2).map((apt, i) => {
+                                        const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                        return (
+                                          <span
+                                            key={apt.id}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
+                                            style={{height: '50%'}}
+                                          >
+                                            {apt.patientName}
+                                          </span>
+                                        );
+                                      })}
                                     </div>
                                   );
                                 } else if (total > 2) {
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
-                                      {slotAppointments.slice(0, 2).map((apt, i) => (
-                                        <span
-                                          key={apt.id}
-                                          className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 flex items-center"
-                                          style={{height: '33.33%'}}
-                                        >
-                                          {apt.patientName}
-                                        </span>
-                                      ))}
+                                      {slotAppointments.slice(0, 2).map((apt, i) => {
+                                        const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                        return (
+                                          <span
+                                            key={apt.id}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
+                                            style={{height: '33.33%'}}
+                                          >
+                                            {apt.patientName}
+                                          </span>
+                                        );
+                                      })}
                                       <span
                                         className="text-xs text-gray-400 flex items-center justify-center font-semibold bg-white/10 dark:bg-black/10 rounded flex-1 min-h-0"
                                         style={{height: '33.33%'}}
