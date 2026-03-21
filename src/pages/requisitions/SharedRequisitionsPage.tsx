@@ -1998,40 +1998,54 @@ export function SharedRequisitionsPage({
       </div>
 
       <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-3/5' : 'w-full'}`}>
-          <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-            <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
-          </div>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/5 min-w-[180px]' : 'w-full'}`}>
+          {activeSection === 'create' ? (
+            <button
+              type="button"
+              onClick={() => toggleSection('list')}
+              className="h-full w-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
+              aria-label={t('requisitions.ui.toggleRequestsSection')}
+            >
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.requests')}</span>
+              <ChevronLeft className="w-5 h-5 text-gray-500 rotate-180" />
+            </button>
+          ) : (
+            <>
+              <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+              </div>
 
-          <div className="px-5 pb-5 pt-4 space-y-4">
-            <RequisitionsListFiltersContent
-              desktop
-              activeTab={activeTab}
-              onSelectTab={handleSelectTab}
-              filterEstado={filterEstado}
-              setFilterEstado={setFilterEstado}
-              filterPrioridade={filterPrioridade}
-              setFilterPrioridade={setFilterPrioridade}
-              filterCriadoPorNome={filterCriadoPorNome}
-              setFilterCriadoPorNome={setFilterCriadoPorNome}
-              filterGeridoPorNome={filterGeridoPorNome}
-              setFilterGeridoPorNome={setFilterGeridoPorNome}
-              onSearch={() => fetchRequisicoes()}
-              onClearFilters={handleClearFilters}
-              loading={loading}
-              requisicoes={requisicoes}
-              onOpenRequisicao={handleOpenRequisicao}
-              selectFieldClassName={selectFieldClassName}
-              inputFieldClassName={inputFieldClassName}
-              formatDateTimeOrDash={formatDateTimeOrDash}
-              t={t}
-            />
+              <div className="px-5 pb-5 pt-4 space-y-4">
+                <RequisitionsListFiltersContent
+                  desktop
+                  activeTab={activeTab}
+                  onSelectTab={handleSelectTab}
+                  filterEstado={filterEstado}
+                  setFilterEstado={setFilterEstado}
+                  filterPrioridade={filterPrioridade}
+                  setFilterPrioridade={setFilterPrioridade}
+                  filterCriadoPorNome={filterCriadoPorNome}
+                  setFilterCriadoPorNome={setFilterCriadoPorNome}
+                  filterGeridoPorNome={filterGeridoPorNome}
+                  setFilterGeridoPorNome={setFilterGeridoPorNome}
+                  onSearch={() => fetchRequisicoes()}
+                  onClearFilters={handleClearFilters}
+                  loading={loading}
+                  requisicoes={requisicoes}
+                  onOpenRequisicao={handleOpenRequisicao}
+                  selectFieldClassName={selectFieldClassName}
+                  inputFieldClassName={inputFieldClassName}
+                  formatDateTimeOrDash={formatDateTimeOrDash}
+                  t={t}
+                />
 
-          </div>
+              </div>
+            </>
+          )}
         </GlassCard>
 
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-2/5 opacity-100' : 'w-[160px] opacity-100'}`}>
+        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-4/5 opacity-100' : 'w-[160px] opacity-100'}`}>
           <button
             type="button"
             onClick={() => toggleSection('create')}
