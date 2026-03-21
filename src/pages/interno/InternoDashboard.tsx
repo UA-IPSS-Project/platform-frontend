@@ -4,6 +4,8 @@ import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../../components/ui/button';
+import { SecretaryRequisitionsPage } from '../secretary/SecretaryRequisitionsPage';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,7 +23,7 @@ interface InternoDashboardProps {
     onToggleDarkMode: () => void;
 }
 
-type InternoView = 'home' | 'profile' | 'settings';
+type InternoView = 'home' | 'requisitions' | 'profile' | 'settings';
 
 export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: InternoDashboardProps) {
     const { user: authUser } = useAuth();
@@ -98,6 +100,18 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
                 </div>
             );
         }
+
+        if (currentView === 'requisitions') {
+            return (
+                <SecretaryRequisitionsPage
+                    isDarkMode={isDarkMode}
+                    currentUserId={authUser?.id || 0}
+                    scopeRole="INTERNO"
+                    canManageRequests={false}
+                />
+            );
+        }
+
         return (
             <div className="flex items-center justify-center h-[500px]">
                 <div className="text-center">
@@ -108,6 +122,25 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
         );
     };
 
+    const navigationContent = (
+        <>
+            <Button
+                variant={currentView === 'home' ? 'default' : 'ghost'}
+                onClick={() => safeSetView('home')}
+                className={`text-sm ${currentView === 'home' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+            >
+                {t('sidebar.home')}
+            </Button>
+            <Button
+                variant={currentView === 'requisitions' ? 'default' : 'ghost'}
+                onClick={() => safeSetView('requisitions')}
+                className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+            >
+                {t('sidebar.requisitions')}
+            </Button>
+        </>
+    );
+
     return (
         <>
         <DashboardLayout
@@ -115,7 +148,7 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
             onToggleDarkMode={onToggleDarkMode}
             onLogout={onLogout}
             roleTitle={t('dashboard.internalTeam')}
-            navigationContent={<div className="text-gray-500 p-4">{t('dashboard.menuInDevelopment')}</div>}
+            navigationContent={navigationContent}
             onMenuToggle={() => { }}
             onNavigateToProfile={() => setCurrentView('profile')}
             onNavigateToSettings={() => safeSetView('settings')}

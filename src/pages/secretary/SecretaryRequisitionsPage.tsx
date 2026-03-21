@@ -31,6 +31,8 @@ interface SecretaryRequisitionsPageProps {
   currentUserId: number;
   initialTipo?: RequisicaoTipo;
   initialPrioridade?: RequisicaoPrioridade;
+  scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
+  canManageRequests?: boolean;
 }
 
 const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
@@ -325,6 +327,8 @@ export function SecretaryRequisitionsPage({
   currentUserId,
   initialTipo,
   initialPrioridade,
+  scopeRole = 'ALL',
+  canManageRequests = true,
 }: Readonly<SecretaryRequisitionsPageProps>) {
   const { t } = useTranslation();
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
@@ -390,6 +394,17 @@ export function SecretaryRequisitionsPage({
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
+  const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
+    if (!requisicao) return false;
+    if (scopeRole === 'ALL') return true;
+    return requisicao.criadoPor?.tipo === scopeRole;
+  };
+
+  const applyScopeFilter = (lista: RequisicaoResponse[]): RequisicaoResponse[] => {
+    if (scopeRole === 'ALL') return lista;
+    return lista.filter((item) => isRequestVisibleForScope(item));
+  };
+
   useEffect(() => {
     setFilterTipo(initialTipo ?? '');
     setFilterPrioridade(initialPrioridade ?? '');
@@ -426,7 +441,7 @@ export function SecretaryRequisitionsPage({
         criadoPorNome: criadoPor || undefined,
         geridoPorNome: geridoPor || undefined,
       });
-      const lista = Array.isArray(data) ? data : [];
+      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
       setRequisicoes(lista);
       // Reutiliza o resultado já carregado para alimentar o overview mensal,
       // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
@@ -1198,6 +1213,10 @@ export function SecretaryRequisitionsPage({
 
     try {
       const requisicaoDetalhe = await requisicoesApi.obterPorId(requisicaoId);
+      if (!isRequestVisibleForScope(requisicaoDetalhe)) {
+        toast.error(t('requisitions.errors.loadFailed'));
+        return;
+      }
       setRequisicoes((prev) => {
         if (prev.some((item) => item.id === requisicaoDetalhe.id)) {
           return prev;
@@ -1213,6 +1232,10 @@ export function SecretaryRequisitionsPage({
   const handleOpenRequisicao = async (req: RequisicaoResponse) => {
     limparEstadoConflito();
     setOpenedRequisicaoId(req.id);
+
+    if (!canManageRequests) {
+      return;
+    }
 
     // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
     if (req.estado === 'ENVIADA') {
@@ -2628,50 +2651,64 @@ export function SecretaryRequisitionsPage({
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.labels.newStatus')}</label>
-                <select
-                  id="req-estado-modal"
-                  value={estadoEdicao}
-                  onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
-                  disabled={!podeAtualizarEstado}
-                  className={selectFieldClassName}
-                >
-                  {ESTADO_SECRETARIA_OPTIONS
-                    .filter((option) => estadosVisiveisSelecionados.includes(option.value))
-                    .map((option) => (
-                    <option key={option.value} value={option.value}>{t(option.label)}</option>
-                    ))}
-                </select>
-                {!podeAtualizarEstado && (
-                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                    {t('requisitions.labels.finalStateRuleHint')}
-                  </p>
-                )}
-              </div>
+              {canManageRequests ? (
+                <>
+                  <div>
+                    <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.labels.newStatus')}</label>
+                    <select
+                      id="req-estado-modal"
+                      value={estadoEdicao}
+                      onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
+                      disabled={!podeAtualizarEstado}
+                      className={selectFieldClassName}
+                    >
+                      {ESTADO_SECRETARIA_OPTIONS
+                        .filter((option) => estadosVisiveisSelecionados.includes(option.value))
+                        .map((option) => (
+                          <option key={option.value} value={option.value}>{t(option.label)}</option>
+                        ))}
+                    </select>
+                    {!podeAtualizarEstado && (
+                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                        {t('requisitions.labels.finalStateRuleHint')}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenedRequisicaoId(null)}
-                  disabled={updatingEstadoId === selectedRequisicao.id}
-                >
-                  {t('requisitions.ui.close')}
-                </Button>
-                <Button
-                  onClick={handleAtualizarEstado}
-                  disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                >
-                  {updatingEstadoId === selectedRequisicao.id ? t('common.saving') : t('requisitions.ui.saveStatus')}
-                </Button>
-              </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setOpenedRequisicaoId(null)}
+                      disabled={updatingEstadoId === selectedRequisicao.id}
+                    >
+                      {t('requisitions.ui.close')}
+                    </Button>
+                    <Button
+                      onClick={handleAtualizarEstado}
+                      disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      {updatingEstadoId === selectedRequisicao.id ? t('common.saving') : t('requisitions.ui.saveStatus')}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setOpenedRequisicaoId(null)}
+                  >
+                    {t('requisitions.ui.close')}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={conflitoDialogOpen} onOpenChange={setConflitoDialogOpen}>
+      {canManageRequests && (
+        <Dialog open={conflitoDialogOpen} onOpenChange={setConflitoDialogOpen}>
         <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
           <DialogHeader>
             <DialogTitle>Conflitos de transporte detetados</DialogTitle>
@@ -2751,7 +2788,8 @@ export function SecretaryRequisitionsPage({
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+      )}
 
       <Dialog open={createMaterialDialogOpen} onOpenChange={setCreateMaterialDialogOpen}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
