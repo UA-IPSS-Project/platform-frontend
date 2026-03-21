@@ -28,19 +28,37 @@ export function FileUpload({
     const resolvedInputId = inputId ?? `file-upload-${generatedId}`;
     const helperId = describedById ?? `${resolvedInputId}-help`;
 
+    const MAX_FILES = 10;
+    const MAX_TOTAL_SIZE_MB = 20;
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files && files.length > 0) {
             const newFiles = Array.from(files);
             const MAX_FILE_SIZE = maxSizeMB * 1024 * 1024;
+            const MAX_TOTAL_SIZE = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
             const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
-
             if (oversizedFiles.length > 0) {
                 const fileNames = oversizedFiles.map(f => f.name).join(', ');
                 toast.error(t('fileUpload.errors.maxSizeExceeded', {
                     maxSizeMB,
                     fileNames,
+                }));
+                return;
+            }
+
+            if (selectedFiles.length + newFiles.length > MAX_FILES) {
+                toast.error(t('fileUpload.errors.maxFilesExceeded', {
+                    maxFiles: MAX_FILES
+                }));
+                return;
+            }
+
+            // Check total size
+            const totalSize = [...selectedFiles, ...newFiles].reduce((acc, file) => acc + file.size, 0);
+            if (totalSize > MAX_TOTAL_SIZE) {
+                toast.error(t('fileUpload.errors.maxTotalSizeExceeded', {
+                    maxTotalSizeMB: MAX_TOTAL_SIZE_MB
                 }));
                 return;
             }
