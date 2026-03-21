@@ -82,7 +82,15 @@ const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: strin
   return slots;
 };
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+    // Expanded slots state for mobile/tap (must be at top level)
+    const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
+    const isMobile = useIsMobile();
+
+    // Helper to expand/collapse slot on mobile
+    const handleExpandSlot = (id: string) => {
+      setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
+    };
   const { i18n } = useTranslation();
 
   // Helper function to get status-based styles (must be outside JSX)
@@ -155,7 +163,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const weekdaysShort = i18n.language.startsWith('en') ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
   const weekdaysMedium = i18n.language.startsWith('en') ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
   const weekdaysMobile = i18n.language.startsWith('en') ? ['M', 'T', 'W', 'T', 'F'] : ['S', 'T', 'Q', 'Q', 'S'];
-  const isMobile = useIsMobile();
   const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -1339,21 +1346,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       ? 'border-gray-800 bg-gray-900/60 text-gray-500 cursor-not-allowed'
                       : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
 
-                    // Expanded state for mobile/tap
-                    const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
-                    const isMobile = useIsMobile();
+                    // Use top-level expandedSlots and isMobile
                     const isExpanded = expandedSlots[slotId];
-
-                    // Helper to expand/collapse slot on mobile
-                    const handleExpandSlot = (id: string) => {
-                      setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
-                    };
 
                     // Helper: render all mini-cells as clickable buttons and add button
                     const renderExpandedSlot = () => {
                       // Only expand to number of appointments + 1 (for '+'), not full slotCapacity
                       const showAddButton = !booked && !inPast && !blocked && slotAppointments.length < slotCapacity;
-                      const expandedCount = slotAppointments.length + (showAddButton ? 1 : 0);
                       return (
                         <div className="w-full h-full flex flex-col gap-1">
                           {slotAppointments.map((splitAppointment, splitIndex) => {
@@ -1492,8 +1491,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         // Desktop: expand inline on hover (usando estado global hoveredSlot)
                         const expanded = hoveredSlot === slotId;
                         // Height: number of appointments + 1 (if add button), each 38px + gap
-                        const showAddButton = !booked && !inPast && !blocked && slotAppointments.length < slotCapacity;
-                        const expandedCount = slotAppointments.length + (showAddButton ? 1 : 0);
                         return (
                           <div
                             key={idx}
@@ -1501,7 +1498,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             onMouseEnter={() => setHoveredSlot(slotId)}
                             onMouseLeave={() => setHoveredSlot(null)}
-                            style={{ minHeight: expanded ? `${expandedCount * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
+                            style={{ minHeight: expanded ? `${(slotAppointments.length + (!booked && !inPast && !blocked && slotAppointments.length < slotCapacity ? 1 : 0)) * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
                           >
                             {expanded ? (
                               renderExpandedSlot()
@@ -1525,7 +1522,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                 } else if (total === 2) {
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
-                                      {slotAppointments.slice(0, 2).map((apt, i) => {
+                                      {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                         return (
@@ -1543,7 +1540,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                 } else if (total > 2) {
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
-                                      {slotAppointments.slice(0, 2).map((apt, i) => {
+                                      {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                         return (
@@ -1572,12 +1569,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         );
                       } else {
                         // Mobile: tap to expand/collapse (mantém comportamento anterior)
+                        // Only disable if slot is empty and inPast/holiday, not if it has appointments
+                        const shouldDisable = (slotAppointments.length === 0) && (inPast || isHolidayDay) || blocked;
                         return (
                           <div key={idx} className="relative">
                             <button
                               id={slotId}
                               className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                              disabled={inPast || isHolidayDay || blocked}
+                              disabled={shouldDisable}
                               aria-label={tt('Expandir marcações', 'Expand appointments')}
                               onClick={() => handleExpandSlot(slotId)}
                             >
