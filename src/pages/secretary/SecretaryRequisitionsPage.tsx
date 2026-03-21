@@ -90,6 +90,8 @@ type RequisicaoConflito = {
   criadoEm?: string;
 };
 
+type ConflitoDialogMode = 'warning' | 'blocked';
+
 const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
   { value: 'GERAL', label: 'requisitions.labels.general' },
   { value: 'MATERIAL', label: 'requisitions.labels.material' },
@@ -311,6 +313,8 @@ export function SecretaryRequisitionsPage({
   const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
   const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
+  const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
+  const [mostrarMensagemConflitoBloqueante, setMostrarMensagemConflitoBloqueante] = useState(false);
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
@@ -1057,6 +1061,8 @@ export function SecretaryRequisitionsPage({
     setConflitoDialogOpen(false);
     setConflitosPendentes([]);
     setConflitoTransportesNomes([]);
+    setConflitoDialogMode('warning');
+    setMostrarMensagemConflitoBloqueante(false);
     setOpenedRequisicaoId(req.id);
 
     // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
@@ -1138,20 +1144,25 @@ export function SecretaryRequisitionsPage({
             });
 
           if (conflitos.length > 0) {
+            const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
             const transportesConflitantesNomes = Array.from(new Set(
               transportesSelecionados
                 .filter((transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id))
                 .map((transporte) => formatTransporteDisplay(transporte)),
             ));
 
+            const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
+
             setConflitosPendentes(
-              conflitos.map((conflito) => ({
+              conflitosParaMostrar.map((conflito) => ({
                 id: conflito.id,
                 criadoPorNome: conflito.criadoPor?.nome || 'Utilizador sem nome',
                 criadoEm: conflito.criadoEm,
               })),
             );
             setConflitoTransportesNomes(transportesConflitantesNomes);
+            setConflitoDialogMode(conflitosBloqueantes.length > 0 ? 'blocked' : 'warning');
+            setMostrarMensagemConflitoBloqueante(false);
             setConflitoDialogOpen(true);
             return;
           }
@@ -1281,6 +1292,8 @@ export function SecretaryRequisitionsPage({
       setConflitoDialogOpen(false);
       setConflitosPendentes([]);
       setConflitoTransportesNomes([]);
+      setConflitoDialogMode('warning');
+      setMostrarMensagemConflitoBloqueante(false);
       await fetchRequisicoes();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
@@ -2417,6 +2430,8 @@ export function SecretaryRequisitionsPage({
             setConflitoDialogOpen(false);
             setConflitosPendentes([]);
             setConflitoTransportesNomes([]);
+            setConflitoDialogMode('warning');
+            setMostrarMensagemConflitoBloqueante(false);
           }
         }}
       >
@@ -2565,8 +2580,16 @@ export function SecretaryRequisitionsPage({
 
           <div className="space-y-4">
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              Existem outras requisições que envolvem o ou os veículos {conflitoTransportesNomes.join(', ')}.
+              {conflitoDialogMode === 'blocked'
+                ? `Já existe uma requisição aceite que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
+                : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
             </p>
+
+            {conflitoDialogMode === 'blocked' && mostrarMensagemConflitoBloqueante && (
+              <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
+                Impossível aceitar esta marcação porque já existe uma marcação aceite com este(s) veículo(s).
+              </p>
+            )}
 
             <div className="space-y-2">
               {conflitosPendentes.map((conflito) => {
@@ -2610,22 +2633,48 @@ export function SecretaryRequisitionsPage({
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setConflitoDialogOpen(false)}
-                disabled={updatingEstadoId === openedRequisicaoId}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="button"
-                onClick={handleContinuarAceitacaoComConflitos}
-                disabled={updatingEstadoId === openedRequisicaoId}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                {updatingEstadoId === openedRequisicaoId ? t('common.saving') : 'Continuar com o Aceitar Requisição'}
-              </Button>
+              {conflitoDialogMode === 'blocked' ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setConflitoDialogOpen(false);
+                      setOpenedRequisicaoId(null);
+                    }}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                  >
+                    Fechar requisição
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setMostrarMensagemConflitoBloqueante(true)}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Impossível aceitar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setConflitoDialogOpen(false)}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleContinuarAceitacaoComConflitos}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {updatingEstadoId === openedRequisicaoId ? t('common.saving') : 'Continuar com o Aceitar Requisição'}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogContent>
