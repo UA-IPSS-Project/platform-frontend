@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CalendarDays, Package, Truck, Wrench, Settings2, Save, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -8,22 +9,23 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { calendarioApi, requisicoesApi } from '../../services/api';
 
-const slotTypes = [
-    {
-        tipo: 'SECRETARIA' as const,
-        titulo: 'Agenda da Secretaria',
-        descricao: 'Define quantas marcações da secretaria podem coexistir no mesmo horário.',
-    },
-    {
-        tipo: 'BALNEARIO' as const,
-        titulo: 'Agenda do Balneário',
-        descricao: 'Controla a lotação operacional dos slots de marcação do balneário.',
-    },
-];
 
-function AdminOverview({
-    summaryCards,
-}: Readonly<{
+function getSlotTypes(t: (k: string) => string) {
+    return [
+        {
+            tipo: 'SECRETARIA' as const,
+            titulo: t('dashboard.admin.slots.secretaryScheduleTitle'),
+            descricao: t('dashboard.admin.slots.secretaryScheduleDescription'),
+        },
+        {
+            tipo: 'BALNEARIO' as const,
+            titulo: t('dashboard.admin.slots.balnearioScheduleTitle'),
+            descricao: t('dashboard.admin.slots.balnearioScheduleDescription'),
+        },
+    ];
+}
+
+function AdminOverview({ summaryCards }: Readonly<{
     summaryCards: Array<{ title: string; value: number | string; description: string; icon: LucideIcon; iconClassName: string }>;
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
@@ -52,24 +54,27 @@ function SlotsManagement({
     slotCapacities,
     onChange,
     onSave,
+    t,
 }: Readonly<{
     isLoadingSlots: boolean;
     isSavingSlots: boolean;
     slotCapacities: { SECRETARIA: number; BALNEARIO: number };
     onChange: (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => void;
     onSave: () => void;
+    t: (k: string) => string;
 }>) {
+    const slotTypes = getSlotTypes(t);
     return (
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
                 <div>
                     <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                         <Settings2 className="w-4 h-4" />
-                        Configuração operacional
+                        {t('dashboard.admin.slots.operationalConfiguration')}
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Capacidade de marcações por slot</h2>
+                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">{t('dashboard.admin.slots.title')}</h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-                        Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.
+                        {t('dashboard.admin.slots.description')}
                     </p>
                 </div>
 
@@ -86,7 +91,7 @@ function SlotsManagement({
 
                             <div className="mt-5 space-y-2">
                                 <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    Máximo por slot
+                                    {t('dashboard.admin.slots.maxPerSlot')}
                                 </Label>
                                 <Input
                                     id={`slot-${slotType.tipo}`}
@@ -110,7 +115,7 @@ function SlotsManagement({
                         className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
                     >
                         <Save className="w-4 h-4" />
-                        {isSavingSlots ? 'A guardar...' : 'Guardar configuração'}
+                        {isSavingSlots ? t('dashboard.admin.slots.saving') : t('dashboard.admin.slots.saveConfiguration')}
                     </Button>
                 </div>
             </div>
@@ -119,6 +124,7 @@ function SlotsManagement({
 }
 
 export function SecretaryAdminArea() {
+    const { t } = useTranslation();
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
         BALNEARIO: 2,
@@ -140,7 +146,7 @@ export function SecretaryAdminArea() {
                 BALNEARIO: config.find(item => item.tipo === 'BALNEARIO')?.capacidadePorSlot ?? 2,
             });
         } catch (error) {
-            toast.error('Não foi possível carregar a configuração de slots');
+            toast.error(t('dashboard.admin.errors.loadSlotConfig'));
         } finally {
             setIsLoadingSlots(false);
         }
@@ -165,12 +171,12 @@ export function SecretaryAdminArea() {
                     tiposManutencao: Array.isArray(tiposManutencao) ? tiposManutencao.length : 0,
                 });
             } catch (error) {
-                toast.error('Erro ao carregar métricas de catálogos');
+                toast.error(t('dashboard.admin.errors.loadCatalogCounts', 'Erro ao carregar métricas de catálogos'));
             }
         };
 
         loadCatalogCounts();
-    }, []);
+    }, [t]);
 
     const handleSlotCapacityChange = (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => {
         const parsed = Number.parseInt(value, 10);
@@ -185,10 +191,10 @@ export function SecretaryAdminArea() {
                 calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA),
                 calendarioApi.atualizarConfiguracaoSlot('BALNEARIO', slotCapacities.BALNEARIO),
             ]);
-            toast.success('Configuração de slots atualizada com sucesso');
+            toast.success(t('dashboard.admin.messages.slotConfigUpdated'));
             await loadSlotCapacities();
         } catch (error) {
-            toast.error('Não foi possível guardar a configuração de slots');
+            toast.error(t('dashboard.admin.errors.saveSlotConfig'));
         } finally {
             setIsSavingSlots(false);
         }
@@ -196,45 +202,45 @@ export function SecretaryAdminArea() {
 
     const summaryCards = useMemo(() => [
         {
-            title: 'Slots (Secretaria/Balneário)',
+            title: t('dashboard.admin.summary.slots.title'),
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
-            description: 'capacidade por horário',
+            description: t('dashboard.admin.summary.slots.description'),
             icon: CalendarDays,
             iconClassName: 'bg-violet-500/20 text-violet-300',
         },
         {
-            title: 'Materiais',
+            title: t('dashboard.admin.summary.materials.title'),
             value: catalogCounts.materiais,
-            description: 'itens no catálogo',
+            description: t('dashboard.admin.summary.materials.description'),
             icon: Package,
             iconClassName: 'bg-blue-500/20 text-blue-300',
         },
         {
-            title: 'Transportes',
+            title: t('dashboard.admin.summary.transports.title'),
             value: catalogCounts.transportes,
-            description: 'transportes no catálogo',
+            description: t('dashboard.admin.summary.transports.description'),
             icon: Truck,
             iconClassName: 'bg-emerald-500/20 text-emerald-300',
         },
         {
-            title: 'Tipos de manutenção',
+            title: t('dashboard.admin.summary.maintenanceTypes.title'),
             value: catalogCounts.tiposManutencao,
-            description: 'tipos disponíveis',
+            description: t('dashboard.admin.summary.maintenanceTypes.description'),
             icon: Wrench,
             iconClassName: 'bg-fuchsia-500/20 text-fuchsia-300',
         },
-    ], [slotCapacities, catalogCounts]);
+    ], [slotCapacities, catalogCounts, t]);
 
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
                 <p className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
                     <ShieldCheck className="w-4 h-4" />
-                    Área reservada à administração
+                    {t('dashboard.admin.roleTitle')}
                 </p>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestão Administrativa</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.title')}</h1>
                 <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                    Área de gestão de slots, catálogos e capacidades operacionais da secretaria.
+                    {t('dashboard.admin.viewDescriptions.overview')}
                 </p>
             </div>
             <AdminOverview
@@ -248,6 +254,7 @@ export function SecretaryAdminArea() {
                 slotCapacities={slotCapacities}
                 onChange={handleSlotCapacityChange}
                 onSave={handleSaveSlotCapacities}
+                t={t}
             />
             <RequisitionsCatalogManagement />
         </div>
