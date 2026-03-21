@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
-import { SecretaryRequisitionsPage } from '../secretary/SecretaryRequisitionsPage';
+import { InternoRequisitionsPage } from './InternoRequisitionsPage';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -103,11 +103,9 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
 
         if (currentView === 'requisitions') {
             return (
-                <SecretaryRequisitionsPage
+                <InternoRequisitionsPage
                     isDarkMode={isDarkMode}
                     currentUserId={authUser?.id || 0}
-                    scopeRole="INTERNO"
-                    canManageRequests={false}
                 />
             );
         }

@@ -14,7 +14,7 @@ import { BalnearioAppointmentDialog } from '../../components/balneario/Balneario
 import { BalnearioAppointmentDetailsDialog } from '../../components/balneario/BalnearioAppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { HistoryPage } from '../HistoryPage';
-import { SecretaryRequisitionsPage } from '../secretary/SecretaryRequisitionsPage';
+import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -426,11 +426,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 }}
                             />
                         ) : currentView === 'requisitions' ? (
-                            <SecretaryRequisitionsPage
+                            <BalnearioRequisitionsPage
                                 isDarkMode={isDarkMode}
                                 currentUserId={authUser?.id || 0}
-                                scopeRole="BALNEARIO"
-                                canManageRequests={false}
                             />
                         ) : (
                             renderPlaceholder(currentView)
