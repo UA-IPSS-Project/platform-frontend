@@ -1513,7 +1513,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                   const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                   return (
-                                    <div className="flex flex-col items-stretch w-full h-full">
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1">
                                       <span
                                         className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${miniCellStatusClass}`}
                                         style={{height: '100%'}}
@@ -1524,7 +1524,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   );
                                 } else if (total === 2) {
                                   return (
-                                    <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
                                       {slotAppointments.slice(0, 2).map((apt, i) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
@@ -1542,7 +1542,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   );
                                 } else if (total > 2) {
                                   return (
-                                    <div className="flex flex-col items-stretch w-full h-full" style={{height: '100%'}}>
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
                                       {slotAppointments.slice(0, 2).map((apt, i) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
