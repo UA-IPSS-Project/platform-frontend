@@ -1,9 +1,9 @@
-import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { Input } from '../../../components/ui/input';
-import { Textarea } from '../../../components/ui/textarea';
+import { Button } from '../../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
+import { Input } from '../../ui/input';
+import { Textarea } from '../../ui/textarea';
 import { MaterialCategoria } from '../../../services/api';
-import { MATERIAL_CATEGORIA_OPTIONS } from '../sharedRequisitions.helpers';
+import { MATERIAL_CATEGORIA_OPTIONS } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
 interface RequisitionsCreateMaterialDialogProps {
   open: boolean;

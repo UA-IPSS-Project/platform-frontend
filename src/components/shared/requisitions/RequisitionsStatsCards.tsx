@@ -1,7 +1,7 @@
 import { AlertTriangleIcon, ClipboardListIcon, PackageIcon, TruckIcon, WrenchIcon } from 'lucide-react';
-import { Button } from '../../../components/ui/button';
-import { GlassCard } from '../../../components/ui/glass-card';
-import { RequisicoesTab } from '../sharedRequisitions.helpers';
+import { Button } from '../../ui/button';
+import { GlassCard } from '../../ui/glass-card';
+import { RequisicoesTab } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
 interface RequisitionsStatsCardsProps {
   stats: {

@@ -3,7 +3,6 @@ import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
@@ -25,29 +24,19 @@ import {
 import {
   ConflitoDialogMode,
   CreateField,
-  ESTADO_OPTIONS,
-  ESTADO_SECRETARIA_OPTIONS,
   MATERIAL_CATEGORIA_OPTIONS,
   MaterialItemGroup,
   PRIORIDADE_OPTIONS,
-  REQUISICOES_TABS,
   RequisicaoConflito,
-  RequisicaoItem,
   RequisicoesTab,
   TRANSPORTE_CATEGORIA_OPTIONS,
   TIPO_OPTIONS,
   TransporteSelectionMode,
   composeDateTime,
   createEmptyMaterialLinha,
-  formatEstado,
   formatLotacao,
-  formatMaterialItemLabel,
-  formatPrioridade,
-  formatTipo,
   formatTransporteCategoria,
-  formatTransporteCollection,
   formatTransporteDisplay,
-  formatTransporteMeta,
   formatVehicleTitle,
   getCoberturaMensagem,
   getEstadosPermitidosTransicao,
@@ -60,9 +49,11 @@ import {
   previousDateInput,
   toIsoFromDateOnly,
 } from './sharedRequisitions.helpers';
-import { RequisitionsStatsCards } from './components/RequisitionsStatsCards';
-import { RequisitionsConflictDialog } from './components/RequisitionsConflictDialog';
-import { RequisitionsCreateMaterialDialog } from './components/RequisitionsCreateMaterialDialog';
+import { RequisitionsStatsCards } from '../../components/shared/requisitions/RequisitionsStatsCards';
+import { RequisitionsConflictDialog } from '../../components/shared/requisitions/RequisitionsConflictDialog';
+import { RequisitionsCreateMaterialDialog } from '../../components/shared/requisitions/RequisitionsCreateMaterialDialog';
+import { RequisitionDetailsDialog } from '../../components/shared/requisitions/RequisitionDetailsDialog';
+import { RequisitionsListFiltersContent } from '../../components/shared/requisitions/RequisitionsListFiltersContent';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -1868,135 +1859,28 @@ export function SharedRequisitionsPage({
 
           {activeSection === 'list' && (
             <div className="px-5 pb-5 space-y-4">
-
-        <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('requisitions.ui.listType')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2" aria-label={t('requisitions.ui.requestTypeTabs')}>
-            {REQUISICOES_TABS.map((tab) => {
-              const isActive = activeTab === tab.value;
-              return (
-                <Button
-                  key={tab.value}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => handleSelectTab(tab.value)}
-                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
-                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
-                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
-                    }`}
-                  aria-pressed={isActive}
-                  aria-label={t('requisitions.ui.selectTab', { tab: t(tab.label) })}
-                >
-                  {t(tab.label)}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
-            <label htmlFor="req-filter-estado" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
-            <select
-              id="req-filter-estado"
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className={selectFieldClassName}
-            >
-              {ESTADO_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
-            <select
-              id="req-filter-prioridade"
-              value={filterPrioridade}
-              onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className={selectFieldClassName}
-            >
-              <option value="">{t('requisitions.ui.allPriorities')}</option>
-              {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-criado-por" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByName')}</label>
-            <Input id="req-filter-criado-por" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder={t('requisitions.ui.createdByPlaceholder')} />
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-gerido-por" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.managedByName')}</label>
-            <Input id="req-filter-gerido-por" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder={t('requisitions.ui.managedByPlaceholder')} />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
-            {loading ? t('requisitions.ui.searching') : t('requisitions.ui.search')}
-          </Button>
-          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>{t('requisitions.ui.clearFilters')}</Button>
-        </div>
-
-        {requisicoes.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
-            {t('requisitions.ui.noRequestsForFilters')}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {requisicoes.map((req) => (
-              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPrioridade(req.prioridade)}</p>
-                    <Button
-                      variant="outline"
-                      className="h-8 px-3"
-                      onClick={() => handleOpenRequisicao(req)}
-                    >
-                      {t('requisitions.ui.open')}
-                    </Button>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
-
-                <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
-                  <p>{t('requisitions.labels.status')}: {formatEstado(req.estado)}</p>
-                  <p>{t('requisitions.labels.createdBy')}: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                  <p>{t('requisitions.labels.managedBy')}: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
-                  <p>{t('requisitions.labels.date')}: {formatDateTimeOrDash(req.criadoEm)}</p>
-                  <p>{t('requisitions.labels.lastUpdate')}: {formatDateTimeOrDash(req.ultimaAlteracaoEstadoEm)}</p>
-                  <p>{t('requisitions.labels.deadline')}: {formatDateTimeOrDash(req.tempoLimite)}</p>
-                  {req.tipo === 'MATERIAL' && (
-                    <p>
-                      {t('requisitions.labels.materials')}:{' '}
-                      {req.itens && req.itens.length > 0
-                        ? req.itens
-                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
-                            .join(', ')
-                        : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
-                    </p>
-                  )}
-                  {req.tipo === 'TRANSPORTE' && (
-                    <>
-                      <p>{t('requisitions.labels.destination')}: {req.destino || '—'}</p>
-                      <p>{t('requisitions.labels.passengers')}: {req.numeroPassageiros || '—'}</p>
-                      <p>{t('requisitions.labels.vehicles')}: {formatTransporteCollection(req)}</p>
-                    </>
-                  )}
-                  {req.tipo === 'MANUTENCAO' && <p>{t('requisitions.labels.subject')}: {req.assunto || '—'}</p>}
-                </div>
-
-              </div>
-            ))}
-          </div>
-        )}
+              <RequisitionsListFiltersContent
+                desktop={false}
+                activeTab={activeTab}
+                onSelectTab={handleSelectTab}
+                filterEstado={filterEstado}
+                setFilterEstado={setFilterEstado}
+                filterPrioridade={filterPrioridade}
+                setFilterPrioridade={setFilterPrioridade}
+                filterCriadoPorNome={filterCriadoPorNome}
+                setFilterCriadoPorNome={setFilterCriadoPorNome}
+                filterGeridoPorNome={filterGeridoPorNome}
+                setFilterGeridoPorNome={setFilterGeridoPorNome}
+                onSearch={() => fetchRequisicoes()}
+                onClearFilters={handleClearFilters}
+                loading={loading}
+                requisicoes={requisicoes}
+                onOpenRequisicao={handleOpenRequisicao}
+                selectFieldClassName={selectFieldClassName}
+                inputFieldClassName={inputFieldClassName}
+                formatDateTimeOrDash={formatDateTimeOrDash}
+                t={t}
+              />
             </div>
           )}
         </GlassCard>
@@ -2010,174 +1894,28 @@ export function SharedRequisitionsPage({
           </div>
 
           <div className="px-5 pb-5 pt-4 space-y-4">
-
-        <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('requisitions.ui.listType')}</p>
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2 rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/60 p-2"
-            role="tablist"
-            tabIndex={0}
-            aria-label={t('requisitions.ui.requestTypeTabs')}
-            onKeyDown={(event) => {
-              const { key } = event;
-              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(key)) {
-                return;
-              }
-              event.preventDefault();
-              const tabs = Array.from(
-                event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-              );
-              if (tabs.length === 0) {
-                return;
-              }
-              const currentIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
-              let nextIndex = currentIndex === -1 ? 0 : currentIndex;
-              if (key === 'ArrowRight') {
-                nextIndex = (currentIndex + 1 + tabs.length) % tabs.length;
-              } else if (key === 'ArrowLeft') {
-                nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-              } else if (key === 'Home') {
-                nextIndex = 0;
-              } else if (key === 'End') {
-                nextIndex = tabs.length - 1;
-              }
-              const nextTab = tabs[nextIndex];
-              if (!nextTab) {
-                return;
-              }
-              const nextValue = nextTab.dataset.tabValue;
-              if (nextValue) {
-                handleSelectTab(nextValue as RequisicoesTab);
-              }
-              nextTab.focus();
-            }}
-          >
-            {REQUISICOES_TABS.map((tab) => {
-              const isActive = activeTab === tab.value;
-              return (
-                <Button
-                  key={tab.value}
-                  type="button"
-                  variant="ghost"
-                  role="tab"
-                  aria-selected={isActive}
-                  tabIndex={isActive ? 0 : -1}
-                  data-tab-value={tab.value}
-                  onClick={() => handleSelectTab(tab.value)}
-                  className={`h-10 w-full justify-center rounded-lg border transition-all duration-200 ${isActive
-                    ? 'border-purple-500 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 shadow-sm'
-                    : 'border-transparent bg-transparent text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-white/80 dark:hover:bg-gray-800/70'
-                    }`}
-                >
-                  {t(tab.label)}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div>
-            <label htmlFor="req-filter-estado-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
-            <select
-              id="req-filter-estado-desktop"
-              value={filterEstado}
-              onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className={selectFieldClassName}
-            >
-              {ESTADO_OPTIONS.map((option) => (
-                <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-prioridade-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
-            <select
-              id="req-filter-prioridade-desktop"
-              value={filterPrioridade}
-              onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className={selectFieldClassName}
-            >
-              <option value="">{t('requisitions.ui.allPriorities')}</option>
-              {PRIORIDADE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{t(option.label)}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-criado-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByName')}</label>
-            <Input id="req-filter-criado-por-desktop" className={inputFieldClassName} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder={t('requisitions.ui.createdByPlaceholder')} />
-          </div>
-
-          <div>
-            <label htmlFor="req-filter-gerido-por-desktop" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.managedByName')}</label>
-            <Input id="req-filter-gerido-por-desktop" className={inputFieldClassName} type="text" value={filterGeridoPorNome} onChange={(e) => setFilterGeridoPorNome(e.target.value)} placeholder={t('requisitions.ui.managedByPlaceholder')} />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button onClick={() => fetchRequisicoes()} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
-            {loading ? t('requisitions.ui.searching') : t('requisitions.ui.search')}
-          </Button>
-          <Button variant="outline" onClick={handleClearFilters} disabled={loading}>{t('requisitions.ui.clearFilters')}</Button>
-        </div>
-
-        {requisicoes.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 dark:border-gray-700 p-8 text-center text-gray-600 dark:text-gray-400">
-            {t('requisitions.ui.noRequestsForFilters')}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-            {requisicoes.map((req) => (
-              <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPrioridade(req.prioridade)}</p>
-                    <Button
-                      variant="outline"
-                      className="h-8 px-3"
-                      onClick={() => handleOpenRequisicao(req)}
-                    >
-                      {t('requisitions.ui.open')}
-                    </Button>
-                  </div>
-                </div>
-
-                <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
-
-                <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
-                  <p>{t('requisitions.labels.status')}: {formatEstado(req.estado)}</p>
-                  <p>{t('requisitions.labels.createdBy')}: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                  <p>{t('requisitions.labels.managedBy')}: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
-                  <p>{t('requisitions.labels.date')}: {formatDateTimeOrDash(req.criadoEm)}</p>
-                  <p>{t('requisitions.labels.lastUpdate')}: {formatDateTimeOrDash(req.ultimaAlteracaoEstadoEm)}</p>
-                  <p>{t('requisitions.labels.deadline')}: {formatDateTimeOrDash(req.tempoLimite)}</p>
-                  {req.tipo === 'MATERIAL' && (
-                    <p>
-                      {t('requisitions.labels.materials')}:{' '}
-                      {req.itens && req.itens.length > 0
-                        ? req.itens
-                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
-                            .join(', ')
-                        : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
-                    </p>
-                  )}
-                  {req.tipo === 'TRANSPORTE' && (
-                    <>
-                      <p>{t('requisitions.labels.destination')}: {req.destino || '—'}</p>
-                      <p>{t('requisitions.labels.passengers')}: {req.numeroPassageiros || '—'}</p>
-                      <p>{t('requisitions.labels.vehicles')}: {formatTransporteCollection(req)}</p>
-                    </>
-                  )}
-                  {req.tipo === 'MANUTENCAO' && <p>{t('requisitions.labels.subject')}: {req.assunto || '—'}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+            <RequisitionsListFiltersContent
+              desktop
+              activeTab={activeTab}
+              onSelectTab={handleSelectTab}
+              filterEstado={filterEstado}
+              setFilterEstado={setFilterEstado}
+              filterPrioridade={filterPrioridade}
+              setFilterPrioridade={setFilterPrioridade}
+              filterCriadoPorNome={filterCriadoPorNome}
+              setFilterCriadoPorNome={setFilterCriadoPorNome}
+              filterGeridoPorNome={filterGeridoPorNome}
+              setFilterGeridoPorNome={setFilterGeridoPorNome}
+              onSearch={() => fetchRequisicoes()}
+              onClearFilters={handleClearFilters}
+              loading={loading}
+              requisicoes={requisicoes}
+              onOpenRequisicao={handleOpenRequisicao}
+              selectFieldClassName={selectFieldClassName}
+              inputFieldClassName={inputFieldClassName}
+              formatDateTimeOrDash={formatDateTimeOrDash}
+              t={t}
+            />
 
           </div>
         </GlassCard>
@@ -2216,7 +1954,7 @@ export function SharedRequisitionsPage({
         </GlassCard>
       </div>
 
-      <Dialog
+      <RequisitionDetailsDialog
         open={openedRequisicaoId !== null}
         onOpenChange={(open) => {
           if (!open) {
@@ -2224,156 +1962,18 @@ export function SharedRequisitionsPage({
             limparEstadoConflito();
           }
         }}
-      >
-        <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
-          <DialogHeader>
-            <DialogTitle>{t('requisitions.ui.requestDetails')}</DialogTitle>
-          </DialogHeader>
-
-          {selectedRequisicao && (
-            <div className="space-y-4">
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
-                <div className="text-sm grid grid-cols-[130px_1fr] gap-x-3 gap-y-2 items-start">
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.description')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.descricao || '—'}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.type')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatTipo(selectedRequisicao.tipo)}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.priority')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatPrioridade(selectedRequisicao.prioridade)}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.currentStatus')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatEstado(selectedRequisicao.estado)}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.createdBy')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoPor?.nome || '—'}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.managedBy')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.geridoPor?.nome || '—'}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.creationDate')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.lastUpdate')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
-
-                  <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.deadline')}</p>
-                  <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.tempoLimite)}</p>
-
-                  {selectedRequisicao.tipo === 'MATERIAL' && (
-                    <>
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.material')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">
-                        {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                          ? selectedRequisicao.itens
-                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
-                              .join(', ')
-                          : selectedRequisicao.material?.nome || '—'}
-                      </p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.quantity')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">
-                        {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                          ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
-                          : selectedRequisicao.quantidade || '—'}
-                      </p>
-                    </>
-                  )}
-                  {selectedRequisicao.tipo === 'TRANSPORTE' && (
-                    <>
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.destination')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.destino || '—'}</p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.departure')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraSaida)}</p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.return')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraRegresso)}</p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.passengers')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.numeroPassageiros || '—'}</p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.driver')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || t('requisitions.labels.toBeDefined')}</p>
-
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.vehicles')}</p>
-                      <div className="space-y-2">
-                        {getRequisicaoTransportes(selectedRequisicao).length > 0 ? getRequisicaoTransportes(selectedRequisicao).map((transporte) => (
-                          <div key={`${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`} className="space-y-1">
-                            <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
-                          </div>
-                        )) : (
-                          <p className="text-gray-900 dark:text-gray-100">—</p>
-                        )}
-                      </div>
-                    </>
-                  )}
-                  {selectedRequisicao.tipo === 'MANUTENCAO' && (
-                    <>
-                      <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.subject')}</p>
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {canManageRequests ? (
-                <>
-                  <div>
-                    <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.labels.newStatus')}</label>
-                    <select
-                      id="req-estado-modal"
-                      value={estadoEdicao}
-                      onChange={(e) => setEstadoEdicao(e.target.value as RequisicaoEstado)}
-                      disabled={!podeAtualizarEstado}
-                      className={selectFieldClassName}
-                    >
-                      {ESTADO_SECRETARIA_OPTIONS
-                        .filter((option) => estadosVisiveisSelecionados.includes(option.value))
-                        .map((option) => (
-                          <option key={option.value} value={option.value}>{t(option.label)}</option>
-                        ))}
-                    </select>
-                    {!podeAtualizarEstado && (
-                      <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
-                        {t('requisitions.labels.finalStateRuleHint')}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setOpenedRequisicaoId(null)}
-                      disabled={updatingEstadoId === selectedRequisicao.id}
-                    >
-                      {t('requisitions.ui.close')}
-                    </Button>
-                    <Button
-                      onClick={handleAtualizarEstado}
-                      disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
-                      className="bg-purple-600 hover:bg-purple-700 text-white"
-                    >
-                      {updatingEstadoId === selectedRequisicao.id ? t('common.saving') : t('requisitions.ui.saveStatus')}
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => setOpenedRequisicaoId(null)}
-                  >
-                    {t('requisitions.ui.close')}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+        selectedRequisicao={selectedRequisicao}
+        canManageRequests={canManageRequests}
+        estadoEdicao={estadoEdicao}
+        onChangeEstadoEdicao={setEstadoEdicao}
+        podeAtualizarEstado={podeAtualizarEstado}
+        estadosVisiveisSelecionados={estadosVisiveisSelecionados}
+        updatingEstadoId={updatingEstadoId}
+        onClose={() => setOpenedRequisicaoId(null)}
+        onSaveStatus={handleAtualizarEstado}
+        locale={locale}
+        t={t}
+      />
 
       {canManageRequests && (
         <RequisitionsConflictDialog

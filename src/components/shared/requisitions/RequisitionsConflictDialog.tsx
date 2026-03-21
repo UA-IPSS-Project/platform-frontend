@@ -1,6 +1,6 @@
-import { Button } from '../../../components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../../components/ui/dialog';
-import { ConflitoDialogMode, RequisicaoConflito } from '../sharedRequisitions.helpers';
+import { Button } from '../../ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
+import { ConflitoDialogMode, RequisicaoConflito } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
 interface RequisitionsConflictDialogProps {
   open: boolean;
