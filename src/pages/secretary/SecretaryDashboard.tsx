@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { NavDropdown } from '../../components/layout/NavDropdown';
 import { NotificationsPage } from '../NotificationsPage';
+import { SecretaryAdminArea } from './SecretaryAdminArea';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
@@ -324,13 +325,16 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         {t('sidebar.reports')}
       </Button>
 
-      <Button
-        variant={currentView === 'management' ? 'default' : 'ghost'}
-        onClick={() => navigateTo('management')}
-        className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-      >
-        {t('sidebar.management')}
-      </Button>
+      <NavDropdown
+        label={t('sidebar.management')}
+        items={[
+          { id: 'management', label: 'Utilizadores' },
+          { id: 'admin-area', label: 'Plataforma' },
+        ]}
+        isActive={['management', 'admin-area'].includes(currentView)}
+        onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('management')}
+      />
     </>
   );
 
@@ -452,6 +456,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               <UserManagement
                 isDarkMode={isDarkMode}
               />
+            ) : currentView === 'admin-area' ? (
+              <div className="py-8">
+                <SecretaryAdminArea />
+              </div>
             ) : currentView === 'profile' ? (
               <ProfilePage
                 user={{ id: authUser?.id || 0, ...userData }}
