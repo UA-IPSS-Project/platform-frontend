@@ -1509,13 +1509,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               (() => {
                                 const total = slotAppointments.length;
                                 if (total === 1) {
+                                  const apt = slotAppointments[0];
+                                  const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                  const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full">
                                       <span
-                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 flex-1 min-h-0 h-full flex items-center"
+                                        className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${miniCellStatusClass}`}
                                         style={{height: '100%'}}
                                       >
-                                        {slotAppointments[0].patientName}
+                                        {apt.patientName}
                                       </span>
                                     </div>
                                   );
