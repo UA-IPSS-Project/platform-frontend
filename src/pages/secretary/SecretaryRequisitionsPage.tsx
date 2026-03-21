@@ -1056,11 +1056,110 @@ export function SecretaryRequisitionsPage({
     handleSelectTab(tab);
   };
 
-  const handleOpenRequisicao = async (req: RequisicaoResponse) => {
+  const limparEstadoConflito = () => {
     setConflitoDialogOpen(false);
     setConflitosPendentes([]);
     setConflitoTransportesNomes([]);
     setConflitoDialogMode('warning');
+  };
+
+  const mapearConflitosParaResumo = (lista: RequisicaoResponse[]): RequisicaoConflito[] => (
+    lista.map((conflito) => ({
+      id: conflito.id,
+      criadoPorNome: conflito.criadoPor?.nome || 'Utilizador sem nome',
+      criadoEm: conflito.criadoEm,
+    }))
+  );
+
+  const calcularConflitosTransporte = (
+    requisicaoAtual: RequisicaoResponse,
+    outrasRequisicoes: RequisicaoResponse[],
+  ): {
+    conflitosParaMostrar: RequisicaoResponse[];
+    nomesTransportesConflito: string[];
+    modo: ConflitoDialogMode;
+  } | null => {
+    const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
+    const idsSelecionados = new Set(
+      transportesSelecionados
+        .map((transporte) => transporte.id)
+        .filter((id): id is number => typeof id === 'number'),
+    );
+
+    if (idsSelecionados.size === 0) {
+      return null;
+    }
+
+    const conflitos = outrasRequisicoes
+      .filter((outra) => outra.id !== requisicaoAtual.id)
+      .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+      .filter((outra) => {
+        const transportesOutra = getRequisicaoTransportes(outra);
+        const partilhaTransporte = transportesOutra.some(
+          (transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id),
+        );
+
+        if (!partilhaTransporte) {
+          return false;
+        }
+
+        if (!requisicaoAtual.dataHoraSaida
+          || !requisicaoAtual.dataHoraRegresso
+          || !outra.dataHoraSaida
+          || !outra.dataHoraRegresso) {
+          return true;
+        }
+
+        return periodsOverlap(
+          requisicaoAtual.dataHoraSaida,
+          requisicaoAtual.dataHoraRegresso,
+          outra.dataHoraSaida,
+          outra.dataHoraRegresso,
+        );
+      });
+
+    if (conflitos.length === 0) {
+      return null;
+    }
+
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
+    const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
+    const nomesTransportesConflito = Array.from(new Set(
+      transportesSelecionados
+        .filter((transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id))
+        .map((transporte) => formatTransporteDisplay(transporte)),
+    ));
+
+    return {
+      conflitosParaMostrar,
+      nomesTransportesConflito,
+      modo: conflitosBloqueantes.length > 0 ? 'blocked' : 'warning',
+    };
+  };
+
+  const abrirRequisicaoPorId = async (requisicaoId: number): Promise<void> => {
+    const requisicaoExistente = requisicoes.find((req) => req.id === requisicaoId);
+    if (requisicaoExistente) {
+      await handleOpenRequisicao(requisicaoExistente);
+      return;
+    }
+
+    try {
+      const requisicaoDetalhe = await requisicoesApi.obterPorId(requisicaoId);
+      setRequisicoes((prev) => {
+        if (prev.some((item) => item.id === requisicaoDetalhe.id)) {
+          return prev;
+        }
+        return [requisicaoDetalhe, ...prev];
+      });
+      await handleOpenRequisicao(requisicaoDetalhe);
+    } catch (error: any) {
+      toast.error(error?.message || t('requisitions.errors.loadFailed'));
+    }
+  };
+
+  const handleOpenRequisicao = async (req: RequisicaoResponse) => {
+    limparEstadoConflito();
     setOpenedRequisicaoId(req.id);
 
     // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
@@ -1103,70 +1202,23 @@ export function SecretaryRequisitionsPage({
     }
 
     if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
-      const transportesSelecionados = getRequisicaoTransportes(selectedRequisicao);
-      const idsSelecionados = new Set(
-        transportesSelecionados
-          .map((transporte) => transporte.id)
-          .filter((id): id is number => typeof id === 'number'),
-      );
+      try {
+        const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
+        const resultadoConflitos = calcularConflitosTransporte(
+          selectedRequisicao,
+          Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [],
+        );
 
-      if (idsSelecionados.size > 0) {
-        try {
-          const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
-          const conflitos = (Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [])
-            .filter((outra) => outra.id !== selectedRequisicao.id)
-            .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
-            .filter((outra) => {
-              const transportesOutra = getRequisicaoTransportes(outra);
-              const partilhaTransporte = transportesOutra.some(
-                (transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id),
-              );
-
-              if (!partilhaTransporte) {
-                return false;
-              }
-
-              if (!selectedRequisicao.dataHoraSaida
-                || !selectedRequisicao.dataHoraRegresso
-                || !outra.dataHoraSaida
-                || !outra.dataHoraRegresso) {
-                return true;
-              }
-
-              return periodsOverlap(
-                selectedRequisicao.dataHoraSaida,
-                selectedRequisicao.dataHoraRegresso,
-                outra.dataHoraSaida,
-                outra.dataHoraRegresso,
-              );
-            });
-
-          if (conflitos.length > 0) {
-            const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
-            const transportesConflitantesNomes = Array.from(new Set(
-              transportesSelecionados
-                .filter((transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id))
-                .map((transporte) => formatTransporteDisplay(transporte)),
-            ));
-
-            const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
-
-            setConflitosPendentes(
-              conflitosParaMostrar.map((conflito) => ({
-                id: conflito.id,
-                criadoPorNome: conflito.criadoPor?.nome || 'Utilizador sem nome',
-                criadoEm: conflito.criadoEm,
-              })),
-            );
-            setConflitoTransportesNomes(transportesConflitantesNomes);
-            setConflitoDialogMode(conflitosBloqueantes.length > 0 ? 'blocked' : 'warning');
-            setConflitoDialogOpen(true);
-            return;
-          }
-        } catch (error: any) {
-          toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+        if (resultadoConflitos) {
+          setConflitosPendentes(mapearConflitosParaResumo(resultadoConflitos.conflitosParaMostrar));
+          setConflitoTransportesNomes(resultadoConflitos.nomesTransportesConflito);
+          setConflitoDialogMode(resultadoConflitos.modo);
+          setConflitoDialogOpen(true);
           return;
         }
+      } catch (error: any) {
+        toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+        return;
       }
     }
 
@@ -1286,10 +1338,7 @@ export function SecretaryRequisitionsPage({
       setUpdatingEstadoId(openedRequisicaoId);
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
       toast.success(t('requisitions.messages.statusUpdated'));
-      setConflitoDialogOpen(false);
-      setConflitosPendentes([]);
-      setConflitoTransportesNomes([]);
-      setConflitoDialogMode('warning');
+      limparEstadoConflito();
       await fetchRequisicoes();
       setOpenedRequisicaoId(null);
     } catch (error: any) {
@@ -2423,10 +2472,7 @@ export function SecretaryRequisitionsPage({
         onOpenChange={(open) => {
           if (!open) {
             setOpenedRequisicaoId(null);
-            setConflitoDialogOpen(false);
-            setConflitosPendentes([]);
-            setConflitoTransportesNomes([]);
-            setConflitoDialogMode('warning');
+            limparEstadoConflito();
           }
         }}
       >
@@ -2600,25 +2646,7 @@ export function SecretaryRequisitionsPage({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={async () => {
-                        const requisicaoConflito = requisicoes.find((req) => req.id === conflito.id);
-                        if (requisicaoConflito) {
-                          await handleOpenRequisicao(requisicaoConflito);
-                        } else {
-                          try {
-                            const requisicaoDetalhe = await requisicoesApi.obterPorId(conflito.id);
-                            setRequisicoes((prev) => {
-                              if (prev.some((item) => item.id === requisicaoDetalhe.id)) {
-                                return prev;
-                              }
-                              return [requisicaoDetalhe, ...prev];
-                            });
-                            await handleOpenRequisicao(requisicaoDetalhe);
-                          } catch (error: any) {
-                            toast.error(error?.message || t('requisitions.errors.loadFailed'));
-                          }
-                        }
-                      }}
+                      onClick={async () => abrirRequisicaoPorId(conflito.id)}
                     >
                       Ver requisição
                     </Button>
@@ -2634,7 +2662,7 @@ export function SecretaryRequisitionsPage({
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setConflitoDialogOpen(false);
+                      limparEstadoConflito();
                       setOpenedRequisicaoId(null);
                     }}
                     disabled={updatingEstadoId === openedRequisicaoId}
