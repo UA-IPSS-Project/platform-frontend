@@ -4,6 +4,8 @@ import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { Button } from '../../components/ui/button';
+import { EscolaRequisitionsPage } from './EscolaRequisitionsPage';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,7 +23,7 @@ interface EscolaDashboardProps {
     onToggleDarkMode: () => void;
 }
 
-type EscolaView = 'home' | 'profile' | 'settings';
+type EscolaView = 'home' | 'requisitions' | 'profile' | 'settings';
 
 export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: EscolaDashboardProps) {
     const { user: authUser } = useAuth();
@@ -98,6 +100,16 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
                 </div>
             );
         }
+
+        if (currentView === 'requisitions') {
+            return (
+                <EscolaRequisitionsPage
+                    isDarkMode={isDarkMode}
+                    currentUserId={authUser?.id || 0}
+                />
+            );
+        }
+
         return (
             <div className="flex items-center justify-center h-[500px]">
                 <div className="text-center">
@@ -108,6 +120,25 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
         );
     };
 
+    const navigationContent = (
+        <>
+            <Button
+                variant={currentView === 'home' ? 'default' : 'ghost'}
+                onClick={() => safeSetView('home')}
+                className={`text-sm ${currentView === 'home' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+            >
+                {t('sidebar.home')}
+            </Button>
+            <Button
+                variant={currentView === 'requisitions' ? 'default' : 'ghost'}
+                onClick={() => safeSetView('requisitions')}
+                className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+            >
+                {t('sidebar.requisitions')}
+            </Button>
+        </>
+    );
+
     return (
         <>
         <DashboardLayout
@@ -115,7 +146,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             onToggleDarkMode={onToggleDarkMode}
             onLogout={onLogout}
             roleTitle={t('dashboard.school')}
-            navigationContent={<div className="text-gray-500 p-4">{t('dashboard.menuInDevelopment')}</div>}
+            navigationContent={navigationContent}
             onMenuToggle={() => { }}
             onNavigateToProfile={() => setCurrentView('profile')}
             onNavigateToSettings={() => safeSetView('settings')}
