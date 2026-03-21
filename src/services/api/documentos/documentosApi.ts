@@ -46,13 +46,13 @@ export const documentosApi = {
     },
 
         // Notificar utente sobre documentos inválidos
-    notificarDocumentosInvalidos: async (marcacaoId: number, observacoes: string) => {
+    notificarDocumentoInvalido: async (marcacaoId: number, documentoId: number, observacoes: string) => {
         const xsrfToken = getCookie('XSRF-TOKEN');
         const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
         if (xsrfToken) {
             headers['X-XSRF-TOKEN'] = xsrfToken;
         }
-        const body = new URLSearchParams({ observacoes });
+        const body = new URLSearchParams({ documentoId: documentoId.toString(), observacoes });
         const response = await fetch(`${API_BASE_URL}/api/documentos/marcacao/${marcacaoId}/notificar-invalidos`, {
             method: 'POST',
             credentials: 'include',

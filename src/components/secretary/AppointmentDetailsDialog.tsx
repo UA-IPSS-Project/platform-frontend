@@ -181,11 +181,21 @@ export function AppointmentDetailsDialog({
       return;
     }
 
-    // Junta todos os motivos em um texto único
-    const motivos = selectedDocs.map(index => `Documento: ${appointment.documents?.[index]?.name || ''} - Motivo: ${invalidReasons[index]}`).join('\n');
     try {
-      await documentosApi.notificarDocumentosInvalidos(parseInt(appointment.id), motivos);
-      toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
+      const marcacaoId = parseInt(appointment.id);
+      let notifiedCount = 0;
+      await Promise.all(selectedDocs.map(async (index) => {
+        const doc = appointment.documents?.[index];
+        if (doc && 'id' in doc && typeof doc.id === 'number') {
+          await documentosApi.notificarDocumentoInvalido(marcacaoId, doc.id, invalidReasons[index]);
+          notifiedCount++;
+        }
+      }));
+      if (notifiedCount > 0) {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
+      } else {
+        toast.error('Nenhum documento válido selecionado para notificação.');
+      }
       setSelectedDocs([]);
       setInvalidReasons({});
     } catch (error: any) {
@@ -605,7 +615,7 @@ export function AppointmentDetailsDialog({
       return;
     }
     documentosApi
-      .notificarDocumentosInvalidos(parseInt(appointment.id), `Documento: ${doc.nomeOriginal} - Motivo: ${motivo}`)
+      .notificarDocumentoInvalido(parseInt(appointment.id), doc.id, motivo)
       .then(() => {
         toast.success(t('appointmentDetails.userNotifiedInvalidDocuments', 'Utente notificado.'));
       })
