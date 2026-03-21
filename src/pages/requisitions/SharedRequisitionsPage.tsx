@@ -515,7 +515,6 @@ export function SharedRequisitionsPage({
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = (field: CreateField): string | undefined => {
     if (field === 'descricao') {
-      if (!descricao.trim()) return t('requisitions.errors.requiredField');
       return undefined;
     }
 
@@ -783,7 +782,7 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    const fieldsToValidate: CreateField[] = ['descricao'];
+    const fieldsToValidate: CreateField[] = [];
     if (tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
     }
@@ -814,7 +813,7 @@ export function SharedRequisitionsPage({
       setSubmitting(true);
 
       const payloadBase = {
-        descricao: descricao.trim(),
+        descricao: descricao.trim() || undefined,
         prioridade,
         tempoLimite: toIsoFromDateOnly(tempoLimite),
         criadoPorId: currentUserId,
@@ -1409,18 +1408,11 @@ export function SharedRequisitionsPage({
           <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.description')}</label>
           <Textarea
             id="req-create-descricao"
-            className={getFieldClassName(textareaFieldClassName, 'descricao')}
+            className={textareaFieldClassName}
             value={descricao}
-            onChange={(e) => {
-              setDescricao(e.target.value);
-              if (createTouched.descricao) {
-                validateAndSetField('descricao');
-              }
-            }}
-            onBlur={() => validateAndSetField('descricao', true)}
+            onChange={(e) => setDescricao(e.target.value)}
             placeholder={t('requisitions.ui.describeRequest')}
           />
-          {createErrors.descricao && <p className="text-red-500 text-xs mt-1">{createErrors.descricao}</p>}
         </div>
       </div>
 

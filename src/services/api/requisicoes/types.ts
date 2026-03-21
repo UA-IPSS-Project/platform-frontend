@@ -58,7 +58,7 @@ export interface ManutencaoItem {
 export interface RequisicaoResponse {
   id: number;
   version?: number;
-  descricao: string;
+  descricao?: string;
   estado: RequisicaoEstado;
   prioridade: RequisicaoPrioridade;
   tipo: RequisicaoTipo;
@@ -77,14 +77,21 @@ export interface RequisicaoResponse {
   quantidade?: number;
   itens?: Array<{
     id?: number;
-    material: {
+    material?: {
       id: number;
       nome?: string;
       categoria?: MaterialCategoria;
       atributo?: string;
       valorAtributo?: string;
     };
-    quantidade: number;
+    quantidade?: number;
+    manutencaoItem?: {
+      id: number;
+      categoria?: ManutencaoCategoria;
+      espaco?: string;
+      itemVerificacao?: string;
+    };
+    observacoes?: string;
   }>;
   transporte?: {
     id: number;
@@ -130,7 +137,7 @@ export interface RequisicaoFilters {
 }
 
 export interface CriarRequisicaoBaseRequest {
-  descricao: string;
+  descricao?: string;
   prioridade: RequisicaoPrioridade;
   tempoLimite?: string;
   criadoPorId: number;

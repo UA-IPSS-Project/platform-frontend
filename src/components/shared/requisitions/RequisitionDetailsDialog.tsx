@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialo
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
 import {
   formatMaterialCategoria,
+  formatManutencaoCategoria,
   ESTADO_SECRETARIA_OPTIONS,
   RequisicaoItem,
   formatEstado,
@@ -86,8 +87,29 @@ export function RequisitionDetailsDialog({
     return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
   };
 
+  const groupManutencaoPorCategoria = (items: RequisicaoItem[] = []) => {
+    const grupos = new Map<string, Array<{ id: string; label: string; observacoes?: string }>>();
+    items.forEach((item) => {
+      if (!item.manutencaoItem) return;
+      const categoria = formatManutencaoCategoria(item.manutencaoItem.categoria);
+      const key = categoria || t('requisitions.labels.noCategory');
+      const grupoAtual = grupos.get(key) ?? [];
+      grupoAtual.push({
+        id: `${item.id ?? 'sem-id'}-${item.manutencaoItem.id}`,
+        label: `${item.manutencaoItem.espaco ?? '—'} - ${item.manutencaoItem.itemVerificacao ?? '—'}`,
+        observacoes: item.observacoes,
+      });
+      grupos.set(key, grupoAtual);
+    });
+    return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
+  };
+
   const materiaisAgrupados = selectedRequisicao?.tipo === 'MATERIAL'
     ? groupMateriaisPorCategoria(selectedRequisicao.itens ?? [])
+    : [];
+
+  const manutencaoAgrupada = selectedRequisicao?.tipo === 'MANUTENCAO'
+    ? groupManutencaoPorCategoria(selectedRequisicao.itens ?? [])
     : [];
 
   return (
@@ -191,6 +213,27 @@ export function RequisitionDetailsDialog({
                     <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.subject')}</p>
                     <div className="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 p-3">
                       <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
+                    </div>
+
+                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">Itens de manutenção</p>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {manutencaoAgrupada.length > 0 ? manutencaoAgrupada.map((grupo) => (
+                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
+                          <ul className="mt-1 list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                            {grupo.itens.map((item) => (
+                              <li key={item.id}>
+                                {item.label}
+                                {item.observacoes ? (
+                                  <span className="block text-xs text-gray-500 dark:text-gray-400 ml-4">Obs: {item.observacoes}</span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )) : (
+                        <p className="text-gray-900 dark:text-gray-100">—</p>
+                      )}
                     </div>
                   </>
                 )}
