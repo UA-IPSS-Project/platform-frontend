@@ -110,7 +110,7 @@ export function SharedRequisitionsPage({
     return 'GERAL';
   });
 
-  const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MANUTENCAO');
+  const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
   const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
@@ -717,7 +717,7 @@ export function SharedRequisitionsPage({
     setExpandedTransporteDetalhes({});
     setCreateErrors({});
     setCreateTouched({});
-    setTipo(initialTipo ?? 'MANUTENCAO');
+    setTipo(initialTipo ?? 'MATERIAL');
     setPrioridade(initialPrioridade ?? 'MEDIA');
   };
 
@@ -1430,7 +1430,7 @@ export function SharedRequisitionsPage({
                             {t('requisitions.ui.noItemsInCategory')}
                           </p>
                         ) : (
-                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                          <div className="p-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-3">
                             {itemsCategoria.map((item) => {
                               const hasPendingSelection = expandedMaterialItems[item.itemKey] === true;
                               const selectedCount = item.variantes.filter((variante) =>
@@ -1575,7 +1575,7 @@ export function SharedRequisitionsPage({
                   <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.transportPlanningHint')}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                   <div>
                     <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
                     <Input
@@ -1605,89 +1605,6 @@ export function SharedRequisitionsPage({
                     />
                   </div>
 
-                  <div onBlurCapture={() => {
-                    validateAndSetField('dataSaida', true);
-                    validateAndSetField('horaSaida', true);
-                  }}>
-                    <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
-                    <DatePickerField
-                      id="req-create-transporte-data-saida"
-                      value={dataSaida}
-                      onChange={(value) => {
-                        setDataSaida(value);
-                        if (!dataRegresso) {
-                          setDataRegresso(value);
-                        }
-                        validateAndSetField('dataSaida');
-                        validateAndSetField('horaSaida');
-                        validateAndSetField('dataRegresso');
-                        validateAndSetField('horaRegresso');
-                      }}
-                      buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
-                    />
-                    {createErrors.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')}</label>
-                    <Input
-                      id="req-create-transporte-hora-saida"
-                      type="time"
-                      className={getFieldClassName(inputFieldClassName, 'horaSaida')}
-                      value={horaSaida}
-                      onChange={(e) => {
-                        setHoraSaida(e.target.value);
-                        validateAndSetField('horaSaida');
-                        validateAndSetField('dataSaida');
-                        validateAndSetField('dataRegresso');
-                        validateAndSetField('horaRegresso');
-                      }}
-                      onBlur={() => validateAndSetField('horaSaida', true)}
-                      onBlurCapture={() => validateAndSetField('dataSaida', true)}
-                    />
-                    {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
-                  </div>
-
-                  <div onBlurCapture={() => {
-                    validateAndSetField('dataRegresso', true);
-                    validateAndSetField('horaRegresso', true);
-                  }}>
-                    <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
-                    <DatePickerField
-                      id="req-create-transporte-data-regresso"
-                      value={dataRegresso}
-                      onChange={(value) => {
-                        setDataRegresso(value);
-                        validateAndSetField('dataRegresso');
-                        validateAndSetField('horaRegresso');
-                        validateAndSetField('dataSaida');
-                        validateAndSetField('horaSaida');
-                      }}
-                      buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
-                    />
-                    {createErrors.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
-                  </div>
-
-                  <div>
-                    <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')}</label>
-                    <Input
-                      id="req-create-transporte-hora-regresso"
-                      type="time"
-                      className={getFieldClassName(inputFieldClassName, 'horaRegresso')}
-                      value={horaRegresso}
-                      onChange={(e) => {
-                        setHoraRegresso(e.target.value);
-                        validateAndSetField('horaRegresso');
-                        validateAndSetField('dataRegresso');
-                        validateAndSetField('dataSaida');
-                        validateAndSetField('horaSaida');
-                      }}
-                      onBlur={() => validateAndSetField('horaRegresso', true)}
-                      onBlurCapture={() => validateAndSetField('dataRegresso', true)}
-                    />
-                    {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
-                  </div>
-
                   <div>
                     <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
                     <Input
@@ -1706,6 +1623,91 @@ export function SharedRequisitionsPage({
                       placeholder={t('requisitions.ui.passengersPlaceholder')}
                     />
                     {createErrors.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
+                  </div>
+
+                  <div className="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div onBlurCapture={() => {
+                      validateAndSetField('dataSaida', true);
+                      validateAndSetField('horaSaida', true);
+                    }}>
+                      <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
+                      <DatePickerField
+                        id="req-create-transporte-data-saida"
+                        value={dataSaida}
+                        onChange={(value) => {
+                          setDataSaida(value);
+                          if (!dataRegresso) {
+                            setDataRegresso(value);
+                          }
+                          validateAndSetField('dataSaida');
+                          validateAndSetField('horaSaida');
+                          validateAndSetField('dataRegresso');
+                          validateAndSetField('horaRegresso');
+                        }}
+                        buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
+                      />
+                      {createErrors.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')}</label>
+                      <Input
+                        id="req-create-transporte-hora-saida"
+                        type="time"
+                        className={getFieldClassName(inputFieldClassName, 'horaSaida')}
+                        value={horaSaida}
+                        onChange={(e) => {
+                          setHoraSaida(e.target.value);
+                          validateAndSetField('horaSaida');
+                          validateAndSetField('dataSaida');
+                          validateAndSetField('dataRegresso');
+                          validateAndSetField('horaRegresso');
+                        }}
+                        onBlur={() => validateAndSetField('horaSaida', true)}
+                        onBlurCapture={() => validateAndSetField('dataSaida', true)}
+                      />
+                      {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
+                    </div>
+
+                    <div onBlurCapture={() => {
+                      validateAndSetField('dataRegresso', true);
+                      validateAndSetField('horaRegresso', true);
+                    }}>
+                      <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
+                      <DatePickerField
+                        id="req-create-transporte-data-regresso"
+                        value={dataRegresso}
+                        onChange={(value) => {
+                          setDataRegresso(value);
+                          validateAndSetField('dataRegresso');
+                          validateAndSetField('horaRegresso');
+                          validateAndSetField('dataSaida');
+                          validateAndSetField('horaSaida');
+                        }}
+                        buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
+                      />
+                      {createErrors.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
+                    </div>
+
+                    <div>
+                      <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')}</label>
+                      <Input
+                        id="req-create-transporte-hora-regresso"
+                        type="time"
+                        className={getFieldClassName(inputFieldClassName, 'horaRegresso')}
+                        value={horaRegresso}
+                        onChange={(e) => {
+                          setHoraRegresso(e.target.value);
+                          validateAndSetField('horaRegresso');
+                          validateAndSetField('dataRegresso');
+                          validateAndSetField('dataSaida');
+                          validateAndSetField('horaSaida');
+                        }}
+                        onBlur={() => validateAndSetField('horaRegresso', true)}
+                        onBlurCapture={() => validateAndSetField('dataRegresso', true)}
+                      />
+                      {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1811,7 +1813,7 @@ export function SharedRequisitionsPage({
                         </button>
 
                         {expandedTransporteCategorias[grupo.categoria] && (
-                          <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
+                          <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-3 gap-3">
                             {grupo.items.map((transporte) => {
                               const isSelected = selectedTransportIds.includes(String(transporte.id));
                               const isRecommended = recommendedTransportIds.includes(transporte.id);
