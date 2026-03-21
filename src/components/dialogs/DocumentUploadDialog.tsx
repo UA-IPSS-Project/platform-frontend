@@ -23,9 +23,22 @@ export function DocumentUploadDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  const MAX_FILES = 10;
+  const MAX_TOTAL_SIZE_MB = 20;
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       toast.error('Selecione pelo menos um ficheiro');
+      return;
+    }
+
+    if (selectedFiles.length > MAX_FILES) {
+      toast.error(`Só pode enviar no máximo ${MAX_FILES} ficheiros por marcação.`);
+      return;
+    }
+
+    const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+    if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
+      toast.error(`O tamanho total dos ficheiros não pode exceder ${MAX_TOTAL_SIZE_MB}MB.`);
       return;
     }
 

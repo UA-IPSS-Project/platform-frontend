@@ -568,6 +568,17 @@ export function AppointmentDetailsDialog({
   const year = dateObj.getFullYear();
   const dateString = t('appointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
 
+  // Só permite editar documentos se o estado for scheduled ou warning
+  const isEditable = appointment.status === 'scheduled' || appointment.status === 'warning';
+
+
+  // Função utilitária para saber se o documento tem preview
+  function hasPreview(nomeOriginal: string): boolean {
+    if (!nomeOriginal) return false;
+    const ext = nomeOriginal.split('.').pop()?.toLowerCase();
+    return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
@@ -681,7 +692,7 @@ export function AppointmentDetailsDialog({
                   <FileTextIcon className="w-4 h-4" />
                   {t('appointmentDetails.attachedDocuments')}
                 </Label>
-                {!isClient && (
+                {!isClient && isEditable && (
                   <Button
                     type="button"
                     size="sm"
@@ -736,14 +747,17 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => documentosApi.previewDocumento(doc.id)}
-                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                          title={t('appointmentDetails.previewDocument', 'Visualizar')}
-                        >
-                          <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        </button>
+                        {hasPreview(doc.nomeOriginal) && (
+                          <button
+                            type="button"
+                            onClick={() => documentosApi.previewDocumento(doc.id)}
+                            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                            title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                          >
+                            <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDownloadDocumento(doc)}
@@ -752,14 +766,16 @@ export function AppointmentDetailsDialog({
                         >
                           <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoverDocumento(doc)}
-                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                          title={t('appointmentDetails.removeDocument')}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
+                        {isEditable && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoverDocumento(doc)}
+                            className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                            title={t('appointmentDetails.removeDocument')}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
