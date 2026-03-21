@@ -275,7 +275,7 @@ export function BalnearioAppointmentDetailsDialog({
                                 {t('appointmentDialog.durationLabel', 'Duração da marcação')}
                             </Label>
                             <Badge color="purple" className="text-xs">
-                                {t('appointmentDialog.durationBalneario', 'Duração padrão para balneário: 30 minutos')}
+                                {t('appointmentDialog.durationBalneario', '30 minutos')}
                             </Badge>
                         </div>
                     </div>

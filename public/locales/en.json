@@ -20,7 +20,7 @@
   },
   "appointmentDialog": {
     "durationLabel": "Appointment duration",
-    "durationBalneario": "Default duration for bathhouse: 30 minutes",
+    "durationBalneario": "30 minutes",
     "title": "New Appointment",
     "description": "Fill in the user's details to create a new appointment",
     "at": "at",
