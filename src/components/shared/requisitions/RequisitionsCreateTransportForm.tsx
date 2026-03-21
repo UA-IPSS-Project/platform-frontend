@@ -101,7 +101,7 @@ export function RequisitionsCreateTransportForm({
           <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.transportPlanningHint')}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
             <Input
@@ -124,6 +124,21 @@ export function RequisitionsCreateTransportForm({
             />
           </div>
 
+          <div>
+            <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
+            <Input
+              id="req-create-transporte-passageiros"
+              type="number"
+              min="1"
+              className={inputFieldClassName}
+              value={numeroPassageiros}
+              onChange={(e) => onChangeNumeroPassageiros(e.target.value)}
+              placeholder={t('requisitions.ui.passengersPlaceholder')}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
             <DatePickerField
@@ -168,19 +183,6 @@ export function RequisitionsCreateTransportForm({
               className={inputFieldClassName}
               value={horaRegresso}
               onChange={(e) => onChangeHoraRegresso(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
-            <Input
-              id="req-create-transporte-passageiros"
-              type="number"
-              min="1"
-              className={inputFieldClassName}
-              value={numeroPassageiros}
-              onChange={(e) => onChangeNumeroPassageiros(e.target.value)}
-              placeholder={t('requisitions.ui.passengersPlaceholder')}
             />
           </div>
         </div>
