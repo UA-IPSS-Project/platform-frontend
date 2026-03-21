@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import SUBJECTS, { getSubjectLabel } from '../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../components/shared/CustomIcons';
 import { StatusBadge } from '../components/shared/status-badge';
+import { useAppointmentStatus } from '../hooks/useAppointmentStatus';
 import { Appointment } from '../types';
 
 interface HistoryPageProps {
@@ -31,6 +32,7 @@ const parseAppointmentDate = (value: Appointment['date']) => {
 
 export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode, startDate, endDate, onDateChange, isClient = false }: HistoryPageProps) {
   const { t, i18n } = useTranslation();
+  const { getStatusLabel } = useAppointmentStatus();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [subjectFilter, setSubjectFilter] = useState('all');
