@@ -5,13 +5,10 @@ import {
   ESTADO_OPTIONS,
   PRIORIDADE_OPTIONS,
   REQUISICOES_TABS,
-  RequisicaoItem,
   RequisicoesTab,
   formatEstado,
-  formatMaterialItemLabel,
   formatPrioridade,
   formatTipo,
-  formatTransporteCollection,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { RequisicaoEstado, RequisicaoPrioridade, RequisicaoResponse } from '../../../services/api';
 
@@ -197,7 +194,7 @@ export function RequisitionsListFiltersContent({
           {requisicoes.map((req) => (
             <div key={req.id} className="rounded-xl border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-4 space-y-2">
               <div className="flex items-start justify-between gap-4">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">#{req.id} · {formatTipo(req.tipo)}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100"># {formatTipo(req.tipo)}</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-gray-600 dark:text-gray-400">{formatPrioridade(req.prioridade)}</p>
                   <Button
@@ -205,38 +202,16 @@ export function RequisitionsListFiltersContent({
                     className="h-8 px-3"
                     onClick={() => onOpenRequisicao(req)}
                   >
-                    {t('requisitions.ui.open')}
+                    Ver detalhes
                   </Button>
                 </div>
               </div>
 
-              <p className="text-sm text-gray-700 dark:text-gray-300">{req.descricao}</p>
-
               <div className="text-xs text-gray-500 dark:text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-1">
                 <p>{t('requisitions.labels.status')}: {formatEstado(req.estado)}</p>
                 <p>{t('requisitions.labels.createdBy')}: {req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                <p>{t('requisitions.labels.managedBy')}: {req.geridoPor?.nome || req.geridoPor?.id || '—'}</p>
-                <p>{t('requisitions.labels.date')}: {formatDateTimeOrDash(req.criadoEm)}</p>
-                <p>{t('requisitions.labels.lastUpdate')}: {formatDateTimeOrDash(req.ultimaAlteracaoEstadoEm)}</p>
+                <p>Criado a: {formatDateTimeOrDash(req.criadoEm)}</p>
                 <p>{t('requisitions.labels.deadline')}: {formatDateTimeOrDash(req.tempoLimite)}</p>
-                {req.tipo === 'MATERIAL' && (
-                  <p>
-                    {t('requisitions.labels.materials')}{': '}
-                    {req.itens && req.itens.length > 0
-                      ? req.itens
-                          .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
-                          .join(', ')
-                      : `ID ${req.material?.id || '—'} · Qtd ${req.quantidade || '—'}`}
-                  </p>
-                )}
-                {req.tipo === 'TRANSPORTE' && (
-                  <>
-                    <p>{t('requisitions.labels.destination')}: {req.destino || '—'}</p>
-                    <p>{t('requisitions.labels.passengers')}: {req.numeroPassageiros || '—'}</p>
-                    <p>{t('requisitions.labels.vehicles')}: {formatTransporteCollection(req)}</p>
-                  </>
-                )}
-                {req.tipo === 'MANUTENCAO' && <p>{t('requisitions.labels.subject')}: {req.assunto || '—'}</p>}
               </div>
             </div>
           ))}

@@ -2,14 +2,16 @@ import { Button } from '../../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
 import {
+  formatMaterialCategoria,
   ESTADO_SECRETARIA_OPTIONS,
   RequisicaoItem,
   formatEstado,
-  formatMaterialItemLabel,
   formatPrioridade,
   formatTipo,
+  formatVehicleTitle,
+  formatLotacao,
+  formatTransporteCategoria,
   formatTransporteDisplay,
-  formatTransporteMeta,
   getRequisicaoTransportes,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
@@ -49,61 +51,98 @@ export function RequisitionDetailsDialog({
     return new Date(value).toLocaleString(locale);
   };
 
+  const groupMateriaisPorCategoria = (items: RequisicaoItem[] = []) => {
+    const grupos = new Map<string, Array<{ id: string; label: string }>>();
+    items.forEach((item) => {
+      const categoria = formatMaterialCategoria(item.material?.categoria);
+      const nome = item.material?.nome ?? t('requisitions.labels.material');
+      const variante = item.material?.valorAtributo ? ` ${item.material.valorAtributo}` : '';
+      const quantidade = item.quantidade ?? 0;
+      const linha = `${nome}${variante} ${quantidade}x`;
+      const key = categoria || t('requisitions.labels.noCategory');
+      const grupoAtual = grupos.get(key) ?? [];
+      grupoAtual.push({
+        id: `${item.material?.id ?? 'sem-id'}-${item.material?.atributo ?? 'sem-atributo'}-${item.material?.valorAtributo ?? 'sem-valor'}`,
+        label: linha,
+      });
+      grupos.set(key, grupoAtual);
+    });
+    return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
+  };
+
+  const groupTransportesPorCategoria = (requisicao: RequisicaoResponse) => {
+    const grupos = new Map<string, Array<{ id: string; label: string; meta: string }>>();
+    getRequisicaoTransportes(requisicao).forEach((transporte) => {
+      const categoria = formatTransporteCategoria(transporte.categoria);
+      const key = categoria || t('requisitions.labels.noCategory');
+      const grupoAtual = grupos.get(key) ?? [];
+      grupoAtual.push({
+        id: `${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`,
+        label: formatVehicleTitle(transporte),
+        meta: `${formatTransporteDisplay(transporte)}${transporte.lotacao ? ` - ${formatLotacao(transporte.lotacao)}` : ''}`,
+      });
+      grupos.set(key, grupoAtual);
+    });
+    return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+      <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('requisitions.ui.requestDetails')}</DialogTitle>
+          <DialogTitle># {selectedRequisicao ? formatTipo(selectedRequisicao.tipo) : t('requisitions.ui.requestDetails')}</DialogTitle>
         </DialogHeader>
 
         {selectedRequisicao && (
           <div className="space-y-4">
             <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
-              <div className="text-sm grid grid-cols-[130px_1fr] gap-x-3 gap-y-2 items-start">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Informação principal</h3>
+              <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
+                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.currentStatus')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatEstado(selectedRequisicao.estado)}</span></p>
+                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.priority')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatPrioridade(selectedRequisicao.prioridade)}</span></p>
+                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.createdBy')}:</span> <span className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoPor?.nome || '—'}</span></p>
+                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.managedBy')}:</span> <span className="text-gray-900 dark:text-gray-100">{selectedRequisicao.geridoPor?.nome || '—'}</span></p>
+                <p><span className="text-gray-500 dark:text-gray-400">Criado a:</span> <span className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</span></p>
+                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.deadline')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.tempoLimite)}</span></p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Detalhes</h3>
+              <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
                 <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.description')}</p>
                 <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.descricao || '—'}</p>
 
                 <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.type')}</p>
                 <p className="text-gray-900 dark:text-gray-100">{formatTipo(selectedRequisicao.tipo)}</p>
 
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.priority')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatPrioridade(selectedRequisicao.prioridade)}</p>
-
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.currentStatus')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatEstado(selectedRequisicao.estado)}</p>
-
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.createdBy')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoPor?.nome || '—'}</p>
-
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.managedBy')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.geridoPor?.nome || '—'}</p>
-
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.creationDate')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</p>
-
                 <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.lastUpdate')}</p>
                 <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
 
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.deadline')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.tempoLimite)}</p>
-
                 {selectedRequisicao.tipo === 'MATERIAL' && (
                   <>
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.material')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">
-                      {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                        ? selectedRequisicao.itens
-                            .map((item: RequisicaoItem) => formatMaterialItemLabel(item.material, item.quantidade))
-                            .join(', ')
-                        : selectedRequisicao.material?.nome || '—'}
-                    </p>
-
                     <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.quantity')}</p>
                     <p className="text-gray-900 dark:text-gray-100">
                       {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
                         ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
                         : selectedRequisicao.quantidade || '—'}
                     </p>
+
+                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.materials')}</p>
+                    <div className="space-y-2">
+                      {groupMateriaisPorCategoria(selectedRequisicao.itens ?? []).length > 0 ? groupMateriaisPorCategoria(selectedRequisicao.itens ?? []).map((grupo) => (
+                        <div key={grupo.categoria}>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
+                          <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
+                            {grupo.itens.map((item) => (
+                              <li key={item.id}>{item.label}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )) : (
+                        <p className="text-gray-900 dark:text-gray-100">—</p>
+                      )}
+                    </div>
                   </>
                 )}
                 {selectedRequisicao.tipo === 'TRANSPORTE' && (
@@ -125,10 +164,17 @@ export function RequisitionDetailsDialog({
 
                     <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.vehicles')}</p>
                     <div className="space-y-2">
-                      {getRequisicaoTransportes(selectedRequisicao).length > 0 ? getRequisicaoTransportes(selectedRequisicao).map((transporte) => (
-                        <div key={`${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`} className="space-y-1">
-                          <p className="text-gray-900 dark:text-gray-100">{formatTransporteDisplay(transporte)}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{formatTransporteMeta(transporte)}</p>
+                      {groupTransportesPorCategoria(selectedRequisicao).length > 0 ? groupTransportesPorCategoria(selectedRequisicao).map((grupo) => (
+                        <div key={grupo.categoria}>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
+                          <div className="space-y-1">
+                            {grupo.itens.map((transporte) => (
+                              <div key={transporte.id}>
+                                <p className="text-gray-900 dark:text-gray-100">{transporte.label}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{transporte.meta}</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )) : (
                         <p className="text-gray-900 dark:text-gray-100">—</p>
