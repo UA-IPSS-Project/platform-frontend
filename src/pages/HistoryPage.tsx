@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
 import { DatePickerField, formatDateInput, parseDateInput } from '../components/ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
@@ -9,6 +8,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import SUBJECTS, { getSubjectLabel } from '../lib/subjects';
 import { ArrowLeftIcon, DownloadIcon, FileTextIcon } from '../components/shared/CustomIcons';
+import { StatusBadge } from '../components/shared/status-badge';
 import { Appointment } from '../types';
 
 interface HistoryPageProps {
@@ -29,21 +29,6 @@ const parseAppointmentDate = (value: Appointment['date']) => {
   return isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const getStatusKey = (status: Appointment['status']) => {
-  switch (status) {
-    case 'completed':
-      return 'completed';
-    case 'warning':
-      return 'warning';
-    case 'no-show':
-      return 'noShow';
-    case 'cancelled':
-      return 'cancelled';
-    default:
-      return status;
-  }
-};
-
 export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode, startDate, endDate, onDateChange, isClient = false }: HistoryPageProps) {
   const { t, i18n } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,24 +39,6 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   /* Sorting State */
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const currentLocale = i18n.resolvedLanguage === 'en' ? 'en-GB' : 'pt-PT';
-
-  const getStatusLabel = (status: Appointment['status']) => t(`history.status.${getStatusKey(status)}`, { defaultValue: status });
-
-  const getStatusBadge = (status: Appointment['status']) => {
-    const label = getStatusLabel(status);
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-600 text-white dark:bg-green-600 dark:text-white">{label}</Badge>;
-      case 'warning':
-        return <Badge className="bg-yellow-500 text-gray-900">{label}</Badge>;
-      case 'no-show':
-        return <Badge style={{ backgroundColor: '#f97316', color: 'white' }}>{label}</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">{label}</Badge>;
-      default:
-        return null;
-    }
-  };
 
   // Sort appointments by date
   const sortedAppointments = [...appointments].sort((a, b) => {
@@ -528,7 +495,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
                     {!isClient && <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>}
                     <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{getSubjectLabel(apt.subject, t)}</td>
-                    <td className="py-4 px-4">{getStatusBadge(apt.status)}</td>
+                    <td className="py-4 px-4"><StatusBadge status={apt.status} /></td>
                   </tr>
                 ))
               )}

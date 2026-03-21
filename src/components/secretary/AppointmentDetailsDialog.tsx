@@ -5,16 +5,16 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
-import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon } from '../shared/CustomIcons';
+import { XIcon, FileTextIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload, File } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { DocumentUploadDialog } from '../dialogs/DocumentUploadDialog';
+import { StatusBadge } from '../shared/status-badge';
 import { useTranslation } from 'react-i18next';
 
 interface AppointmentDetailsDialogProps {
@@ -526,38 +526,6 @@ export function AppointmentDetailsDialog({
     return new Date(year, month + 1, 0).getDate();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in-progress':
-        return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">{t('appointmentDetails.inProgress')}</Badge>;
-      case 'scheduled':
-        return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">{t('appointmentDetails.scheduled')}</Badge>;
-      case 'warning':
-        return (
-          <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
-            <AlertTriangleIcon className="w-3 h-3" />
-            {t('appointmentDetails.scheduled')}
-          </Badge>
-        );
-      case 'completed':
-        return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-          {t('appointmentDetails.completed')}
-        </Badge>;
-      case 'no-show':
-
-        return (
-          <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
-            {t('appointmentDetails.noShow')}
-          </Badge>
-        );
-      case 'cancelled':
-        return <Badge variant="destructive" className="rounded-full px-3">{t('appointmentDetails.cancelled')}</Badge>;
-
-      default:
-        return null;
-    }
-  };
-
   const invalidDocuments = appointment.documents?.filter(doc => doc.invalid) || [];
 
   const dateObj = new Date(appointment.date);
@@ -582,7 +550,7 @@ export function AppointmentDetailsDialog({
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-lg text-gray-900 dark:text-gray-100">{t('appointmentDetails.viewAppointment')}</h2>
-                {getStatusBadge(appointment.status)}
+                <StatusBadge status={appointment.status} size="md" />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
             </div>
