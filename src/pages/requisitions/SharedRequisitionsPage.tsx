@@ -22,6 +22,44 @@ import {
   TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
+import {
+  ConflitoDialogMode,
+  CreateField,
+  ESTADO_OPTIONS,
+  ESTADO_SECRETARIA_OPTIONS,
+  MATERIAL_CATEGORIA_OPTIONS,
+  MaterialItemGroup,
+  PRIORIDADE_OPTIONS,
+  REQUISICOES_TABS,
+  RequisicaoConflito,
+  RequisicaoItem,
+  RequisicoesTab,
+  TRANSPORTE_CATEGORIA_OPTIONS,
+  TIPO_OPTIONS,
+  TransporteSelectionMode,
+  composeDateTime,
+  createEmptyMaterialLinha,
+  formatEstado,
+  formatLotacao,
+  formatMaterialItemLabel,
+  formatPrioridade,
+  formatTipo,
+  formatTransporteCategoria,
+  formatTransporteCollection,
+  formatTransporteDisplay,
+  formatTransporteMeta,
+  formatVehicleTitle,
+  getCoberturaMensagem,
+  getEstadosPermitidosTransicao,
+  getEstadosVisiveisNoSeletor,
+  getPassengerCapacity,
+  getRequisicaoTransportes,
+  isDateInputInPast,
+  normalizarTexto,
+  periodsOverlap,
+  previousDateInput,
+  toIsoFromDateOnly,
+} from './sharedRequisitions.helpers';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -34,293 +72,6 @@ export interface SharedRequisitionsPageProps {
   scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
   canManageRequests?: boolean;
 }
-
-const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
-  { value: '', label: 'requisitions.labels.allStatuses' },
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
-];
-
-const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
-];
-
-const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
-  }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['ACEITE', 'RECUSADA'];
-  }
-  return [];
-};
-
-const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
-  }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
-  }
-  if (estadoAtual) {
-    return [estadoAtual];
-  }
-  return ['EM_ANALISE'];
-};
-
-const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
-  { value: 'BAIXA', label: 'requisitions.labels.low' },
-  { value: 'MEDIA', label: 'requisitions.labels.medium' },
-  { value: 'ALTA', label: 'requisitions.labels.high' },
-  { value: 'URGENTE', label: 'requisitions.labels.urgent' },
-];
-
-const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
-  { value: 'MATERIAL', label: 'requisitions.labels.material' },
-  { value: 'TRANSPORTE', label: 'requisitions.labels.transport' },
-  { value: 'MANUTENCAO', label: 'requisitions.labels.maintenance' },
-];
-
-type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
-
-type RequisicaoConflito = {
-  id: number;
-  criadoPorNome: string;
-  criadoEm?: string;
-};
-
-type ConflitoDialogMode = 'warning' | 'blocked';
-
-const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
-  { value: 'GERAL', label: 'requisitions.labels.general' },
-  { value: 'MATERIAL', label: 'requisitions.labels.material' },
-  { value: 'MANUTENCAO', label: 'requisitions.labels.maintenance' },
-  { value: 'TRANSPORTE', label: 'requisitions.labels.transport' },
-  { value: 'URGENTE', label: 'requisitions.labels.urgent' },
-];
-
-const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
-  { value: 'PESADO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryHeavyPassengers' },
-  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryLightPassengers' },
-  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryLightGoods' },
-  { value: 'LIGEIRO_ESPECIAL', label: 'requisitions.labels.transportCategoryLightSpecial' },
-  { value: 'ADAPTADO', label: 'requisitions.labels.transportCategoryAdapted' },
-  { value: 'LIGEIRO', label: 'requisitions.labels.transportCategoryLight' },
-  { value: 'PESADO', label: 'requisitions.labels.transportCategoryHeavy' },
-  { value: 'PASSAGEIROS', label: 'requisitions.labels.passengers' },
-];
-
-const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
-  { value: 'ESCRITA', label: 'requisitions.labels.materialCategoryWriting' },
-  { value: 'PAPEL_E_ARQUIVO', label: 'requisitions.labels.materialCategoryPaperFiling' },
-  { value: 'HIGIENE_E_LIMPEZA', label: 'requisitions.labels.materialCategoryHygieneCleaning' },
-  { value: 'TECNOLOGIA', label: 'requisitions.labels.materialCategoryTechnology' },
-  { value: 'OUTROS', label: 'requisitions.labels.materialCategoryOther' },
-];
-
-const formatTipo = (tipo: RequisicaoTipo) => {
-  const key = TIPO_OPTIONS.find((option) => option.value === tipo)?.label;
-  return key ? i18n.t(key) : tipo;
-};
-const formatPrioridade = (prioridade: RequisicaoPrioridade) => {
-  const key = PRIORIDADE_OPTIONS.find((option) => option.value === prioridade)?.label;
-  return key ? i18n.t(key) : prioridade;
-};
-const formatEstado = (estado: RequisicaoEstado) => {
-  const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
-  return key ? i18n.t(key) : estado;
-};
-const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
-  i18n.t(MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
-const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
-  i18n.t(TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
-
-const toIsoFromDateOnly = (date?: Date): string | undefined => {
-  if (!date) return undefined;
-  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0)).toISOString();
-};
-
-const formatMaterialItemLabel = (
-  material?: { id: number; nome?: string; categoria?: MaterialCategoria; atributo?: string; valorAtributo?: string },
-  quantidade?: number,
-): string => {
-  const materialLabel = material?.nome ?? (material?.id ? `#${material.id}` : i18n.t('requisitions.labels.material'));
-  const detalhe = material?.atributo && material?.valorAtributo
-    ? ` - ${material.atributo}: ${material.valorAtributo}`
-    : '';
-  const categoria = material?.categoria ? ` [${formatMaterialCategoria(material.categoria)}]` : '';
-  return `${materialLabel}${categoria}${detalhe} (x${quantidade ?? 0})`;
-};
-
-type RequisicaoItem = NonNullable<RequisicaoResponse['itens']>[number];
-type RequisicaoTransporteItem = NonNullable<RequisicaoResponse['transportes']>[number];
-type TransporteResumo = RequisicaoTransporteItem['transporte'];
-type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo | TransporteCatalogo | null | undefined;
-type TransporteSelectionMode = 'auto' | 'manual';
-type CreateField =
-  | 'descricao'
-  | 'materialItens'
-  | 'destino'
-  | 'dataSaida'
-  | 'horaSaida'
-  | 'dataRegresso'
-  | 'horaRegresso'
-  | 'numeroPassageiros'
-  | 'transporteIds';
-
-const createEmptyMaterialLinha = () => ({
-  rowId:
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? `material-row-${crypto.randomUUID()}`
-      : `material-row-${Math.random().toString(36).slice(2)}`,
-  materialId: '',
-  quantidade: '1',
-});
-
-const normalizarTexto = (valor?: string | null) => (valor ?? '').trim().toLowerCase();
-
-const getPassengerCapacity = (lotacao?: number): number => {
-  if (!lotacao || lotacao <= 0) return 0;
-  return Math.max(0, lotacao - 1);
-};
-
-const composeDateTime = (date?: string, time?: string): string | undefined => {
-  if (!date || !time) return undefined;
-  const parsedDate = parseDateInput(date) ?? (() => {
-    const fallback = new Date(date);
-    return Number.isNaN(fallback.getTime()) ? undefined : fallback;
-  })();
-
-  if (!parsedDate) return undefined;
-
-  const timeParts = time.split(':');
-  if (timeParts.length < 2) return undefined;
-  const hours = Number(timeParts[0]);
-  const minutes = Number(timeParts[1]);
-
-  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
-    return undefined;
-  }
-
-  const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate(), hours, minutes, 0, 0);
-  const yyyy = normalized.getFullYear();
-  const mm = String(normalized.getMonth() + 1).padStart(2, '0');
-  const dd = String(normalized.getDate()).padStart(2, '0');
-  const hh = String(normalized.getHours()).padStart(2, '0');
-  const min = String(normalized.getMinutes()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
-};
-
-const isDateInputInPast = (dateInput?: string): boolean => {
-  const parsed = parseDateInput(dateInput);
-  if (!parsed) return false;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return parsed < today;
-};
-
-const toValidDate = (dateTime?: string): Date | undefined => {
-  if (!dateTime) return undefined;
-  const parsed = new Date(dateTime);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
-
-const periodsOverlap = (
-  startA?: string,
-  endA?: string,
-  startB?: string,
-  endB?: string,
-): boolean => {
-  const startADate = toValidDate(startA);
-  const endADate = toValidDate(endA);
-  const startBDate = toValidDate(startB);
-  const endBDate = toValidDate(endB);
-
-  if (!startADate || !endADate || !startBDate || !endBDate) return false;
-  return startADate < endBDate && endADate > startBDate;
-};
-
-const previousDateInput = (dateInput?: string): string | undefined => {
-  const parsed = parseDateInput(dateInput);
-  if (!parsed) return undefined;
-  const prev = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate() - 1);
-  return formatDateInput(prev);
-};
-
-const formatLotacao = (lotacao?: number): string => {
-  if (!lotacao || lotacao <= 0) return i18n.t('requisitions.labels.capacityNotDefined');
-  return `${lotacao} ${lotacao === 1 ? i18n.t('requisitions.labels.seat') : i18n.t('requisitions.labels.seats')}`;
-};
-
-const formatVehicleTitle = (transporte?: TransporteLike): string => {
-  const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
-  return (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
-};
-
-const formatTransporteDisplay = (transporte?: TransporteLike): string => {
-  if (!transporte) return i18n.t('requisitions.labels.noAssociatedTransport');
-
-  const parts = [
-    transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
-    formatVehicleTitle(transporte),
-    transporte.matricula,
-  ].filter(Boolean);
-
-  return parts.join(' · ');
-};
-
-const formatTransporteMeta = (transporte?: TransporteLike): string => {
-  if (!transporte) return i18n.t('requisitions.labels.noDetails');
-
-  let dataMatricula: string | undefined;
-  if (transporte.dataMatricula) {
-    let matriculaDate: Date | undefined;
-    if (typeof transporte.dataMatricula === 'string') {
-      matriculaDate = parseDateInput(transporte.dataMatricula) ?? undefined;
-    }
-
-    if (matriculaDate && !Number.isNaN(matriculaDate.getTime())) {
-      dataMatricula = matriculaDate.toLocaleDateString('pt-PT');
-    }
-  }
-
-  return [
-    transporte.categoria ? formatTransporteCategoria(transporte.categoria) : undefined,
-    formatLotacao(transporte.lotacao),
-    dataMatricula ? i18n.t('requisitions.labels.registeredOn', { date: dataMatricula }) : undefined,
-  ].filter(Boolean).join(' · ');
-};
-
-const getCoberturaMensagem = (passageirosSolicitados: number, lugaresEmFalta: number): string => {
-  if (passageirosSolicitados <= 0) return i18n.t('requisitions.labels.providePassengerCount');
-  if (lugaresEmFalta > 0) return i18n.t('requisitions.labels.missingSeats', { count: lugaresEmFalta });
-  return i18n.t('requisitions.labels.capacitySufficient');
-};
-
-const getRequisicaoTransportes = (requisicao?: RequisicaoResponse | null): TransporteResumo[] => {
-  if (!requisicao) return [];
-  if (requisicao.transportes && requisicao.transportes.length > 0) {
-    return requisicao.transportes.map((item) => item.transporte).filter(Boolean);
-  }
-  return requisicao.transporte ? [requisicao.transporte] : [];
-};
-
-const formatTransporteCollection = (requisicao?: RequisicaoResponse | null): string => {
-  const transportesRequisicao = getRequisicaoTransportes(requisicao);
-  if (transportesRequisicao.length === 0) return '—';
-  return transportesRequisicao.map((transporte) => formatTransporteDisplay(transporte)).join(', ');
-};
-
-type MaterialItemGroup = {
-  itemKey: string;
-  nome: string;
-  categoria: MaterialCategoria;
-  variantes: MaterialCatalogo[];
-};
 
 export function SharedRequisitionsPage({
   isDarkMode,
