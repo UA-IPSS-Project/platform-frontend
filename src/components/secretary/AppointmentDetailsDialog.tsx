@@ -11,7 +11,28 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
-import { Download, Trash2, Upload, File } from 'lucide-react';
+import { Download, Trash2, Upload } from 'lucide-react';
+
+// EyeIcon SVG inline (usado para preview)
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -731,7 +752,7 @@ export function AppointmentDetailsDialog({
                       className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <File className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <FileTextIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p
                             className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] md:max-w-[320px] lg:max-w-[420px]"
@@ -770,15 +791,7 @@ export function AppointmentDetailsDialog({
                               title={t('appointmentDetails.previewDocument', 'Visualizar')}
                               aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
                             >
-                              <File className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadDocumento(doc)}
-                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                              title="Download"
-                            >
-                              <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                              <EyeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             </button>
                             {isEditable && (
                               <Popover>
@@ -795,6 +808,14 @@ export function AppointmentDetailsDialog({
                                 <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
                                   <button
                                     type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4 text-white" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => handleRemoverDocumento(doc)}
                                     className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                   >
@@ -804,7 +825,8 @@ export function AppointmentDetailsDialog({
                                   <button
                                     type="button"
                                     onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm"
+                                    style={{ color: '#EFBC21', background: 'rgba(239,188,33,0.08)' }}
                                   >
                                     <BellIcon className="w-4 h-4" />
                                     {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
