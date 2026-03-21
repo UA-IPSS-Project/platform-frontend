@@ -86,6 +86,10 @@ export function RequisitionDetailsDialog({
     return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
   };
 
+  const materiaisAgrupados = selectedRequisicao?.tipo === 'MATERIAL'
+    ? groupMateriaisPorCategoria(selectedRequisicao.itens ?? [])
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 max-h-[85vh] overflow-y-auto">
@@ -128,12 +132,12 @@ export function RequisitionDetailsDialog({
                         : selectedRequisicao.quantidade || '—'}
                     </p>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.materials')}</p>
-                    <div className="space-y-2">
-                      {groupMateriaisPorCategoria(selectedRequisicao.itens ?? []).length > 0 ? groupMateriaisPorCategoria(selectedRequisicao.itens ?? []).map((grupo) => (
-                        <div key={grupo.categoria}>
+                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.materials')}</p>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {materiaisAgrupados.length > 0 ? materiaisAgrupados.map((grupo) => (
+                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
                           <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
-                          <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
+                          <ul className="mt-1 list-disc list-inside text-gray-700 dark:text-gray-300 space-y-0.5">
                             {grupo.itens.map((item) => (
                               <li key={item.id}>{item.label}</li>
                             ))}
@@ -162,12 +166,12 @@ export function RequisitionDetailsDialog({
                     <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.driver')}</p>
                     <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || t('requisitions.labels.toBeDefined')}</p>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.vehicles')}</p>
-                    <div className="space-y-2">
+                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.vehicles')}</p>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                       {groupTransportesPorCategoria(selectedRequisicao).length > 0 ? groupTransportesPorCategoria(selectedRequisicao).map((grupo) => (
-                        <div key={grupo.categoria}>
+                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
                           <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
-                          <div className="space-y-1">
+                          <div className="mt-1 space-y-1">
                             {grupo.itens.map((transporte) => (
                               <div key={transporte.id}>
                                 <p className="text-gray-900 dark:text-gray-100">{transporte.label}</p>
@@ -184,8 +188,10 @@ export function RequisitionDetailsDialog({
                 )}
                 {selectedRequisicao.tipo === 'MANUTENCAO' && (
                   <>
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.subject')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
+                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.subject')}</p>
+                    <div className="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 p-3">
+                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
+                    </div>
                   </>
                 )}
               </div>
