@@ -19,6 +19,7 @@ export type TransporteCategoria =
   | 'PASSAGEIROS'
   | 'ADAPTADO';
 export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
+export type ManutencaoCategoria = 'CATL' | 'RC' | 'PRE_ESCOLAR' | 'CRECHE';
 
 export interface MaterialCatalogo {
   id: number;
@@ -45,6 +46,13 @@ export interface TipoManutencaoCatalogo {
   id: number;
   nome: string;
   descricao?: string | null;
+}
+
+export interface ManutencaoItem {
+  id: number;
+  categoria: ManutencaoCategoria;
+  espaco: string;
+  itemVerificacao: string;
 }
 
 export interface RequisicaoResponse {
@@ -147,6 +155,7 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
   assunto?: string;
+  manutencaoItemIds?: number[];
 }
 
 export interface AtualizarEstadoRequisicaoRequest {

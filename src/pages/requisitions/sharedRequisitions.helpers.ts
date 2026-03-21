@@ -1,6 +1,7 @@
 import i18n from '../../i18n';
 import { formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import {
+  ManutencaoCategoria,
   MaterialCategoria,
   MaterialCatalogo,
   RequisicaoEstado,
@@ -98,6 +99,13 @@ export const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label
   { value: 'OUTROS', label: 'requisitions.labels.materialCategoryOther' },
 ];
 
+export const MANUTENCAO_CATEGORIA_OPTIONS: Array<{ value: ManutencaoCategoria; label: string }> = [
+  { value: 'CATL', label: 'requisitions.labels.maintenanceCategoryCATL' },
+  { value: 'RC', label: 'requisitions.labels.maintenanceCategoryRC' },
+  { value: 'PRE_ESCOLAR', label: 'requisitions.labels.maintenanceCategoryPreschool' },
+  { value: 'CRECHE', label: 'requisitions.labels.maintenanceCategoryDaycare' },
+];
+
 export const formatTipo = (tipo: RequisicaoTipo) => {
   const key = TIPO_OPTIONS.find((option) => option.value === tipo)?.label;
   return key ? i18n.t(key) : tipo;
@@ -112,6 +120,8 @@ export const formatEstado = (estado: RequisicaoEstado) => {
 };
 export const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
   i18n.t(MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
+export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria) =>
+  i18n.t(MANUTENCAO_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 export const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
   i18n.t(TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
 

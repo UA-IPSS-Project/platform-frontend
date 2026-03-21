@@ -11,8 +11,10 @@ import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import {
+  ManutencaoCategoria,
   MaterialCategoria,
   MaterialCatalogo,
+  ManutencaoItem,
   RequisicaoEstado,
   RequisicaoPrioridade,
   RequisicaoResponse,
@@ -24,6 +26,7 @@ import {
 import {
   ConflitoDialogMode,
   CreateField,
+  MANUTENCAO_CATEGORIA_OPTIONS,
   MATERIAL_CATEGORIA_OPTIONS,
   MaterialItemGroup,
   PRIORIDADE_OPTIONS,
@@ -34,6 +37,7 @@ import {
   TransporteSelectionMode,
   composeDateTime,
   createEmptyMaterialLinha,
+  formatManutencaoCategoria,
   formatLotacao,
   formatTransporteCategoria,
   formatTransporteDisplay,
@@ -54,6 +58,7 @@ import { RequisitionsConflictDialog } from '../../components/shared/requisitions
 import { RequisitionsCreateMaterialDialog } from '../../components/shared/requisitions/RequisitionsCreateMaterialDialog';
 import { RequisitionDetailsDialog } from '../../components/shared/requisitions/RequisitionDetailsDialog';
 import { RequisitionsListFiltersContent } from '../../components/shared/requisitions/RequisitionsListFiltersContent';
+import { RequisitionsCreateManutencaoForm } from '../../components/shared/requisitions/RequisitionsCreateManutencaoForm';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -134,6 +139,10 @@ export function SharedRequisitionsPage({
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
   const [assunto, setAssunto] = useState('');
+  const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
+  const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
+  const [expandedManutencaoItems, setExpandedManutencaoItems] = useState<Record<string, boolean>>({});
+  const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -216,12 +225,14 @@ export function SharedRequisitionsPage({
   const fetchCatalogo = async () => {
     try {
       setLoadingCatalogo(true);
-      const [materiaisData, transportesData] = await Promise.all([
+      const [materiaisData, transportesData, manutencaoData] = await Promise.all([
         requisicoesApi.listarMateriais(),
         requisicoesApi.listarTransportes(),
+        requisicoesApi.listarManutencaoItems(),
       ]);
       setMateriais(Array.isArray(materiaisData) ? materiaisData : []);
       setTransportes(Array.isArray(transportesData) ? transportesData : []);
+      setManutencaoItems(Array.isArray(manutencaoData) ? manutencaoData : []);
     } catch (error: any) {
       toast.error(error?.message || t('requisitions.errors.loadCatalogFailed'));
     } finally {
@@ -647,6 +658,22 @@ export function SharedRequisitionsPage({
     setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
   };
 
+  const toggleManutencaoCategoriaExpansion = (categoria: ManutencaoCategoria) => {
+    setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  };
+
+  const toggleManutencaoItemVisibility = (itemKey: string) => {
+    setExpandedManutencaoItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+  };
+
+  const toggleManutencaoItem = (itemId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
+    } else {
+      setSelectedManutencaoItemIds((prev) => prev.filter((id) => id !== itemId));
+    }
+  };
+
   const toggleVariante = (materialId: number, checked: boolean) => {
     setMaterialLinhas((prev) => {
       const materialIdStr = String(materialId);
@@ -819,6 +846,7 @@ export function SharedRequisitionsPage({
         await requisicoesApi.criarManutencao({
           ...payloadBase,
           assunto: assunto.trim() || undefined,
+          manutencaoItemIds: selectedManutencaoItemIds.length > 0 ? selectedManutencaoItemIds : undefined,
         });
       }
 
@@ -1900,9 +1928,21 @@ export function SharedRequisitionsPage({
           )}
 
           {tipo === 'MANUTENCAO' && (
-            <div>
-              <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.subjectOptional')}</label>
-              <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder={t('requisitions.ui.subjectPlaceholder')} />
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="req-create-assunto" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.subjectOptional')}</label>
+                <Input id="req-create-assunto" className={inputFieldClassName} type="text" value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder={t('requisitions.ui.subjectPlaceholder')} />
+              </div>
+              <RequisitionsCreateManutencaoForm
+                manutencaoItems={manutencaoItems}
+                expandedManutencaoCategorias={expandedManutencaoCategorias}
+                expandedManutencaoItems={expandedManutencaoItems}
+                selectedManutencaoItemIds={selectedManutencaoItemIds}
+                onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
+                onToggleItemVisibility={toggleManutencaoItemVisibility}
+                onToggleItem={toggleManutencaoItem}
+                t={t}
+              />
             </div>
           )}
         </div>
