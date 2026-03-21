@@ -12,13 +12,15 @@ interface DocumentUploadDialogProps {
   onClose: () => void;
   marcacaoId: number;
   onSuccess?: (documentos: DocumentoDTO[]) => void;
+  isClient?: boolean;
 }
 
 export function DocumentUploadDialog({
   open,
   onClose,
   marcacaoId,
-  onSuccess
+  onSuccess,
+  isClient = false
 }: DocumentUploadDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -27,31 +29,31 @@ export function DocumentUploadDialog({
   const MAX_TOTAL_SIZE_MB = 20;
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast.error('Selecione pelo menos um ficheiro');
+      if (isClient) toast.error('Selecione pelo menos um ficheiro');
       return;
     }
 
     if (selectedFiles.length > MAX_FILES) {
-      toast.error(`Só pode enviar no máximo ${MAX_FILES} ficheiros por marcação.`);
+      if (isClient) toast.error(`Só pode enviar no máximo ${MAX_FILES} ficheiros por marcação.`);
       return;
     }
 
     const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
     if (totalSize > MAX_TOTAL_SIZE_MB * 1024 * 1024) {
-      toast.error(`O tamanho total dos ficheiros não pode exceder ${MAX_TOTAL_SIZE_MB}MB.`);
+      if (isClient) toast.error(`O tamanho total dos ficheiros não pode exceder ${MAX_TOTAL_SIZE_MB}MB.`);
       return;
     }
 
     setIsUploading(true);
     try {
       const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
-      toast.success(`${uploadedDocs.length} documento(s) enviado(s) com sucesso!`);
+      if (isClient) toast.success(`${uploadedDocs.length} documento(s) enviado(s) com sucesso!`);
       onSuccess?.(uploadedDocs);
       setSelectedFiles([]);
       onClose();
     } catch (error) {
       console.error('Erro ao enviar documentos:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao enviar documentos');
+      if (isClient) toast.error(error instanceof Error ? error.message : 'Erro ao enviar documentos');
     } finally {
       setIsUploading(false);
     }

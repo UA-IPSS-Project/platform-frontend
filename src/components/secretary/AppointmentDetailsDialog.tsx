@@ -1270,6 +1270,7 @@ export function AppointmentDetailsDialog({
         open={showDocUpload}
         onClose={() => setShowDocUpload(false)}
         marcacaoId={parseInt(appointment.id)}
+        isClient={isClient}
         onSuccess={(docs) => {
           setDocumentos(prev => [...prev, ...docs]);
           setShowDocUpload(false);
