@@ -85,6 +85,7 @@ export function SharedRequisitionsPage({
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
+  const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
@@ -237,6 +238,25 @@ export function SharedRequisitionsPage({
     setCreateTouched({});
   }, [tipo]);
 
+  // Fetch all accepted transport requisitions (without role filter) for conflict detection
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE') return;
+
+    const fetchAcceptedTransports = async () => {
+      try {
+        const todasRequisicoes = await requisicoesApi.procurar({ 
+          tipo: 'TRANSPORTE',
+          estado: 'ACEITE' 
+        });
+        setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
+      } catch (error: any) {
+        console.error('Failed to fetch accepted transport requisitions:', error);
+      }
+    };
+
+    fetchAcceptedTransports();
+  }, [tipo]);
+
   useEffect(() => {
     return () => {
       if (sectionSwitchTimeoutRef.current) {
@@ -303,7 +323,14 @@ export function SharedRequisitionsPage({
     if (tipo !== 'TRANSPORTE') return new Set<number>();
 
     const ids = new Set<number>();
-    monthlyRequisicoes.forEach((requisicao) => {
+    
+    // Check against ALL accepted transport requisitions from all roles
+    // This ensures vehicles blocked by any role are shown as unavailable
+    const todasRequisicoes = todasRequisicoesTransporteAceites.length > 0 
+      ? todasRequisicoesTransporteAceites 
+      : monthlyRequisicoes;
+    
+    todasRequisicoes.forEach((requisicao) => {
       if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
@@ -322,7 +349,7 @@ export function SharedRequisitionsPage({
     });
 
     return ids;
-  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, tipo]);
+  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, todasRequisicoesTransporteAceites, tipo]);
 
   const transportesOrdenadosDisponiveis = useMemo(
     () => transportesOrdenados.filter((transporte) => !transportesIndisponiveis.has(transporte.id)),
@@ -1156,7 +1183,39 @@ export function SharedRequisitionsPage({
 
     try {
       setUpdatingEstadoId(openedRequisicaoId);
+      
+      // First, accept the current request
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      
+      // Then, automatically reject conflicting transport requests
+      if (selectedRequisicao?.tipo === 'TRANSPORTE') {
+        try {
+          const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
+          const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
+          
+          const resultadoConflitos = calcularConflitosTransporte(
+            selectedRequisicao,
+            requisicoesList,
+          );
+
+          if (resultadoConflitos && resultadoConflitos.conflitosParaMostrar.length > 0) {
+            // Reject all conflicting requests that are not in a final state
+            const rejectPromises = resultadoConflitos.conflitosParaMostrar
+              .filter((conflito) => conflito.estado !== 'RECUSADA' && conflito.estado !== 'CANCELADA')
+              .map((conflito) =>
+                requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' })
+              );
+            
+            if (rejectPromises.length > 0) {
+              await Promise.all(rejectPromises);
+            }
+          }
+        } catch (error: any) {
+          // Log rejection errors but don't block the main acceptance
+          console.error('Failed to reject conflicting requisitions:', error);
+        }
+      }
+      
       toast.success(t('requisitions.messages.statusUpdated'));
       limparEstadoConflito();
       await fetchRequisicoes();
