@@ -1357,24 +1357,11 @@ export function SharedRequisitionsPage({
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
 
-        <div>
-          <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
-          <select
-            id="req-create-tipo"
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value as RequisicaoTipo)}
-            className={selectFieldClassName}
-          >
-            {TIPO_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{t(option.label)}</option>
-            ))}
-          </select>
-        </div>
-
         <RequisitionsCreateCommonFields
           tipo={tipo}
           descricao={descricao}
           onChangeDescricao={setDescricao}
+          onChangeTipo={setTipo}
           prioridade={prioridade}
           onChangePrioridade={setPrioridade}
           tempoLimite={tempoLimite}
