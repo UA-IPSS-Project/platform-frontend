@@ -1047,6 +1047,9 @@
     }
   },
   "balnearioAppointmentDetails": {
+  },
+  "calendar": {
+    "suaMarcacao": "Your appointment",
     "dialogTitle": "Bathhouse Appointment Details",
     "dialogDescription": "Review and edit the user's needs and information.",
     "title": "Bath Details",

@@ -1361,7 +1361,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               appointments.some(a => a.id === splitAppointment.id);
                             const displayText = splitAppointment.status === 'no-show'
                               ? 'Faltou'
-                              : (isClient && splitIsOwn ? 'Sua marcação' : splitAppointment.patientName);
+                              : (isClient && splitIsOwn ? tt('Sua marcação', 'Your appointment') : splitAppointment.patientName);
                             // Get status style for each mini-cell
                             const isInteractive = !!(isClient && splitIsOwn);
                             const miniCellStatusClass = getMiniCellStatusStyle(splitAppointment.status, isInteractive);
@@ -1427,7 +1427,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
                         }
                         if (isClient && isOwn) {
-                          return tt('Sua marcação - clique para ver detalhes', 'Your appointment - click to view details');
+                          return tt('Sua marcação', 'Your appointment') + ' - ' + tt('clique para ver detalhes', 'click to view details');
                         }
                         if (inPast) {
                           return tt('Marcação histórica - clique para ver detalhes', 'Past appointment - click to view details');

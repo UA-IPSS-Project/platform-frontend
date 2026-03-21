@@ -1047,6 +1047,9 @@
     }
   },
   "balnearioAppointmentDetails": {
+  },
+  "calendar": {
+    "suaMarcacao": "Sua marcação",
     "dialogTitle": "Detalhes do Agendamento Balneário",
     "dialogDescription": "Consulte e edite as necessidades e informações do utente.",
     "title": "Detalhes do Banho",
