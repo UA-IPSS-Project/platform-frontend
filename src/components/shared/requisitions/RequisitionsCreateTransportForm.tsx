@@ -8,8 +8,6 @@ import {
   formatLotacao,
   formatVehicleTitle,
   getCoberturaMensagem,
-  formatDateInput,
-  parseDateInput,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { TransporteCatalogo, TransporteCategoria } from '../../../services/api';
 
@@ -89,7 +87,6 @@ export function RequisitionsCreateTransportForm({
   loadingCatalogo,
   createErrors,
   inputFieldClassName,
-  selectFieldClassName,
   onApplySuggestion,
   t,
 }: Readonly<RequisitionsCreateTransportFormProps>) {

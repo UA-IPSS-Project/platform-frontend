@@ -3,11 +3,8 @@ import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
 import {
-  MATERIAL_CATEGORIA_OPTIONS,
   MaterialItemGroup,
-  formatMaterialItemLabel,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
-import { MaterialCatalogo } from '../../../services/api';
 
 interface RequisitionsCreateMaterialFormProps {
   materialLinhas: Array<{ rowId: string; materialId: string; quantidade: string }>;
@@ -19,7 +16,7 @@ interface RequisitionsCreateMaterialFormProps {
     itens: MaterialItemGroup[];
   }>;
   materiaisAdicionados: Array<{
-    rowId: string;
+  t: (key: string, options?: Record<string, unknown>) => string;
     descricao: string;
     quantidade: number;
   }>;
@@ -45,11 +42,11 @@ interface RequisitionsCreateMaterialFormProps {
 }
 
 export function RequisitionsCreateMaterialForm({
+    rowId: string;
   materialLinhas,
   expandedMaterialItems,
   expandedMaterialCategorias,
   materiaisPorCategoria,
-  materiaisAdicionados,
   materiaisAdicionadosTotal,
   onToggleCategoriaExpansion,
   onToggleItemVisibility,
@@ -172,7 +169,7 @@ export function RequisitionsCreateMaterialForm({
                                 </div>
                               );
                             })}
-                          </div>
+                              t: (key: string, options?: Record<string, unknown>) => string;
                         )}
                       </div>
                     );

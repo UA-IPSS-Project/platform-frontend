@@ -1,8 +1,22 @@
 import { DatePickerField } from '../../ui/date-picker-field';
-import { Input } from '../../ui/input';
 import { Textarea } from '../../ui/textarea';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../../services/api';
-import { PRIORIDADE_OPTIONS, formatDateInput, parseDateInput } from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { PRIORIDADE_OPTIONS } from '../../../pages/requisitions/sharedRequisitions.helpers';
+
+const toDateInputValue = (date?: Date): string => {
+  if (!date) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const fromDateInputValue = (value: string): Date | undefined => {
+  if (!value) return undefined;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
+};
 
 interface RequisitionsCreateCommonFieldsProps {
   descricao: string;
@@ -27,10 +41,8 @@ export function RequisitionsCreateCommonFields({
   onChangePrioridade,
   tempoLimite,
   onChangeTempoLimite,
-  tipo,
   descricaoError,
   tempoLimiteError,
-  inputFieldClassName,
   textareaFieldClassName,
   selectFieldClassName,
   t,
@@ -69,8 +81,8 @@ export function RequisitionsCreateCommonFields({
           <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.deadlineOptional')}</label>
           <DatePickerField
             id="req-create-tempo-limite"
-            value={formatDateInput(tempoLimite)}
-            onChange={(value) => onChangeTempoLimite(value ? parseDateInput(value) : undefined)}
+            value={toDateInputValue(tempoLimite)}
+            onChange={(value) => onChangeTempoLimite(fromDateInputValue(value))}
             buttonClassName={`mt-1 ${tempoLimiteError ? 'border-red-500' : ''}`}
           />
           {tempoLimiteError && <p className="text-red-500 text-xs mt-1">{tempoLimiteError}</p>}

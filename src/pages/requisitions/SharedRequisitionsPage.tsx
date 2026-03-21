@@ -993,7 +993,7 @@ export function SharedRequisitionsPage({
       return [];
     }
 
-    const conflitos = outrasRequisicoes
+    return outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
       .filter((outra) => outra.estado !== 'CANCELADA') // Don't reject cancelled requests
       .filter((outra) => {
@@ -1020,8 +1020,6 @@ export function SharedRequisitionsPage({
           outra.dataHoraRegresso,
         );
       });
-
-    return conflitos;
   };
 
   const abrirRequisicaoPorId = async (requisicaoId: number): Promise<void> => {
