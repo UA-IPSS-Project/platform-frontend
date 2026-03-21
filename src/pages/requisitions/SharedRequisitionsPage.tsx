@@ -1246,16 +1246,21 @@ export function SharedRequisitionsPage({
           );
 
           if (todosOsConflitos.length > 0) {
-            // Reject all conflicting requests that are not already RECUSADA
-            const rejectPromises = todosOsConflitos
-              .filter((conflito) => conflito.estado !== 'RECUSADA')
-              .map((conflito) =>
-                requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' })
-              );
-            
-            if (rejectPromises.length > 0) {
-              await Promise.all(rejectPromises);
-            }
+            // Backend only allows ENVIADA -> EM_ANALISE -> RECUSADA.
+            // For other pending states, RECUSADA can be applied directly.
+            const rejeitarConflito = async (conflito: RequisicaoResponse) => {
+              if (conflito.estado === 'RECUSADA') {
+                return;
+              }
+
+              if (conflito.estado === 'ENVIADA') {
+                await requisicoesApi.atualizarEstado(conflito.id, { estado: 'EM_ANALISE' });
+              }
+
+              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' });
+            };
+
+            await Promise.all(todosOsConflitos.map((conflito) => rejeitarConflito(conflito)));
           }
         } catch (error: any) {
           // Log rejection errors but don't block the main acceptance

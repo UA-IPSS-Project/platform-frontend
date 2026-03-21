@@ -2,9 +2,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
-import {
-  MaterialItemGroup,
-} from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { MaterialItemGroup } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
 interface RequisitionsCreateMaterialFormProps {
   materialLinhas: Array<{ rowId: string; materialId: string; quantidade: string }>;
@@ -16,7 +14,7 @@ interface RequisitionsCreateMaterialFormProps {
     itens: MaterialItemGroup[];
   }>;
   materiaisAdicionados: Array<{
-  t: (key: string, options?: Record<string, unknown>) => string;
+    rowId: string;
     descricao: string;
     quantidade: number;
   }>;
@@ -38,11 +36,10 @@ interface RequisitionsCreateMaterialFormProps {
     }>;
   }>;
   materiaisError?: string;
-  t: (key: string) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 export function RequisitionsCreateMaterialForm({
-    rowId: string;
   materialLinhas,
   expandedMaterialItems,
   expandedMaterialCategorias,
@@ -169,7 +166,7 @@ export function RequisitionsCreateMaterialForm({
                                 </div>
                               );
                             })}
-                              t: (key: string, options?: Record<string, unknown>) => string;
+                          </div>
                         )}
                       </div>
                     );
