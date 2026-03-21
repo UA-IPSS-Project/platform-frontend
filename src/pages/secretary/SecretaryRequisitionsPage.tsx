@@ -46,7 +46,28 @@ const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string 
   { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
 ];
 
-const ESTADO_FINAL_OPTIONS = new Set<RequisicaoEstado>(['ACEITE', 'RECUSADA']);
+const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
+  if (estadoAtual === 'ENVIADA') {
+    return ['EM_ANALISE'];
+  }
+  if (estadoAtual === 'EM_ANALISE') {
+    return ['ACEITE', 'RECUSADA'];
+  }
+  return [];
+};
+
+const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
+  if (estadoAtual === 'ENVIADA') {
+    return ['EM_ANALISE'];
+  }
+  if (estadoAtual === 'EM_ANALISE') {
+    return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
+  }
+  if (estadoAtual) {
+    return [estadoAtual];
+  }
+  return ['EM_ANALISE'];
+};
 
 const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
   { value: 'BAIXA', label: 'requisitions.labels.low' },
@@ -62,6 +83,14 @@ const TIPO_OPTIONS: Array<{ value: RequisicaoTipo; label: string }> = [
 ];
 
 type RequisicoesTab = 'GERAL' | RequisicaoTipo | 'URGENTE';
+
+type RequisicaoConflito = {
+  id: number;
+  criadoPorNome: string;
+  criadoEm?: string;
+};
+
+type ConflitoDialogMode = 'warning' | 'blocked';
 
 const REQUISICOES_TABS: Array<{ value: RequisicoesTab; label: string }> = [
   { value: 'GERAL', label: 'requisitions.labels.general' },
@@ -158,7 +187,38 @@ const getPassengerCapacity = (lotacao?: number): number => {
 
 const composeDateTime = (date?: string, time?: string): string | undefined => {
   if (!date || !time) return undefined;
-  return `${date}T${time}`;
+  const parsedDate = parseDateInput(date) ?? (() => {
+    const fallback = new Date(date);
+    return Number.isNaN(fallback.getTime()) ? undefined : fallback;
+  })();
+
+  if (!parsedDate) return undefined;
+
+  const timeParts = time.split(':');
+  if (timeParts.length < 2) return undefined;
+  const hours = Number(timeParts[0]);
+  const minutes = Number(timeParts[1]);
+
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return undefined;
+  }
+
+  const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate(), hours, minutes, 0, 0);
+  const yyyy = normalized.getFullYear();
+  const mm = String(normalized.getMonth() + 1).padStart(2, '0');
+  const dd = String(normalized.getDate()).padStart(2, '0');
+  const hh = String(normalized.getHours()).padStart(2, '0');
+  const min = String(normalized.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
+const isDateInputInPast = (dateInput?: string): boolean => {
+  const parsed = parseDateInput(dateInput);
+  if (!parsed) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed < today;
 };
 
 const toValidDate = (dateTime?: string): Date | undefined => {
@@ -281,6 +341,10 @@ export function SecretaryRequisitionsPage({
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
+  const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
+  const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
+  const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
+  const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
@@ -634,6 +698,19 @@ export function SecretaryRequisitionsPage({
     }
   }, [materialLinhas, createTouched.materialItens]);
 
+  useEffect(() => {
+    if (tipo !== 'TRANSPORTE') return;
+
+    const temAlgumValorDataHora = Boolean(dataSaida || horaSaida || dataRegresso || horaRegresso);
+    if (!temAlgumValorDataHora) return;
+
+    // Revalida após atualização de estado para evitar checks com valores antigos no onChange.
+    validateAndSetField('dataSaida');
+    validateAndSetField('horaSaida');
+    validateAndSetField('dataRegresso');
+    validateAndSetField('horaRegresso');
+  }, [tipo, dataSaida, horaSaida, dataRegresso, horaRegresso]);
+
   const setFieldTouched = (field: CreateField) => {
     setCreateTouched((prev) => ({ ...prev, [field]: true }));
   };
@@ -658,6 +735,14 @@ export function SecretaryRequisitionsPage({
     if (field === 'horaSaida' && !horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !horaRegresso) return t('requisitions.errors.requiredField');
+
+    if ((field === 'dataSaida' || field === 'horaSaida') && dataSaida && isDateInputInPast(dataSaida)) {
+      return t('requisitions.errors.dateCannotBePast');
+    }
+
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && dataRegresso && isDateInputInPast(dataRegresso)) {
+      return t('requisitions.errors.dateCannotBePast');
+    }
 
     if (field === 'numeroPassageiros') {
       if (!numeroPassageiros) return t('requisitions.errors.requiredField');
@@ -715,6 +800,7 @@ export function SecretaryRequisitionsPage({
       }
       if (key === 'numeroPassageiros') mapped.numeroPassageiros = value;
       if (key === 'transporteIds') mapped.transporteIds = value;
+      if (key === 'transporteId') mapped.transporteIds = value;
     });
 
     return mapped;
@@ -1022,30 +1108,170 @@ export function SecretaryRequisitionsPage({
     handleSelectTab(tab);
   };
 
-  const handleOpenRequisicao = (req: RequisicaoResponse) => {
+  const limparEstadoConflito = () => {
+    setConflitoDialogOpen(false);
+    setConflitosPendentes([]);
+    setConflitoTransportesNomes([]);
+    setConflitoDialogMode('warning');
+  };
+
+  const mapearConflitosParaResumo = (lista: RequisicaoResponse[]): RequisicaoConflito[] => (
+    lista.map((conflito) => ({
+      id: conflito.id,
+      criadoPorNome: conflito.criadoPor?.nome || 'Utilizador sem nome',
+      criadoEm: conflito.criadoEm,
+    }))
+  );
+
+  const calcularConflitosTransporte = (
+    requisicaoAtual: RequisicaoResponse,
+    outrasRequisicoes: RequisicaoResponse[],
+  ): {
+    conflitosParaMostrar: RequisicaoResponse[];
+    nomesTransportesConflito: string[];
+    modo: ConflitoDialogMode;
+  } | null => {
+    const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
+    const idsSelecionados = new Set(
+      transportesSelecionados
+        .map((transporte) => transporte.id)
+        .filter((id): id is number => typeof id === 'number'),
+    );
+
+    if (idsSelecionados.size === 0) {
+      return null;
+    }
+
+    const conflitos = outrasRequisicoes
+      .filter((outra) => outra.id !== requisicaoAtual.id)
+      .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+      .filter((outra) => {
+        const transportesOutra = getRequisicaoTransportes(outra);
+        const partilhaTransporte = transportesOutra.some(
+          (transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id),
+        );
+
+        if (!partilhaTransporte) {
+          return false;
+        }
+
+        if (!requisicaoAtual.dataHoraSaida
+          || !requisicaoAtual.dataHoraRegresso
+          || !outra.dataHoraSaida
+          || !outra.dataHoraRegresso) {
+          return true;
+        }
+
+        return periodsOverlap(
+          requisicaoAtual.dataHoraSaida,
+          requisicaoAtual.dataHoraRegresso,
+          outra.dataHoraSaida,
+          outra.dataHoraRegresso,
+        );
+      });
+
+    if (conflitos.length === 0) {
+      return null;
+    }
+
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
+    const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
+    const nomesTransportesConflito = Array.from(new Set(
+      transportesSelecionados
+        .filter((transporte) => typeof transporte.id === 'number' && idsSelecionados.has(transporte.id))
+        .map((transporte) => formatTransporteDisplay(transporte)),
+    ));
+
+    return {
+      conflitosParaMostrar,
+      nomesTransportesConflito,
+      modo: conflitosBloqueantes.length > 0 ? 'blocked' : 'warning',
+    };
+  };
+
+  const abrirRequisicaoPorId = async (requisicaoId: number): Promise<void> => {
+    const requisicaoExistente = requisicoes.find((req) => req.id === requisicaoId);
+    if (requisicaoExistente) {
+      await handleOpenRequisicao(requisicaoExistente);
+      return;
+    }
+
+    try {
+      const requisicaoDetalhe = await requisicoesApi.obterPorId(requisicaoId);
+      setRequisicoes((prev) => {
+        if (prev.some((item) => item.id === requisicaoDetalhe.id)) {
+          return prev;
+        }
+        return [requisicaoDetalhe, ...prev];
+      });
+      await handleOpenRequisicao(requisicaoDetalhe);
+    } catch (error: any) {
+      toast.error(error?.message || t('requisitions.errors.loadFailed'));
+    }
+  };
+
+  const handleOpenRequisicao = async (req: RequisicaoResponse) => {
+    limparEstadoConflito();
     setOpenedRequisicaoId(req.id);
-    const estadoSecretaria = ESTADO_SECRETARIA_OPTIONS.some((opt) => opt.value === req.estado)
-      ? req.estado
-      : 'EM_ANALISE';
-    setEstadoEdicao(estadoSecretaria);
+
+    // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
+    if (req.estado === 'ENVIADA') {
+      try {
+        setUpdatingEstadoId(req.id);
+        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
+        await fetchRequisicoes();
+        setEstadoEdicao('EM_ANALISE');
+      } catch (error: any) {
+        toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+        setEstadoEdicao('EM_ANALISE');
+      } finally {
+        setUpdatingEstadoId(null);
+      }
+      return;
+    }
+
+    const estadosPermitidos = getEstadosPermitidosTransicao(req.estado);
+    setEstadoEdicao(estadosPermitidos[0] ?? req.estado);
   };
 
   const handleAtualizarEstado = async () => {
     if (!openedRequisicaoId || !selectedRequisicao) return;
 
-    if (selectedRequisicao.estado !== 'EM_ANALISE') {
+    const estadosPermitidos = getEstadosPermitidosTransicao(selectedRequisicao.estado);
+    if (estadosPermitidos.length === 0) {
       toast.error(t('requisitions.errors.onlyPendingDecision'));
       return;
     }
 
-    if (estadoEdicao === 'EM_ANALISE') {
+    if (estadoEdicao === selectedRequisicao.estado) {
       toast.error(t('requisitions.errors.chooseFinalState'));
       return;
     }
 
-    if (!ESTADO_FINAL_OPTIONS.has(estadoEdicao)) {
+    if (!estadosPermitidos.includes(estadoEdicao)) {
       toast.error(t('requisitions.errors.invalidFinalState'));
       return;
+    }
+
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
+      try {
+        const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
+        const resultadoConflitos = calcularConflitosTransporte(
+          selectedRequisicao,
+          Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [],
+        );
+
+        if (resultadoConflitos) {
+          setConflitosPendentes(mapearConflitosParaResumo(resultadoConflitos.conflitosParaMostrar));
+          setConflitoTransportesNomes(resultadoConflitos.nomesTransportesConflito);
+          setConflitoDialogMode(resultadoConflitos.modo);
+          setConflitoDialogOpen(true);
+          return;
+        }
+      } catch (error: any) {
+        toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+        return;
+      }
     }
 
     try {
@@ -1147,9 +1373,36 @@ export function SecretaryRequisitionsPage({
     [requisicoes, openedRequisicaoId],
   );
 
+  const estadosPermitidosSelecionados = useMemo(
+    () => getEstadosPermitidosTransicao(selectedRequisicao?.estado),
+    [selectedRequisicao?.estado],
+  );
+
+  const estadosVisiveisSelecionados = useMemo(
+    () => getEstadosVisiveisNoSeletor(selectedRequisicao?.estado),
+    [selectedRequisicao?.estado],
+  );
+
+  const handleContinuarAceitacaoComConflitos = async () => {
+    if (!openedRequisicaoId) return;
+
+    try {
+      setUpdatingEstadoId(openedRequisicaoId);
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      toast.success(t('requisitions.messages.statusUpdated'));
+      limparEstadoConflito();
+      await fetchRequisicoes();
+      setOpenedRequisicaoId(null);
+    } catch (error: any) {
+      toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
+    } finally {
+      setUpdatingEstadoId(null);
+    }
+  };
+
   const podeAtualizarEstado = useMemo(
-    () => selectedRequisicao?.estado === 'EM_ANALISE',
-    [selectedRequisicao],
+    () => estadosPermitidosSelecionados.length > 0,
+    [estadosPermitidosSelecionados],
   );
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
@@ -1473,7 +1726,10 @@ export function SecretaryRequisitionsPage({
                     />
                   </div>
 
-                  <div onBlurCapture={() => validateAndSetField('dataSaida', true)}>
+                  <div onBlurCapture={() => {
+                    validateAndSetField('dataSaida', true);
+                    validateAndSetField('horaSaida', true);
+                  }}>
                     <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-saida"
@@ -1483,12 +1739,10 @@ export function SecretaryRequisitionsPage({
                         if (!dataRegresso) {
                           setDataRegresso(value);
                         }
-                        if (createTouched.dataSaida) {
-                          validateAndSetField('dataSaida');
-                        }
-                        if (createTouched.dataRegresso) {
-                          validateAndSetField('dataRegresso');
-                        }
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
                       }}
                       buttonClassName={`mt-1 ${createErrors.dataSaida ? 'border-red-500' : ''}`}
                     />
@@ -1504,28 +1758,31 @@ export function SecretaryRequisitionsPage({
                       value={horaSaida}
                       onChange={(e) => {
                         setHoraSaida(e.target.value);
-                        if (createTouched.horaSaida) {
-                          validateAndSetField('horaSaida');
-                        }
+                        validateAndSetField('horaSaida');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
                       }}
                       onBlur={() => validateAndSetField('horaSaida', true)}
+                      onBlurCapture={() => validateAndSetField('dataSaida', true)}
                     />
                     {createErrors.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
                   </div>
 
-                  <div onBlurCapture={() => validateAndSetField('dataRegresso', true)}>
+                  <div onBlurCapture={() => {
+                    validateAndSetField('dataRegresso', true);
+                    validateAndSetField('horaRegresso', true);
+                  }}>
                     <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
                     <DatePickerField
                       id="req-create-transporte-data-regresso"
                       value={dataRegresso}
                       onChange={(value) => {
                         setDataRegresso(value);
-                        if (createTouched.dataRegresso) {
-                          validateAndSetField('dataRegresso');
-                        }
-                        if (createTouched.horaRegresso) {
-                          validateAndSetField('horaRegresso');
-                        }
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('horaRegresso');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
                       }}
                       buttonClassName={`mt-1 ${createErrors.dataRegresso ? 'border-red-500' : ''}`}
                     />
@@ -1541,11 +1798,13 @@ export function SecretaryRequisitionsPage({
                       value={horaRegresso}
                       onChange={(e) => {
                         setHoraRegresso(e.target.value);
-                        if (createTouched.horaRegresso) {
-                          validateAndSetField('horaRegresso');
-                        }
+                        validateAndSetField('horaRegresso');
+                        validateAndSetField('dataRegresso');
+                        validateAndSetField('dataSaida');
+                        validateAndSetField('horaSaida');
                       }}
                       onBlur={() => validateAndSetField('horaRegresso', true)}
+                      onBlurCapture={() => validateAndSetField('dataRegresso', true)}
                     />
                     {createErrors.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
                   </div>
@@ -2266,7 +2525,15 @@ export function SecretaryRequisitionsPage({
         </GlassCard>
       </div>
 
-      <Dialog open={openedRequisicaoId !== null} onOpenChange={(open) => !open && setOpenedRequisicaoId(null)}>
+      <Dialog
+        open={openedRequisicaoId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenedRequisicaoId(null);
+            limparEstadoConflito();
+          }
+        }}
+      >
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
           <DialogHeader>
             <DialogTitle>{t('requisitions.ui.requestDetails')}</DialogTitle>
@@ -2370,9 +2637,11 @@ export function SecretaryRequisitionsPage({
                   disabled={!podeAtualizarEstado}
                   className={selectFieldClassName}
                 >
-                  {ESTADO_SECRETARIA_OPTIONS.map((option) => (
+                  {ESTADO_SECRETARIA_OPTIONS
+                    .filter((option) => estadosVisiveisSelecionados.includes(option.value))
+                    .map((option) => (
                     <option key={option.value} value={option.value}>{t(option.label)}</option>
-                  ))}
+                    ))}
                 </select>
                 {!podeAtualizarEstado && (
                   <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
@@ -2399,6 +2668,88 @@ export function SecretaryRequisitionsPage({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={conflitoDialogOpen} onOpenChange={setConflitoDialogOpen}>
+        <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+          <DialogHeader>
+            <DialogTitle>Conflitos de transporte detetados</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {conflitoDialogMode === 'blocked'
+                ? `Já existe uma requisição aceite que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
+                : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
+            </p>
+
+            {conflitoDialogMode === 'blocked' && (
+              <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
+                Impossível aceitar esta marcação porque já existe uma marcação aceite com este(s) veículo(s).
+              </p>
+            )}
+
+            <div className="space-y-2">
+              {conflitosPendentes.map((conflito) => {
+                const dataPedido = conflito.criadoEm
+                  ? new Date(conflito.criadoEm).toLocaleString(locale)
+                  : 'Data indisponível';
+
+                return (
+                  <div key={conflito.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-gray-700 p-2">
+                    <span className="text-sm text-gray-800 dark:text-gray-200">
+                      {conflito.criadoPorNome} - {dataPedido}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={async () => abrirRequisicaoPorId(conflito.id)}
+                    >
+                      Ver requisição
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              {conflitoDialogMode === 'blocked' ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      limparEstadoConflito();
+                      setOpenedRequisicaoId(null);
+                    }}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                  >
+                    Fechar requisição
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setConflitoDialogOpen(false)}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleContinuarAceitacaoComConflitos}
+                    disabled={updatingEstadoId === openedRequisicaoId}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                  >
+                    {updatingEstadoId === openedRequisicaoId ? t('common.saving') : 'Continuar com o Aceitar Requisição'}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
