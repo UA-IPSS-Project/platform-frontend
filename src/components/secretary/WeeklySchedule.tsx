@@ -1489,6 +1489,59 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
                     // Multi-capacity slot: expand inline on hover (desktop), tap to expand (mobile)
                     if (slotCapacity > 1 && slotAppointments.length > 0) {
+                      if (isClient) {
+                        // UTENTE: lógica especial
+                        const ownApt = slotAppointments.find(apt => (apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id));
+                        const hasReserved = slotAppointments.some(apt => apt.status === 'reserved');
+                        if (ownApt) {
+                          // Mostra só a própria marcação, célula clicável para abrir detalhes
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => onViewAppointment(ownApt)}
+                              className={`${base} border-purple-400 bg-purple-50 dark:bg-purple-900/20 ${isActiveHighlight ? 'slot-highlight' : ''} flex items-center justify-center min-h-[40px] cursor-pointer`}
+                              title={tt('Clique para ver detalhes', 'Click to view details')}
+                            >
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
+                                {tt('Sua marcação', 'Your appointment')}
+                              </span>
+                            </button>
+                          );
+                        } else if (slotAppointments.length >= slotCapacity) {
+                          // Slot cheio: bloco cinzento
+                          return (
+                            <div key={idx} id={slotId} className={`${base} bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
+                                {/* Slot cheio, sem texto */}
+                              </span>
+                            </div>
+                          );
+                        } else if (hasReserved) {
+                          // Slot reservado: cinzento com texto
+                          return (
+                            <div key={idx} id={slotId} className={`${base} bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
+                                {tt('Reservado', 'Reserved')}
+                              </span>
+                            </div>
+                          );
+                        } else {
+                          // Slot vazio: célula clicável
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => handleSlotClick(day, time)}
+                              disabled={inPast || isHolidayDay}
+                              title={tt('Clique para marcar', 'Click to book')}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}
+                            >
+                              {/* Vazio, sem texto */}
+                            </button>
+                          );
+                        }
+                      }
                       if (!isMobile) {
                         // Desktop: expand inline on hover (usando estado global hoveredSlot)
                         const expanded = hoveredSlot === slotId;
@@ -1517,7 +1570,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                         className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${miniCellStatusClass}`}
                                         style={{height: '100%'}}
                                       >
-                                        {apt.patientName}
+                                        {apt.status === 'reserved' ? tt('Reservado', 'Reserved') : apt.patientName}
                                       </span>
                                     </div>
                                   );
@@ -1533,7 +1586,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                             className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
                                             style={{height: '50%'}}
                                           >
-                                            {apt.patientName}
+                                            {apt.status === 'reserved' ? tt('Reservado', 'Reserved') : apt.patientName}
                                           </span>
                                         );
                                       })}
@@ -1551,7 +1604,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                             className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
                                             style={{height: '33.33%'}}
                                           >
-                                            {apt.patientName}
+                                            {apt.status === 'reserved' ? tt('Reservado', 'Reserved') : apt.patientName}
                                           </span>
                                         );
                                       })}
@@ -1605,51 +1658,30 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     }
                     // Multi-capacity slot but empty: behave like single slot (no expansion, direct create)
                     if (slotCapacity > 1 && slotAppointments.length === 0) {
-                      // Para utente, mostrar todas as mini-células disponíveis (até slotCapacity)
-                      if (isClient) {
-                        return (
-                          <div key={idx} id={slotId} className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                            style={{ display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '40px', height: '100%' }}>
-                            {Array.from({ length: slotCapacity }).map((_, subIdx) => (
-                              <button
-                                key={`empty-${slotId}-${subIdx}`}
-                                onClick={() => handleSlotClick(day, time)}
-                                disabled={inPast || isHolidayDay}
-                                className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${getMiniCellStatusStyle('available', true)}`}
-                                style={{height: `${100 / slotCapacity}%`}}
-                                title={tt('Clique para marcar', 'Click to book')}
-                              >
-                                {tt('Disponível', 'Available')}
-                              </button>
-                            ))}
-                          </div>
-                        );
+                      // Sempre mostrar célula grande única, nunca mini-células, mesmo para utente
+                      let appointmentStyles: string;
+                      if (isBlockedAdmin) {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
                       } else {
-                        // Secretaria: mantém botão único vazio
-                        let appointmentStyles: string;
-                        if (isBlockedAdmin) {
-                          appointmentStyles = isDarkMode
-                            ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                            : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
-                        } else {
-                          appointmentStyles = available;
-                        }
-                        const getSlotTooltip = (): string => {
-                          if (isHolidayDay) return tt('Feriado', 'Holiday');
-                          return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
-                        };
-                        return (
-                          <button
-                            key={idx}
-                            id={slotId}
-                            onClick={() => handleSlotClick(day, time)}
-                            disabled={inPast || isHolidayDay}
-                            title={getSlotTooltip()}
-                            className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                          >
-                          </button>
-                        );
+                        appointmentStyles = available;
                       }
+                      const getSlotTooltip = (): string => {
+                        if (isHolidayDay) return tt('Feriado', 'Holiday');
+                        return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
+                      };
+                      return (
+                        <button
+                          key={idx}
+                          id={slotId}
+                          onClick={() => handleSlotClick(day, time)}
+                          disabled={inPast || isHolidayDay}
+                          title={getSlotTooltip()}
+                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                        >
+                        </button>
+                      );
                     }
                     // fallback
                     return null;
