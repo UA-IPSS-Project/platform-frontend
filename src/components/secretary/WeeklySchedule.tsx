@@ -1402,7 +1402,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     // Single-capacity slot: keep default button
                     if (slotCapacity === 1) {
                       // ...existing code for single slot...
-                      // BALNEARIO: tornar marcações sempre clicáveis para editar
+                      // BALNEARIO: tornar marcações sempre clicáveis para editar (staff), mas clientes só podem editar a sua
                       let appointmentStyles: string;
                       if (appointment?.status === 'reserved') {
                         appointmentStyles = isDarkMode
@@ -1428,8 +1428,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         }
                         return tt('Clique para editar', 'Click to edit');
                       };
-                      // Se existe marcação e não está reservada/cancelada, torna clicável para editar
-                      if (appointment && appointment.status !== 'reserved' && appointment.status !== 'cancelled') {
+                      // BALNEARIO: staff pode editar qualquer marcação, cliente só a sua
+                      if (
+                        appointment &&
+                        appointment.status !== 'reserved' &&
+                        appointment.status !== 'cancelled' &&
+                        (
+                          appointmentType !== 'BALNEARIO' ||
+                          (!isClient || ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id)))
+                        )
+                      ) {
                         return (
                           <button
                             key={idx}
@@ -1439,7 +1447,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             className={`${base} ${appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                           >
                             <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
-                              {appointment.patientName}
+                              {isClient && appointmentType === 'BALNEARIO' && ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id))
+                                ? tt('Sua marcação', 'Your appointment')
+                                : appointment.patientName}
                             </span>
                           </button>
                         );
