@@ -1292,12 +1292,6 @@ export function SharedRequisitionsPage({
         <div>
           {createForm.tipo === 'MATERIAL' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-end">
-                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => createForm.setCreateMaterialDialogOpen(true)}>
-                  {t('requisitions.ui.newMaterial')}
-                </Button>
-              </div>
-
               <RequisitionsCreateMaterialForm
                 materialLinhas={createForm.materialLinhas}
                 expandedMaterialItems={createForm.expandedMaterialItems}

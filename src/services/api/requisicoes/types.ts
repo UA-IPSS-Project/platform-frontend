@@ -18,7 +18,7 @@ export type TransporteCategoria =
   | 'PESADO'
   | 'PASSAGEIROS'
   | 'ADAPTADO';
-export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
+export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA';
 export type ManutencaoCategoria = 'CATL' | 'RC' | 'PRE_ESCOLAR' | 'CRECHE';
 
 export interface MaterialCatalogo {

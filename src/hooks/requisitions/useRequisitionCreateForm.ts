@@ -39,7 +39,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
-  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState('OUTROS');
+  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState('TECNOLOGIA');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
@@ -78,7 +78,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const resetMaterialDialog = useCallback(() => {
     setNovoMaterialNome('');
     setNovoMaterialDescricao('');
-    setNovoMaterialCategoria('OUTROS');
+    setNovoMaterialCategoria('TECNOLOGIA');
     setNovoMaterialAtributo('');
     setNovoMaterialValorAtributo('');
   }, []);
