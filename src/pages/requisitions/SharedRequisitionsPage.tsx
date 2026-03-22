@@ -1129,7 +1129,7 @@ export function SharedRequisitionsPage({
 
     createForm.materialLinhas.forEach((linha) => {
       const material = catalog.materiais.find((item) => String(item.id) === linha.materialId);
-      const categoria = material?.categoria ?? 'OUTROS';
+      const categoria = material?.categoria ?? 'TECNOLOGIA';
       const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
       const grupoAtual = grupos.get(categoria) ?? [];
 
