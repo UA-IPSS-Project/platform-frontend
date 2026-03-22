@@ -603,17 +603,24 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const handleSlotClick = async (date: Date, time: string) => {
-    const slotAppointments = getSlotAppointments(date, time);
+    toast.info(`[DEBUG] React recebeu o clique: ${time}`);
+    try {
+      console.log('[DEBUG-SLOT] Clique detetado na data:', date, 'e hora:', time);
+      
+      const slotAppointments = getSlotAppointments(date, time);
+    console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
 
     // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
     // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
     if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
+      console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
       openSlotNavigator(date, time);
       return;
     }
 
     const appointment = getAppointmentForSlot(date, time);
     const slotIsFull = slotAppointments.length >= slotCapacity;
+    console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
 
     // Se o slot ainda não estiver cheio, permitir criar nova marcação
     // mesmo quando já existem marcações nesse horário.
@@ -632,12 +639,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         return;
       }
 
+      console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
       onCreateAppointment(date, time);
       return;
     }
 
     // Se já existe marcação, permitir visualizar (mesmo no passado)
     if (appointment) {
+      console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
       // Verificar se é marcação própria
       const isOwn = slotAppointments.some(item =>
         (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
@@ -659,15 +668,15 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     // Validar se o horário não é no passado APENAS para criar nova marcação
     if (isSlotInPast(date, time)) {
+      console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
       toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
       return;
     }
 
     // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
-    // Se isSlotBlocked retornar true, significa que o backend detectou algo (bloqueio ou marcação existente)
-    // Nesse caso, devemos forçar um refresh visual para o utilizador ver o novo estado
     const blocked = await isSlotBlocked(date, time);
     if (blocked) {
+      console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
       toast.error(tt('Horário indisponível', 'Time slot unavailable'));
       if (onRefresh) {
         // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
@@ -676,7 +685,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       return;
     }
 
+    console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
     onCreateAppointment(date, time);
+    } catch (error: any) {
+      console.error('[DEBUG-SLOT] Crash em handleSlotClick:', error);
+      toast.error(`[DEBUG-CRASH] ${error.message || 'Erro Desconhecido'}`);
+    }
   };
 
   const getWeekLabel = () => {
@@ -1402,6 +1416,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     // Single-capacity slot: keep default button
                     if (slotCapacity === 1) {
                       // ...existing code for single slot...
+                      // BALNEARIO: tornar marcações sempre clicáveis para editar (staff), mas clientes só podem editar a sua
                       let appointmentStyles: string;
                       if (appointment?.status === 'reserved') {
                         appointmentStyles = isDarkMode
@@ -1412,8 +1427,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
                       } else {
-                        const isInteractive = !!(isClient && isOwn);
-                        appointmentStyles = getStatusStyle(appointment?.status, isInteractive);
+                        appointmentStyles = available;
                       }
                       const getSlotTooltip = (): string => {
                         if (!appointment) {
@@ -1426,20 +1440,40 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         if (blocked) {
                           return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
                         }
-                        if (isClient && isOwn) {
-                          return tt('Sua marcação', 'Your appointment') + ' - ' + tt('clique para ver detalhes', 'click to view details');
-                        }
-                        if (inPast) {
-                          return tt('Marcação histórica - clique para ver detalhes', 'Past appointment - click to view details');
-                        }
-                        return tt('Clique para ver detalhes', 'Click to view details');
+                        return tt('Clique para editar', 'Click to edit');
                       };
+                      // BALNEARIO: staff pode editar qualquer marcação, cliente só a sua
+                      if (
+                        appointment &&
+                        appointment.status !== 'reserved' &&
+                        appointment.status !== 'cancelled' &&
+                        (
+                          appointmentType !== 'BALNEARIO' ||
+                          (!isClient || ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id)))
+                        )
+                      ) {
+                        return (
+                          <button
+                            key={idx}
+                            id={slotId}
+                            onClick={() => onViewAppointment(appointment)}
+                            title={getSlotTooltip()}
+                            className={`${base} ${appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                          >
+                            <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                              {isClient && appointmentType === 'BALNEARIO' && ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id))
+                                ? tt('Sua marcação', 'Your appointment')
+                                : appointment.patientName}
+                            </span>
+                          </button>
+                        );
+                      }
+                      // Caso contrário, mantém comportamento padrão
                       return (
                         <button
                           key={idx}
                           id={slotId}
                           onClick={() => handleSlotClick(day, time)}
-                          disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
                           title={getSlotTooltip()}
                           className={`${base} ${inPast && !appointment
                             ? pastSlot
@@ -1450,7 +1484,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                 : available
                             } ${isActiveHighlight ? 'slot-highlight' : ''}`}
                         >
-                          {/* ...existing single slot rendering... */}
                           {(() => {
                             if (isBlockedAdmin) {
                               if (inPast) return null;
@@ -1489,6 +1522,62 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
                     // Multi-capacity slot: expand inline on hover (desktop), tap to expand (mobile)
                     if (slotCapacity > 1 && slotAppointments.length > 0) {
+                      if (isClient) {
+                        // UTENTE: lógica simplificada
+                        const ignoreStates = ['reserved', 'cancelled', 'no-show'];
+                        const ownApt = slotAppointments.find(apt => (
+                          apt.patientNIF &&
+                          currentUserNif &&
+                          String(apt.patientNIF) === String(currentUserNif) &&
+                          !ignoreStates.includes((apt.status || '').toLowerCase())
+                        ) || (
+                          appointments.some(a => a.id === apt.id) && !ignoreStates.includes((apt.status || '').toLowerCase())
+                        ));
+                        if (ownApt) {
+                          // Mostra só a própria marcação, célula clicável para abrir detalhes
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => onViewAppointment(ownApt)}
+                              className={`${base} border-purple-400 bg-purple-50 dark:bg-purple-900/20 ${isActiveHighlight ? 'slot-highlight' : ''} flex items-center justify-center min-h-[40px] cursor-pointer`}
+                              title={tt('Clique para ver detalhes', 'Click to view details')}
+                            >
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
+                                {tt('Sua marcação', 'Your appointment')}
+                              </span>
+                            </button>
+                          );
+                        } else if (slotAppointments.length >= slotCapacity) {
+                          // Slot cheio: bloqueado/cinzento forte
+                          return (
+                            <div
+                              key={idx}
+                              id={slotId}
+                              className={`${base} bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              style={{ background: 'linear-gradient(135deg, #4a4a4a 60%, #888 100%)' }}
+                            >
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
+                                {/* Slot cheio, sem texto */}
+                              </span>
+                            </div>
+                          );
+                        } else {
+                          // Slot vazio: célula clicável
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => handleSlotClick(day, time)}
+                              disabled={inPast || isHolidayDay}
+                              title={tt('Clique para marcar', 'Click to book')}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}
+                            >
+                              {/* Vazio, sem texto */}
+                            </button>
+                          );
+                        }
+                      }
                       if (!isMobile) {
                         // Desktop: expand inline on hover (usando estado global hoveredSlot)
                         const expanded = hoveredSlot === slotId;
@@ -1497,26 +1586,93 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           <div
                             key={idx}
                             id={slotId}
-                            className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            className={`${base} cursor-pointer ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             onMouseEnter={() => setHoveredSlot(slotId)}
                             onMouseLeave={() => setHoveredSlot(null)}
+                            onClick={() => handleSlotClick(day, time)}
                             style={{ minHeight: expanded ? `${(slotAppointments.length + (!booked && !inPast && !blocked && slotAppointments.length < slotCapacity ? 1 : 0)) * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
                           >
                             {expanded ? (
-                              renderExpandedSlot()
+                              <div className="w-full h-full flex flex-col gap-1">
+                                {slotAppointments.map((apt) => {
+                                  const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                  if (apt.status === 'reserved') {
+                                    return (
+                                      <span
+                                        key={apt.id}
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                        style={{height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`, background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (onRefresh) onRefresh();
+                                        }}
+                                      >
+                                        {tt('Reservado', 'Reserved')}
+                                      </span>
+                                    );
+                                  }
+                                  // ...restante lógica para outros estados...
+                                  const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                  return (
+                                    <span
+                                      key={apt.id}
+                                      className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
+                                      style={{height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`}}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewAppointment(apt);
+                                      }}
+                                    >
+                                      {apt.patientName}
+                                    </span>
+                                  );
+                                })}
+                                {/* Botão de adicionar, se aplicável */}
+                                {!booked && !inPast && !blocked && slotAppointments.length < slotCapacity && (
+                                  <button
+                                    key={`add-${slotAppointments.length}`}
+                                    className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                                    style={{ minHeight: '38px', height: '38px' }}
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      onCreateAppointment(day, time);
+                                    }}
+                                    aria-label={tt('Criar nova marcação', 'Create new appointment')}
+                                  >
+                                    <PlusIcon className="w-5 h-5" />
+                                  </button>
+                                )}
+                              </div>
                             ) : (
                               (() => {
                                 const total = slotAppointments.length;
                                 if (total === 1) {
                                   const apt = slotAppointments[0];
                                   const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                  if (apt.status === 'reserved') {
+                                    return (
+                                      <span
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                        style={{height: '100%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (onRefresh) onRefresh();
+                                        }}
+                                      >
+                                        {tt('Reservado', 'Reserved')}
+                                      </span>
+                                    );
+                                  }
                                   const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                   return (
                                     <div className="flex flex-col items-stretch w-full h-full gap-1">
                                       <span
-                                        className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${miniCellStatusClass}`}
+                                        className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
                                         style={{height: '100%'}}
-                                      >
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onViewAppointment(apt);
+                                        }}>
                                         {apt.patientName}
                                       </span>
                                     </div>
@@ -1526,12 +1682,31 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
                                       {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        if (apt.status === 'reserved') {
+                                          return (
+                                            <span
+                                              key={apt.id}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                              style={{height: '50%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onRefresh) onRefresh();
+                                              }}
+                                            >
+                                              {tt('Reservado', 'Reserved')}
+                                            </span>
+                                          );
+                                        }
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                         return (
                                           <span
                                             key={apt.id}
-                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
                                             style={{height: '50%'}}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onViewAppointment(apt);
+                                            }}
                                           >
                                             {apt.patientName}
                                           </span>
@@ -1544,12 +1719,31 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
                                       {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        if (apt.status === 'reserved') {
+                                          return (
+                                            <span
+                                              key={apt.id}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                              style={{height: '33.33%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onRefresh) onRefresh();
+                                              }}
+                                            >
+                                              {tt('Reservado', 'Reserved')}
+                                            </span>
+                                          );
+                                        }
                                         const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
                                         return (
                                           <span
                                             key={apt.id}
-                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center ${miniCellStatusClass}`}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
                                             style={{height: '33.33%'}}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onViewAppointment(apt);
+                                            }}
                                           >
                                             {apt.patientName}
                                           </span>
@@ -1605,7 +1799,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     }
                     // Multi-capacity slot but empty: behave like single slot (no expansion, direct create)
                     if (slotCapacity > 1 && slotAppointments.length === 0) {
-                      // Reuse single slot logic for empty multi-capacity slots
+                      // Sempre mostrar célula grande única, nunca mini-células, mesmo para utente
                       let appointmentStyles: string;
                       if (isBlockedAdmin) {
                         appointmentStyles = isDarkMode
@@ -1623,11 +1817,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           key={idx}
                           id={slotId}
                           onClick={() => handleSlotClick(day, time)}
-                          disabled={inPast || isHolidayDay}
                           title={getSlotTooltip()}
-                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] w-full h-full cursor-pointer flex items-center justify-center`}
                         >
-                          {/* Empty slot: show nothing inside */}
+                          <span className="sr-only">Criar Marcação</span>
                         </button>
                       );
                     }
