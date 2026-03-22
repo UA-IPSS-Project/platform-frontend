@@ -74,8 +74,13 @@ function App() {
     }
 
     if (user && !user.active) {
-      // If a Staff member is somehow logged in but inactive (e.g. waiting for approval),
-      // show a specific message instead of redirecting to set-password
+      // Two inactive scenarios:
+      // 1) First login with temporary password -> force password setup
+      // 2) Self-registered employee pending secretary approval -> show pending message
+      if (user.requiresPasswordSetup) {
+        return <Navigate to="/set-password" replace />;
+      }
+
       if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA', 'ADMIN'].includes(user.role)) {
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
@@ -100,7 +105,7 @@ function App() {
         );
       }
 
-      // For Utentes (or others), redirect to set-password/terms
+      // For non-staff users, inactive means first-login completion.
       return <Navigate to="/set-password" replace />;
     }
 

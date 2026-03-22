@@ -1,10 +1,25 @@
 // API Base URL
+import i18n from '../../../i18n';
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export interface ApiRequestError extends Error {
     status?: number;
     fieldErrors?: Record<string, string>;
 }
+
+const getFriendlyHttpErrorMessage = (status: number): string => {
+    if (status >= 500) return i18n.t('api.errors.serviceUnavailable');
+    if (status === 404) return i18n.t('api.errors.notFound');
+    if (status >= 400) return i18n.t('api.errors.requestFailed');
+    return i18n.t('api.errors.communicationError');
+};
+
+const isLikelyHtmlResponse = (text: string, contentType: string | null): boolean => {
+    if (contentType?.toLowerCase().includes('text/html')) return true;
+    const trimmed = text.trim().toLowerCase();
+    return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<body');
+};
 
 // Helper to get cookie by name
 export const getCookie = (name: string): string | null => {
@@ -70,49 +85,54 @@ export async function apiRequest<T>(
         // Check if response is ok
         if (!response.ok) {
             const isAuthError = response.status === 401 || response.status === 403;
-            let errorMessage = 'Ocorreu um erro ao comunicar com o servidor.';
+            let errorMessage = i18n.t('api.errors.communicationError');
             let parsedErrorData: any = null;
 
             if (response.status === 401) {
-                errorMessage = 'Sessão expirada ou inválida. Inicie sessão novamente.';
+                errorMessage = i18n.t('api.errors.sessionExpired');
             } else if (response.status === 403) {
-                errorMessage = 'Acesso negado ou token de segurança inválido. Atualize a sessão.';
+                errorMessage = i18n.t('api.errors.accessDenied');
             }
 
             try {
                 const text = await response.text();
+                const contentType = response.headers.get('content-type');
 
-                try {
-                    // Try to parse as JSON
-                    const errorData = JSON.parse(text);
-                    parsedErrorData = errorData;
+                if (isLikelyHtmlResponse(text, contentType) && !isAuthError) {
+                    errorMessage = getFriendlyHttpErrorMessage(response.status);
+                } else {
+                    try {
+                        // Try to parse as JSON
+                        const errorData = JSON.parse(text);
+                        parsedErrorData = errorData;
 
-                    if (errorData.message && !isAuthError) {
-                        errorMessage = errorData.message;
+                        if (errorData.message && !isAuthError) {
+                            errorMessage = errorData.message;
 
-                        // Handle validation errors specifically
-                        if (errorData.errors && typeof errorData.errors === 'object') {
-                            const details = Object.values(errorData.errors).join('; ');
-                            if (details) {
-                                errorMessage += `: ${details}`;
+                            // Handle validation errors specifically
+                            if (errorData.errors && typeof errorData.errors === 'object') {
+                                const details = Object.values(errorData.errors).join('; ');
+                                if (details) {
+                                    errorMessage += `: ${details}`;
+                                }
                             }
                         }
-                    }
-                    else if (errorData.error && !isAuthError) {
-                        // Legacy/Fallback error field
-                        errorMessage = errorData.error;
-                    }
-                } catch {
-                    // If not JSON, try to use text content if it's short
-                    if (text && text.length < 200 && !isAuthError) {
-                        errorMessage = text;
-                    } else if (!isAuthError) {
-                        errorMessage = `Erro ${response.status}: Não foi possível processar a resposta do servidor.`;
+                        else if (errorData.error && !isAuthError) {
+                            // Legacy/Fallback error field
+                            errorMessage = errorData.error;
+                        }
+                    } catch {
+                        // If not JSON, try to use text content if it's short and plain text
+                        if (text && text.length < 200 && !isAuthError) {
+                            errorMessage = text;
+                        } else if (!isAuthError) {
+                            errorMessage = getFriendlyHttpErrorMessage(response.status);
+                        }
                     }
                 }
             } catch {
                 if (!isAuthError) {
-                    errorMessage = `Erro de conexão (${response.status})`;
+                    errorMessage = getFriendlyHttpErrorMessage(response.status);
                 }
             }
 
@@ -142,7 +162,7 @@ export async function apiRequest<T>(
         } catch (parseError) {
             console.error('JSON Parse Error:', parseError);
             console.error('Response text:', text.substring(0, 500)); // Log first 500 chars
-            throw new Error('Invalid JSON response from server');
+            throw new Error(i18n.t('api.errors.invalidJson'));
         }
     } catch (error) {
         console.error('API request failed:', error);

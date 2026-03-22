@@ -7,7 +7,20 @@
     "pt": "PT",
     "en": "EN"
   },
+  "api": {
+    "errors": {
+      "serviceUnavailable": "Serviço temporariamente indisponível. Tente novamente em instantes.",
+      "notFound": "Recurso não encontrado.",
+      "requestFailed": "Não foi possível concluir o pedido.",
+      "communicationError": "Ocorreu um erro ao comunicar com o servidor.",
+      "sessionExpired": "Sessão expirada ou inválida. Inicie sessão novamente.",
+      "accessDenied": "Acesso negado ou token de segurança inválido. Atualize a sessão.",
+      "invalidJson": "Resposta inválida do servidor"
+    }
+  },
   "appointmentDialog": {
+    "durationLabel": "Duração da marcação",
+    "durationBalneario": "30 minutos",
     "title": "Novo Agendamento",
     "description": "Preencha os dados do utente para criar uma nova marcação",
     "at": "às",
@@ -440,6 +453,8 @@
     "birthDate": "Data de Nascimento",
     "contact": "Contacto",
     "institutionalEmailLabel": "Email Institucional",
+    "employeeEmailPrefixPlaceholder": "nome.personalizado",
+    "employeeEmailDomainPlaceholder": "@dominio.pt",
     "fillNameFirst": "(Preencha o nome primeiro)",
     "other": "Outro",
     "role": "Função",
@@ -464,7 +479,7 @@
     "profession": "Profissão",
     "workLocation": "Local de Emprego",
     "workAddress": "Freguesia de Emprego",
-    "workPhone": "Telefone do Emprego",
+    "workPhone": "Telefone de Emprego",
     "sections": {
       "personal": "Informação Pessoal",
       "address": "Morada",
@@ -480,7 +495,7 @@
       "addProfession": "Adicione profissão",
       "addWorkLocation": "Adicione local de emprego",
       "addWorkAddress": "Adicione morada do emprego",
-      "addWorkPhone": "Adicione telefone do emprego"
+      "addWorkPhone": "Adicione telefone de emprego"
     },
     "messages": {
       "updatedSuccess": "Perfil atualizado com sucesso"
@@ -659,12 +674,16 @@
       "type": "Tipo",
       "priority": "Prioridade",
       "deadlineDate": "Data limite",
+      "deadlineOptional": "Data limite (opcional)",
       "selectDate": "Selecionar data",
       "transportAutoDeadlineHint": "Preenchida automaticamente para o dia anterior à saída.",
       "description": "Descrição",
+      "descriptionPlaceholder": "Descreve a requisição",
       "describeRequest": "Descreva a requisição",
       "detailsByType": "Detalhes por tipo",
       "selectMaterials": "Selecionar materiais",
+      "availableMaterials": "Materiais disponíveis",
+      "selectMaterialsHint": "Seleciona os materiais e define as quantidades.",
       "newMaterial": "Novo material",
       "noItemsInCategory": "Sem itens nesta categoria.",
       "hideAttributes": "Ocultar atributos",
@@ -740,6 +759,12 @@
       "createdByPlaceholder": "Ex: Maria",
       "managedByName": "Gerido por nome",
       "managedByPlaceholder": "Ex: João",
+      "createdByRole": "Role de quem criou",
+      "allRoles": "Todos os roles",
+      "roleSecretary": "Secretaria",
+      "roleSchool": "Escola",
+      "roleBalneario": "Balneário",
+      "roleInterno": "Interno",
       "searching": "A pesquisar...",
       "search": "Pesquisar",
       "clearFilters": "Limpar filtros",
@@ -771,6 +796,7 @@
       "addOneMaterial": "Adicione pelo menos um material com quantidade válida.",
       "invalidPassengers": "Indique um número de passageiros válido.",
       "selectOneVehicle": "Selecione pelo menos uma viatura.",
+      "dateCannotBePast": "A data/hora não pode estar no passado.",
       "returnAfterDeparture": "A data/hora de regresso deve ser posterior à data/hora de saída.",
       "missingAuthenticatedUser": "Não foi possível identificar o utilizador autenticado.",
       "createFailed": "Erro ao criar requisição.",
@@ -794,6 +820,7 @@
   },
   "userManagement": {
     "title": "Gestão de Utilizadores",
+    "title2": "Gestão da Plataforma",
     "subtitle": "Criação e recuperação de contas",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
@@ -905,7 +932,7 @@
     "invalidReasonPlaceholder": "Razão pela qual este documento é inválido...",
     "startAppointment": "Iniciar atendimento",
     "complete": "Concluir",
-    "notifyInvalidDocument": "Notificar Documento Inválido",
+    "notifyInvalidDocument": "Documento Inválido",
     "addDocuments": "Adicionar Documentos",
     "reschedule": "Reagendar",
     "dateString": "{{dayName}}, {{day}} de {{month}} de {{year}} às {{time}}",
@@ -1031,6 +1058,9 @@
     }
   },
   "balnearioAppointmentDetails": {
+  },
+  "calendar": {
+    "suaMarcacao": "Sua marcação",
     "dialogTitle": "Detalhes do Agendamento Balneário",
     "dialogDescription": "Consulte e edite as necessidades e informações do utente.",
     "title": "Detalhes do Banho",

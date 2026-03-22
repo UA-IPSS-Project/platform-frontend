@@ -3,7 +3,6 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
 import { XIcon, AlertTriangleIcon, UserIcon } from '../shared/CustomIcons';
@@ -11,6 +10,7 @@ import { ClipboardList, Save } from 'lucide-react';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { StatusBadge } from '../shared/status-badge';
 import { useTranslation } from 'react-i18next';
 
 interface BalnearioAppointmentDetailsDialogProps {
@@ -66,7 +66,7 @@ export function BalnearioAppointmentDetailsDialog({
         if (details?.roupas) {
             details.roupas.forEach(roupa => {
                 const allOptions = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS];
-                if (allOptions.includes(roupa.categoria)) {
+                if (allOptions.some(opt => opt.value === roupa.categoria)) {
                     initial[roupa.categoria] = true;
                 }
             });
@@ -208,36 +208,6 @@ export function BalnearioAppointmentDetailsDialog({
         }
     };
 
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'in-progress':
-                return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">{t('statusBadge.inProgress')}</Badge>;
-            case 'scheduled':
-                return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">{t('statusBadge.scheduled')}</Badge>;
-            case 'warning':
-                return (
-                    <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
-                        <AlertTriangleIcon className="w-3 h-3" />
-                        {t('statusBadge.warning')}
-                    </Badge>
-                );
-            case 'completed':
-                return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-                    {t('statusBadge.completed')}
-                </Badge>;
-            case 'no-show':
-                return (
-                    <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
-                        {t('statusBadge.noShow')}
-                    </Badge>
-                );
-            case 'cancelled':
-                return <Badge variant="destructive" className="rounded-full px-3">{t('statusBadge.cancelled')}</Badge>;
-            default:
-                return null;
-        }
-    };
-
     const getOptionLabel = (value: string) => {
         const option = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].find(item => item.value === value);
         return option ? t(option.labelKey) : value;
@@ -266,9 +236,18 @@ export function BalnearioAppointmentDetailsDialog({
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                             <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('balnearioAppointmentDetails.title')}</h2>
-                            {getStatusBadge(appointment.status)}
+                            <StatusBadge status={appointment.status} size="md" />
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
+                        {/* Duração da marcação balneário */}
+                        <div className="mt-2 flex items-center gap-2">
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                {t('appointmentDialog.durationLabel', 'Duração da marcação')}
+                            </Label>
+                            <Badge color="purple" className="text-xs">
+                                {t('appointmentDialog.durationBalneario', '30 minutos')}
+                            </Badge>
+                        </div>
                     </div>
                     <button
                         onClick={onClose}

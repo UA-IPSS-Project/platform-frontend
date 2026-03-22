@@ -2,19 +2,41 @@ import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
-import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon } from '../shared/CustomIcons';
-import { Download, Trash2, Upload, File } from 'lucide-react';
+import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
+import { Download, Trash2, Upload } from 'lucide-react';
+
+// EyeIcon SVG inline (usado para preview)
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { DocumentUploadDialog } from '../dialogs/DocumentUploadDialog';
+import { StatusBadge } from '../shared/status-badge';
 import { useTranslation } from 'react-i18next';
 
 interface AppointmentDetailsDialogProps {
@@ -146,7 +168,7 @@ export function AppointmentDetailsDialog({
     }));
   };
 
-  const handleNotifyInvalid = () => {
+  const handleNotifyInvalid = async () => {
     if (selectedDocs.length === 0) {
       toast.error(t('appointmentDetails.selectAtLeastOneDocument'));
       return;
@@ -159,20 +181,26 @@ export function AppointmentDetailsDialog({
       return;
     }
 
-    const updatedDocuments = appointment.documents?.map((doc, index) => ({
-      ...doc,
-      invalid: selectedDocs.includes(index) ? true : doc.invalid,
-      reason: selectedDocs.includes(index) ? invalidReasons[index] : doc.reason,
-    }));
-
-    onUpdate(appointment.id, {
-      documents: updatedDocuments,
-      status: 'warning',
-    });
-
-    toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
-    setSelectedDocs([]);
-    setInvalidReasons({});
+    try {
+      const marcacaoId = parseInt(appointment.id);
+      let notifiedCount = 0;
+      await Promise.all(selectedDocs.map(async (index) => {
+        const doc = appointment.documents?.[index];
+        if (doc && 'id' in doc && typeof doc.id === 'number') {
+          await documentosApi.notificarDocumentoInvalido(marcacaoId, doc.id, invalidReasons[index]);
+          notifiedCount++;
+        }
+      }));
+      if (notifiedCount > 0) {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
+      } else {
+        toast.error('Nenhum documento válido selecionado para notificação.');
+      }
+      setSelectedDocs([]);
+      setInvalidReasons({});
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao notificar utente.');
+    }
   };
 
   const handleCancelAppointment = async () => {
@@ -526,38 +554,6 @@ export function AppointmentDetailsDialog({
     return new Date(year, month + 1, 0).getDate();
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in-progress':
-        return <Badge className="rounded-full px-3 bg-[#ede9fe] text-[#5b21b6] dark:bg-[#4c1d95] dark:text-[#c4b5fd]">{t('appointmentDetails.inProgress')}</Badge>;
-      case 'scheduled':
-        return <Badge className="rounded-full px-3 bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200">{t('appointmentDetails.scheduled')}</Badge>;
-      case 'warning':
-        return (
-          <Badge className="rounded-full px-3 flex items-center gap-1 border border-amber-300 bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400">
-            <AlertTriangleIcon className="w-3 h-3" />
-            {t('appointmentDetails.scheduled')}
-          </Badge>
-        );
-      case 'completed':
-        return <Badge className="rounded-full px-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-          {t('appointmentDetails.completed')}
-        </Badge>;
-      case 'no-show':
-
-        return (
-          <Badge variant="outline" className="rounded-full px-3 border border-amber-300 bg-transparent !bg-transparent text-amber-700 dark:border-amber-500 dark:text-amber-400 dark:bg-transparent dark:!bg-transparent">
-            {t('appointmentDetails.noShow')}
-          </Badge>
-        );
-      case 'cancelled':
-        return <Badge variant="destructive" className="rounded-full px-3">{t('appointmentDetails.cancelled')}</Badge>;
-
-      default:
-        return null;
-    }
-  };
-
   const invalidDocuments = appointment.documents?.filter(doc => doc.invalid) || [];
 
   const dateObj = new Date(appointment.date);
@@ -567,6 +563,34 @@ export function AppointmentDetailsDialog({
   const month = dateObj.toLocaleDateString(locale, { month: 'long' });
   const year = dateObj.getFullYear();
   const dateString = t('appointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
+
+  // Só permite editar documentos se o estado for scheduled ou warning
+  const isEditable = appointment.status === 'scheduled' || appointment.status === 'warning';
+
+
+  // Função utilitária para saber se o documento tem preview
+  function hasPreview(nomeOriginal: string): boolean {
+    if (!nomeOriginal) return false;
+    const ext = nomeOriginal.split('.').pop()?.toLowerCase();
+    return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
+  }
+
+
+  function handleNotificarDocumentoInvalido(doc: DocumentoDTO) {
+    const motivo = window.prompt(t('appointmentDetails.invalidReasonPrompt', 'Indique o motivo do documento ser inválido:'));
+    if (!motivo || !motivo.trim()) {
+      toast.error(t('appointmentDetails.addReasonForEachDocument', 'Indique o motivo.'));
+      return;
+    }
+    documentosApi
+      .notificarDocumentoInvalido(parseInt(appointment.id), doc.id, motivo)
+      .then(() => {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments', 'Utente notificado.'));
+      })
+      .catch((error: any) => {
+        toast.error(error.message || 'Erro ao notificar utente.');
+      });
+  }
 
   return (
     <>
@@ -582,7 +606,7 @@ export function AppointmentDetailsDialog({
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h2 className="text-lg text-gray-900 dark:text-gray-100">{t('appointmentDetails.viewAppointment')}</h2>
-                {getStatusBadge(appointment.status)}
+                <StatusBadge status={appointment.status} size="md" />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
             </div>
@@ -681,7 +705,7 @@ export function AppointmentDetailsDialog({
                   <FileTextIcon className="w-4 h-4" />
                   {t('appointmentDetails.attachedDocuments')}
                 </Label>
-                {!isClient && (
+                {!isClient && isEditable && (
                   <Button
                     type="button"
                     size="sm"
@@ -706,10 +730,29 @@ export function AppointmentDetailsDialog({
                       className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <File className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <FileTextIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                            {doc.nomeOriginal}
+                          <p
+                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] md:max-w-[320px] lg:max-w-[420px]"
+                            title={doc.nomeOriginal}
+                          >
+                            {(() => {
+                              // Espera padrão NIF_TIPO_UUID.extensão
+                              const nome = doc.nomeOriginal;
+                              if (!nome) return '';
+                              const partes = nome.split('_');
+                              if (partes.length < 3) return nome;
+                              const uuidComExt = partes[2];
+                              const dotIdx = uuidComExt.indexOf('.')
+                              let uuid = uuidComExt;
+                              let ext = '';
+                              if (dotIdx !== -1) {
+                                uuid = uuidComExt.substring(0, dotIdx);
+                                ext = uuidComExt.substring(dotIdx);
+                              }
+                              const shortUuid = uuid.substring(0, 8);
+                              return `${partes[0]}_${partes[1]}_${shortUuid}${ext}`;
+                            })()}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}
@@ -717,22 +760,108 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadDocumento(doc)}
-                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoverDocumento(doc)}
-                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                          title={t('appointmentDetails.removeDocument')}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
+                        {hasPreview(doc.nomeOriginal) ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => documentosApi.previewDocumento(doc.id)}
+                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                              title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                              aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            >
+                              <EyeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </button>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4 text-white" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  {/* Só mostra o botão de documento inválido se NÃO for utente */}
+                                  {!isClient && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm"
+                                      style={{ color: '#EFBC21' }}
+                                    >
+                                      <BellIcon className="w-4 h-4" />
+                                      {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                    </button>
+                                  )}
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                  >
+                                    <BellIcon className="w-4 h-4" />
+                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                  </button>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
+                        )}
+
+
                       </div>
                     </div>
                   ))}
@@ -1122,6 +1251,7 @@ export function AppointmentDetailsDialog({
         open={showDocUpload}
         onClose={() => setShowDocUpload(false)}
         marcacaoId={parseInt(appointment.id)}
+        isClient={isClient}
         onSuccess={(docs) => {
           setDocumentos(prev => [...prev, ...docs]);
           setShowDocUpload(false);

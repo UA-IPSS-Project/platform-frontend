@@ -36,4 +36,5 @@ export interface AuthResponse {
     nome: string;
     role: 'UTENTE' | 'SECRETARIA' | 'ADMIN' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
     active: boolean;
+    requiresPasswordSetup: boolean;
 }

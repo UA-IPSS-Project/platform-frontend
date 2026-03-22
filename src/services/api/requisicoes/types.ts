@@ -18,7 +18,10 @@ export type TransporteCategoria =
   | 'PESADO'
   | 'PASSAGEIROS'
   | 'ADAPTADO';
+// NOTE: 'OUTROS' is kept for backward compatibility with historical data.
+// New materials should not use 'OUTROS' - see MATERIAL_CATEGORIA_OPTIONS for allowed user inputs.
 export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
+export type ManutencaoCategoria = 'CATL' | 'RC' | 'PRE_ESCOLAR' | 'CRECHE';
 
 export interface MaterialCatalogo {
   id: number;
@@ -47,10 +50,17 @@ export interface TipoManutencaoCatalogo {
   descricao?: string | null;
 }
 
+export interface ManutencaoItem {
+  id: number;
+  categoria: ManutencaoCategoria;
+  espaco: string;
+  itemVerificacao: string;
+}
+
 export interface RequisicaoResponse {
   id: number;
   version?: number;
-  descricao: string;
+  descricao?: string;
   estado: RequisicaoEstado;
   prioridade: RequisicaoPrioridade;
   tipo: RequisicaoTipo;
@@ -69,14 +79,21 @@ export interface RequisicaoResponse {
   quantidade?: number;
   itens?: Array<{
     id?: number;
-    material: {
+    material?: {
       id: number;
       nome?: string;
       categoria?: MaterialCategoria;
       atributo?: string;
       valorAtributo?: string;
     };
-    quantidade: number;
+    quantidade?: number;
+    manutencaoItem?: {
+      id: number;
+      categoria?: ManutencaoCategoria;
+      espaco?: string;
+      itemVerificacao?: string;
+    };
+    observacoes?: string;
   }>;
   transporte?: {
     id: number;
@@ -122,7 +139,7 @@ export interface RequisicaoFilters {
 }
 
 export interface CriarRequisicaoBaseRequest {
-  descricao: string;
+  descricao?: string;
   prioridade: RequisicaoPrioridade;
   tempoLimite?: string;
   criadoPorId: number;
@@ -145,8 +162,14 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
   transporteIds: number[];
 }
 
+export interface ManutencaoItemRequestPayload {
+  itemId: number;
+  observacoes?: string;
+}
+
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
   assunto?: string;
+  manutencaoItens?: ManutencaoItemRequestPayload[];
 }
 
 export interface AtualizarEstadoRequisicaoRequest {
