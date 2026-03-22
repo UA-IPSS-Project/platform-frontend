@@ -36,6 +36,9 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
 
   // Material creation dialog state
+  // NOTE: 'TECNOLOGIA' is the default for new materials.
+  // 'OUTROS' is reserved for backward compatibility with historical data only.
+  // Users creating new materials should prefer explicit categorization.
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');

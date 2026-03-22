@@ -91,6 +91,8 @@ export const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; l
   { value: 'PASSAGEIROS', label: 'requisitions.labels.passengers' },
 ];
 
+// NOTE: 'OUTROS' exclusivamente para retrocompatibilidade com dados históricos.
+// Novos materiais devem usar apenas as categorias abaixo. A criação de novos materiais não oferece 'OUTROS' como opção.
 export const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
   { value: 'ESCRITA', label: 'requisitions.labels.materialCategoryWriting' },
   { value: 'PAPEL_E_ARQUIVO', label: 'requisitions.labels.materialCategoryPaperFiling' },
