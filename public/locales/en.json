@@ -820,6 +820,7 @@
   },
   "userManagement": {
     "title": "User Management",
+    "title2": "Platform Management",
     "subtitle": "Account creation and recovery",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",

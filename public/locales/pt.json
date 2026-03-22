@@ -820,6 +820,7 @@
   },
   "userManagement": {
     "title": "Gestão de Utilizadores",
+    "title2": "Gestão da Plataforma",
     "subtitle": "Criação e recuperação de contas",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
