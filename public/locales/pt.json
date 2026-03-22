@@ -820,6 +820,7 @@
   },
   "userManagement": {
     "title": "Gestão de Utilizadores",
+    "title2": "Gestão da Plataforma",
     "subtitle": "Criação e recuperação de contas",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
@@ -931,7 +932,7 @@
     "invalidReasonPlaceholder": "Razão pela qual este documento é inválido...",
     "startAppointment": "Iniciar atendimento",
     "complete": "Concluir",
-    "notifyInvalidDocument": "Notificar Documento Inválido",
+    "notifyInvalidDocument": "Documento Inválido",
     "addDocuments": "Adicionar Documentos",
     "reschedule": "Reagendar",
     "dateString": "{{dayName}}, {{day}} de {{month}} de {{year}} às {{time}}",
@@ -1057,6 +1058,9 @@
     }
   },
   "balnearioAppointmentDetails": {
+  },
+  "calendar": {
+    "suaMarcacao": "Sua marcação",
     "dialogTitle": "Detalhes do Agendamento Balneário",
     "dialogDescription": "Consulte e edite as necessidades e informações do utente.",
     "title": "Detalhes do Banho",

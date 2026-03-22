@@ -820,6 +820,7 @@
   },
   "userManagement": {
     "title": "User Management",
+    "title2": "Platform Management",
     "subtitle": "Account creation and recovery",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
@@ -931,7 +932,7 @@
     "invalidReasonPlaceholder": "Reason why this document is invalid...",
     "startAppointment": "Start appointment",
     "complete": "Complete",
-    "notifyInvalidDocument": "Notify Invalid Document",
+    "notifyInvalidDocument": "Invalid Document",
     "addDocuments": "Add Documents",
     "reschedule": "Reschedule",
     "dateString": "{{dayName}}, {{day}} {{month}} {{year}} at {{time}}",
@@ -1057,6 +1058,9 @@
     }
   },
   "balnearioAppointmentDetails": {
+  },
+  "calendar": {
+    "suaMarcacao": "Your appointment",
     "dialogTitle": "Bathhouse Appointment Details",
     "dialogDescription": "Review and edit the user's needs and information.",
     "title": "Bath Details",
