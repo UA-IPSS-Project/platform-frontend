@@ -115,7 +115,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
               <input
                 id="identifier"
                 type="text"
-                placeholder={t('auth.employeeEmailPrefixPlaceholder')}
+                placeholder={t('email')}
                 value={employeeEmailPrefix}
                 onChange={(e) => {
                   const prefix = e.target.value.replace(/@.*/, '');
