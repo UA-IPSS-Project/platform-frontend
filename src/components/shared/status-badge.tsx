@@ -3,6 +3,7 @@ import { AlertTriangleIcon } from './CustomIcons';
 import { cn } from '../ui/utils';
 import { Appointment } from '../../types';
 import { useAppointmentStatus } from '../../hooks/useAppointmentStatus';
+import { VALID_APPOINTMENT_STATUSES } from '../../config/appointmentStatusConfig';
 
 interface StatusBadgeProps {
     status: Appointment['status'] | string;
@@ -14,10 +15,14 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, className, size = 'md', showIcon = true }: StatusBadgeProps) {
     const { getStatusLabel, isOutlineVariant, getBorderClasses, shouldShowAlertIcon, getStatusClasses } = useAppointmentStatus();
 
-    // Garantir que o status é válido
-    const validStatus = ['scheduled', 'in-progress', 'warning', 'completed', 'cancelled', 'no-show', 'reserved'].includes(status as string)
-        ? (status as Appointment['status'])
-        : 'scheduled';
+    // NOTE: Explicitly detect invalid status instead of silently coercing to 'scheduled'
+    // This helps surface upstream bugs rather than masking them.
+    // Invalid statuses are passed through to getStatusConfig, which will console.warn them.
+    const isValidStatus = VALID_APPOINTMENT_STATUSES.includes(status as any);
+    
+    // If status is invalid, use it anyway and let the hook handle the warning.
+    // This ensures the warning in getStatusConfig will be triggered.
+    const displayStatus = isValidStatus ? (status as Appointment['status']) : (status as any);
 
     const sizeClasses = {
         sm: 'px-1.5 py-0.25 text-xs',
@@ -28,19 +33,19 @@ export function StatusBadge({ status, className, size = 'md', showIcon = true }:
     const baseClasses = cn(
         'rounded-full flex items-center gap-1',
         sizeClasses[size],
-        getStatusClasses(validStatus)
+        getStatusClasses(displayStatus)
     );
 
-    const borderClasses = isOutlineVariant(validStatus)
-        ? cn('border', getBorderClasses(validStatus))
+    const borderClasses = isOutlineVariant(displayStatus)
+        ? cn('border', getBorderClasses(displayStatus))
         : '';
 
-    const shouldShowAlert = shouldShowAlertIcon(validStatus) && showIcon;
+    const shouldShowAlert = shouldShowAlertIcon(displayStatus) && showIcon;
 
     return (
         <Badge className={cn(baseClasses, borderClasses, className)}>
             {shouldShowAlert && <AlertTriangleIcon className="w-3 h-3" />}
-            {getStatusLabel(validStatus)}
+            {getStatusLabel(displayStatus)}
         </Badge>
     );
 }

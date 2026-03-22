@@ -18,7 +18,9 @@ export type TransporteCategoria =
   | 'PESADO'
   | 'PASSAGEIROS'
   | 'ADAPTADO';
-export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA';
+// NOTE: 'OUTROS' is kept for backward compatibility with historical data.
+// New materials should not use 'OUTROS' - see MATERIAL_CATEGORIA_OPTIONS for allowed user inputs.
+export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
 export type ManutencaoCategoria = 'CATL' | 'RC' | 'PRE_ESCOLAR' | 'CRECHE';
 
 export interface MaterialCatalogo {

@@ -1129,6 +1129,8 @@ export function SharedRequisitionsPage({
 
     createForm.materialLinhas.forEach((linha) => {
       const material = catalog.materiais.find((item) => String(item.id) === linha.materialId);
+      // NOTE: Materials with 'OUTROS' category are preserved for backward compatibility with historical data.
+      // Unknown/missing categories default to 'TECNOLOGIA', but 'OUTROS' is explicitly preserved if present.
       const categoria = material?.categoria ?? 'TECNOLOGIA';
       const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
       const grupoAtual = grupos.get(categoria) ?? [];

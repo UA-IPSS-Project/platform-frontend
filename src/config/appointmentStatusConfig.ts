@@ -89,10 +89,26 @@ export const APPOINTMENT_STATUS_CONFIG: Record<AppointmentStatusType, StatusConf
 };
 
 /**
+ * Lista de status válidos extraída do config
+ * Mantém sincronização automática: se novos status forem adicionados ao config, aparecem aqui
+ */
+export const VALID_APPOINTMENT_STATUSES = Object.keys(APPOINTMENT_STATUS_CONFIG) as AppointmentStatusType[];
+
+/**
  * Obtém a configuração de um status específico
+ * NOTE: Returns config for given status, or undefined if status is invalid.
+ * Callers should handle invalid status explicitly rather than defaulting silently.
  */
 export function getStatusConfig(status: AppointmentStatusType): StatusConfig {
-  return APPOINTMENT_STATUS_CONFIG[status] || APPOINTMENT_STATUS_CONFIG.scheduled;
+  const config = APPOINTMENT_STATUS_CONFIG[status];
+  if (!config) {
+    console.warn(
+      `[StatusBadge] Unknown appointment status received: "${status}". ` +
+      `Valid statuses are: ${Object.keys(APPOINTMENT_STATUS_CONFIG).join(', ')}. ` +
+      `This may indicate a backend change or data inconsistency.`
+    );
+  }
+  return config || APPOINTMENT_STATUS_CONFIG.scheduled;
 }
 
 /**

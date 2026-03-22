@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
+import { MaterialCategoria } from '../../services/api/requisicoes/types';
 
 export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPrioridade?: RequisicaoPrioridade) {
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
@@ -36,10 +37,13 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
 
   // Material creation dialog state
+  // NOTE: 'TECNOLOGIA' is the default for new materials.
+  // 'OUTROS' is reserved for backward compatibility with historical data only.
+  // Users creating new materials should prefer explicit categorization.
   const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
-  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState('TECNOLOGIA');
+  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('TECNOLOGIA');
   const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
@@ -97,7 +101,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     });
   }, []);
 
-  return useMemo(() => ({
+  return {
     // General form state
     tipo,
     setTipo,
@@ -109,7 +113,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTempoLimite,
     tempoLimiteManuallyEdited,
     setTempoLimiteManuallyEdited,
-    
     // Validation
     createErrors,
     setCreateErrors,
@@ -117,7 +120,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setCreateTouched,
     setFieldTouched,
     setFieldError,
-
     // Material state
     materialLinhas,
     setMaterialLinhas,
@@ -125,7 +127,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setExpandedMaterialItems,
     expandedMaterialCategorias,
     setExpandedMaterialCategorias,
-
     // Transport state
     destinoTransporte,
     setDestinoTransporte,
@@ -149,7 +150,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setExpandedTransporteCategorias,
     expandedTransporteDetalhes,
     setExpandedTransporteDetalhes,
-
     // Maintenance state
     selectedManutencaoItemIds,
     setSelectedManutencaoItemIds,
@@ -157,7 +157,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setExpandedManutencaoCategorias,
     manutencaoObservacoesPorCategoria,
     setManutencaoObservacoesPorCategoria,
-
     // Material dialog state
     createMaterialDialogOpen,
     setCreateMaterialDialogOpen,
@@ -171,9 +170,8 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setNovoMaterialAtributo,
     novoMaterialValorAtributo,
     setNovoMaterialValorAtributo,
-
     // Actions
     resetForm,
     resetMaterialDialog,
-  }), [tipo, setTipo, descricao, setDescricao, prioridade, setPrioridade, tempoLimite, setTempoLimite, tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited, createErrors, setCreateErrors, createTouched, setCreateTouched, setFieldTouched, setFieldError, materialLinhas, setMaterialLinhas, expandedMaterialItems, setExpandedMaterialItems, expandedMaterialCategorias, setExpandedMaterialCategorias, destinoTransporte, setDestinoTransporte, dataSaida, setDataSaida, horaSaida, setHoraSaida, dataRegresso, setDataRegresso, horaRegresso, setHoraRegresso, numeroPassageiros, setNumeroPassageiros, condutorTransporte, setCondutorTransporte, selectedTransportIds, setSelectedTransportIds, transportSelectionMode, setTransportSelectionMode, expandedTransporteCategorias, setExpandedTransporteCategorias, expandedTransporteDetalhes, setExpandedTransporteDetalhes, selectedManutencaoItemIds, setSelectedManutencaoItemIds, expandedManutencaoCategorias, setExpandedManutencaoCategorias, manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria, createMaterialDialogOpen, setCreateMaterialDialogOpen, novoMaterialNome, setNovoMaterialNome, novoMaterialDescricao, setNovoMaterialDescricao, novoMaterialCategoria, setNovoMaterialCategoria, novoMaterialAtributo, setNovoMaterialAtributo, novoMaterialValorAtributo, setNovoMaterialValorAtributo, resetForm, resetMaterialDialog]);
+  };
 }
