@@ -1605,31 +1605,51 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     }
                     // Multi-capacity slot but empty: behave like single slot (no expansion, direct create)
                     if (slotCapacity > 1 && slotAppointments.length === 0) {
-                      // Reuse single slot logic for empty multi-capacity slots
-                      let appointmentStyles: string;
-                      if (isBlockedAdmin) {
-                        appointmentStyles = isDarkMode
-                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      // Para utente, mostrar todas as mini-células disponíveis (até slotCapacity)
+                      if (isClient) {
+                        return (
+                          <div key={idx} id={slotId} className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '4px', minHeight: '40px', height: '100%' }}>
+                            {Array.from({ length: slotCapacity }).map((_, subIdx) => (
+                              <button
+                                key={`empty-${slotId}-${subIdx}`}
+                                onClick={() => handleSlotClick(day, time)}
+                                disabled={inPast || isHolidayDay}
+                                className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center ${getMiniCellStatusStyle('available', true)}`}
+                                style={{height: `${100 / slotCapacity}%`}}
+                                title={tt('Clique para marcar', 'Click to book')}
+                              >
+                                {tt('Disponível', 'Available')}
+                              </button>
+                            ))}
+                          </div>
+                        );
                       } else {
-                        appointmentStyles = available;
+                        // Secretaria: mantém botão único vazio
+                        let appointmentStyles: string;
+                        if (isBlockedAdmin) {
+                          appointmentStyles = isDarkMode
+                            ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                            : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                        } else {
+                          appointmentStyles = available;
+                        }
+                        const getSlotTooltip = (): string => {
+                          if (isHolidayDay) return tt('Feriado', 'Holiday');
+                          return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
+                        };
+                        return (
+                          <button
+                            key={idx}
+                            id={slotId}
+                            onClick={() => handleSlotClick(day, time)}
+                            disabled={inPast || isHolidayDay}
+                            title={getSlotTooltip()}
+                            className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                          >
+                          </button>
+                        );
                       }
-                      const getSlotTooltip = (): string => {
-                        if (isHolidayDay) return tt('Feriado', 'Holiday');
-                        return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
-                      };
-                      return (
-                        <button
-                          key={idx}
-                          id={slotId}
-                          onClick={() => handleSlotClick(day, time)}
-                          disabled={inPast || isHolidayDay}
-                          title={getSlotTooltip()}
-                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                        >
-                          {/* Empty slot: show nothing inside */}
-                        </button>
-                      );
                     }
                     // fallback
                     return null;
