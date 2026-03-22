@@ -479,7 +479,7 @@
     "profession": "Profissão",
     "workLocation": "Local de Emprego",
     "workAddress": "Freguesia de Emprego",
-    "workPhone": "Telefone do Emprego",
+    "workPhone": "Telefone de Emprego",
     "sections": {
       "personal": "Informação Pessoal",
       "address": "Morada",
@@ -495,7 +495,7 @@
       "addProfession": "Adicione profissão",
       "addWorkLocation": "Adicione local de emprego",
       "addWorkAddress": "Adicione morada do emprego",
-      "addWorkPhone": "Adicione telefone do emprego"
+      "addWorkPhone": "Adicione telefone de emprego"
     },
     "messages": {
       "updatedSuccess": "Perfil atualizado com sucesso"

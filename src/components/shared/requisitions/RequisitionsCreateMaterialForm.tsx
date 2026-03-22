@@ -65,7 +65,7 @@ export function RequisitionsCreateMaterialForm({
         </div>
 
         {materiaisPorCategoria.map((categoria) => {
-          const isCategoriaExpanded = expandedMaterialCategorias[categoria.categoria] !== false;
+          const isCategoriaExpanded = expandedMaterialCategorias[categoria.categoria] === true;
           const itemsCategoria = categoria.itens;
 
           return (

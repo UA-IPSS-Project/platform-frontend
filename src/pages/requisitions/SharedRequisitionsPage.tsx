@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -7,39 +7,31 @@ import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
+import { useRequisitionFilters } from '../../hooks/requisitions/useRequisitionFilters';
+import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitionCreateForm';
+import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
   MaterialCategoria,
   MaterialCatalogo,
-  ManutencaoItem,
   RequisicaoEstado,
   RequisicaoPrioridade,
   RequisicaoResponse,
   RequisicaoTipo,
-  TransporteCatalogo,
   TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
 import {
   ConflitoDialogMode,
   CreateField,
-  MANUTENCAO_CATEGORIA_OPTIONS,
   MATERIAL_CATEGORIA_OPTIONS,
   MaterialItemGroup,
-  PRIORIDADE_OPTIONS,
   RequisicaoConflito,
   RequisicoesTab,
   TRANSPORTE_CATEGORIA_OPTIONS,
-  TIPO_OPTIONS,
-  TransporteSelectionMode,
   composeDateTime,
   createEmptyMaterialLinha,
-  formatManutencaoCategoria,
-  formatLotacao,
-  formatTransporteCategoria,
   formatTransporteDisplay,
-  formatVehicleTitle,
-  getCoberturaMensagem,
   getEstadosPermitidosTransicao,
   getEstadosVisiveisNoSeletor,
   getPassengerCapacity,
@@ -86,6 +78,13 @@ export function SharedRequisitionsPage({
     if (!value) return '—';
     return new Date(value).toLocaleString(locale);
   };
+
+  // Use custom hooks for state management
+  const filters = useRequisitionFilters(initialTipo, initialPrioridade);
+  const createForm = useRequisitionCreateForm(initialTipo, initialPrioridade);
+  const catalog = useRequisitionCatalog(t);
+
+  // List and dialog state
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
@@ -100,54 +99,7 @@ export function SharedRequisitionsPage({
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
   const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
-  const [createMaterialDialogOpen, setCreateMaterialDialogOpen] = useState(false);
-  const [loadingCatalogo, setLoadingCatalogo] = useState(false);
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
-
-  const [filterEstado, setFilterEstado] = useState<RequisicaoEstado | ''>('');
-  const [filterTipo, setFilterTipo] = useState<RequisicaoTipo | ''>(initialTipo ?? '');
-  const [filterPrioridade, setFilterPrioridade] = useState<RequisicaoPrioridade | ''>(initialPrioridade ?? '');
-  const [filterCriadoPorNome, setFilterCriadoPorNome] = useState('');
-  const [filterGeridoPorNome, setFilterGeridoPorNome] = useState('');
-  const [filterCriadoPorTipo, setFilterCriadoPorTipo] = useState<'' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO'>('');
-  const [activeTab, setActiveTab] = useState<RequisicoesTab>(() => {
-    if (initialPrioridade === 'URGENTE') return 'URGENTE';
-    if (initialTipo) return initialTipo;
-    return 'GERAL';
-  });
-
-  const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
-  const [descricao, setDescricao] = useState('');
-  const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
-  const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
-  const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
-  const [materialLinhas, setMaterialLinhas] = useState<Array<{ rowId: string; materialId: string; quantidade: string }>>([]);
-  const [expandedMaterialItems, setExpandedMaterialItems] = useState<Record<string, boolean>>({});
-  const [expandedMaterialCategorias, setExpandedMaterialCategorias] = useState<Partial<Record<MaterialCategoria, boolean>>>({});
-  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<TransporteCategoria, boolean>>>({});
-  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
-  const [destinoTransporte, setDestinoTransporte] = useState('');
-  const [dataSaida, setDataSaida] = useState('');
-  const [horaSaida, setHoraSaida] = useState('');
-  const [dataRegresso, setDataRegresso] = useState('');
-  const [horaRegresso, setHoraRegresso] = useState('');
-  const [numeroPassageiros, setNumeroPassageiros] = useState('');
-  const [condutorTransporte, setCondutorTransporte] = useState('');
-  const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
-  const [transportSelectionMode, setTransportSelectionMode] = useState<TransporteSelectionMode>('auto');
-  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
-  const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
-  const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
-  const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
-  const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
-  const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
-  const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
-  const [novoMaterialNome, setNovoMaterialNome] = useState('');
-  const [novoMaterialDescricao, setNovoMaterialDescricao] = useState('');
-  const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
-  const [novoMaterialAtributo, setNovoMaterialAtributo] = useState('');
-  const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
   const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
@@ -163,20 +115,20 @@ export function SharedRequisitionsPage({
   const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
 
   useEffect(() => {
-    setFilterTipo(initialTipo ?? '');
-    setFilterPrioridade(initialPrioridade ?? '');
+    filters.setFilterTipo(initialTipo ?? '');
+    filters.setFilterPrioridade(initialPrioridade ?? '');
     if (initialPrioridade === 'URGENTE') {
-      setActiveTab('URGENTE');
+      filters.setActiveTab('URGENTE');
     } else if (initialTipo) {
-      setActiveTab(initialTipo);
+      filters.setActiveTab(initialTipo);
     } else {
-      setActiveTab('GERAL');
+      filters.setActiveTab('GERAL');
     }
-    if (initialTipo) setTipo(initialTipo);
-    if (initialPrioridade) setPrioridade(initialPrioridade);
+    if (initialTipo) createForm.setTipo(initialTipo);
+    if (initialPrioridade) createForm.setPrioridade(initialPrioridade);
   }, [initialTipo, initialPrioridade]);
 
-  const fetchRequisicoes = async (overrides?: {
+  const fetchRequisicoes = useCallback(async (overrides?: {
     estado?: RequisicaoEstado | '';
     tipo?: RequisicaoTipo | '';
     prioridade?: RequisicaoPrioridade | '';
@@ -184,12 +136,12 @@ export function SharedRequisitionsPage({
     geridoPorNome?: string;
     criadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
   }) => {
-    const estado = overrides?.estado ?? filterEstado;
-    const tipoFiltro = overrides?.tipo ?? filterTipo;
-    const prioridadeFiltro = overrides?.prioridade ?? filterPrioridade;
-    const criadoPor = overrides?.criadoPorNome ?? filterCriadoPorNome;
-    const geridoPor = overrides?.geridoPorNome ?? filterGeridoPorNome;
-    const criadoPorTipo = overrides?.criadoPorTipo ?? filterCriadoPorTipo;
+    const estado = overrides?.estado ?? filters.filterEstado;
+    const tipoFiltro = overrides?.tipo ?? filters.filterTipo;
+    const prioridadeFiltro = overrides?.prioridade ?? filters.filterPrioridade;
+    const criadoPor = overrides?.criadoPorNome ?? filters.filterCriadoPorNome;
+    const geridoPor = overrides?.geridoPorNome ?? filters.filterGeridoPorNome;
+    const criadoPorTipo = overrides?.criadoPorTipo ?? filters.filterCriadoPorTipo;
 
     try {
       setLoading(true);
@@ -213,10 +165,7 @@ export function SharedRequisitionsPage({
     } finally {
       setLoading(false);
     }
-  };
-
-  // Nota: o overview mensal agora reutiliza os dados já carregados em
-  // fetchRequisicoes (via setMonthlyRequisicoes(lista)), evitando uma
+  }, [filters, t]);
   // chamada adicional não filtrada a requisicoesApi.procurar({}).
 
   useEffect(() => {
@@ -227,38 +176,16 @@ export function SharedRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
-  }, [initialTipo, initialPrioridade, filterCriadoPorTipo, scopeRole, canManageRequests]);
-
-  const fetchCatalogo = async () => {
-    try {
-      setLoadingCatalogo(true);
-      const [materiaisData, transportesData, manutencaoData] = await Promise.all([
-        requisicoesApi.listarMateriais(),
-        requisicoesApi.listarTransportes(),
-        requisicoesApi.listarManutencaoItems(),
-      ]);
-      setMateriais(Array.isArray(materiaisData) ? materiaisData : []);
-      setTransportes(Array.isArray(transportesData) ? transportesData : []);
-      setManutencaoItems(Array.isArray(manutencaoData) ? manutencaoData : []);
-    } catch (error: any) {
-      toast.error(error?.message || t('requisitions.errors.loadCatalogFailed'));
-    } finally {
-      setLoadingCatalogo(false);
-    }
-  };
+  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes]);
 
   useEffect(() => {
-    fetchCatalogo();
-  }, []);
-
-  useEffect(() => {
-    setCreateErrors({});
-    setCreateTouched({});
-  }, [tipo]);
+    createForm.setCreateErrors({});
+    createForm.setCreateTouched({});
+  }, [createForm.tipo]);
 
   // Fetch all accepted transport requisitions (without role filter) for conflict detection
   useEffect(() => {
-    if (tipo !== 'TRANSPORTE') return;
+    if (createForm.tipo !== 'TRANSPORTE') return;
 
     const fetchAcceptedTransports = async () => {
       try {
@@ -273,7 +200,7 @@ export function SharedRequisitionsPage({
     };
 
     fetchAcceptedTransports();
-  }, [tipo]);
+  }, [createForm.tipo]);
 
   useEffect(() => {
     return () => {
@@ -287,7 +214,7 @@ export function SharedRequisitionsPage({
     const map = new Map<MaterialCategoria, MaterialItemGroup[]>();
 
     MATERIAL_CATEGORIA_OPTIONS.forEach((categoria) => {
-      const materiaisCategoria = materiais.filter((material) => material.categoria === categoria.value);
+      const materiaisCategoria = catalog.materiais.filter((material) => material.categoria === categoria.value);
       const byNome = new Map<string, MaterialCatalogo[]>();
 
       materiaisCategoria.forEach((material) => {
@@ -307,10 +234,10 @@ export function SharedRequisitionsPage({
     });
 
     return map;
-  }, [materiais]);
+  }, [catalog.materiais]);
 
   const transportesOrdenados = useMemo(
-    () => [...transportes].sort((a, b) => {
+    () => [...catalog.transportes].sort((a, b) => {
       const codigoA = a.codigo ?? '';
       const codigoB = b.codigo ?? '';
       if (codigoA && codigoB && codigoA !== codigoB) {
@@ -324,21 +251,21 @@ export function SharedRequisitionsPage({
 
       return (a.matricula ?? '').localeCompare(b.matricula ?? '', 'pt-PT');
     }),
-    [transportes],
+    [catalog.transportes],
   );
 
   const dataHoraSaidaSelecionada = useMemo(
-    () => composeDateTime(dataSaida, horaSaida),
-    [dataSaida, horaSaida],
+    () => composeDateTime(createForm.dataSaida, createForm.horaSaida),
+    [createForm.dataSaida, createForm.horaSaida],
   );
 
   const dataHoraRegressoSelecionada = useMemo(
-    () => composeDateTime(dataRegresso, horaRegresso),
-    [dataRegresso, horaRegresso],
+    () => composeDateTime(createForm.dataRegresso, createForm.horaRegresso),
+    [createForm.dataRegresso, createForm.horaRegresso],
   );
 
   const transportesIndisponiveis = useMemo(() => {
-    if (tipo !== 'TRANSPORTE') return new Set<number>();
+    if (createForm.tipo !== 'TRANSPORTE') return new Set<number>();
 
     const ids = new Set<number>();
     
@@ -367,7 +294,7 @@ export function SharedRequisitionsPage({
     });
 
     return ids;
-  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, todasRequisicoesTransporteAceites, tipo]);
+  }, [dataHoraRegressoSelecionada, dataHoraSaidaSelecionada, monthlyRequisicoes, todasRequisicoesTransporteAceites, createForm.tipo]);
 
   const transportesOrdenadosDisponiveis = useMemo(
     () => transportesOrdenados.filter((transporte) => !transportesIndisponiveis.has(transporte.id)),
@@ -384,9 +311,9 @@ export function SharedRequisitionsPage({
   );
 
   const passageirosSolicitados = useMemo(() => {
-    const value = Number(numeroPassageiros || 0);
+    const value = Number(createForm.numeroPassageiros || 0);
     return Number.isFinite(value) && value > 0 ? value : 0;
-  }, [numeroPassageiros]);
+  }, [createForm.numeroPassageiros]);
 
   // Keep this in one place because selection quality depends on this exact knapsack scoring strategy.
   // eslint-disable-next-line sonarjs/cognitive-complexity
@@ -447,31 +374,31 @@ export function SharedRequisitionsPage({
   }, [passageirosSolicitados, transportesOrdenadosDisponiveis]);
 
   useEffect(() => {
-    if (tipo !== 'TRANSPORTE' || transportSelectionMode !== 'auto') {
+    if (createForm.tipo !== 'TRANSPORTE' || createForm.transportSelectionMode !== 'auto') {
       return;
     }
-    setSelectedTransportIds(recommendedTransportIds.map(String));
-  }, [recommendedTransportIds, transportSelectionMode, tipo]);
+    createForm.setSelectedTransportIds(recommendedTransportIds.map(String));
+  }, [recommendedTransportIds, createForm.transportSelectionMode, createForm.tipo]);
 
   useEffect(() => {
-    if (tipo !== 'TRANSPORTE' || selectedTransportIds.length === 0) {
+    if (createForm.tipo !== 'TRANSPORTE' || createForm.selectedTransportIds.length === 0) {
       return;
     }
 
-    const selectedDisponiveis = selectedTransportIds.filter((id) => !transportesIndisponiveis.has(Number(id)));
-    if (selectedDisponiveis.length === selectedTransportIds.length) {
+    const selectedDisponiveis = createForm.selectedTransportIds.filter((id) => !transportesIndisponiveis.has(Number(id)));
+    if (selectedDisponiveis.length === createForm.selectedTransportIds.length) {
       return;
     }
 
-    setSelectedTransportIds(selectedDisponiveis);
-    if (createTouched.transporteIds) {
+    createForm.setSelectedTransportIds(selectedDisponiveis);
+    if (createForm.createTouched.transporteIds) {
       setTimeout(() => validateAndSetField('transporteIds'), 0);
     }
-  }, [createTouched.transporteIds, selectedTransportIds, tipo, transportesIndisponiveis]);
+  }, [createForm.createTouched.transporteIds, createForm.selectedTransportIds, createForm.tipo, transportesIndisponiveis]);
 
   const selectedTransportes = useMemo(
-    () => transportesOrdenados.filter((item) => selectedTransportIds.includes(String(item.id))),
-    [selectedTransportIds, transportesOrdenados],
+    () => transportesOrdenados.filter((item) => createForm.selectedTransportIds.includes(String(item.id))),
+    [createForm.selectedTransportIds, transportesOrdenados],
   );
 
   const selectedTransportesCapacidade = useMemo(
@@ -485,28 +412,28 @@ export function SharedRequisitionsPage({
   );
 
   useEffect(() => {
-    if (tipo !== 'TRANSPORTE' || !dataSaida) return;
+    if (createForm.tipo !== 'TRANSPORTE' || !createForm.dataSaida) return;
 
-    if (!dataRegresso) {
-      setDataRegresso(dataSaida);
+    if (!createForm.dataRegresso) {
+      createForm.setDataRegresso(createForm.dataSaida);
     }
 
-    if (!tempoLimiteManuallyEdited) {
-      const previousDate = previousDateInput(dataSaida);
-      setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
+    if (!createForm.tempoLimiteManuallyEdited) {
+      const previousDate = previousDateInput(createForm.dataSaida);
+      createForm.setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
     }
-  }, [tipo, dataSaida, dataRegresso, tempoLimiteManuallyEdited]);
+  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso, createForm.tempoLimiteManuallyEdited]);
 
   useEffect(() => {
-    if (createTouched.materialItens) {
+    if (createForm.createTouched.materialItens) {
       validateAndSetField('materialItens');
     }
-  }, [materialLinhas, createTouched.materialItens]);
+  }, [createForm.materialLinhas, createForm.createTouched.materialItens]);
 
   useEffect(() => {
-    if (tipo !== 'TRANSPORTE') return;
+    if (createForm.tipo !== 'TRANSPORTE') return;
 
-    const temAlgumValorDataHora = Boolean(dataSaida || horaSaida || dataRegresso || horaRegresso);
+    const temAlgumValorDataHora = Boolean(createForm.dataSaida || createForm.horaSaida || createForm.dataRegresso || createForm.horaRegresso);
     if (!temAlgumValorDataHora) return;
 
     // Revalida após atualização de estado para evitar checks com valores antigos no onChange.
@@ -514,52 +441,52 @@ export function SharedRequisitionsPage({
     validateAndSetField('horaSaida');
     validateAndSetField('dataRegresso');
     validateAndSetField('horaRegresso');
-  }, [tipo, dataSaida, horaSaida, dataRegresso, horaRegresso]);
+  }, [createForm.tipo, createForm.dataSaida, createForm.horaSaida, createForm.dataRegresso, createForm.horaRegresso]);
 
-  const setFieldTouched = (field: CreateField) => {
-    setCreateTouched((prev) => ({ ...prev, [field]: true }));
-  };
+  const setFieldTouched = useCallback((field: CreateField) => {
+    createForm.setFieldTouched(field);
+  }, [createForm]);
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  const validateCreateField = (field: CreateField): string | undefined => {
+  const validateCreateField = useCallback((field: CreateField): string | undefined => {
     if (field === 'descricao') {
       return undefined;
     }
 
-    if (tipo === 'MATERIAL' && field === 'materialItens') {
-      const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
+    if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
+      const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
       if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
       return undefined;
     }
 
-    if (tipo !== 'TRANSPORTE') return undefined;
+    if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino' && !destinoTransporte.trim()) return t('requisitions.errors.requiredField');
-    if (field === 'dataSaida' && !dataSaida) return t('requisitions.errors.requiredField');
-    if (field === 'horaSaida' && !horaSaida) return t('requisitions.errors.requiredField');
-    if (field === 'dataRegresso' && !dataRegresso) return t('requisitions.errors.requiredField');
-    if (field === 'horaRegresso' && !horaRegresso) return t('requisitions.errors.requiredField');
+    if (field === 'destino' && !createForm.destinoTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
+    if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
+    if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
+    if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    if ((field === 'dataSaida' || field === 'horaSaida') && dataSaida && isDateInputInPast(dataSaida)) {
+    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInputInPast(createForm.dataSaida)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && dataRegresso && isDateInputInPast(dataRegresso)) {
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInputInPast(createForm.dataRegresso)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
     if (field === 'numeroPassageiros') {
-      if (!numeroPassageiros) return t('requisitions.errors.requiredField');
+      if (!createForm.numeroPassageiros) return t('requisitions.errors.requiredField');
       if (passageirosSolicitados < 1) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
-    if (field === 'transporteIds' && selectedTransportIds.length === 0) {
+    if (field === 'transporteIds' && createForm.selectedTransportIds.length === 0) {
       return t('requisitions.errors.selectOneVehicle');
     }
 
-    const saida = composeDateTime(dataSaida, horaSaida);
-    const regresso = composeDateTime(dataRegresso, horaRegresso);
+    const saida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
+    const regresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
     if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
       const saidaDate = new Date(saida);
       const regressoDate = new Date(regresso);
@@ -569,22 +496,16 @@ export function SharedRequisitionsPage({
     }
 
     return undefined;
-  };
+  }, [createForm, passageirosSolicitados, t]);
 
-  const validateAndSetField = (field: CreateField, markTouched = false): string | undefined => {
+  const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
     const error = validateCreateField(field);
     if (markTouched) {
       setFieldTouched(field);
     }
-    setCreateErrors((prev) => {
-      if (error) return { ...prev, [field]: error };
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
+    createForm.setFieldError(field, error);
     return error;
-  };
+  }, [validateCreateField, setFieldTouched, createForm]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -610,81 +531,79 @@ export function SharedRequisitionsPage({
     return mapped;
   };
 
-  const handleCriarMaterialCatalogo = async () => {
-    if (!novoMaterialNome.trim()) {
+  const handleCriarMaterialCatalogo = useCallback(async () => {
+    if (!createForm.novoMaterialNome.trim()) {
       toast.error(t('requisitions.material.errors.nameRequired'));
       return;
     }
-    if (!novoMaterialAtributo.trim() || !novoMaterialValorAtributo.trim()) {
+    if (!createForm.novoMaterialAtributo.trim() || !createForm.novoMaterialValorAtributo.trim()) {
       toast.error(t('requisitions.material.errors.attributeRequired'));
       return;
     }
 
     try {
       setSubmittingMaterial(true);
-      const novoMaterial = await requisicoesApi.criarMaterialCatalogo({
-        nome: novoMaterialNome.trim(),
-        descricao: novoMaterialDescricao.trim() || undefined,
-        categoria: novoMaterialCategoria,
-        atributo: novoMaterialAtributo.trim(),
-        valorAtributo: novoMaterialValorAtributo.trim(),
+      await requisicoesApi.criarMaterialCatalogo({
+        nome: createForm.novoMaterialNome.trim(),
+        descricao: createForm.novoMaterialDescricao.trim() || undefined,
+        categoria: createForm.novoMaterialCategoria as MaterialCategoria,
+        atributo: createForm.novoMaterialAtributo.trim(),
+        valorAtributo: createForm.novoMaterialValorAtributo.trim(),
       });
       toast.success(t('requisitions.material.messages.created'));
-      setMateriais((prev) => [...prev, novoMaterial]);
-      setNovoMaterialNome('');
-      setNovoMaterialDescricao('');
-      setNovoMaterialCategoria('OUTROS');
-      setNovoMaterialAtributo('');
-      setNovoMaterialValorAtributo('');
-      setCreateMaterialDialogOpen(false);
+      
+      // Update catalog
+      catalog.fetchCatalogo();
+      createForm.resetMaterialDialog();
+      createForm.setCreateMaterialDialogOpen(false);
     } catch (error: any) {
       toast.error(error?.message || t('requisitions.material.errors.createFailed'));
     } finally {
       setSubmittingMaterial(false);
     }
-  };
+  }, [createForm, catalog, t]);
 
-  const handleRemoveMaterialLinha = (rowId: string) => {
-    setMaterialLinhas((prev) => prev.filter((item) => item.rowId !== rowId));
-  };
+  const handleRemoveMaterialLinha = useCallback((rowId: string) => {
+    createForm.setMaterialLinhas((prev) => prev.filter((item) => item.rowId !== rowId));
+  }, [createForm]);
 
-  const toggleItemAttributesVisibility = (itemKey: string) => {
-    setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
-  };
+  const toggleItemAttributesVisibility = useCallback((itemKey: string) => {
+    createForm.setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+  }, [createForm]);
 
-  const toggleCategoriaExpansion = (categoria: MaterialCategoria) => {
-    setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  };
+  const toggleCategoriaExpansion = useCallback((categoria: MaterialCategoria) => {
+    createForm.setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  }, [createForm]);
 
-  const toggleTransporteCategoriaExpansion = (categoria: TransporteCategoria) => {
-    setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  };
+  const toggleTransporteCategoriaExpansion = useCallback((categoria: TransporteCategoria) => {
+    createForm.setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  }, [createForm]);
 
-  const toggleTransporteDetalhes = (transporteId: number) => {
-    setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
-  };
+  const toggleTransporteDetalhes = useCallback((transporteId: number) => {
+    createForm.setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
+  }, [createForm]);
 
-  const toggleManutencaoCategoriaExpansion = (categoria: ManutencaoCategoria) => {
-    setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  };
+  const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
+    createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+  }, [createForm]);
 
-  const toggleManutencaoItem = (itemId: number, checked: boolean) => {
+  const toggleManutencaoItem = useCallback((itemId: number, checked: boolean) => {
     if (checked) {
-      setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
+      createForm.setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
     } else {
-      setSelectedManutencaoItemIds((prev) => prev.filter((id) => id !== itemId));
+      createForm.setSelectedManutencaoItemIds((prev) => prev.filter((id) => id !== itemId));
     }
-  };
+  }, [createForm]);
 
-  const updateManutencaoObservacaoCategoria = (categoria: string, observacao: string) => {
-    setManutencaoObservacoesPorCategoria((prev) => ({
+  const updateManutencaoObservacaoCategoria = useCallback((categoria: string, observacao: string) => {
+    createForm.setManutencaoObservacoesPorCategoria((prev) => ({
       ...prev,
       [categoria]: observacao,
     }));
-  };
+  }, [createForm]);
 
-  const toggleVariante = (materialId: number, checked: boolean) => {
-    setMaterialLinhas((prev) => {
+  const toggleVariante = useCallback((materialId: number, checked: boolean) => {
+    createForm.setMaterialLinhas((prev) => {
       const materialIdStr = String(materialId);
       const existing = prev.find((item) => item.materialId === materialIdStr);
 
@@ -695,106 +614,85 @@ export function SharedRequisitionsPage({
 
       return prev.filter((item) => item.materialId !== materialIdStr);
     });
-  };
+  }, [createForm]);
 
-  const handleItemToggle = (item: MaterialItemGroup, checked: boolean) => {
+  const handleItemToggle = useCallback((item: MaterialItemGroup, checked: boolean) => {
     if (checked) {
-      setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
+      createForm.setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
       if (item.variantes.length === 1) {
         toggleVariante(item.variantes[0].id, true);
       }
       return;
     }
 
-    setExpandedMaterialItems((prev) => {
+    createForm.setExpandedMaterialItems((prev) => {
       const next = { ...prev };
       delete next[item.itemKey];
       return next;
     });
 
-    setMaterialLinhas((prev) => {
+    createForm.setMaterialLinhas((prev) => {
       const ids = new Set(item.variantes.map((variante) => String(variante.id)));
       return prev.filter((linha) => !ids.has(linha.materialId));
     });
-  };
+  }, [createForm, toggleVariante]);
 
-  const updateVarianteQuantidade = (materialId: number, quantidade: string) => {
+  const updateVarianteQuantidade = useCallback((materialId: number, quantidade: string) => {
     if (!quantidade) return;
 
     const valor = Number(quantidade);
     if (!Number.isFinite(valor) || valor < 1) return;
 
-    setMaterialLinhas((prev) =>
+    createForm.setMaterialLinhas((prev) =>
       prev.map((linha) =>
         linha.materialId === String(materialId)
           ? { ...linha, quantidade }
           : linha,
       ),
     );
-  };
+  }, [createForm]);
 
-  const handleResetCreateForm = () => {
-    setDescricao('');
-    setTempoLimite(undefined);
-    setTempoLimiteManuallyEdited(false);
-    setMaterialLinhas([]);
-    setDestinoTransporte('');
-    setDataSaida('');
-    setHoraSaida('');
-    setDataRegresso('');
-    setHoraRegresso('');
-    setNumeroPassageiros('');
-    setCondutorTransporte('');
-    setSelectedTransportIds([]);
-    setTransportSelectionMode('auto');
-    setExpandedMaterialItems({});
-    setExpandedTransporteCategorias({});
-    setExpandedTransporteDetalhes({});
-    setSelectedManutencaoItemIds([]);
-    setManutencaoObservacoesPorCategoria({});
-    setCreateErrors({});
-    setCreateTouched({});
-    setTipo(initialTipo ?? 'MATERIAL');
-    setPrioridade(initialPrioridade ?? 'MEDIA');
-  };
+  const handleResetCreateForm = useCallback(() => {
+    createForm.resetForm();
+  }, [createForm]);
 
-  const toggleSelectedTransport = (transporteId: number, checked: boolean) => {
+  const toggleSelectedTransport = useCallback((transporteId: number, checked: boolean) => {
     if (checked && transportesIndisponiveis.has(transporteId)) {
       return;
     }
 
     const transporteIdStr = String(transporteId);
-    setTransportSelectionMode('manual');
-    setSelectedTransportIds((prev) => {
+    createForm.setTransportSelectionMode('manual');
+    createForm.setSelectedTransportIds((prev) => {
       if (checked) {
         return prev.includes(transporteIdStr) ? prev : [...prev, transporteIdStr];
       }
       return prev.filter((item) => item !== transporteIdStr);
     });
-    if (createTouched.transporteIds) {
+    if (createForm.createTouched.transporteIds) {
       setTimeout(() => validateAndSetField('transporteIds'), 0);
     }
-  };
+  }, [transportesIndisponiveis, createForm, validateAndSetField]);
 
-  const handleAplicarSugestaoTransporte = () => {
-    setTransportSelectionMode('auto');
-    setSelectedTransportIds(recommendedTransportIds.map(String));
-    if (createTouched.transporteIds) {
+  const handleAplicarSugestaoTransporte = useCallback(() => {
+    createForm.setTransportSelectionMode('auto');
+    createForm.setSelectedTransportIds(recommendedTransportIds.map(String));
+    if (createForm.createTouched.transporteIds) {
       setTimeout(() => validateAndSetField('transporteIds'), 0);
     }
-  };
+  }, [recommendedTransportIds, createForm, validateAndSetField]);
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     if (!currentUserId) {
       toast.error(t('requisitions.errors.missingAuthenticatedUser'));
       return;
     }
 
     const fieldsToValidate: CreateField[] = [];
-    if (tipo === 'MATERIAL') {
+    if (createForm.tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
     }
-    if (tipo === 'TRANSPORTE') {
+    if (createForm.tipo === 'TRANSPORTE') {
       fieldsToValidate.push(
         'destino',
         'dataSaida',
@@ -814,21 +712,21 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    const dataHoraSaida = composeDateTime(dataSaida, horaSaida);
-    const dataHoraRegresso = composeDateTime(dataRegresso, horaRegresso);
+    const dataHoraSaida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
+    const dataHoraRegresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
 
     try {
       setSubmitting(true);
 
       const payloadBase = {
-        descricao: descricao.trim() || undefined,
-        prioridade,
-        tempoLimite: toIsoFromDateOnly(tempoLimite),
+        descricao: createForm.descricao.trim() || undefined,
+        prioridade: createForm.prioridade,
+        tempoLimite: toIsoFromDateOnly(createForm.tempoLimite),
         criadoPorId: currentUserId,
       };
 
-      if (tipo === 'MATERIAL') {
-        const linhasValidas = materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
+      if (createForm.tipo === 'MATERIAL') {
+        const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
 
         const itensDedupe = Array.from(
           linhasValidas.reduce<Map<number, number>>((acc, linha) => {
@@ -841,24 +739,26 @@ export function SharedRequisitionsPage({
           ...payloadBase,
           itens: itensDedupe,
         });
+        // Refresh catalog after creating material
+        catalog.fetchCatalogo();
         toast.success(t('requisitions.messages.materialCreated'));
-      } else if (tipo === 'TRANSPORTE') {
+      } else if (createForm.tipo === 'TRANSPORTE') {
         await requisicoesApi.criarTransporte({
           ...payloadBase,
-          destino: destinoTransporte.trim(),
+          destino: createForm.destinoTransporte.trim(),
           dataHoraSaida: dataHoraSaida!,
           dataHoraRegresso: dataHoraRegresso!,
           numeroPassageiros: passageirosSolicitados,
-          condutor: condutorTransporte.trim() || undefined,
-          transporteIds: selectedTransportIds.map(Number),
+          condutor: createForm.condutorTransporte.trim() || undefined,
+          transporteIds: createForm.selectedTransportIds.map(Number),
         });
       } else {
-        const manutencaoItensPayload = selectedManutencaoItemIds.map((itemId) => {
-          const item = manutencaoItems.find((m) => m.id === itemId);
+        const manutencaoItensPayload = createForm.selectedManutencaoItemIds.map((itemId) => {
+          const item = catalog.manutencaoItems.find((m) => m.id === itemId);
           const observacaoCategoria = item ? item.categoria : '';
           return {
             itemId,
-            observacoes: manutencaoObservacoesPorCategoria[observacaoCategoria] || undefined,
+            observacoes: createForm.manutencaoObservacoesPorCategoria[observacaoCategoria] || undefined,
           };
         });
 
@@ -868,7 +768,7 @@ export function SharedRequisitionsPage({
         });
       }
 
-      if (tipo !== 'MATERIAL') {
+      if (createForm.tipo !== 'MATERIAL') {
         toast.success(t('requisitions.messages.created'));
       }
       handleResetCreateForm();
@@ -878,8 +778,8 @@ export function SharedRequisitionsPage({
       const apiError = error as ApiRequestError;
       const mappedErrors = toCreateFieldErrors(apiError);
       if (Object.keys(mappedErrors).length > 0) {
-        setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
-        setCreateTouched((prev) => {
+        createForm.setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
+        createForm.setCreateTouched((prev) => {
           const next = { ...prev };
           Object.keys(mappedErrors).forEach((field) => {
             next[field as CreateField] = true;
@@ -892,35 +792,35 @@ export function SharedRequisitionsPage({
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [currentUserId, createForm, passageirosSolicitados, catalog, t, handleResetCreateForm, fetchRequisicoes]);
 
   const requisicoesRequestChainRef = useRef<Promise<void>>(Promise.resolve());
 
   const handleClearFilters = () => {
-    setFilterEstado('');
-    if (activeTab === 'URGENTE') {
-      setFilterTipo('');
-      setFilterPrioridade('URGENTE');
-    } else if (activeTab === 'GERAL') {
-      setFilterTipo('');
-      setFilterPrioridade('');
+    filters.setFilterEstado('');
+    if (filters.activeTab === 'URGENTE') {
+      filters.setFilterTipo('');
+      filters.setFilterPrioridade('URGENTE');
+    } else if (filters.activeTab === 'GERAL') {
+      filters.setFilterTipo('');
+      filters.setFilterPrioridade('');
     } else {
-      setFilterTipo(activeTab);
-      setFilterPrioridade('');
+      filters.setFilterTipo(filters.activeTab);
+      filters.setFilterPrioridade('');
     }
-    setFilterCriadoPorNome('');
-    setFilterGeridoPorNome('');
-    setFilterCriadoPorTipo('');
+    filters.setFilterCriadoPorNome('');
+    filters.setFilterGeridoPorNome('');
+    filters.setFilterCriadoPorTipo('');
   };
 
   const handleSelectTab = (tab: RequisicoesTab) => {
-    setActiveTab(tab);
+    filters.setActiveTab(tab);
 
     const nextTipo: RequisicaoTipo | '' = tab === 'GERAL' || tab === 'URGENTE' ? '' : tab;
     const nextPrioridade: RequisicaoPrioridade | '' = tab === 'URGENTE' ? 'URGENTE' : '';
 
-    setFilterTipo(nextTipo);
-    setFilterPrioridade(nextPrioridade);
+    filters.setFilterTipo(nextTipo);
+    filters.setFilterPrioridade(nextPrioridade);
 
     requisicoesRequestChainRef.current = requisicoesRequestChainRef.current
       .catch(() => {
@@ -928,11 +828,11 @@ export function SharedRequisitionsPage({
       })
       .then(() =>
         fetchRequisicoes({
-          estado: filterEstado,
+          estado: filters.filterEstado,
           tipo: nextTipo,
           prioridade: nextPrioridade,
-          criadoPorNome: filterCriadoPorNome,
-          geridoPorNome: filterGeridoPorNome,
+          criadoPorNome: filters.filterCriadoPorNome,
+          geridoPorNome: filters.filterGeridoPorNome,
         }),
       );
   };
@@ -1227,9 +1127,9 @@ export function SharedRequisitionsPage({
       quantidade: number;
     }>>();
 
-    materialLinhas.forEach((linha) => {
-      const material = materiais.find((item) => String(item.id) === linha.materialId);
-      const categoria = material?.categoria ?? 'OUTROS';
+    createForm.materialLinhas.forEach((linha) => {
+      const material = catalog.materiais.find((item) => String(item.id) === linha.materialId);
+      const categoria = material?.categoria ?? 'TECNOLOGIA';
       const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
       const grupoAtual = grupos.get(categoria) ?? [];
 
@@ -1249,11 +1149,11 @@ export function SharedRequisitionsPage({
         itens: grupos.get(categoria.value) ?? [],
       }))
       .filter((grupo) => grupo.itens.length > 0);
-  }, [materiais, materialLinhas]);
+  }, [catalog.materiais, createForm.materialLinhas]);
 
   const materiaisAdicionadosTotal = useMemo(
-    () => materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
-    [materialLinhas],
+    () => createForm.materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
+    [createForm.materialLinhas],
   );
 
   const selectedRequisicao = useMemo(
@@ -1336,11 +1236,6 @@ export function SharedRequisitionsPage({
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-  const getFieldClassName = (baseClass: string, field: CreateField) => (
-    createErrors[field]
-      ? `${baseClass} border-red-500 focus-visible:border-red-500 focus-visible:ring-red-200`
-      : baseClass
-  );
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -1367,18 +1262,18 @@ export function SharedRequisitionsPage({
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
 
         <RequisitionsCreateCommonFields
-          tipo={tipo}
-          descricao={descricao}
-          onChangeDescricao={setDescricao}
-          onChangeTipo={setTipo}
-          prioridade={prioridade}
-          onChangePrioridade={setPrioridade}
-          tempoLimite={tempoLimite}
+          tipo={createForm.tipo}
+          descricao={createForm.descricao}
+          onChangeDescricao={createForm.setDescricao}
+          onChangeTipo={createForm.setTipo}
+          prioridade={createForm.prioridade}
+          onChangePrioridade={createForm.setPrioridade}
+          tempoLimite={createForm.tempoLimite}
           onChangeTempoLimite={(value) => {
-            setTempoLimite(value);
-            setTempoLimiteManuallyEdited(true);
+            createForm.setTempoLimite(value);
+            createForm.setTempoLimiteManuallyEdited(true);
           }}
-          descricaoError={createErrors.descricao}
+          descricaoError={createForm.createErrors.descricao}
           tempoLimiteError={undefined}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
@@ -1386,7 +1281,7 @@ export function SharedRequisitionsPage({
           t={t}
         />
 
-        {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
+        {createForm.tipo === 'TRANSPORTE' && !createForm.tempoLimiteManuallyEdited && createForm.dataSaida && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
         )}
       </div>
@@ -1395,18 +1290,12 @@ export function SharedRequisitionsPage({
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.detailsByType')}</h3>
 
         <div>
-          {tipo === 'MATERIAL' && (
+          {createForm.tipo === 'MATERIAL' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-end">
-                <Button type="button" variant="outline" className="h-7 px-2 text-xs" onClick={() => setCreateMaterialDialogOpen(true)}>
-                  {t('requisitions.ui.newMaterial')}
-                </Button>
-              </div>
-
               <RequisitionsCreateMaterialForm
-                materialLinhas={materialLinhas}
-                expandedMaterialItems={expandedMaterialItems}
-                expandedMaterialCategorias={expandedMaterialCategorias as Partial<Record<string, boolean>>}
+                materialLinhas={createForm.materialLinhas}
+                expandedMaterialItems={createForm.expandedMaterialItems}
+                expandedMaterialCategorias={createForm.expandedMaterialCategorias as Partial<Record<string, boolean>>}
                 materiaisPorCategoria={MATERIAL_CATEGORIA_OPTIONS.map((categoria) => ({
                   categoria: categoria.value,
                   label: categoria.label,
@@ -1422,68 +1311,68 @@ export function SharedRequisitionsPage({
                 onUpdateVarianteQuantidade={updateVarianteQuantidade}
                 onRemoveMaterialLinha={handleRemoveMaterialLinha}
                 quantityFieldClassName={quantityFieldClassName}
-                materiaisError={createErrors.materialItens}
+                materiaisError={createForm.createErrors.materialItens}
                 t={t}
               />
             </div>
           )}
 
-          {tipo === 'TRANSPORTE' && (
+          {createForm.tipo === 'TRANSPORTE' && (
             <div className="space-y-3">
               <RequisitionsCreateTransportForm
-                destinoTransporte={destinoTransporte}
+                destinoTransporte={createForm.destinoTransporte}
                 onChangeDestino={(value) => {
-                  setDestinoTransporte(value);
-                  if (createTouched.destino) validateAndSetField('destino');
+                  createForm.setDestinoTransporte(value);
+                  if (createForm.createTouched.destino) validateAndSetField('destino');
                 }}
-                dataSaida={dataSaida}
+                dataSaida={createForm.dataSaida}
                 onChangeDataSaida={(value) => {
-                  setDataSaida(value);
+                  createForm.setDataSaida(value);
                   validateAndSetField('dataSaida');
                   validateAndSetField('horaSaida');
                   validateAndSetField('dataRegresso');
                   validateAndSetField('horaRegresso');
                 }}
-                horaSaida={horaSaida}
+                horaSaida={createForm.horaSaida}
                 onChangeHoraSaida={(value) => {
-                  setHoraSaida(value);
+                  createForm.setHoraSaida(value);
                   validateAndSetField('horaSaida');
                   validateAndSetField('dataSaida');
                   validateAndSetField('dataRegresso');
                   validateAndSetField('horaRegresso');
                 }}
-                dataRegresso={dataRegresso}
+                dataRegresso={createForm.dataRegresso}
                 onChangeDataRegresso={(value) => {
-                  setDataRegresso(value);
+                  createForm.setDataRegresso(value);
                   validateAndSetField('dataRegresso');
                   validateAndSetField('horaRegresso');
                   validateAndSetField('dataSaida');
                   validateAndSetField('horaSaida');
                 }}
-                horaRegresso={horaRegresso}
+                horaRegresso={createForm.horaRegresso}
                 onChangeHoraRegresso={(value) => {
-                  setHoraRegresso(value);
+                  createForm.setHoraRegresso(value);
                   validateAndSetField('horaRegresso');
                   validateAndSetField('dataRegresso');
                   validateAndSetField('dataSaida');
                   validateAndSetField('horaSaida');
                 }}
-                numeroPassageiros={numeroPassageiros}
+                numeroPassageiros={createForm.numeroPassageiros}
                 onChangeNumeroPassageiros={(value) => {
-                  setNumeroPassageiros(value);
-                  if (createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                  createForm.setNumeroPassageiros(value);
+                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
                 }}
-                condutorTransporte={condutorTransporte}
-                onChangeCondutor={setCondutorTransporte}
-                selectedTransportIds={selectedTransportIds}
+                condutorTransporte={createForm.condutorTransporte}
+                onChangeCondutor={createForm.setCondutorTransporte}
+                selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
                   toggleSelectedTransport(transporteId, checked);
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteCategorias={expandedTransporteCategorias}
+                expandedTransporteCategorias={createForm.expandedTransporteCategorias as Partial<Record<string, boolean>>}
                 onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
-                expandedTransporteDetalhes={expandedTransporteDetalhes}
+                expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
                 onToggleTransporteDetalhes={toggleTransporteDetalhes}
                 transportesPorCategoria={transportesPorCategoria}
                 selectedTransportes={selectedTransportes}
@@ -1492,30 +1381,30 @@ export function SharedRequisitionsPage({
                 selectedTransportesCapacidade={selectedTransportesCapacidade}
                 passageirosSolicitados={passageirosSolicitados}
                 lugaresEmFalta={lugaresEmFalta}
-                loadingCatalogo={loadingCatalogo}
-                createErrors={{ transporteIds: createErrors.transporteIds }}
+                loadingCatalogo={catalog.loadingCatalogo}
+                createErrors={{ transporteIds: createForm.createErrors.transporteIds }}
                 inputFieldClassName={inputFieldClassName}
                 selectFieldClassName={selectFieldClassName}
                 onApplySuggestion={handleAplicarSugestaoTransporte}
                 t={t}
               />
 
-              {createErrors.destino && <p className="text-red-500 text-xs">{createErrors.destino}</p>}
-              {createErrors.dataSaida && <p className="text-red-500 text-xs">{createErrors.dataSaida}</p>}
-              {createErrors.horaSaida && <p className="text-red-500 text-xs">{createErrors.horaSaida}</p>}
-              {createErrors.dataRegresso && <p className="text-red-500 text-xs">{createErrors.dataRegresso}</p>}
-              {createErrors.horaRegresso && <p className="text-red-500 text-xs">{createErrors.horaRegresso}</p>}
-              {createErrors.numeroPassageiros && <p className="text-red-500 text-xs">{createErrors.numeroPassageiros}</p>}
+              {createForm.createErrors.destino && <p className="text-red-500 text-xs">{createForm.createErrors.destino}</p>}
+              {createForm.createErrors.dataSaida && <p className="text-red-500 text-xs">{createForm.createErrors.dataSaida}</p>}
+              {createForm.createErrors.horaSaida && <p className="text-red-500 text-xs">{createForm.createErrors.horaSaida}</p>}
+              {createForm.createErrors.dataRegresso && <p className="text-red-500 text-xs">{createForm.createErrors.dataRegresso}</p>}
+              {createForm.createErrors.horaRegresso && <p className="text-red-500 text-xs">{createForm.createErrors.horaRegresso}</p>}
+              {createForm.createErrors.numeroPassageiros && <p className="text-red-500 text-xs">{createForm.createErrors.numeroPassageiros}</p>}
             </div>
           )}
 
-          {tipo === 'MANUTENCAO' && (
+          {createForm.tipo === 'MANUTENCAO' && (
             <div className="space-y-4">
               <RequisitionsCreateManutencaoForm
-                manutencaoItems={manutencaoItems}
-                expandedManutencaoCategorias={expandedManutencaoCategorias}
-                selectedManutencaoItemIds={selectedManutencaoItemIds}
-                manutencaoObservacoesPorCategoria={manutencaoObservacoesPorCategoria}
+                manutencaoItems={catalog.manutencaoItems}
+                expandedManutencaoCategorias={createForm.expandedManutencaoCategorias}
+                selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
+                manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
                 onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
                 onToggleItem={toggleManutencaoItem}
                 onUpdateObservacaoCategoria={updateManutencaoObservacaoCategoria}
@@ -1592,19 +1481,19 @@ export function SharedRequisitionsPage({
             <div className="px-5 pb-5 space-y-4">
               <RequisitionsListFiltersContent
                 desktop={false}
-                activeTab={activeTab}
+                activeTab={filters.activeTab}
                 onSelectTab={handleSelectTab}
-                filterEstado={filterEstado}
-                setFilterEstado={setFilterEstado}
-                filterPrioridade={filterPrioridade}
-                setFilterPrioridade={setFilterPrioridade}
-                filterCriadoPorNome={filterCriadoPorNome}
-                setFilterCriadoPorNome={setFilterCriadoPorNome}
-                filterGeridoPorNome={filterGeridoPorNome}
-                setFilterGeridoPorNome={setFilterGeridoPorNome}
+                filterEstado={filters.filterEstado}
+                setFilterEstado={filters.setFilterEstado}
+                filterPrioridade={filters.filterPrioridade}
+                setFilterPrioridade={filters.setFilterPrioridade}
+                filterCriadoPorNome={filters.filterCriadoPorNome}
+                setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
+                filterGeridoPorNome={filters.filterGeridoPorNome}
+                setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
                 showCreatedByRoleFilter={isSecretaryView}
-                filterCriadoPorTipo={filterCriadoPorTipo}
-                setFilterCriadoPorTipo={setFilterCriadoPorTipo}
+                filterCriadoPorTipo={filters.filterCriadoPorTipo}
+                setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
@@ -1642,19 +1531,19 @@ export function SharedRequisitionsPage({
               <div className="px-5 pb-5 pt-4 space-y-4">
                 <RequisitionsListFiltersContent
                   desktop
-                  activeTab={activeTab}
+                  activeTab={filters.activeTab}
                   onSelectTab={handleSelectTab}
-                  filterEstado={filterEstado}
-                  setFilterEstado={setFilterEstado}
-                  filterPrioridade={filterPrioridade}
-                  setFilterPrioridade={setFilterPrioridade}
-                  filterCriadoPorNome={filterCriadoPorNome}
-                  setFilterCriadoPorNome={setFilterCriadoPorNome}
-                  filterGeridoPorNome={filterGeridoPorNome}
-                  setFilterGeridoPorNome={setFilterGeridoPorNome}
+                  filterEstado={filters.filterEstado}
+                  setFilterEstado={filters.setFilterEstado}
+                  filterPrioridade={filters.filterPrioridade}
+                  setFilterPrioridade={filters.setFilterPrioridade}
+                  filterCriadoPorNome={filters.filterCriadoPorNome}
+                  setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
+                  filterGeridoPorNome={filters.filterGeridoPorNome}
+                  setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
                   showCreatedByRoleFilter={isSecretaryView}
-                  filterCriadoPorTipo={filterCriadoPorTipo}
-                  setFilterCriadoPorTipo={setFilterCriadoPorTipo}
+                  filterCriadoPorTipo={filters.filterCriadoPorTipo}
+                  setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                   onSearch={() => fetchRequisicoes()}
                   onClearFilters={handleClearFilters}
                   loading={loading}
@@ -1748,22 +1637,22 @@ export function SharedRequisitionsPage({
       )}
 
       <RequisitionsCreateMaterialDialog
-        open={createMaterialDialogOpen}
-        onOpenChange={setCreateMaterialDialogOpen}
+        open={createForm.createMaterialDialogOpen}
+        onOpenChange={createForm.setCreateMaterialDialogOpen}
         inputFieldClassName={inputFieldClassName}
         textareaFieldClassName={textareaFieldClassName}
-        novoMaterialNome={novoMaterialNome}
-        novoMaterialDescricao={novoMaterialDescricao}
-        novoMaterialCategoria={novoMaterialCategoria}
-        novoMaterialAtributo={novoMaterialAtributo}
-        novoMaterialValorAtributo={novoMaterialValorAtributo}
+        novoMaterialNome={createForm.novoMaterialNome}
+        novoMaterialDescricao={createForm.novoMaterialDescricao}
+        novoMaterialCategoria={createForm.novoMaterialCategoria as MaterialCategoria}
+        novoMaterialAtributo={createForm.novoMaterialAtributo}
+        novoMaterialValorAtributo={createForm.novoMaterialValorAtributo}
         submittingMaterial={submittingMaterial}
-        onChangeNome={setNovoMaterialNome}
-        onChangeDescricao={setNovoMaterialDescricao}
-        onChangeCategoria={setNovoMaterialCategoria}
-        onChangeAtributo={setNovoMaterialAtributo}
-        onChangeValorAtributo={setNovoMaterialValorAtributo}
-        onCancel={() => setCreateMaterialDialogOpen(false)}
+        onChangeNome={createForm.setNovoMaterialNome}
+        onChangeDescricao={createForm.setNovoMaterialDescricao}
+        onChangeCategoria={createForm.setNovoMaterialCategoria}
+        onChangeAtributo={createForm.setNovoMaterialAtributo}
+        onChangeValorAtributo={createForm.setNovoMaterialValorAtributo}
+        onCancel={() => createForm.setCreateMaterialDialogOpen(false)}
         onCreate={handleCriarMaterialCatalogo}
         t={t}
       />

@@ -96,7 +96,6 @@ export const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label
   { value: 'PAPEL_E_ARQUIVO', label: 'requisitions.labels.materialCategoryPaperFiling' },
   { value: 'HIGIENE_E_LIMPEZA', label: 'requisitions.labels.materialCategoryHygieneCleaning' },
   { value: 'TECNOLOGIA', label: 'requisitions.labels.materialCategoryTechnology' },
-  { value: 'OUTROS', label: 'requisitions.labels.materialCategoryOther' },
 ];
 
 export const MANUTENCAO_CATEGORIA_OPTIONS: Array<{ value: ManutencaoCategoria; label: string }> = [
