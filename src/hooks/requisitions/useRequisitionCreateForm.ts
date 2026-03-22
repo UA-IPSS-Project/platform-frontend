@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
 
@@ -97,7 +97,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     });
   }, []);
 
-  return {
+  return useMemo(() => ({
     // General form state
     tipo,
     setTipo,
@@ -175,5 +175,5 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     // Actions
     resetForm,
     resetMaterialDialog,
-  };
+  }), [tipo, setTipo, descricao, setDescricao, prioridade, setPrioridade, tempoLimite, setTempoLimite, tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited, createErrors, setCreateErrors, createTouched, setCreateTouched, setFieldTouched, setFieldError, materialLinhas, setMaterialLinhas, expandedMaterialItems, setExpandedMaterialItems, expandedMaterialCategorias, setExpandedMaterialCategorias, destinoTransporte, setDestinoTransporte, dataSaida, setDataSaida, horaSaida, setHoraSaida, dataRegresso, setDataRegresso, horaRegresso, setHoraRegresso, numeroPassageiros, setNumeroPassageiros, condutorTransporte, setCondutorTransporte, selectedTransportIds, setSelectedTransportIds, transportSelectionMode, setTransportSelectionMode, expandedTransporteCategorias, setExpandedTransporteCategorias, expandedTransporteDetalhes, setExpandedTransporteDetalhes, selectedManutencaoItemIds, setSelectedManutencaoItemIds, expandedManutencaoCategorias, setExpandedManutencaoCategorias, manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria, createMaterialDialogOpen, setCreateMaterialDialogOpen, novoMaterialNome, setNovoMaterialNome, novoMaterialDescricao, setNovoMaterialDescricao, novoMaterialCategoria, setNovoMaterialCategoria, novoMaterialAtributo, setNovoMaterialAtributo, novoMaterialValorAtributo, setNovoMaterialValorAtributo, resetForm, resetMaterialDialog]);
 }

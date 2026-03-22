@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { RequisicaoEstado, RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import type { RequisicoesTab } from '../../pages/requisitions/sharedRequisitions.helpers';
 
@@ -34,7 +34,7 @@ export function useRequisitionFilters(
     }
   }, [initialTipo, initialPrioridade]);
 
-  return {
+  return useMemo(() => ({
     filterEstado,
     setFilterEstado,
     filterTipo,
@@ -50,5 +50,5 @@ export function useRequisitionFilters(
     activeTab,
     setActiveTab,
     resetFilters,
-  };
+  }), [filterEstado, filterTipo, filterPrioridade, filterCriadoPorNome, filterGeridoPorNome, filterCriadoPorTipo, activeTab, resetFilters]);
 }

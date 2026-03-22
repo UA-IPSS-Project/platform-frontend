@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { MaterialCatalogo, ManutencaoItem, TransporteCatalogo, requisicoesApi } from '../../services/api';
 
@@ -8,7 +8,7 @@ export function useRequisitionCatalog(t: (key: string) => string) {
   const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(false);
 
-  const fetchCatalogo = async () => {
+  const fetchCatalogo = useCallback(async () => {
     try {
       setLoadingCatalogo(true);
       const [materiaisData, transportesData, manutencaoData] = await Promise.all([
@@ -24,17 +24,17 @@ export function useRequisitionCatalog(t: (key: string) => string) {
     } finally {
       setLoadingCatalogo(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     fetchCatalogo();
-  }, []);
+  }, [fetchCatalogo]);
 
-  return {
+  return useMemo(() => ({
     materiais,
     transportes,
     manutencaoItems,
     loadingCatalogo,
     fetchCatalogo,
-  };
+  }), [materiais, transportes, manutencaoItems, loadingCatalogo, fetchCatalogo]);
 }

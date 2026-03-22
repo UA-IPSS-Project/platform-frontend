@@ -14,35 +14,24 @@ import {
   ManutencaoCategoria,
   MaterialCategoria,
   MaterialCatalogo,
-  ManutencaoItem,
   RequisicaoEstado,
   RequisicaoPrioridade,
   RequisicaoResponse,
   RequisicaoTipo,
-  TransporteCatalogo,
   TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
 import {
   ConflitoDialogMode,
   CreateField,
-  MANUTENCAO_CATEGORIA_OPTIONS,
   MATERIAL_CATEGORIA_OPTIONS,
   MaterialItemGroup,
-  PRIORIDADE_OPTIONS,
   RequisicaoConflito,
   RequisicoesTab,
   TRANSPORTE_CATEGORIA_OPTIONS,
-  TIPO_OPTIONS,
-  TransporteSelectionMode,
   composeDateTime,
   createEmptyMaterialLinha,
-  formatManutencaoCategoria,
-  formatLotacao,
-  formatTransporteCategoria,
   formatTransporteDisplay,
-  formatVehicleTitle,
-  getCoberturaMensagem,
   getEstadosPermitidosTransicao,
   getEstadosVisiveisNoSeletor,
   getPassengerCapacity,
@@ -554,7 +543,7 @@ export function SharedRequisitionsPage({
 
     try {
       setSubmittingMaterial(true);
-      const novoMaterial = await requisicoesApi.criarMaterialCatalogo({
+      await requisicoesApi.criarMaterialCatalogo({
         nome: createForm.novoMaterialNome.trim(),
         descricao: createForm.novoMaterialDescricao.trim() || undefined,
         categoria: createForm.novoMaterialCategoria as MaterialCategoria,
@@ -723,8 +712,8 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    const dataHoraSaida = composeDateTime(dataSaida, horaSaida);
-    const dataHoraRegresso = composeDateTime(dataRegresso, horaRegresso);
+    const dataHoraSaida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
+    const dataHoraRegresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
 
     try {
       setSubmitting(true);
@@ -779,7 +768,7 @@ export function SharedRequisitionsPage({
         });
       }
 
-      if (tipo !== 'MATERIAL') {
+      if (createForm.tipo !== 'MATERIAL') {
         toast.success(t('requisitions.messages.created'));
       }
       handleResetCreateForm();
@@ -789,8 +778,8 @@ export function SharedRequisitionsPage({
       const apiError = error as ApiRequestError;
       const mappedErrors = toCreateFieldErrors(apiError);
       if (Object.keys(mappedErrors).length > 0) {
-        setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
-        setCreateTouched((prev) => {
+        createForm.setCreateErrors((prev) => ({ ...prev, ...mappedErrors }));
+        createForm.setCreateTouched((prev) => {
           const next = { ...prev };
           Object.keys(mappedErrors).forEach((field) => {
             next[field as CreateField] = true;
@@ -808,30 +797,30 @@ export function SharedRequisitionsPage({
   const requisicoesRequestChainRef = useRef<Promise<void>>(Promise.resolve());
 
   const handleClearFilters = () => {
-    setFilterEstado('');
-    if (activeTab === 'URGENTE') {
-      setFilterTipo('');
-      setFilterPrioridade('URGENTE');
-    } else if (activeTab === 'GERAL') {
-      setFilterTipo('');
-      setFilterPrioridade('');
+    filters.setFilterEstado('');
+    if (filters.activeTab === 'URGENTE') {
+      filters.setFilterTipo('');
+      filters.setFilterPrioridade('URGENTE');
+    } else if (filters.activeTab === 'GERAL') {
+      filters.setFilterTipo('');
+      filters.setFilterPrioridade('');
     } else {
-      setFilterTipo(activeTab);
-      setFilterPrioridade('');
+      filters.setFilterTipo(filters.activeTab);
+      filters.setFilterPrioridade('');
     }
-    setFilterCriadoPorNome('');
-    setFilterGeridoPorNome('');
-    setFilterCriadoPorTipo('');
+    filters.setFilterCriadoPorNome('');
+    filters.setFilterGeridoPorNome('');
+    filters.setFilterCriadoPorTipo('');
   };
 
   const handleSelectTab = (tab: RequisicoesTab) => {
-    setActiveTab(tab);
+    filters.setActiveTab(tab);
 
     const nextTipo: RequisicaoTipo | '' = tab === 'GERAL' || tab === 'URGENTE' ? '' : tab;
     const nextPrioridade: RequisicaoPrioridade | '' = tab === 'URGENTE' ? 'URGENTE' : '';
 
-    setFilterTipo(nextTipo);
-    setFilterPrioridade(nextPrioridade);
+    filters.setFilterTipo(nextTipo);
+    filters.setFilterPrioridade(nextPrioridade);
 
     requisicoesRequestChainRef.current = requisicoesRequestChainRef.current
       .catch(() => {
@@ -839,11 +828,11 @@ export function SharedRequisitionsPage({
       })
       .then(() =>
         fetchRequisicoes({
-          estado: filterEstado,
+          estado: filters.filterEstado,
           tipo: nextTipo,
           prioridade: nextPrioridade,
-          criadoPorNome: filterCriadoPorNome,
-          geridoPorNome: filterGeridoPorNome,
+          criadoPorNome: filters.filterCriadoPorNome,
+          geridoPorNome: filters.filterGeridoPorNome,
         }),
       );
   };
@@ -1138,8 +1127,8 @@ export function SharedRequisitionsPage({
       quantidade: number;
     }>>();
 
-    materialLinhas.forEach((linha) => {
-      const material = materiais.find((item) => String(item.id) === linha.materialId);
+    createForm.materialLinhas.forEach((linha) => {
+      const material = catalog.materiais.find((item) => String(item.id) === linha.materialId);
       const categoria = material?.categoria ?? 'OUTROS';
       const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
       const grupoAtual = grupos.get(categoria) ?? [];
@@ -1160,11 +1149,11 @@ export function SharedRequisitionsPage({
         itens: grupos.get(categoria.value) ?? [],
       }))
       .filter((grupo) => grupo.itens.length > 0);
-  }, [materiais, materialLinhas]);
+  }, [catalog.materiais, createForm.materialLinhas]);
 
   const materiaisAdicionadosTotal = useMemo(
-    () => materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
-    [materialLinhas],
+    () => createForm.materialLinhas.reduce((sum, linha) => sum + Number(linha.quantidade || 0), 0),
+    [createForm.materialLinhas],
   );
 
   const selectedRequisicao = useMemo(
@@ -1247,11 +1236,6 @@ export function SharedRequisitionsPage({
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-  const getFieldClassName = (baseClass: string, field: CreateField) => (
-    createErrors[field]
-      ? `${baseClass} border-red-500 focus-visible:border-red-500 focus-visible:ring-red-200`
-      : baseClass
-  );
 
   const toggleSection = (targetSection: 'create' | 'list') => {
     if (sectionSwitchTimeoutRef.current) {
@@ -1278,18 +1262,18 @@ export function SharedRequisitionsPage({
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
 
         <RequisitionsCreateCommonFields
-          tipo={tipo}
-          descricao={descricao}
-          onChangeDescricao={setDescricao}
-          onChangeTipo={setTipo}
-          prioridade={prioridade}
-          onChangePrioridade={setPrioridade}
-          tempoLimite={tempoLimite}
+          tipo={createForm.tipo}
+          descricao={createForm.descricao}
+          onChangeDescricao={createForm.setDescricao}
+          onChangeTipo={createForm.setTipo}
+          prioridade={createForm.prioridade}
+          onChangePrioridade={createForm.setPrioridade}
+          tempoLimite={createForm.tempoLimite}
           onChangeTempoLimite={(value) => {
-            setTempoLimite(value);
-            setTempoLimiteManuallyEdited(true);
+            createForm.setTempoLimite(value);
+            createForm.setTempoLimiteManuallyEdited(true);
           }}
-          descricaoError={createErrors.descricao}
+          descricaoError={createForm.createErrors.descricao}
           tempoLimiteError={undefined}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
@@ -1297,7 +1281,7 @@ export function SharedRequisitionsPage({
           t={t}
         />
 
-        {tipo === 'TRANSPORTE' && !tempoLimiteManuallyEdited && dataSaida && (
+        {createForm.tipo === 'TRANSPORTE' && !createForm.tempoLimiteManuallyEdited && createForm.dataSaida && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
         )}
       </div>
@@ -1333,7 +1317,7 @@ export function SharedRequisitionsPage({
                 onUpdateVarianteQuantidade={updateVarianteQuantidade}
                 onRemoveMaterialLinha={handleRemoveMaterialLinha}
                 quantityFieldClassName={quantityFieldClassName}
-                materiaisError={createErrors.materialItens}
+                materiaisError={createForm.createErrors.materialItens}
                 t={t}
               />
             </div>
@@ -1363,36 +1347,36 @@ export function SharedRequisitionsPage({
                   validateAndSetField('dataRegresso');
                   validateAndSetField('horaRegresso');
                 }}
-                dataRegresso={dataRegresso}
+                dataRegresso={createForm.dataRegresso}
                 onChangeDataRegresso={(value) => {
-                  setDataRegresso(value);
+                  createForm.setDataRegresso(value);
                   validateAndSetField('dataRegresso');
                   validateAndSetField('horaRegresso');
                   validateAndSetField('dataSaida');
                   validateAndSetField('horaSaida');
                 }}
-                horaRegresso={horaRegresso}
+                horaRegresso={createForm.horaRegresso}
                 onChangeHoraRegresso={(value) => {
-                  setHoraRegresso(value);
+                  createForm.setHoraRegresso(value);
                   validateAndSetField('horaRegresso');
                   validateAndSetField('dataRegresso');
                   validateAndSetField('dataSaida');
                   validateAndSetField('horaSaida');
                 }}
-                numeroPassageiros={numeroPassageiros}
+                numeroPassageiros={createForm.numeroPassageiros}
                 onChangeNumeroPassageiros={(value) => {
-                  setNumeroPassageiros(value);
-                  if (createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                  createForm.setNumeroPassageiros(value);
+                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
                 }}
-                condutorTransporte={condutorTransporte}
-                onChangeCondutor={setCondutorTransporte}
-                selectedTransportIds={selectedTransportIds}
+                condutorTransporte={createForm.condutorTransporte}
+                onChangeCondutor={createForm.setCondutorTransporte}
+                selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
                   toggleSelectedTransport(transporteId, checked);
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteCategorias={expandedTransporteCategorias}
+                expandedTransporteCategorias={createForm.expandedTransporteCategorias as Partial<Record<string, boolean>>}
                 onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
                 expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
                 onToggleTransporteDetalhes={toggleTransporteDetalhes}
@@ -1503,19 +1487,19 @@ export function SharedRequisitionsPage({
             <div className="px-5 pb-5 space-y-4">
               <RequisitionsListFiltersContent
                 desktop={false}
-                activeTab={activeTab}
+                activeTab={filters.activeTab}
                 onSelectTab={handleSelectTab}
-                filterEstado={filterEstado}
-                setFilterEstado={setFilterEstado}
-                filterPrioridade={filterPrioridade}
-                setFilterPrioridade={setFilterPrioridade}
-                filterCriadoPorNome={filterCriadoPorNome}
-                setFilterCriadoPorNome={setFilterCriadoPorNome}
-                filterGeridoPorNome={filterGeridoPorNome}
-                setFilterGeridoPorNome={setFilterGeridoPorNome}
+                filterEstado={filters.filterEstado}
+                setFilterEstado={filters.setFilterEstado}
+                filterPrioridade={filters.filterPrioridade}
+                setFilterPrioridade={filters.setFilterPrioridade}
+                filterCriadoPorNome={filters.filterCriadoPorNome}
+                setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
+                filterGeridoPorNome={filters.filterGeridoPorNome}
+                setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
                 showCreatedByRoleFilter={isSecretaryView}
-                filterCriadoPorTipo={filterCriadoPorTipo}
-                setFilterCriadoPorTipo={setFilterCriadoPorTipo}
+                filterCriadoPorTipo={filters.filterCriadoPorTipo}
+                setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
@@ -1553,19 +1537,19 @@ export function SharedRequisitionsPage({
               <div className="px-5 pb-5 pt-4 space-y-4">
                 <RequisitionsListFiltersContent
                   desktop
-                  activeTab={activeTab}
+                  activeTab={filters.activeTab}
                   onSelectTab={handleSelectTab}
-                  filterEstado={filterEstado}
-                  setFilterEstado={setFilterEstado}
-                  filterPrioridade={filterPrioridade}
-                  setFilterPrioridade={setFilterPrioridade}
-                  filterCriadoPorNome={filterCriadoPorNome}
-                  setFilterCriadoPorNome={setFilterCriadoPorNome}
-                  filterGeridoPorNome={filterGeridoPorNome}
-                  setFilterGeridoPorNome={setFilterGeridoPorNome}
+                  filterEstado={filters.filterEstado}
+                  setFilterEstado={filters.setFilterEstado}
+                  filterPrioridade={filters.filterPrioridade}
+                  setFilterPrioridade={filters.setFilterPrioridade}
+                  filterCriadoPorNome={filters.filterCriadoPorNome}
+                  setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
+                  filterGeridoPorNome={filters.filterGeridoPorNome}
+                  setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
                   showCreatedByRoleFilter={isSecretaryView}
-                  filterCriadoPorTipo={filterCriadoPorTipo}
-                  setFilterCriadoPorTipo={setFilterCriadoPorTipo}
+                  filterCriadoPorTipo={filters.filterCriadoPorTipo}
+                  setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                   onSearch={() => fetchRequisicoes()}
                   onClearFilters={handleClearFilters}
                   loading={loading}
