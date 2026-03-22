@@ -1058,9 +1058,6 @@
     }
   },
   "balnearioAppointmentDetails": {
-  },
-  "calendar": {
-    "suaMarcacao": "Sua marcação",
     "dialogTitle": "Detalhes do Agendamento Balneário",
     "dialogDescription": "Consulte e edite as necessidades e informações do utente.",
     "title": "Detalhes do Banho",
@@ -1087,5 +1084,8 @@
     "missedAppointment": "Faltou",
     "completeService": "Concluir Atendimento",
     "dateString": "{{dayName}}, {{day}} de {{month}} de {{year}} às {{time}}"
+  },
+  "calendar": {
+    "suaMarcacao": "Sua marcação"
   }
 }
