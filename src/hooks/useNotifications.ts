@@ -44,7 +44,9 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     // In Spring, the client should always subscribe to /user/queue/... 
     // and Spring will automatically route it using the authenticated Principal.
     const topic = userEmail ? `/user/queue/notifications` : null;
-    useWebSocket('ws://localhost:8080/ws', topic, onNotificationReceived);
+    const wsUrl = import.meta.env.VITE_WS_URL
+        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+    useWebSocket(wsUrl, topic, onNotificationReceived);
 
     useEffect(() => {
         carregarNotificacoes();

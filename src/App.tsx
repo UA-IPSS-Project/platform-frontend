@@ -44,6 +44,27 @@ function App() {
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
 
+  // CSRF Token Preflight: Generate XSRF-TOKEN cookie on app load
+  // This ensures the token is available for subsequent POST requests (e.g., login)
+  // Runs once on component mount
+  useEffect(() => {
+    const generateCsrfToken = async () => {
+      try {
+        await fetch('/api/auth/me', {
+          credentials: 'include',
+          method: 'GET',
+        });
+        console.debug('[CSRF] Preflight GET successful - XSRF-TOKEN cookie generated');
+      } catch (error) {
+        // Silently ignore errors - token generation is a best-effort operation
+        // User may not be authenticated yet, which is fine
+        console.debug('[CSRF] Preflight GET failed (expected if not authenticated):', error);
+      }
+    };
+
+    generateCsrfToken();
+  }, []); // Empty dependency array: run once on mount
+
   // Protected Route Component
   const ProtectedRoute = ({ children }: { children: any }) => {
     if (isLoading) return null;
