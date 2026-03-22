@@ -208,15 +208,25 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     };
 
     const handleViewAppointment = async (appointment: Appointment) => {
-        if (appointment.status === 'reserved') return;
+        console.log('[DEBUG-BALNEARIO] handleViewAppointment triggered for appointment:', appointment);
+        if (appointment.status === 'reserved') {
+            console.warn('[DEBUG-BALNEARIO] Appointment is reserved, returning early! Is this intended? Status is:', appointment.status);
+            return;
+        }
 
         try {
+            console.log('[DEBUG-BALNEARIO] Fetching latest data for ID:', appointment.id);
             const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
+            console.log('[DEBUG-BALNEARIO] Latest data received:', latestData);
             const freshAppointment = mapApiToAppointment(latestData);
+            console.log('[DEBUG-BALNEARIO] freshAppointment mapping:', freshAppointment);
+            
             updateAppointmentOptimistically(freshAppointment.id, freshAppointment);
             setSelectedAppointment(freshAppointment);
             setShowDetailsDialog(true);
+            console.log('[DEBUG-BALNEARIO] Details dialog state set to TRUE.');
         } catch (error) {
+            console.error('[DEBUG-BALNEARIO] Error fetching latest appointment data:', error);
             toast.error('Não foi possível carregar os dados mais recentes da marcação.');
             refreshCurrentWeek(currentDate);
         }

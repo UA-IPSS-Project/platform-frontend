@@ -137,11 +137,6 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         setIsLoading(true);
 
         try {
-            if (tempReservaId) {
-                await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, { method: 'DELETE' });
-                setTempReservaId(null);
-            }
-
             const dataHora = new Date(date);
             const [hours, minutes] = time.split(':');
             dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -171,13 +166,18 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 produtosHigiene: hasHygiene,
                 lavagemRoupa: hasLaundry,
                 responsavelId: funcionarioId,
-                roupas: roupasVal
+                roupas: roupasVal,
+                reservaId: tempReservaId
             };
 
             await apiRequest<{ id: number }>('/api/marcacoes/balneario', {
                 method: 'POST',
                 body: JSON.stringify(payload),
             });
+            
+            // Garantir que não chamamos libertar-slot ao desmontar agora que a reserva foi efetivada
+            setTempReservaId(null);
+            tempReservaRef.current = null;
 
             toast.success(t('balnearioAppointment.createdSuccess'));
 
