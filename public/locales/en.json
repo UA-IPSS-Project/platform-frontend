@@ -792,6 +792,8 @@
       "statusUpdated": "Request status updated successfully."
     },
     "errors": {
+      "deadlineCannotBePast": "The deadline date cannot be in the past.",
+      "deadlineBeforeDeparture": "The deadline must be before the departure date/time.",
       "requiredField": "Required field.",
       "addOneMaterial": "Add at least one material with a valid quantity.",
       "invalidPassengers": "Provide a valid number of passengers.",

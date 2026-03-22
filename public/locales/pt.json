@@ -792,6 +792,8 @@
       "statusUpdated": "Estado da requisição atualizado com sucesso."
     },
     "errors": {
+      "deadlineCannotBePast": "A data limite não pode estar no passado.",
+      "deadlineBeforeDeparture": "A data limite deve ser anterior à data/hora de saída.",
       "requiredField": "Campo obrigatório.",
       "addOneMaterial": "Adicione pelo menos um material com quantidade válida.",
       "invalidPassengers": "Indique um número de passageiros válido.",

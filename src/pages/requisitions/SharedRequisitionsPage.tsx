@@ -189,9 +189,9 @@ export function SharedRequisitionsPage({
 
     const fetchAcceptedTransports = async () => {
       try {
-        const todasRequisicoes = await requisicoesApi.procurar({ 
+        const todasRequisicoes = await requisicoesApi.procurar({
           tipo: 'TRANSPORTE',
-          estado: 'ACEITE' 
+          estado: 'ACEITE'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -268,13 +268,13 @@ export function SharedRequisitionsPage({
     if (createForm.tipo !== 'TRANSPORTE') return new Set<number>();
 
     const ids = new Set<number>();
-    
+
     // Check against ALL accepted transport requisitions from all roles
     // This ensures vehicles blocked by any role are shown as unavailable
-    const todasRequisicoes = todasRequisicoesTransporteAceites.length > 0 
-      ? todasRequisicoesTransporteAceites 
+    const todasRequisicoes = todasRequisicoesTransporteAceites.length > 0
+      ? todasRequisicoesTransporteAceites
       : monthlyRequisicoes;
-    
+
     todasRequisicoes.forEach((requisicao) => {
       if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
       if (!periodsOverlap(
@@ -443,6 +443,12 @@ export function SharedRequisitionsPage({
     validateAndSetField('horaRegresso');
   }, [createForm.tipo, createForm.dataSaida, createForm.horaSaida, createForm.dataRegresso, createForm.horaRegresso]);
 
+  useEffect(() => {
+    if (createForm.createTouched.tempoLimite) {
+      validateAndSetField('tempoLimite');
+    }
+  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite]);
+
   const setFieldTouched = useCallback((field: CreateField) => {
     createForm.setFieldTouched(field);
   }, [createForm]);
@@ -450,6 +456,24 @@ export function SharedRequisitionsPage({
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = useCallback((field: CreateField): string | undefined => {
     if (field === 'descricao') {
+      return undefined;
+    }
+
+    if (field === 'tempoLimite') {
+      if (!createForm.tempoLimite) return undefined;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const limite = new Date(createForm.tempoLimite);
+      limite.setHours(0, 0, 0, 0);
+
+      if (limite < today) return t('requisitions.errors.deadlineCannotBePast');
+
+      if (createForm.tipo === 'TRANSPORTE' && createForm.dataSaida) {
+        const saidaMatch = parseDateInput(createForm.dataSaida);
+        if (saidaMatch && limite >= saidaMatch) return t('requisitions.errors.deadlineBeforeDeparture');
+      }
+
       return undefined;
     }
 
@@ -551,7 +575,7 @@ export function SharedRequisitionsPage({
         valorAtributo: createForm.novoMaterialValorAtributo.trim(),
       });
       toast.success(t('requisitions.material.messages.created'));
-      
+
       // Update catalog
       catalog.fetchCatalogo();
       createForm.resetMaterialDialog();
@@ -689,6 +713,8 @@ export function SharedRequisitionsPage({
     }
 
     const fieldsToValidate: CreateField[] = [];
+    fieldsToValidate.push('tempoLimite');
+
     if (createForm.tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
     }
@@ -1178,16 +1204,16 @@ export function SharedRequisitionsPage({
 
     try {
       setUpdatingEstadoId(openedRequisicaoId);
-      
+
       // First, accept the current request
       await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
-      
+
       // Then, automatically reject ALL conflicting transport requests regardless of their state
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
           const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
-          
+
           // Get ALL conflicting requests (including ENVIADA, EM_ANALISE, etc)
           const todosOsConflitos = calcularTodosOsConflitosTransporte(
             selectedRequisicao,
@@ -1216,7 +1242,7 @@ export function SharedRequisitionsPage({
           console.error('Failed to reject conflicting requisitions:', error);
         }
       }
-      
+
       toast.success(t('requisitions.messages.statusUpdated'));
       limparEstadoConflito();
       await fetchRequisicoes();
@@ -1274,9 +1300,10 @@ export function SharedRequisitionsPage({
           onChangeTempoLimite={(value) => {
             createForm.setTempoLimite(value);
             createForm.setTempoLimiteManuallyEdited(true);
+            createForm.setFieldTouched('tempoLimite');
           }}
           descricaoError={createForm.createErrors.descricao}
-          tempoLimiteError={undefined}
+          tempoLimiteError={createForm.createErrors.tempoLimite}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
           selectFieldClassName={selectFieldClassName}
