@@ -1,6 +1,8 @@
+
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 import { getCookie } from '../services/api/core/client';
+import { getWebSocketProtocol } from '../utils/wsProtocol';
 
 export function useWebSocket(
     url: string,
@@ -14,6 +16,13 @@ export function useWebSocket(
     useEffect(() => {
         if (!topic) return;
 
+        // Dynamically select ws/wss protocol
+        let wsUrl = url;
+        if (!/^wss?:\/\//.test(url)) {
+            const proto = getWebSocketProtocol();
+            wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
+        }
+
         // Read JWT from cookie so the STOMP CONNECT frame is authenticated
         const jwt = getCookie('jwt');
         const connectHeaders: Record<string, string> = {};
@@ -22,7 +31,7 @@ export function useWebSocket(
         }
 
         stompClient.current = new Client({
-            brokerURL: url,
+            brokerURL: wsUrl,
             connectHeaders,
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
