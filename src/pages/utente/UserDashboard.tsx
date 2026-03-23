@@ -201,6 +201,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   };
 
   const handleViewAppointment = async (appointment: Appointment) => {
+    // Sempre atualizar primeiro, antes de qualquer ação
+    await refreshAppointments();
     try {
       const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
       const dateTime = new Date(latestData.data);
