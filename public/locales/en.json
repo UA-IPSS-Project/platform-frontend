@@ -635,6 +635,10 @@
       "materialCategoryHygieneCleaning": "Hygiene and cleaning",
       "materialCategoryTechnology": "Technology",
       "materialCategoryOther": "Other",
+      "maintenanceCategoryCATL": "CATL",
+      "maintenanceCategoryRC": "Ground Floor",
+      "maintenanceCategoryPreschool": "Preschool",
+      "maintenanceCategoryDaycare": "Daycare",
       "noCategory": "No category",
       "capacityNotDefined": "Capacity not defined",
       "seat": "seat",
@@ -734,6 +738,7 @@
       "subjectOptional": "Subject (optional)",
       "subjectPlaceholder": "Ex: Leaking tap",
       "close": "Close",
+      "clearSelection": "Clear selection",
       "creatingRequest": "Creating...",
       "createRequest": "Create request",
       "goToGeneralRequests": "Go to general requests",
@@ -742,6 +747,7 @@
       "urgent": "Urgent",
       "goToMaterialRequests": "Go to material requests",
       "material": "Material",
+      "materials": "Materials",
       "goToMaintenanceRequests": "Go to maintenance requests",
       "maintenance": "Maintenance",
       "goToTransportRequests": "Go to transport requests",
@@ -784,7 +790,12 @@
       "attributeValue": "Attribute value",
       "attributeValuePlaceholder": "Ex: Blue, A4, 100ml",
       "creating": "Creating...",
-      "createMaterial": "Create material"
+      "createMaterial": "Create material",
+      "confirmTitle": "Confirm Request",
+      "confirmMessage": "Please review the request details before submitting.",
+      "confirmCancelBtn": "Cancel",
+      "confirmSubmitBtn": "Confirm",
+      "availableItems": "Available items"
     },
     "messages": {
       "created": "Request created successfully.",
@@ -792,8 +803,11 @@
       "statusUpdated": "Request status updated successfully."
     },
     "errors": {
+      "deadlineCannotBePast": "The deadline date cannot be in the past.",
+      "deadlineBeforeDeparture": "The deadline must be before the departure date/time.",
       "requiredField": "Required field.",
       "addOneMaterial": "Add at least one material with a valid quantity.",
+      "addOneMaintenanceItem": "Select at least one maintenance item.",
       "invalidPassengers": "Provide a valid number of passengers.",
       "selectOneVehicle": "Select at least one vehicle.",
       "dateCannotBePast": "Date/time cannot be in the past.",

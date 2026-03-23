@@ -239,6 +239,7 @@ export type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo
 export type TransporteSelectionMode = 'auto' | 'manual';
 export type CreateField =
   | 'descricao'
+  | 'tempoLimite'
   | 'materialItens'
   | 'destino'
   | 'dataSaida'
@@ -246,7 +247,8 @@ export type CreateField =
   | 'dataRegresso'
   | 'horaRegresso'
   | 'numeroPassageiros'
-  | 'transporteIds';
+  | 'transporteIds'
+  | 'manutencaoItens';
 
 export const createEmptyMaterialLinha = () => ({
   rowId:
