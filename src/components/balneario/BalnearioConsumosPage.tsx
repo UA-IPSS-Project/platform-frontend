@@ -535,23 +535,29 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                             <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-tight">
                                                 {catLabels[cat] || cat}
                                             </h3>
-                                            <div className="h-64 flex-1">
+                                            <div style={{ height: Math.max(200, items.length * 50 + 50) }} className="w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={items} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                    <BarChart 
+                                                        layout="vertical" 
+                                                        data={items} 
+                                                        margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
+                                                    >
+                                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
                                                         <XAxis 
-                                                            dataKey="nome" 
-                                                            tickFormatter={(nome) => cat === 'CALCADO' ? `Nº ${nome}` : t(`consumos.products.${nome}`, nome) as string}
-                                                            axisLine={false}
-                                                            tickLine={false}
-                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
-                                                            dy={10}
-                                                        />
-                                                        <YAxis 
+                                                            type="number"
                                                             axisLine={false}
                                                             tickLine={false}
                                                             tick={{ fontSize: 12, fill: '#6B7280' }}
                                                             allowDecimals={false}
+                                                        />
+                                                        <YAxis 
+                                                            type="category"
+                                                            dataKey="nome" 
+                                                            tickFormatter={(nome) => cat === 'CALCADO' ? `Nº ${nome}` : (t(`consumos.products.${nome}`, nome) as string)}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            width={cat === 'CALCADO' ? 60 : 100}
                                                         />
                                                         <Tooltip 
                                                             cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
@@ -562,8 +568,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                         />
                                                         <Bar 
                                                             dataKey="quantidade" 
-                                                            radius={[4, 4, 0, 0]} 
-                                                            maxBarSize={50}
+                                                            radius={[0, 4, 4, 0]} 
+                                                            barSize={24}
                                                         >
                                                             {items.map((_, index) => (
                                                                 <Cell key={`cell-${index}`} fill={getCatBarColorHex(cat)} />
