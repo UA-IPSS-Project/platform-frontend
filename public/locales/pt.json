@@ -1109,20 +1109,37 @@
     "pairs": "pares",
     "shoeSize": "Nº calçado",
     "outOfStock": "Esgotado no armazém",
-    "lowStock": "Stock baixo no armazém",
+    "lowStock": "Baixo no armazém",
     "day": "Hoje",
     "week": "Semana",
     "month": "Mês",
     "totalConsumptions": "Total Consumos",
+    "consumptionByCategory": "Consumo por Categoria",
     "consumptionOverTime": "Consumos ao Longo do Tempo",
     "mostConsumed": "Itens Mais Consumidos",
     "noDataForPeriod": "Sem dados de consumo para este período",
     "warehouse": "Armazém",
     "statistics": "Estatísticas",
+    "unsavedTitle": "Modificações por guardar",
+    "unsavedDescription": "Tem modificações que não foram guardadas. Deseja descartar as alterações?",
+    "stockWarningTitle": "Aviso de Stock",
+    "stockWarningDescription": "Alguns itens selecionados estão com stock baixo ou esgotados no armazém. Deseja continuar mesmo assim?",
+    "stockWarningContinue": "Sim, continuar",
     "categories": {
       "detergentes": "Detergentes",
       "higiene": "Higiene",
-      "calcado": "Stock de Calçado"
+      "calcado": "Calçado"
+    },
+    "products": {
+      "Detergente Roupa": "Detergente Roupa",
+      "Amaciador": "Amaciador",
+      "Lixívia": "Lixívia",
+      "Detergente Chão": "Detergente Chão",
+      "Sabonete Líquido": "Sabonete Líquido",
+      "Champô": "Champô",
+      "Toalhetes": "Toalhetes",
+      "Fraldas Adulto": "Fraldas Adulto",
+      "Papel Higiénico": "Papel Higiénico"
     }
   }
 }

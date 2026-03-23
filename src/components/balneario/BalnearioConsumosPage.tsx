@@ -4,7 +4,17 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Package, BarChart3, Minus, Plus, Save, AlertTriangle, ShoppingBag, Droplets, Footprints } from 'lucide-react';
+import { Minus, Plus, Save, AlertTriangle } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '../ui/alert-dialog';
 import { armazemApi, ItemArmazemDTO, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 
 interface BalnearioConsumosPageProps {
@@ -22,6 +32,9 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     const [savingItems, setSavingItems] = useState<Set<number>>(new Set());
     const [editingMinimos, setEditingMinimos] = useState(false);
 
+    // Unsaved changes warning
+    const [pendingTab, setPendingTab] = useState<TabType | null>(null);
+
     // Estatísticas
     const [stats, setStats] = useState<ConsumoEstatisticaDTO | null>(null);
     const [statsPeriodo, setStatsPeriodo] = useState<'DIA' | 'SEMANA' | 'MES'>('MES');
@@ -32,7 +45,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             setIsLoading(true);
             const data = await armazemApi.listarTodos();
             setItems(data);
-        } catch (error) {
+        } catch {
             toast.error(t('consumos.loadError', 'Erro ao carregar itens do armazém'));
         } finally {
             setIsLoading(false);
@@ -44,7 +57,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             setStatsLoading(true);
             const data = await armazemApi.obterEstatisticas(statsPeriodo);
             setStats(data);
-        } catch (error) {
+        } catch {
             toast.error(t('consumos.statsError', 'Erro ao carregar estatísticas'));
         } finally {
             setStatsLoading(false);
@@ -64,6 +77,14 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     // =====================================================================
     // ARMAZÉM HANDLERS
     // =====================================================================
+
+    const anyChanges = items.some(item => hasItemChanges(item));
+
+    function hasItemChanges(item: ItemArmazemDTO) {
+        const editing = editingItems[item.id];
+        if (!editing) return false;
+        return editing.quantidade !== item.quantidade || editing.quantidadeMinima !== item.quantidadeMinima;
+    }
 
     const handleQuantidadeChange = (item: ItemArmazemDTO, delta: number) => {
         const current = editingItems[item.id] || { quantidade: item.quantidade, quantidadeMinima: item.quantidadeMinima };
@@ -92,12 +113,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         }));
     };
 
-    const hasChanges = (item: ItemArmazemDTO) => {
-        const editing = editingItems[item.id];
-        if (!editing) return false;
-        return editing.quantidade !== item.quantidade || editing.quantidadeMinima !== item.quantidadeMinima;
-    };
-
     const handleSaveItem = async (item: ItemArmazemDTO) => {
         const editing = editingItems[item.id];
         if (!editing) return;
@@ -115,7 +130,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 return copy;
             });
             toast.success(t('consumos.itemSaved', 'Item atualizado com sucesso'));
-        } catch (error) {
+        } catch {
             toast.error(t('consumos.saveError', 'Erro ao guardar'));
         } finally {
             setSavingItems(prev => {
@@ -127,11 +142,29 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     };
 
     const handleSaveAll = async () => {
-        const changedItems = items.filter(item => hasChanges(item));
+        const changedItems = items.filter(item => hasItemChanges(item));
         if (changedItems.length === 0) return;
-
         for (const item of changedItems) {
             await handleSaveItem(item);
+        }
+    };
+
+    // Tab switching with unsaved changes warning
+    const handleTabSwitch = (newTab: TabType) => {
+        if (newTab === activeTab) return;
+        if (activeTab === 'armazem' && (anyChanges || editingMinimos)) {
+            setPendingTab(newTab);
+        } else {
+            setActiveTab(newTab);
+        }
+    };
+
+    const confirmTabSwitch = () => {
+        if (pendingTab) {
+            setEditingItems({});
+            setEditingMinimos(false);
+            setActiveTab(pendingTab);
+            setPendingTab(null);
         }
     };
 
@@ -145,40 +178,109 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         return acc;
     }, {});
 
-    const getCategoryIcon = (cat: string) => {
-        switch (cat) {
-            case 'DETERGENTES': return <Droplets className="w-5 h-5" />;
-            case 'HIGIENE': return <ShoppingBag className="w-5 h-5" />;
-            case 'CALCADO': return <Footprints className="w-5 h-5" />;
-            default: return <Package className="w-5 h-5" />;
-        }
-    };
-
     const getCategoryLabel = (cat: string) => {
         switch (cat) {
             case 'DETERGENTES': return t('consumos.categories.detergentes', 'Detergentes');
             case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
-            case 'CALCADO': return t('consumos.categories.calcado', 'Stock de Calçado');
+            case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
             default: return cat;
         }
     };
 
-    const getCategoryColor = (cat: string) => {
-        switch (cat) {
-            case 'DETERGENTES': return 'from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 border-green-200 dark:border-green-800';
-            case 'HIGIENE': return 'from-pink-50 to-pink-100/50 dark:from-pink-950/30 dark:to-pink-900/20 border-pink-200 dark:border-pink-800';
-            case 'CALCADO': return 'from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-800';
-            default: return 'from-gray-50 to-gray-100/50 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-700';
-        }
-    };
+    // =====================================================================
+    // RENDER ITEM ROW (shared by all categories including calçado)
+    // =====================================================================
 
-    const getIconBgColor = (cat: string) => {
-        switch (cat) {
-            case 'DETERGENTES': return 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400';
-            case 'HIGIENE': return 'bg-pink-100 dark:bg-pink-900/50 text-pink-600 dark:text-pink-400';
-            case 'CALCADO': return 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400';
-            default: return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
-        }
+    const renderItemRow = (item: ItemArmazemDTO, isCalcado = false) => {
+        const editing = editingItems[item.id];
+        const qty = editing?.quantidade ?? item.quantidade;
+        const min = editing?.quantidadeMinima ?? item.quantidadeMinima;
+        const estado = qty >= min ? 'OK' : 'BAIXO';
+        const isSaving = savingItems.has(item.id);
+        const changed = hasItemChanges(item);
+
+        return (
+            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-gray-100 dark:border-gray-700/30 last:border-b-0">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                    {isCalcado ? `${t('consumos.size', 'Tamanho')} ${item.nome}` : t(`consumos.products.${item.nome}`, item.nome)}
+                </span>
+
+                {/* Quantity controls */}
+                <div className="flex items-center gap-2 w-40 justify-center">
+                    <button
+                        onClick={() => handleQuantidadeChange(item, -1)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        aria-label="Diminuir"
+                    >
+                        <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <Input
+                        type="number"
+                        value={qty}
+                        onChange={(e) => handleQuantidadeInput(item, e.target.value)}
+                        className={`w-16 h-8 text-center text-sm font-semibold border rounded-lg ${
+                            estado === 'BAIXO'
+                                ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                        }`}
+                        min={0}
+                    />
+                    <span className="text-xs text-gray-400 w-8">{item.unidade}</span>
+                    <button
+                        onClick={() => handleQuantidadeChange(item, 1)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        aria-label="Aumentar"
+                    >
+                        <Plus className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+
+                {/* Minimum */}
+                <div className="w-24 text-center">
+                    {editingMinimos ? (
+                        <Input
+                            type="number"
+                            value={min}
+                            onChange={(e) => handleMinimoChange(item, e.target.value)}
+                            className="w-16 h-8 text-center text-sm mx-auto border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                            min={0}
+                        />
+                    ) : (
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{min} {item.unidade}</span>
+                    )}
+                </div>
+
+                {/* Status + Save */}
+                <div className="w-24 flex items-center justify-center gap-1">
+                    {changed ? (
+                        <Button
+                            size="sm"
+                            onClick={() => handleSaveItem(item)}
+                            disabled={isSaving}
+                            className="h-7 px-2 bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                        >
+                            <Save className="w-3 h-3 mr-1" />
+                            {isSaving ? '...' : t('consumos.save', 'Guardar')}
+                        </Button>
+                    ) : (
+                        <Badge className={`text-xs px-3 py-1 ${
+                            estado === 'OK'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800'
+                        }`}>
+                            {estado === 'OK' ? (
+                                <span>OK</span>
+                            ) : (
+                                <span className="flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    {t('consumos.low', 'Baixo')}
+                                </span>
+                            )}
+                        </Badge>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     // =====================================================================
@@ -193,8 +295,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 </div>
             );
         }
-
-        const anyChanges = items.some(item => hasChanges(item));
 
         return (
             <div className="space-y-6">
@@ -225,13 +325,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     </div>
                 </div>
 
-                {/* Categories */}
-                {Object.entries(groupedItems).filter(([cat]) => cat !== 'CALCADO').map(([categoria, catItems]) => (
-                    <div key={categoria} className={`bg-gradient-to-br ${getCategoryColor(categoria)} rounded-2xl border p-6 shadow-sm`}>
+                {/* All categories rendered as white cards with table layout */}
+                {Object.entries(groupedItems).map(([categoria, catItems]) => (
+                    <div key={categoria} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
                         <div className="flex items-center gap-3 mb-5">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getIconBgColor(categoria)}`}>
-                                {getCategoryIcon(categoria)}
-                            </div>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                 {getCategoryLabel(categoria)}
                             </h3>
@@ -240,7 +337,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         {/* Table Header */}
                         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                {t('consumos.product', 'Produto')}
+                                {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
                             </span>
                             <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
                                 {t('consumos.quantity', 'Quantidade')}
@@ -253,215 +350,27 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             </span>
                         </div>
 
-                        {/* Items */}
-                        {catItems.map(item => {
-                            const editing = editingItems[item.id];
-                            const qty = editing?.quantidade ?? item.quantidade;
-                            const min = editing?.quantidadeMinima ?? item.quantidadeMinima;
-                            const estado = qty >= min ? 'OK' : 'BAIXO';
-                            const isSaving = savingItems.has(item.id);
-                            const changed = hasChanges(item);
+                        {/* Items - for calçado, sort by number and render in same table style */}
+                        {(categoria === 'CALCADO'
+                            ? [...catItems].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
+                            : catItems
+                        ).map(item => renderItemRow(item, categoria === 'CALCADO'))}
 
-                            return (
-                                <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-gray-100/60 dark:border-gray-700/30 last:border-b-0">
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{item.nome}</span>
-
-                                    {/* Quantity controls */}
-                                    <div className="flex items-center gap-2 w-40 justify-center">
-                                        <button
-                                            onClick={() => handleQuantidadeChange(item, -1)}
-                                            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                            aria-label="Diminuir"
-                                        >
-                                            <Minus className="w-3.5 h-3.5" />
-                                        </button>
-                                        <Input
-                                            type="number"
-                                            value={qty}
-                                            onChange={(e) => handleQuantidadeInput(item, e.target.value)}
-                                            className={`w-16 h-8 text-center text-sm font-semibold border rounded-lg ${
-                                                estado === 'BAIXO'
-                                                    ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                                    : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                                            }`}
-                                            min={0}
-                                        />
-                                        <span className="text-xs text-gray-400 w-8">{item.unidade}</span>
-                                        <button
-                                            onClick={() => handleQuantidadeChange(item, 1)}
-                                            className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                            aria-label="Aumentar"
-                                        >
-                                            <Plus className="w-3.5 h-3.5" />
-                                        </button>
-                                    </div>
-
-                                    {/* Minimum */}
-                                    <div className="w-24 text-center">
-                                        {editingMinimos ? (
-                                            <Input
-                                                type="number"
-                                                value={min}
-                                                onChange={(e) => handleMinimoChange(item, e.target.value)}
-                                                className="w-16 h-8 text-center text-sm mx-auto border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
-                                                min={0}
-                                            />
-                                        ) : (
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">{min} {item.unidade}</span>
-                                        )}
-                                    </div>
-
-                                    {/* Status + Save */}
-                                    <div className="w-24 flex items-center justify-center gap-1">
-                                        {changed ? (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleSaveItem(item)}
-                                                disabled={isSaving}
-                                                className="h-7 px-2 bg-purple-600 hover:bg-purple-700 text-white text-xs"
-                                            >
-                                                <Save className="w-3 h-3 mr-1" />
-                                                {isSaving ? '...' : t('consumos.save', 'Guardar')}
-                                            </Button>
-                                        ) : (
-                                            <Badge className={`text-xs px-3 py-1 ${
-                                                estado === 'OK'
-                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800'
-                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800'
-                                            }`}>
-                                                {estado === 'OK' ? (
-                                                    <span>OK</span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1">
-                                                        <AlertTriangle className="w-3 h-3" />
-                                                        Stock Baixo
-                                                    </span>
-                                                )}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                        {/* Total count for calçado */}
+                        {categoria === 'CALCADO' && (
+                            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {t('consumos.totalInStock', 'Total em stock')}: <strong>
+                                        {catItems.reduce((sum, item) => {
+                                            const editing = editingItems[item.id];
+                                            return sum + (editing?.quantidade ?? item.quantidade);
+                                        }, 0)} {t('consumos.pairs', 'pares')}
+                                    </strong>
+                                </span>
+                            </div>
+                        )}
                     </div>
                 ))}
-
-                {/* Calçado Section - Special Grid Layout */}
-                {groupedItems['CALCADO'] && (
-                    <div className={`bg-gradient-to-br ${getCategoryColor('CALCADO')} rounded-2xl border p-6 shadow-sm`}>
-                        <div className="flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getIconBgColor('CALCADO')}`}>
-                                    <Footprints className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                        {getCategoryLabel('CALCADO')}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                        {t('consumos.quantityBySize', 'Quantidade por tamanho')}
-                                    </p>
-                                </div>
-                            </div>
-                            {groupedItems['CALCADO'].some(item => hasChanges(item)) && (
-                                <Button
-                                    onClick={handleSaveAll}
-                                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                                    size="sm"
-                                >
-                                    <Save className="w-4 h-4 mr-1" />
-                                    {t('consumos.save', 'Guardar')}
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-11 gap-3">
-                            {groupedItems['CALCADO']
-                                .sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
-                                .map(item => {
-                                    const editing = editingItems[item.id];
-                                    const qty = editing?.quantidade ?? item.quantidade;
-                                    const min = editing?.quantidadeMinima ?? item.quantidadeMinima;
-                                    const estado = qty >= min ? 'OK' : 'BAIXO';
-
-                                    return (
-                                        <div
-                                            key={item.id}
-                                            className={`rounded-xl border p-3 text-center transition-all ${
-                                                estado === 'BAIXO'
-                                                    ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
-                                                    : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
-                                            }`}
-                                        >
-                                            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">
-                                                {t('consumos.size', 'Tamanho')}
-                                            </p>
-                                            <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                                                {item.nome}
-                                            </p>
-
-                                            <div className="flex items-center justify-center gap-1">
-                                                <button
-                                                    onClick={() => handleQuantidadeChange(item, -1)}
-                                                    className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                >
-                                                    <Minus className="w-3 h-3" />
-                                                </button>
-                                                <Input
-                                                    type="number"
-                                                    value={qty}
-                                                    onChange={(e) => handleQuantidadeInput(item, e.target.value)}
-                                                    className={`w-12 h-7 text-center text-sm font-semibold border rounded ${
-                                                        estado === 'BAIXO'
-                                                            ? 'border-red-300 text-red-700 bg-red-50 dark:border-red-700 dark:text-red-300 dark:bg-red-900/30'
-                                                            : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
-                                                    }`}
-                                                    min={0}
-                                                />
-                                                <button
-                                                    onClick={() => handleQuantidadeChange(item, 1)}
-                                                    className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                >
-                                                    <Plus className="w-3 h-3" />
-                                                </button>
-                                            </div>
-
-                                            {estado === 'BAIXO' && (
-                                                <p className="text-[10px] text-red-600 dark:text-red-400 mt-1.5 font-medium">
-                                                    {t('consumos.low', 'Baixo')}
-                                                </p>
-                                            )}
-
-                                            {hasChanges(item) && (
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => handleSaveItem(item)}
-                                                    disabled={savingItems.has(item.id)}
-                                                    className="mt-2 h-6 px-2 text-[10px] bg-purple-600 hover:bg-purple-700 text-white w-full"
-                                                >
-                                                    <Save className="w-3 h-3 mr-0.5" />
-                                                    {savingItems.has(item.id) ? '...' : t('consumos.save', 'Guardar')}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                        </div>
-
-                        {/* Total count */}
-                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-100 dark:border-purple-800">
-                            <AlertTriangle className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                            <span className="text-sm text-purple-700 dark:text-purple-300">
-                                {t('consumos.totalInStock', 'Total em stock')}: <strong>
-                                    {groupedItems['CALCADO'].reduce((sum, item) => {
-                                        const editing = editingItems[item.id];
-                                        return sum + (editing?.quantidade ?? item.quantidade);
-                                    }, 0)} {t('consumos.pairs', 'pares')}
-                                </strong>
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
         );
     };
@@ -481,20 +390,36 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
         if (!stats) return null;
 
-        // Aggregate by item name for the table
-        const byItem: Record<string, number> = {};
-        for (const item of stats.itens) {
-            byItem[item.nome] = (byItem[item.nome] || 0) + item.quantidade;
-        }
-        const sortedItems = Object.entries(byItem).sort((a, b) => b[1] - a[1]);
+        // Aggregate by category for summary cards
+        const catLabels: Record<string, string> = {
+            'HIGIENE': getCategoryLabel('HIGIENE'),
+            'DETERGENTES': getCategoryLabel('DETERGENTES'),
+            'CALCADO': getCategoryLabel('CALCADO'),
+        };
 
-        // Aggregate by date for the chart
-        const byDate: Record<string, number> = {};
+        // Aggregate by item name for horizontal bar chart
+        const byItem: Record<string, { quantidade: number; categoria: string }> = {};
         for (const item of stats.itens) {
-            byDate[item.data] = (byDate[item.data] || 0) + item.quantidade;
+            if (!byItem[item.nome]) {
+                byItem[item.nome] = { quantidade: 0, categoria: item.categoria };
+            }
+            byItem[item.nome].quantidade += item.quantidade;
         }
-        const sortedDates = Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
-        const maxValue = Math.max(...sortedDates.map(([, v]) => v), 1);
+        const sortedItems = Object.entries(byItem).sort((a, b) => b[1].quantidade - a[1].quantidade);
+        const maxItemValue = sortedItems.length > 0 ? sortedItems[0][1].quantidade : 1;
+
+        // Aggregate by category for category bar chart
+        const catTotals = stats.totaisPorCategoria;
+        const maxCatValue = Math.max(...Object.values(catTotals), 1);
+
+        const getCatBarColor = (cat: string) => {
+            switch (cat) {
+                case 'HIGIENE': return 'bg-pink-500';
+                case 'DETERGENTES': return 'bg-green-500';
+                case 'CALCADO': return 'bg-purple-500';
+                default: return 'bg-gray-500';
+            }
+        };
 
         return (
             <div className="space-y-6">
@@ -513,72 +438,81 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     ))}
                 </div>
 
-                {/* Summary cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
-                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{stats.totalGeral}</p>
+                {stats.totalGeral === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500">
+                        <AlertTriangle className="w-12 h-12 mb-3 opacity-50" />
+                        <p>{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
                     </div>
-                    {Object.entries(stats.totaisPorCategoria).map(([cat, total]) => (
-                        <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{getCategoryLabel(cat)}</p>
-                            <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{total}</p>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Simple bar chart */}
-                {sortedDates.length > 0 && (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                            {t('consumos.consumptionOverTime', 'Consumos ao Longo do Tempo')}
-                        </h3>
-                        <div className="flex items-end gap-1 h-40">
-                            {sortedDates.map(([date, value]) => {
-                                const height = (value / maxValue) * 100;
-                                const dateLabel = new Date(date).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' });
-                                return (
-                                    <div key={date} className="flex-1 flex flex-col items-center gap-1">
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">{value}</span>
-                                        <div
-                                            className="w-full bg-purple-500 rounded-t-md transition-all duration-300 min-h-[4px]"
-                                            style={{ height: `${Math.max(height, 3)}%` }}
-                                        />
-                                        <span className="text-[10px] text-gray-400 dark:text-gray-500 rotate-0">{dateLabel}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* Top consumed items table */}
-                {sortedItems.length > 0 && (
-                    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                            {t('consumos.mostConsumed', 'Itens Mais Consumidos')}
-                        </h3>
-                        <div className="space-y-2">
-                            {sortedItems.map(([nome, quantidade], index) => (
-                                <div key={nome} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm font-mono text-gray-400 w-6">#{index + 1}</span>
-                                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{nome}</span>
-                                    </div>
-                                    <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-800">
-                                        {quantidade}x
-                                    </Badge>
+                ) : (
+                    <>
+                        {/* Summary cards */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
+                                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{stats.totalGeral}</p>
+                            </div>
+                            {Object.entries(catTotals).map(([cat, total]) => (
+                                <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{catLabels[cat] || cat}</p>
+                                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{total}</p>
                                 </div>
                             ))}
                         </div>
-                    </div>
-                )}
 
-                {stats.totalGeral === 0 && (
-                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500">
-                        <BarChart3 className="w-12 h-12 mb-3 opacity-50" />
-                        <p>{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
-                    </div>
+                        {/* Category bar chart */}
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                {t('consumos.consumptionByCategory', 'Consumo por Categoria')}
+                            </h3>
+                            <div className="space-y-3">
+                                {Object.entries(catTotals).map(([cat, total]) => {
+                                    const width = (total / maxCatValue) * 100;
+                                    return (
+                                        <div key={cat} className="flex items-center gap-3">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400 w-28 shrink-0">{catLabels[cat] || cat}</span>
+                                            <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-6 overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${getCatBarColor(cat)} transition-all duration-500`}
+                                                    style={{ width: `${Math.max(width, 3)}%` }}
+                                                />
+                                            </div>
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 w-10 text-right">{total}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Per-product horizontal bar chart */}
+                        {sortedItems.length > 0 && (
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                    {t('consumos.mostConsumed', 'Itens Mais Consumidos')}
+                                </h3>
+                                <div className="space-y-2">
+                                    {sortedItems.map(([nome, { quantidade, categoria }]) => {
+                                        const width = (quantidade / maxItemValue) * 100;
+                                        return (
+                                            <div key={nome} className="flex items-center gap-3">
+                                                <span className="text-sm text-gray-600 dark:text-gray-400 w-40 shrink-0 truncate" title={nome}>
+                                                    {t(`consumos.products.${nome}`, nome)}
+                                                </span>
+                                                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full ${getCatBarColor(categoria)} transition-all duration-500`}
+                                                        style={{ width: `${Math.max(width, 3)}%` }}
+                                                    />
+                                                </div>
+                                                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-800 shrink-0">
+                                                    {quantidade}x
+                                                </Badge>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         );
@@ -590,29 +524,27 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            {/* Header with Tabs */}
+            {/* Header with Tabs - no icons */}
             <div className="flex items-center gap-4 mb-6">
                 <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                     <button
-                        onClick={() => setActiveTab('armazem')}
+                        onClick={() => handleTabSwitch('armazem')}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                             activeTab === 'armazem'
                                 ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                         }`}
                     >
-                        <Package className="w-4 h-4 inline mr-2" />
                         {t('consumos.warehouse', 'Armazém')}
                     </button>
                     <button
-                        onClick={() => setActiveTab('estatisticas')}
+                        onClick={() => handleTabSwitch('estatisticas')}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                             activeTab === 'estatisticas'
                                 ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                         }`}
                     >
-                        <BarChart3 className="w-4 h-4 inline mr-2" />
                         {t('consumos.statistics', 'Estatísticas')}
                     </button>
                 </div>
@@ -620,6 +552,26 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
             {/* Tab Content */}
             {activeTab === 'armazem' ? renderArmazem() : renderEstatisticas()}
+
+            {/* Unsaved changes warning dialog */}
+            <AlertDialog open={pendingTab !== null} onOpenChange={() => setPendingTab(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t('consumos.unsavedTitle', 'Modificações por guardar')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('consumos.unsavedDescription', 'Tem modificações que não foram guardadas. Deseja descartar as alterações?')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPendingTab(null)}>
+                            {t('profile.unsaved.stay', 'Ficar')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-red-600 hover:bg-red-700 text-white">
+                            {t('profile.unsaved.discard', 'Descartar')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

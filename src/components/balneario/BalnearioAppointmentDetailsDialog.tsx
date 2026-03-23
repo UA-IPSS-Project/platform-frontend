@@ -9,6 +9,16 @@ import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
 import { XIcon, UserIcon } from '../shared/CustomIcons';
 import { ClipboardList, Save, AlertTriangle } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '../ui/alert-dialog';
 import { Appointment } from '../../types';
 import { marcacoesApi } from '../../services/api';
 import { armazemApi, StockCheckResult } from '../../services/api/armazem/armazemApi';
@@ -60,6 +70,7 @@ export function BalnearioAppointmentDetailsDialog({
     const [hasChanges, setHasChanges] = useState(false);
     const [stockLevels, setStockLevels] = useState<Record<string, StockCheckResult>>({});
     const [shoeSizeStock, setShoeSizeStock] = useState<StockCheckResult | null>(null);
+    const [showStockWarning, setShowStockWarning] = useState(false);
 
     // Initialize editable state from appointment data whenever dialog opens or appointment changes
     useEffect(() => {
@@ -121,8 +132,29 @@ export function BalnearioAppointmentDetailsDialog({
         const stock = stockLevels[optionValue];
         if (!stock || !stock.tracked) return null;
         if (stock.esgotado) return t('consumos.outOfStock', 'Esgotado no armazém');
-        if (stock.estado === 'BAIXO') return t('consumos.lowStock', 'Stock baixo no armazém');
+        if (stock.estado === 'BAIXO') return t('consumos.lowStock', 'Baixo no armazém');
         return null;
+    };
+
+    // Check if any selected items have stock issues
+    const hasStockWarnings = (): boolean => {
+        for (const [option, isSelected] of Object.entries(selectedOptions)) {
+            if (!isSelected) continue;
+            if (option === 'Sapatos/Sapatilhas') {
+                if (shoeSizeStock && shoeSizeStock.tracked && (shoeSizeStock.esgotado || shoeSizeStock.estado === 'BAIXO')) return true;
+            } else {
+                const warning = getStockWarning(option);
+                if (warning) return true;
+            }
+        }
+        return false;
+    };
+
+    // Handle shoe size input - only digits, max 2 chars
+    const handleShoeSizeChange = (value: string) => {
+        const digits = value.replace(/\D/g, '').slice(0, 2);
+        setShoeSize(digits);
+        setHasChanges(true);
     };
 
     const handleSaveDetails = async () => {
@@ -231,7 +263,16 @@ export function BalnearioAppointmentDetailsDialog({
         }
     };
 
-    const handleStartAppointment = async () => {
+    const handleStartAppointment = () => {
+        if (!authUser?.id) return;
+        if (hasStockWarnings()) {
+            setShowStockWarning(true);
+            return;
+        }
+        doStartAppointment();
+    };
+
+    const doStartAppointment = async () => {
         if (!authUser?.id) return;
 
         try {
@@ -267,6 +308,7 @@ export function BalnearioAppointmentDetailsDialog({
     const dateString = t('balnearioAppointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
 
     return (
+        <>
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
                 <DialogTitle className="sr-only">{t('balnearioAppointmentDetails.dialogTitle')}</DialogTitle>
@@ -391,13 +433,13 @@ export function BalnearioAppointmentDetailsDialog({
                                                         <div className="flex items-center gap-2">
                                                             <Label className="text-xs text-gray-500 dark:text-gray-400">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
                                                             <Input
-                                                                type="number"
+                                                                type="text"
+                                                                inputMode="numeric"
                                                                 value={shoeSize}
-                                                                onChange={(e) => { setShoeSize(e.target.value); setHasChanges(true); }}
+                                                                onChange={(e) => handleShoeSizeChange(e.target.value)}
                                                                 placeholder="35-46"
                                                                 className="w-20 h-7 text-sm text-center border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
-                                                                min={35}
-                                                                max={46}
+                                                                maxLength={2}
                                                             />
                                                         </div>
                                                         {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
@@ -409,7 +451,7 @@ export function BalnearioAppointmentDetailsDialog({
                                                         {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
                                                             <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
                                                                 <AlertTriangle className="w-3 h-3" />
-                                                                {t('consumos.lowStock', 'Stock baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
+                                                                {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
                                                             </p>
                                                         )}
                                                     </div>
@@ -531,5 +573,30 @@ export function BalnearioAppointmentDetailsDialog({
                 </div>
             </DialogContent>
         </Dialog>
+
+        {/* Stock warning confirmation popup */}
+        <AlertDialog open={showStockWarning} onOpenChange={setShowStockWarning}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                        {t('consumos.stockWarningTitle', 'Aviso de Stock')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {t('consumos.stockWarningDescription', 'Alguns itens selecionados estão com stock baixo ou esgotados no armazém. Deseja continuar mesmo assim?')}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={() => { setShowStockWarning(false); doStartAppointment(); }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                        {t('consumos.stockWarningContinue', 'Sim, continuar')}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }
