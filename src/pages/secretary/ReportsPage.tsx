@@ -7,6 +7,14 @@ import { Button } from '../../components/ui/button';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 
+// Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
+const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 
 type ReportSection =
   | 'secretaria'
@@ -56,9 +64,9 @@ function formatTimeStr(iso: string) {
 export function ReportsPage() {
   const today = new Date();
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const [startDate, setStartDate] = useState(firstOfMonth.toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const [startDate, setStartDate] = useState(formatDate(firstOfMonth));
+  const [endDate, setEndDate] = useState(formatDate(lastOfMonth));
   const [selected, setSelected] = useState<Set<ReportSection>>(
     new Set(['secretaria', 'balneario'])
   );
@@ -83,8 +91,8 @@ export function ReportsPage() {
 
     setIsGenerating(true);
     try {
-      const startISO = new Date(startDate + 'T00:00:00').toISOString();
-      const endISO = new Date(endDate + 'T23:59:59').toISOString();
+      const startISO = `${startDate}T00:00:00`;
+      const endISO = `${endDate}T23:59:59`;
 
       // Parallel fetch
       const [marcacoesSecretaria, marcacoesBalneario, requisicoes] = await Promise.all([
@@ -365,7 +373,7 @@ export function ReportsPage() {
         {/* Quick range buttons */}
         <div className="flex flex-wrap gap-2 mt-3">
           {[
-            { label: 'Este mês', start: new Date(today.getFullYear(), today.getMonth(), 1), end: today },
+            { label: 'Este mês', start: new Date(today.getFullYear(), today.getMonth(), 1), end: new Date(today.getFullYear(), today.getMonth() + 1, 0) },
             { label: 'Mês passado', start: new Date(today.getFullYear(), today.getMonth() - 1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) },
             { label: 'Últimos 7 dias', start: new Date(Date.now() - 6 * 86400000), end: today },
             { label: 'Últimos 30 dias', start: new Date(Date.now() - 29 * 86400000), end: today },
@@ -374,8 +382,8 @@ export function ReportsPage() {
             <button
               key={label}
               onClick={() => {
-                setStartDate(start.toISOString().slice(0, 10));
-                setEndDate(end.toISOString().slice(0, 10));
+                setStartDate(formatDate(start));
+                setEndDate(formatDate(end));
               }}
               className="text-xs px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition font-medium"
             >
