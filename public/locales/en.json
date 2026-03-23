@@ -288,6 +288,8 @@
     "admin": {
       "roleTitle": "Administrator",
       "title": "Administration Panel",
+      "mainTitle": "Platform Management",
+      "mainDescription": "All changes are reflected in real time for all users.",
       "administrationOnlyArea": "Administration-only area",
       "navigation": {
         "dashboard": "Dashboard",
@@ -346,6 +348,69 @@
       "messages": {
         "slotConfigUpdated": "Slot configuration updated successfully"
       },
+      "catalogs": {
+        "title": "Catalog Configuration",
+        "description": "Add, edit or remove items and categories. All changes affect the entire platform and all user profiles immediately.",
+        "managementTitle": "Material, Transport and Maintenance Management",
+        "addMaterial": "Add material",
+        "addTransport": "Add transport",
+        "addMaintenance": "Add maintenance",
+        "category": "Category",
+        "newCategory": "New Category",
+        "materialName": "Material name",
+        "attribute": "Attribute",
+        "value": "Value",
+        "code": "Code",
+        "type": "Type",
+        "plate": "Plate",
+        "brand": "Brand",
+        "model": "Model",
+        "capacity": "Capacity",
+        "regDate": "Reg. Date",
+        "selectCategory": "Select Category",
+        "newCategoryName": "New Category Name",
+        "addSpace": "1. Add Space",
+        "spaceName": "Space Name",
+        "createSpace": "Create Space",
+        "addElement": "2. Add Element",
+        "verificationElement": "Verification Element",
+        "createElement": "Create Element",
+        "materials": "Materials",
+        "transports": "Transports",
+        "maintenance": "Maintenance",
+        "spaces": "Spaces",
+        "elements": "Elements",
+        "success": {
+          "materialCreated": "Material created successfully.",
+          "transportCreated": "Transport created successfully.",
+          "materialUpdated": "Material updated successfully.",
+          "transportUpdated": "Transport updated successfully.",
+          "materialDeleted": "Material deleted successfully.",
+          "transportDeleted": "Transport deleted successfully.",
+          "spaceCreated": "Space created!",
+          "elementCreated": "Element created!",
+          "spaceUpdated": "Space updated.",
+          "elementUpdated": "Element updated.",
+          "spaceDeleted": "Space deleted.",
+          "elementDeleted": "Element deleted.",
+          "categoryRemoved": "Category removed."
+        },
+        "errors": {
+          "requiredFields": "All fields are required.",
+          "categoryRequired": "Category is required.",
+          "capacityPositive": "Capacity must be a number greater than zero.",
+          "loadMaterials": "Error loading materials.",
+          "loadTransports": "Error loading transports.",
+          "loadMaintenance": "Error loading maintenance items."
+        },
+        "confirm": {
+          "deleteMaterial": "Are you sure you want to delete this material?",
+          "deleteTransport": "Are you sure you want to delete this transport?",
+          "deleteSpace": "Delete space \"{{name}}\" and its items?",
+          "deleteElement": "Delete element \"{{name}}\" in all spaces?",
+          "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
+        }
+      },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",
         "saveSlotConfig": "Could not save slot configuration"
@@ -375,7 +440,9 @@
     "back": "Back",
     "edit": "Edit",
     "save": "Save",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "ok": "OK"
   },
   "notifications": {
     "title": "Notifications",

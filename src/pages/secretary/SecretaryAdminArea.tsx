@@ -234,9 +234,9 @@ export function SecretaryAdminArea() {
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestão de Plataforma</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.mainTitle')}</h1>
                 <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                    Gere centralmente as capacidades de marcação, materiais, transportes e manutenção. Todas as alterações são refletidas em tempo real para todos os utilizadores.
+                    {t('dashboard.admin.mainDescription')}
                 </p>
             </div>
             <GlassCard className="p-6">
@@ -257,11 +257,16 @@ export function SecretaryAdminArea() {
             <GlassCard className="p-6 mt-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
                     <Settings2 className="w-4 h-4" />
-                    Gestão de Materiais, Transportes e Manutenção
+                    {t('dashboard.admin.catalogs.title')}
                 </div>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl mb-4">
-                    Adicione, edite ou remova itens e categorias. Todas as alterações afetam imediatamente toda a plataforma e todos os perfis de utilizador.
+                    {t('dashboard.admin.catalogs.description')}
                 </p>
+                
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                    {t('dashboard.admin.catalogs.managementTitle')}
+                </h2>
+
                 <RequisitionsCatalogManagement />
             </GlassCard>
         </div>
