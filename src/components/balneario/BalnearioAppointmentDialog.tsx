@@ -488,7 +488,9 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 if (blocker.state === 'blocked') blocker.proceed?.();
                 if (pendingClose) {
                     setPendingClose(false);
-                    handleClose();
+                    setTimeout(() => {
+                        handleClose();
+                    }, 100);
                 }
             }}
             onCancel={() => {

@@ -32,11 +32,12 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
   // ==========================================
   // Proteção Interna (Navegação na App via NavigationContext)
   // ==========================================
-  const navigator = useContext(NavigationContext).navigator as any;
+  const context = useContext(NavigationContext);
+  const navigator = context ? (context as any).navigator : null;
   const [blockedTx, setBlockedTx] = useState<any>(null);
 
   useEffect(() => {
-    if (!isDirty || !navigator.block) return;
+    if (!isDirty || !navigator || !navigator.block) return;
 
     // A função block aciona sempre que há tentativa de navegação
     const unblock = navigator.block((tx: any) => {
@@ -50,8 +51,12 @@ export function useUnsavedChangesWarning(isDirty: boolean) {
   const proceed = useCallback(() => {
     if (blockedTx) {
       const tx = blockedTx;
-      setBlockedTx(null); // Reseta a UI
-      tx.retry(); // Efetua a navegação bloqueada
+      setBlockedTx(null); // Reseta a UI e fecha o modal
+      // Importante: setTimeout permite ao Radix UI (AlertDialog) restaurar o pointer-events do <body>
+      // antes da rota ser trocada e o componente desmontado forçosamente.
+      setTimeout(() => {
+        tx.retry(); 
+      }, 100);
     }
   }, [blockedTx]);
 

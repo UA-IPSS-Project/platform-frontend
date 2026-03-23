@@ -581,7 +581,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           if (blocker.state === 'blocked') blocker.proceed?.();
           if (pendingClose) {
             setPendingClose(false);
-            handleClose();
+            setTimeout(() => {
+              handleClose();
+            }, 100);
           }
         }}
         onCancel={() => {
