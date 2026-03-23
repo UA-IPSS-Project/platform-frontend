@@ -16,6 +16,7 @@ import {
     AlertDialogAction,
 } from '../ui/alert-dialog';
 import { armazemApi, ItemArmazemDTO, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface BalnearioConsumosPageProps {
     isDarkMode: boolean;
@@ -371,19 +372,37 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             {!isCollapsed && (
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                     {/* Table Header */}
-                                    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                            {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
-                                        </span>
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
-                                            {t('consumos.quantity', 'Quantidade')}
-                                        </span>
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
-                                            {t('consumos.minimum', 'Mínimo')}
-                                        </span>
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
-                                            {t('consumos.status', 'Estado')}
-                                        </span>
+                                    <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8" : ""}>
+                                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
+                                            </span>
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                                {t('consumos.quantity', 'Quantidade')}
+                                            </span>
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                {t('consumos.minimum', 'Mínimo')}
+                                            </span>
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                {t('consumos.status', 'Estado')}
+                                            </span>
+                                        </div>
+                                        {categoria === 'CALCADO' && (
+                                            <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                                    {t('consumos.size', 'Tamanho')}
+                                                </span>
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                                    {t('consumos.quantity', 'Quantidade')}
+                                                </span>
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                    {t('consumos.minimum', 'Mínimo')}
+                                                </span>
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                    {t('consumos.status', 'Estado')}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Items - for calçado, two columns on large screens + sorting */}
@@ -438,33 +457,34 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             'CALCADO': getCategoryLabel('CALCADO'),
         };
 
-        // Aggregate by item name for horizontal bar chart
-        const byItem: Record<string, { quantidade: number; categoria: string }> = {};
-        for (const item of stats.itens) {
-            if (!byItem[item.nome]) {
-                byItem[item.nome] = { quantidade: 0, categoria: item.categoria };
-            }
-            byItem[item.nome].quantidade += item.quantidade;
-        }
-        const sortedItems = Object.entries(byItem).sort((a, b) => b[1].quantidade - a[1].quantidade);
-        const maxItemValue = sortedItems.length > 0 ? sortedItems[0][1].quantidade : 1;
 
-        // Aggregate by category for category bar chart
+        // Aggregate by category for category summary
         const catTotals = {
             'HIGIENE': stats.totaisPorCategoria['HIGIENE'] || 0,
             'DETERGENTES': stats.totaisPorCategoria['DETERGENTES'] || 0,
             'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0
         };
-        const maxCatValue = Math.max(...Object.values(catTotals), 1);
 
-        const getCatBarColor = (cat: string) => {
+        const getCatBarColorHex = (cat: string) => {
             switch (cat) {
-                case 'HIGIENE': return 'bg-pink-500';
-                case 'DETERGENTES': return 'bg-green-500';
-                case 'CALCADO': return 'bg-purple-500';
-                default: return 'bg-gray-500';
+                case 'HIGIENE': return '#EC4899';
+                case 'DETERGENTES': return '#22C55E';
+                case 'CALCADO': return '#A855F7';
+                default: return '#6B7280';
             }
         };
+
+        const statsByCategory = stats.itens.reduce((acc, item) => {
+            if (!acc[item.categoria]) acc[item.categoria] = [];
+            
+            const existing = acc[item.categoria].find(i => i.nome === item.nome);
+            if (existing) {
+                existing.quantidade += item.quantidade;
+            } else {
+                acc[item.categoria].push({ nome: item.nome, quantidade: item.quantidade });
+            }
+            return acc;
+        }, {} as Record<string, { nome: string; quantidade: number }[]>);
 
         return (
             <div className="space-y-6">
@@ -497,61 +517,66 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             ))}
                         </div>
 
-                        {/* Category bar chart */}
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                                {t('consumos.consumptionByCategory', 'Consumo por Categoria')}
-                            </h3>
-                            <div className="space-y-3">
-                                {Object.entries(catTotals).map(([cat, total]) => {
-                                    const width = (total / maxCatValue) * 100;
+                        {/* Modular Category Bar Charts */}
+                        {Object.entries(statsByCategory).length === 0 ? (
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex items-center justify-center h-48 mt-6">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                                {Object.keys(statsByCategory).sort((a, b) => {
+                                    if (a === 'CALCADO') return 1;
+                                    if (b === 'CALCADO') return -1;
+                                    return a.localeCompare(b);
+                                }).map(cat => {
+                                    const items = statsByCategory[cat].sort((a,b) => b.quantidade - a.quantidade);
                                     return (
-                                        <div key={cat} className="flex items-center gap-3">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400 w-28 shrink-0">{catLabels[cat] || cat}</span>
-                                            <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-6 overflow-hidden">
-                                                <div
-                                                    className={`h-full rounded-full ${getCatBarColor(cat)} transition-all duration-500`}
-                                                    style={{ width: `${Math.max(width, 3)}%` }}
-                                                />
+                                        <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
+                                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-tight">
+                                                {catLabels[cat] || cat}
+                                            </h3>
+                                            <div className="h-64 flex-1">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={items} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                                                        <XAxis 
+                                                            dataKey="nome" 
+                                                            tickFormatter={(nome) => cat === 'CALCADO' ? `Nº ${nome}` : t(`consumos.products.${nome}`, nome) as string}
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            dy={10}
+                                                        />
+                                                        <YAxis 
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            allowDecimals={false}
+                                                        />
+                                                        <Tooltip 
+                                                            cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
+                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#111827' }}
+                                                            formatter={(value: number) => [<span className="font-bold text-purple-600">{value}</span>, t('consumos.quantity', 'Quantidade')]}
+                                                            labelFormatter={(nome) => cat === 'CALCADO' ? `Tamanho ${nome}` : t(`consumos.products.${nome}`, nome as string)}
+                                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#374151' }}
+                                                        />
+                                                        <Bar 
+                                                            dataKey="quantidade" 
+                                                            radius={[4, 4, 0, 0]} 
+                                                            maxBarSize={50}
+                                                        >
+                                                            {items.map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fill={getCatBarColorHex(cat)} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
                                             </div>
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 w-10 text-right">{total}</span>
                                         </div>
                                     );
                                 })}
                             </div>
-                        </div>
-
-                        {/* Per-product horizontal bar chart */}
-                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                                {t('consumos.mostConsumed', 'Itens Mais Consumidos')}
-                            </h3>
-                            {sortedItems.length === 0 ? (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {sortedItems.map(([nome, { quantidade, categoria }]) => {
-                                        const width = (quantidade / maxItemValue) * 100;
-                                        return (
-                                            <div key={nome} className="flex items-center gap-3">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400 w-40 shrink-0 truncate" title={nome}>
-                                                    {t(`consumos.products.${nome}`, nome)}
-                                                </span>
-                                                <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
-                                                    <div
-                                                        className={`h-full rounded-full ${getCatBarColor(categoria)} transition-all duration-500`}
-                                                        style={{ width: `${Math.max(width, 3)}%` }}
-                                                    />
-                                                </div>
-                                                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-800 shrink-0">
-                                                    {quantidade}x
-                                                </Badge>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+                        )}
             </div>
         );
     };
@@ -562,9 +587,9 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            {/* Header with Tabs - Centered and Larger */}
-            <div className="flex justify-center mb-8">
-                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 w-full max-w-md">
+            {/* Header with Tabs */}
+            <div className="flex justify-start mb-8">
+                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 w-[350px]">
                     <button
                         onClick={() => handleTabSwitch('armazem')}
                         className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
