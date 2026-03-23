@@ -1087,5 +1087,42 @@
   },
   "calendar": {
     "suaMarcacao": "Sua marcação"
+  },
+  "consumos": {
+    "loadError": "Erro ao carregar itens do armazém",
+    "statsError": "Erro ao carregar estatísticas",
+    "armazemDescription": "Gestão de inventário do balneário. Clique nos valores para editar.",
+    "editingMinimos": "A editar mínimos",
+    "editMinimos": "Editar Mínimos",
+    "saveAll": "Guardar Tudo",
+    "save": "Guardar",
+    "itemSaved": "Item atualizado com sucesso",
+    "saveError": "Erro ao guardar",
+    "product": "Produto",
+    "quantity": "Quantidade",
+    "minimum": "Mínimo",
+    "status": "Estado",
+    "size": "Tamanho",
+    "low": "Baixo",
+    "quantityBySize": "Quantidade por tamanho",
+    "totalInStock": "Total em stock",
+    "pairs": "pares",
+    "shoeSize": "Nº calçado",
+    "outOfStock": "Esgotado no armazém",
+    "lowStock": "Stock baixo no armazém",
+    "day": "Hoje",
+    "week": "Semana",
+    "month": "Mês",
+    "totalConsumptions": "Total Consumos",
+    "consumptionOverTime": "Consumos ao Longo do Tempo",
+    "mostConsumed": "Itens Mais Consumidos",
+    "noDataForPeriod": "Sem dados de consumo para este período",
+    "warehouse": "Armazém",
+    "statistics": "Estatísticas",
+    "categories": {
+      "detergentes": "Detergentes",
+      "higiene": "Higiene",
+      "calcado": "Stock de Calçado"
+    }
   }
 }

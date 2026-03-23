@@ -1087,5 +1087,42 @@
   },
   "calendar": {
     "suaMarcacao": "Your appointment"
+  },
+  "consumos": {
+    "loadError": "Error loading warehouse items",
+    "statsError": "Error loading statistics",
+    "armazemDescription": "Bathhouse inventory management. Click values to edit.",
+    "editingMinimos": "Editing minimums",
+    "editMinimos": "Edit Minimums",
+    "saveAll": "Save All",
+    "save": "Save",
+    "itemSaved": "Item updated successfully",
+    "saveError": "Error saving",
+    "product": "Product",
+    "quantity": "Quantity",
+    "minimum": "Minimum",
+    "status": "Status",
+    "size": "Size",
+    "low": "Low",
+    "quantityBySize": "Quantity by size",
+    "totalInStock": "Total in stock",
+    "pairs": "pairs",
+    "shoeSize": "Shoe size",
+    "outOfStock": "Out of stock in warehouse",
+    "lowStock": "Low stock in warehouse",
+    "day": "Today",
+    "week": "Week",
+    "month": "Month",
+    "totalConsumptions": "Total Consumption",
+    "consumptionOverTime": "Consumption Over Time",
+    "mostConsumed": "Most Consumed Items",
+    "noDataForPeriod": "No consumption data for this period",
+    "warehouse": "Warehouse",
+    "statistics": "Statistics",
+    "categories": {
+      "detergentes": "Detergents",
+      "higiene": "Hygiene",
+      "calcado": "Shoe Stock"
+    }
   }
 }
