@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { Minus, Plus, Save, AlertTriangle } from 'lucide-react';
+import { Minus, Plus, Save, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogContent,
@@ -39,6 +39,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     const [stats, setStats] = useState<ConsumoEstatisticaDTO | null>(null);
     const [statsPeriodo, setStatsPeriodo] = useState<'DIA' | 'SEMANA' | 'MES'>('MES');
     const [statsLoading, setStatsLoading] = useState(false);
+    const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
 
     const carregarItens = useCallback(async () => {
         try {
@@ -73,6 +74,19 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             carregarEstatisticas();
         }
     }, [activeTab, carregarEstatisticas]);
+
+    // Global unsaved changes warning (for browser reload/close)
+    useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (items.some(item => hasItemChanges(item)) || editingMinimos) {
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [items, editingMinimos]);
 
     // =====================================================================
     // ARMAZÉM HANDLERS
@@ -166,6 +180,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             setActiveTab(pendingTab);
             setPendingTab(null);
         }
+    };
+
+    const toggleCategory = (cat: string) => {
+        setCollapsedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
     };
 
     // =====================================================================
@@ -310,7 +328,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             onClick={() => setEditingMinimos(!editingMinimos)}
                             className={editingMinimos ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
                         >
-                            {editingMinimos ? t('consumos.editingMinimos', 'A editar mínimos') : t('consumos.editMinimos', 'Editar Mínimos')}
+                            {editingMinimos ? t('consumos.exitEditing', 'Sair da edição') : t('consumos.editMinimos', 'Editar Mínimos')}
                         </Button>
                         {anyChanges && (
                             <Button
@@ -326,51 +344,74 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 </div>
 
                 {/* All categories rendered as white cards with table layout */}
-                {Object.entries(groupedItems).map(([categoria, catItems]) => (
-                    <div key={categoria} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                        <div className="flex items-center gap-3 mb-5">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                {getCategoryLabel(categoria)}
-                            </h3>
-                        </div>
+                {Object.keys(groupedItems).sort((a, b) => {
+                    if (a === 'CALCADO') return 1;
+                    if (b === 'CALCADO') return -1;
+                    return a.localeCompare(b);
+                }).map(categoria => {
+                    const catItems = groupedItems[categoria];
+                    const isCollapsed = collapsedCategories[categoria];
 
-                        {/* Table Header */}
-                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
-                            </span>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
-                                {t('consumos.quantity', 'Quantidade')}
-                            </span>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
-                                {t('consumos.minimum', 'Mínimo')}
-                            </span>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
-                                {t('consumos.status', 'Estado')}
-                            </span>
-                        </div>
-
-                        {/* Items - for calçado, sort by number and render in same table style */}
-                        {(categoria === 'CALCADO'
-                            ? [...catItems].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
-                            : catItems
-                        ).map(item => renderItemRow(item, categoria === 'CALCADO'))}
-
-                        {/* Total count for calçado */}
-                        {categoria === 'CALCADO' && (
-                            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                    {t('consumos.totalInStock', 'Total em stock')}: <strong>
-                                        {catItems.reduce((sum, item) => {
-                                            const editing = editingItems[item.id];
-                                            return sum + (editing?.quantidade ?? item.quantidade);
-                                        }, 0)} {t('consumos.pairs', 'pares')}
-                                    </strong>
-                                </span>
+                    return (
+                        <div key={categoria} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-6">
+                            <div 
+                                className="flex items-center justify-between mb-5 cursor-pointer select-none group"
+                                onClick={() => toggleCategory(categoria)}
+                            >
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">
+                                    {getCategoryLabel(categoria)}
+                                </h2>
+                                <button
+                                    className="p-1.5 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700 dark:group-hover:bg-gray-700 transition-colors"
+                                >
+                                    {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                                </button>
                             </div>
-                        )}
-                    </div>
-                ))}
+
+                            {!isCollapsed && (
+                                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                    {/* Table Header */}
+                                    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
+                                        </span>
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                            {t('consumos.quantity', 'Quantidade')}
+                                        </span>
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            {t('consumos.minimum', 'Mínimo')}
+                                        </span>
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            {t('consumos.status', 'Estado')}
+                                        </span>
+                                    </div>
+
+                                    {/* Items - for calçado, two columns on large screens + sorting */}
+                                    <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0" : "flex flex-col"}>
+                                        {(categoria === 'CALCADO'
+                                            ? [...catItems].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
+                                            : catItems
+                                        ).map(item => renderItemRow(item, categoria === 'CALCADO'))}
+                                    </div>
+
+                                    {/* Total count for calçado */}
+                                    {categoria === 'CALCADO' && (
+                                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                {t('consumos.totalInStock', 'Total em stock')}: <strong>
+                                                    {catItems.reduce((sum, item) => {
+                                                        const editing = editingItems[item.id];
+                                                        return sum + (editing?.quantidade ?? item.quantidade);
+                                                    }, 0)} {t('consumos.pairs', 'pares')}
+                                                </strong>
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         );
     };
@@ -409,7 +450,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         const maxItemValue = sortedItems.length > 0 ? sortedItems[0][1].quantidade : 1;
 
         // Aggregate by category for category bar chart
-        const catTotals = stats.totaisPorCategoria;
+        const catTotals = {
+            'HIGIENE': stats.totaisPorCategoria['HIGIENE'] || 0,
+            'DETERGENTES': stats.totaisPorCategoria['DETERGENTES'] || 0,
+            'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0
+        };
         const maxCatValue = Math.max(...Object.values(catTotals), 1);
 
         const getCatBarColor = (cat: string) => {
@@ -438,14 +483,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     ))}
                 </div>
 
-                {stats.totalGeral === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500">
-                        <AlertTriangle className="w-12 h-12 mb-3 opacity-50" />
-                        <p>{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
-                    </div>
-                ) : (
-                    <>
-                        {/* Summary cards */}
+                {/* Summary cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
                                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
@@ -484,11 +522,13 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         </div>
 
                         {/* Per-product horizontal bar chart */}
-                        {sortedItems.length > 0 && (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                                    {t('consumos.mostConsumed', 'Itens Mais Consumidos')}
-                                </h3>
+                        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                                {t('consumos.mostConsumed', 'Itens Mais Consumidos')}
+                            </h3>
+                            {sortedItems.length === 0 ? (
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
+                            ) : (
                                 <div className="space-y-2">
                                     {sortedItems.map(([nome, { quantidade, categoria }]) => {
                                         const width = (quantidade / maxItemValue) * 100;
@@ -510,10 +550,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                         );
                                     })}
                                 </div>
-                            </div>
-                        )}
-                    </>
-                )}
+                            )}
+                        </div>
             </div>
         );
     };
@@ -524,12 +562,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            {/* Header with Tabs - no icons */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {/* Header with Tabs - Centered and Larger */}
+            <div className="flex justify-center mb-8">
+                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 w-full max-w-md">
                     <button
                         onClick={() => handleTabSwitch('armazem')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                             activeTab === 'armazem'
                                 ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -539,7 +577,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     </button>
                     <button
                         onClick={() => handleTabSwitch('estatisticas')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                             activeTab === 'estatisticas'
                                 ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'

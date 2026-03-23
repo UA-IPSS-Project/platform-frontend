@@ -244,6 +244,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 lavagemRoupa: hasLaundry,
                 responsavelId: funcionarioId,
                 roupas: roupasVal,
+                observacoes: notes,
                 reservaId: tempReservaId
             };
 
