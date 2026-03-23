@@ -332,10 +332,13 @@ export function SharedRequisitionsPage({
     if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
 
     // Custo combinado: nº_viaturas × K + lugares_vazios
-    // K ≈ 25% dos passageiros — cada viatura extra custa tanto como desperdiçar 1/4 da ocupação.
-    // Exemplos: 9 pass (K=3): 2 carros (1 vazio) = 7 < bus (20 vazios) = 23 → carros ganham
-    //           27 pass (K=7): bus (3 vazios) = 10 < 5 carros (0 vazios) = 35 → bus ganha
-    const penalizacaoViatura = Math.max(2, Math.ceil(passageirosSolicitados / 4));
+    // K (Peso/Penalização de usar 1 viatura extra)
+    // Para 17 passageiros, usar 3 carrinhas (3 lugares vazios totais) vs 1 autocarro (12 lugares vazios):
+    // Se K for pequeno, o DP escolhe as 3 carrinhas para evitar levar 12 lugares vazios às costas.
+    // Usando K = ceil(passageiros / 2.5) e min de 3:
+    // Ex 1: 5 pass (K=3) -> 2 carros (custo=2×3+3vazios=9) vs 1 bus (custo=1×3+24vazios=27). Traz 2 carros.
+    // Ex 2: 17 pass (K=7) -> 3 carrinhas (custo=3×7+3vazios=24) vs 1 bus (custo=1×7+12vazios=19). Traz o minibus!
+    const penalizacaoViatura = Math.max(3, Math.ceil(passageirosSolicitados / 2.5));
 
     // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
     const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
@@ -1261,7 +1264,7 @@ export function SharedRequisitionsPage({
 
   const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
   const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
-  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30 cursor-text';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
 
