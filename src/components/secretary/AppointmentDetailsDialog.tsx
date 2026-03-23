@@ -134,13 +134,39 @@ export function AppointmentDetailsDialog({
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+function cleanFilename(name: string) {
+  if (!name) return "";
+  const dotIndex = name.lastIndexOf(".");
+  const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+  const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
+
+  const parts = baseName.split("_");
+  if (parts.length >= 4) {
+    // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
+    const nif = parts[0];
+    const rawDate = parts[parts.length - 2];
+    const assuntoParts = parts.slice(1, parts.length - 2);
+    const assunto = assuntoParts.join("_");
+
+    let formattedDate = rawDate;
+    if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
+      formattedDate = `${rawDate.substring(6, 8)}-${rawDate.substring(4, 6)}-${rawDate.substring(0, 4)}`;
+    }
+    return `${nif}_${assunto}_${formattedDate}${extension}`;
+  } else if (parts.length === 3) {
+    // Formato legado: NIF_TIPO_UUID
+    return `${parts[0]}_${parts[1]}${extension}`;
+  }
+  return name;
+}
 
   const handleDocToggle = (index: number) => {
     setSelectedDocs(prev => {
@@ -733,26 +759,10 @@ export function AppointmentDetailsDialog({
                         <FileTextIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p
-                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[180px] md:max-w-[320px] lg:max-w-[420px]"
+                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[300px] md:max-w-[450px] lg:max-w-[550px]"
                             title={doc.nomeOriginal}
                           >
-                            {(() => {
-                              // Espera padrão NIF_TIPO_UUID.extensão
-                              const nome = doc.nomeOriginal;
-                              if (!nome) return '';
-                              const partes = nome.split('_');
-                              if (partes.length < 3) return nome;
-                              const uuidComExt = partes[2];
-                              const dotIdx = uuidComExt.indexOf('.')
-                              let uuid = uuidComExt;
-                              let ext = '';
-                              if (dotIdx !== -1) {
-                                uuid = uuidComExt.substring(0, dotIdx);
-                                ext = uuidComExt.substring(dotIdx);
-                              }
-                              const shortUuid = uuid.substring(0, 8);
-                              return `${partes[0]}_${partes[1]}_${shortUuid}${ext}`;
-                            })()}
+                            {cleanFilename(doc.nomeOriginal)}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}

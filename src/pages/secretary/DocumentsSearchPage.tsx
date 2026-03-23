@@ -12,6 +12,7 @@ import {
   UserIcon,
   ClockIcon,
   SlidersIcon,
+  EyeIcon,
 } from '../../components/shared/CustomIcons';
 import { documentosApi, DocumentoDTO } from '../../services/api';
 import { toast } from 'sonner';
@@ -43,10 +44,44 @@ function getMimeInfo(mime: string): { label: string; color: string; bg: string }
   return { label: mime?.split('/')[1]?.toUpperCase() || '—', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700' };
 }
 
-function formatSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${bytes} B`;
+function formatSize(bytes: number) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+function hasPreview(nomeOriginal: string): boolean {
+  if (!nomeOriginal) return false;
+  const ext = nomeOriginal.split('.').pop()?.toLowerCase();
+  return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
+}
+
+function cleanFilename(name: string) {
+  if (!name) return "";
+  const dotIndex = name.lastIndexOf(".");
+  const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+  const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
+
+  const parts = baseName.split("_");
+  if (parts.length >= 4) {
+    // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
+    const nif = parts[0];
+    const rawDate = parts[parts.length - 2];
+    const assuntoParts = parts.slice(1, parts.length - 2);
+    const assunto = assuntoParts.join("_");
+    
+    let formattedDate = rawDate;
+    if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
+      formattedDate = `${rawDate.substring(6, 8)}-${rawDate.substring(4, 6)}-${rawDate.substring(0, 4)}`;
+    }
+    return `${nif}_${assunto}_${formattedDate}${extension}`;
+  } else if (parts.length === 3) {
+    // Formato legado: NIF_TIPO_UUID
+    return `${parts[0]}_${parts[1]}${extension}`;
+  }
+  return name;
 }
 
 export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
@@ -310,8 +345,8 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug">
-                            {doc.nomeOriginal}
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug" title={doc.nomeOriginal}>
+                            {cleanFilename(doc.nomeOriginal)}
                           </p>
 
                           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -343,16 +378,27 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                           </div>
                         </div>
 
-                        {/* Download button */}
-                        <div className="flex-shrink-0 pt-0.5">
+                        {/* Action buttons */}
+                        <div className="flex-shrink-0 pt-0.5 flex items-center gap-1">
+                          {hasPreview(doc.nomeOriginal) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                              onClick={() => documentosApi.previewDocumento(doc.id)}
+                              title={t('appointmentDetails.previewDocument')}
+                            >
+                              <EyeIcon className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-xs border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                            size="icon"
+                            className="h-8 w-8 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                             onClick={() => handleDownload(doc)}
+                            title={t('documents.actions.download')}
                           >
-                            <DownloadIcon className="w-3.5 h-3.5" />
-                            {t('documents.actions.download')}
+                            <DownloadIcon className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -412,8 +458,8 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                             key={p}
                             onClick={() => setPaginaAtual(p as number)}
                             className={`w-7 h-7 rounded-md text-xs font-medium transition-colors ${paginaAtual === p
-                                ? 'bg-purple-600 text-white'
-                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                              ? 'bg-purple-600 text-white'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                               }`}
                           >
                             {p}
