@@ -747,6 +747,7 @@
       "urgent": "Urgent",
       "goToMaterialRequests": "Go to material requests",
       "material": "Material",
+      "materials": "Materials",
       "goToMaintenanceRequests": "Go to maintenance requests",
       "maintenance": "Maintenance",
       "goToTransportRequests": "Go to transport requests",
