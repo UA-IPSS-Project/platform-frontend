@@ -1426,6 +1426,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         appointmentStyles = isDarkMode
                           ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
                           : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      } else if (appointment && appointment.status) {
+                        // Colorir pelo estado da marcação
+                        const canEdit = !isClient || appointments.some(a => a.id === appointment.id);
+                        appointmentStyles = getStatusStyle(appointment.status, canEdit);
                       } else {
                         appointmentStyles = available;
                       }

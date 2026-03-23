@@ -18,6 +18,7 @@ import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleD
 import { UserManagement } from '../../components/secretary/UserManagement';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
+import { ReportsPage } from './ReportsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -518,6 +519,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   },
                 }}
               />
+            ) : currentView === 'reports' ? (
+              <ReportsPage />
             ) : (
               renderPlaceholder(currentView)
             )}
