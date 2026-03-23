@@ -14,7 +14,7 @@ import { useIsMobile } from '../ui/use-mobile';
 // Helper: Plus icon for add button
 function PlusIcon({ className = '' }: { className?: string }) {
   return (
-    <svg className={className} width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeWidth="2" d="M8 3v10M3 8h10"/></svg>
+    <svg className={className} width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeWidth="2" d="M8 3v10M3 8h10" /></svg>
   );
 }
 import { useTranslation } from 'react-i18next';
@@ -83,14 +83,14 @@ const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: strin
 };
 
 export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
-    // Expanded slots state for mobile/tap (must be at top level)
-    const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
-    const isMobile = useIsMobile();
+  // Expanded slots state for mobile/tap (must be at top level)
+  const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
+  const isMobile = useIsMobile();
 
-    // Helper to expand/collapse slot on mobile
-    const handleExpandSlot = (id: string) => {
-      setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
-    };
+  // Helper to expand/collapse slot on mobile
+  const handleExpandSlot = (id: string) => {
+    setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
+  };
   const { i18n } = useTranslation();
 
   // Helper function to get status-based styles (must be outside JSX)
@@ -172,8 +172,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   today.setHours(0, 0, 0, 0);
 
   // Campo Ano como Select
-    // Estado global para hover de slot (expansão inline)
-    const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
+  // Estado global para hover de slot (expansão inline)
+  const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
   const [quickYear, setQuickYear] = useState(today.getFullYear());
   const [quickMonth, setQuickMonth] = useState(today.getMonth());
   const [quickDay, setQuickDay] = useState(today.getDate());
@@ -606,87 +606,108 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     toast.info(`[DEBUG] React recebeu o clique: ${time}`);
     try {
       console.log('[DEBUG-SLOT] Clique detetado na data:', date, 'e hora:', time);
-      
+
       const slotAppointments = getSlotAppointments(date, time);
-    console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
+      console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
 
-    // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
-    // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
-    if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
-      console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
-      openSlotNavigator(date, time);
-      return;
-    }
+      // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
+      // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
+      if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
+        console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
+        openSlotNavigator(date, time);
+        return;
+      }
 
-    const appointment = getAppointmentForSlot(date, time);
-    const slotIsFull = slotAppointments.length >= slotCapacity;
-    console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
+      const appointment = getAppointmentForSlot(date, time);
+      const slotIsFull = slotAppointments.length >= slotCapacity;
+      console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
 
-    // Se o slot ainda não estiver cheio, permitir criar nova marcação
-    // mesmo quando já existem marcações nesse horário.
-    if (!isClient && slotAppointments.length > 0 && !slotIsFull) {
+      // Se o slot ainda não estiver cheio, permitir criar nova marcação
+      // mesmo quando já existem marcações nesse horário.
+      if (!isClient && slotAppointments.length > 0 && !slotIsFull) {
+        if (isSlotInPast(date, time)) {
+          toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
+          return;
+        }
+
+        const blocked = await isSlotBlocked(date, time);
+        if (blocked) {
+          toast.error(tt('Horário indisponível', 'Time slot unavailable'));
+          if (onRefresh) {
+            onRefresh();
+          }
+          return;
+        }
+
+        console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
+        onCreateAppointment(date, time);
+        return;
+      }
+
+      // Se já existe marcação, permitir visualizar (mesmo no passado)
+      if (appointment) {
+        console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
+        // Verificar se é marcação própria
+        const isOwn = slotAppointments.some(item =>
+          (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
+          appointments.some(a => a.id === item.id)
+        );
+
+        // Utente: se o slot ainda tem vagas (excluindo reservas), permitir criar marcação
+        if (isClient && !isOwn) {
+          const realBookings = slotAppointments.filter(a => a.status !== 'reserved').length;
+          if (realBookings < slotCapacity) {
+            if (isSlotInPast(date, time)) {
+              toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
+              return;
+            }
+            const blocked = await isSlotBlocked(date, time);
+            if (blocked) {
+              toast.error(tt('Horário indisponível', 'Time slot unavailable'));
+              return;
+            }
+            onCreateAppointment(date, time);
+            return;
+          }
+          // Slot cheio para o utente: só atualizar silenciosamente, sem toast de "a atualizar"
+          if (onRefresh) await onRefresh();
+          return;
+        }
+
+        // Se for reservado (staff), recarregar marcações
+        if (appointment.status === 'reserved') {
+          if (onRefresh) {
+            toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
+            await onRefresh();
+            toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
+          }
+          return;
+        }
+        onViewAppointment(appointment);
+        return;
+      }
+
+      // Validar se o horário não é no passado APENAS para criar nova marcação
       if (isSlotInPast(date, time)) {
+        console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
         toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
         return;
       }
 
+      // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
       const blocked = await isSlotBlocked(date, time);
       if (blocked) {
+        console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
         toast.error(tt('Horário indisponível', 'Time slot unavailable'));
         if (onRefresh) {
+          // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
           onRefresh();
         }
         return;
       }
 
-      console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
+      console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
       onCreateAppointment(date, time);
-      return;
-    }
-
-    // Se já existe marcação, permitir visualizar (mesmo no passado)
-    if (appointment) {
-      console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
-      // Verificar se é marcação própria
-      const isOwn = slotAppointments.some(item =>
-        (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
-        appointments.some(a => a.id === item.id)
-      );
-
-      // Se for slot reservado ou bloqueado, recarregar marcações
-      if (appointment.status === 'reserved' || (isClient && !isOwn)) {
-        if (onRefresh) {
-          toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
-          await onRefresh();
-          toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
-        }
-        return;
-      }
-      onViewAppointment(appointment);
-      return;
-    }
-
-    // Validar se o horário não é no passado APENAS para criar nova marcação
-    if (isSlotInPast(date, time)) {
-      console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
-      toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
-      return;
-    }
-
-    // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
-    const blocked = await isSlotBlocked(date, time);
-    if (blocked) {
-      console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
-      toast.error(tt('Horário indisponível', 'Time slot unavailable'));
-      if (onRefresh) {
-        // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
-        onRefresh();
-      }
-      return;
-    }
-
-    console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
-    onCreateAppointment(date, time);
     } catch (error: any) {
       console.error('[DEBUG-SLOT] Crash em handleSlotClick:', error);
       toast.error(`[DEBUG-CRASH] ${error.message || 'Erro Desconhecido'}`);
@@ -1413,6 +1434,93 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       );
                     };
 
+                    // === UNIFIED CLIENT UI ===
+                    if (isClient) {
+                      if (slotCapacity === 1) {
+                        if (appointment) {
+                          if (appointment.status === 'reserved') {
+                            return (
+                              <div key={idx} id={slotId} className={`${base} bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                                <span className="text-[10px] font-medium truncate leading-none px-0.5">{tt('Reservado', 'Reserved')}</span>
+                              </div>
+                            );
+                          }
+                          if (isOwn) {
+                            return (
+                              <button key={idx} id={slotId} onClick={() => onViewAppointment(appointment)} title={tt('Clique para ver detalhes', 'Click to view details')} className={`${base} ${getStatusStyle(appointment.status, true)} flex items-center justify-center cursor-pointer min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                                <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                                  {tt('Sua marcação', 'Your appointment')}
+                                </span>
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              </div>
+                            );
+                          }
+                        }
+                        if (isBlockedAdmin) {
+                          if (inPast) return <div key={idx} className={`${base} ${pastSlot}`}></div>;
+                          return (
+                            <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                            </div>
+                          );
+                        }
+                        return (
+                          <button key={idx} id={slotId} disabled={inPast || isHolidayDay} onClick={() => handleSlotClick(day, time)} title={tt('Clique para marcar', 'Click to book')} className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}></button>
+                        );
+                      } else {
+                        // slotCapacity > 1
+                        const ignoreStates = ['reserved', 'cancelled', 'no-show'];
+                        const ownApt = slotAppointments.find(apt => (
+                          apt.patientNIF &&
+                          currentUserNif &&
+                          String(apt.patientNIF) === String(currentUserNif) &&
+                          !ignoreStates.includes((apt.status || '').toLowerCase())
+                        ) || (
+                            appointments.some(a => a.id === apt.id) && !ignoreStates.includes((apt.status || '').toLowerCase())
+                          ));
+                        if (ownApt) {
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => onViewAppointment(ownApt)}
+                              className={`${base} ${getStatusStyle(ownApt.status, true)} flex items-center justify-center min-h-[40px] cursor-pointer ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              title={tt('Clique para ver detalhes', 'Click to view details')}
+                            >
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                                {tt('Sua marcação', 'Your appointment')}
+                              </span>
+                            </button>
+                          );
+                        } else if (slotAppointments.length === slotCapacity || isBlockedAdmin) {
+                          return (
+                            <div
+                              key={idx}
+                              id={slotId}
+                              className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            >
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => handleSlotClick(day, time)}
+                              disabled={inPast || isHolidayDay}
+                              title={tt('Clique para marcar', 'Click to book')}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}
+                            >
+                            </button>
+                          );
+                        }
+                      }
+                    }
+                    // === END UNIFIED CLIENT UI ===
+
                     // Single-capacity slot: keep default button
                     if (slotCapacity === 1) {
                       // ...existing code for single slot...
@@ -1526,62 +1634,6 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
                     // Multi-capacity slot: expand inline on hover (desktop), tap to expand (mobile)
                     if (slotCapacity > 1 && slotAppointments.length > 0) {
-                      if (isClient) {
-                        // UTENTE: lógica simplificada
-                        const ignoreStates = ['reserved', 'cancelled', 'no-show'];
-                        const ownApt = slotAppointments.find(apt => (
-                          apt.patientNIF &&
-                          currentUserNif &&
-                          String(apt.patientNIF) === String(currentUserNif) &&
-                          !ignoreStates.includes((apt.status || '').toLowerCase())
-                        ) || (
-                          appointments.some(a => a.id === apt.id) && !ignoreStates.includes((apt.status || '').toLowerCase())
-                        ));
-                        if (ownApt) {
-                          // Mostra só a própria marcação, célula clicável para abrir detalhes
-                          return (
-                            <button
-                              key={idx}
-                              id={slotId}
-                              onClick={() => onViewAppointment(ownApt)}
-                              className={`${base} border-purple-400 bg-purple-50 dark:bg-purple-900/20 ${isActiveHighlight ? 'slot-highlight' : ''} flex items-center justify-center min-h-[40px] cursor-pointer`}
-                              title={tt('Clique para ver detalhes', 'Click to view details')}
-                            >
-                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
-                                {tt('Sua marcação', 'Your appointment')}
-                              </span>
-                            </button>
-                          );
-                        } else if (slotAppointments.length >= slotCapacity) {
-                          // Slot cheio: bloqueado/cinzento forte
-                          return (
-                            <div
-                              key={idx}
-                              id={slotId}
-                              className={`${base} bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                              style={{ background: 'linear-gradient(135deg, #4a4a4a 60%, #888 100%)' }}
-                            >
-                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center">
-                                {/* Slot cheio, sem texto */}
-                              </span>
-                            </div>
-                          );
-                        } else {
-                          // Slot vazio: célula clicável
-                          return (
-                            <button
-                              key={idx}
-                              id={slotId}
-                              onClick={() => handleSlotClick(day, time)}
-                              disabled={inPast || isHolidayDay}
-                              title={tt('Clique para marcar', 'Click to book')}
-                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}
-                            >
-                              {/* Vazio, sem texto */}
-                            </button>
-                          );
-                        }
-                      }
                       if (!isMobile) {
                         // Desktop: expand inline on hover (usando estado global hoveredSlot)
                         const expanded = hoveredSlot === slotId;
@@ -1605,7 +1657,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                       <span
                                         key={apt.id}
                                         className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                        style={{height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`, background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                        style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`, background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (onRefresh) onRefresh();
@@ -1621,7 +1673,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     <span
                                       key={apt.id}
                                       className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
-                                      style={{height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`}}
+                                      style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%` }}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         onViewAppointment(apt);
@@ -1657,7 +1709,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     return (
                                       <span
                                         className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                        style={{height: '100%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                        style={{ height: '100%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (onRefresh) onRefresh();
@@ -1672,7 +1724,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     <div className="flex flex-col items-stretch w-full h-full gap-1">
                                       <span
                                         className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
-                                        style={{height: '100%'}}
+                                        style={{ height: '100%' }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           onViewAppointment(apt);
@@ -1683,7 +1735,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   );
                                 } else if (total === 2) {
                                   return (
-                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{ height: '100%' }}>
                                       {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         if (apt.status === 'reserved') {
@@ -1691,7 +1743,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                             <span
                                               key={apt.id}
                                               className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                              style={{height: '50%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                              style={{ height: '50%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (onRefresh) onRefresh();
@@ -1706,7 +1758,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                           <span
                                             key={apt.id}
                                             className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
-                                            style={{height: '50%'}}
+                                            style={{ height: '50%' }}
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               onViewAppointment(apt);
@@ -1720,7 +1772,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   );
                                 } else if (total > 2) {
                                   return (
-                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{height: '100%'}}>
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{ height: '100%' }}>
                                       {slotAppointments.slice(0, 2).map((apt) => {
                                         const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
                                         if (apt.status === 'reserved') {
@@ -1728,7 +1780,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                             <span
                                               key={apt.id}
                                               className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                              style={{height: '33.33%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)'}}
+                                              style={{ height: '33.33%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (onRefresh) onRefresh();
@@ -1743,7 +1795,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                           <span
                                             key={apt.id}
                                             className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
-                                            style={{height: '33.33%'}}
+                                            style={{ height: '33.33%' }}
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               onViewAppointment(apt);
@@ -1755,7 +1807,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                       })}
                                       <span
                                         className="text-xs text-gray-400 flex items-center justify-center font-semibold bg-white/10 dark:bg-black/10 rounded flex-1 min-h-0"
-                                        style={{height: '33.33%'}}
+                                        style={{ height: '33.33%' }}
                                       >
                                         +{slotAppointments.length - 2} {tt('mais', 'more')}
                                       </span>

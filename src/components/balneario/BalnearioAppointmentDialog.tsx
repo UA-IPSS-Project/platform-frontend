@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -21,6 +21,8 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from '../ui/alert-dialog';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
 interface BalnearioAppointmentDialogProps {
     open: boolean;
@@ -59,11 +61,18 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     const [stockLevels, setStockLevels] = useState<Record<string, StockCheckResult>>({});
     const [shoeSizeStock, setShoeSizeStock] = useState<StockCheckResult | null>(null);
     const [showStockWarning, setShowStockWarning] = useState(false);
+    const [pendingClose, setPendingClose] = useState(false);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
     const [tempReservaId, setTempReservaId] = useState<number | null>(null);
     const tempReservaRef = useRef<number | null>(null);
+
+    const isDirty = useMemo(() => {
+        return name.trim() !== '' || Object.values(selectedOptions).some(Boolean) || notes.trim() !== '' || shoeSize !== '';
+    }, [name, selectedOptions, notes, shoeSize]);
+
+    const blocker = useUnsavedChangesWarning(isDirty);
 
     // Reservar slot ao abrir o dialog
     useEffect(() => {
@@ -133,6 +142,14 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             tempReservaRef.current = null;
         }
         onClose();
+    };
+
+    const requestClose = () => {
+        if (isDirty) {
+            setPendingClose(true);
+        } else {
+            handleClose();
+        }
     };
 
     const toggleOption = (option: string) => {
@@ -273,7 +290,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
     return (
         <>
-        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 <DialogHeader>
                     <DialogTitle className="text-gray-900 dark:text-gray-100">{t('balnearioAppointment.title')}</DialogTitle>
@@ -431,7 +448,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     </div>
 
                     <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-                        <Button type="button" variant="outline" onClick={handleClose} className="flex-1" disabled={isLoading}>
+                        <Button type="button" variant="outline" onClick={requestClose} className="flex-1" disabled={isLoading}>
                             {t('appointmentDialog.actions.cancel')}
                         </Button>
                         <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
@@ -465,6 +482,22 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        <UnsavedChangesModal 
+            isOpen={blocker.state === 'blocked' || pendingClose}
+            onConfirm={() => {
+                if (blocker.state === 'blocked') blocker.proceed?.();
+                if (pendingClose) {
+                    setPendingClose(false);
+                    setTimeout(() => {
+                        handleClose();
+                    }, 100);
+                }
+            }}
+            onCancel={() => {
+                if (blocker.state === 'blocked') blocker.reset?.();
+                if (pendingClose) setPendingClose(false);
+            }}
+        />
         </>
     );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { documentosApi } from '../../services/api';
 import { FileUpload } from '../shared/FileUpload';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
 interface ClientAppointmentDialogProps {
   open: boolean;
@@ -31,6 +33,13 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+  const [pendingClose, setPendingClose] = useState(false);
+
+  const isDirty = useMemo(() => {
+    return subject !== '' || description.trim() !== '' || selectedFiles.length > 0;
+  }, [subject, description, selectedFiles]);
+
+  const blocker = useUnsavedChangesWarning(isDirty);
 
   // Reservar slot ao abrir o dialog
   useEffect(() => {
@@ -105,6 +114,14 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     onClose();
   };
 
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingClose(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!subject) newErrors.subject = t('appointmentDialog.errors.subjectRequired');
@@ -176,7 +193,8 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+    <>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
@@ -234,7 +252,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
           </div>
 
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+            <Button type="button" variant="outline" onClick={requestClose} className="flex-1">
               {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
@@ -244,5 +262,22 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
         </form>
       </DialogContent>
     </Dialog>
+      <UnsavedChangesModal 
+          isOpen={blocker.state === 'blocked' || pendingClose}
+          onConfirm={() => {
+              if (blocker.state === 'blocked') blocker.proceed?.();
+              if (pendingClose) {
+                  setPendingClose(false);
+                  setTimeout(() => {
+                      handleClose();
+                  }, 100);
+              }
+          }}
+          onCancel={() => {
+              if (blocker.state === 'blocked') blocker.reset?.();
+              if (pendingClose) setPendingClose(false);
+          }}
+      />
+    </>
   );
 }
