@@ -234,17 +234,18 @@ export function SecretaryAdminArea() {
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
-
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.title')}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestão de Plataforma</h1>
                 <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
-                    {t('dashboard.admin.viewDescriptions.overview')}
+                    Gere centralmente as capacidades de marcação, materiais, transportes e manutenção. Todas as alterações são refletidas em tempo real para todos os utilizadores.
                 </p>
             </div>
-            <AdminOverview
-                summaryCards={summaryCards}
-                onOpenSlots={() => { }}
-                onOpenCatalogs={() => { }}
-            />
+            <GlassCard className="p-6">
+                <AdminOverview
+                    summaryCards={summaryCards}
+                    onOpenSlots={() => { }}
+                    onOpenCatalogs={() => { }}
+                />
+            </GlassCard>
             <SlotsManagement
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
@@ -253,21 +254,16 @@ export function SecretaryAdminArea() {
                 onSave={handleSaveSlotCapacities}
                 t={t}
             />
-            <div className="flex flex-col gap-6 mt-6">
-                <div>
-                    <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                        <Settings2 className="w-4 h-4" />
-                        {t('dashboard.admin.catalogs.title', 'Catálogos Administrativos')}
-                    </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
-                        {t('dashboard.admin.catalogs.subtitle', 'Gestão de Catálogos')}
-                    </h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
-                        {t('dashboard.admin.catalogs.description', 'Adicione, edite ou remova itens dos catálogos de materiais, transportes e tipos de manutenção.')}
-                    </p>
+            <GlassCard className="p-6 mt-6">
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                    <Settings2 className="w-4 h-4" />
+                    Gestão de Materiais, Transportes e Manutenção
                 </div>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl mb-4">
+                    Adicione, edite ou remova itens e categorias. Todas as alterações afetam imediatamente toda a plataforma e todos os perfis de utilizador.
+                </p>
                 <RequisitionsCatalogManagement />
-            </div>
+            </GlassCard>
         </div>
     );
 }

@@ -67,6 +67,7 @@ export function RequisitionsCatalogManagement() {
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
   const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
+  // Código de transporte é gerado automaticamente
   const [novoTransporteCodigo, setNovoTransporteCodigo] = useState('');
   const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
   const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
@@ -211,7 +212,7 @@ export function RequisitionsCatalogManagement() {
 
   const handleCreateTransporte = async () => {
     if (
-      !novoTransporteCodigo.trim() || !novoTransporteTipo.trim() || !novoTransporteMatricula.trim() ||
+      !novoTransporteTipo.trim() || !novoTransporteMatricula.trim() ||
       !novoTransporteMarca.trim() || !novoTransporteModelo.trim() || !novoTransporteLotacao.trim() || !novoTransporteDataMatricula
     ) {
       toast.error(tt('Todos os campos são obrigatórios.', 'All fields are required.'));
@@ -232,8 +233,20 @@ export function RequisitionsCatalogManagement() {
       }
 
       setSavingTransporte(true);
+      // Gerar código automaticamente: V01, V02, ...
+      const codigosExistentes = transportes.map(t => t.codigo).filter(Boolean);
+      let maxNum = 0;
+      codigosExistentes.forEach(codigo => {
+        const match = /^V(\d{2})$/.exec(codigo);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const novoCodigo = `V${String(maxNum + 1).padStart(2, '0')}`;
+
       const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
-        codigo: novoTransporteCodigo.trim().toUpperCase(),
+        codigo: novoCodigo,
         tipo: novoTransporteTipo.trim(),
         categoria: categoriaFinal,
         matricula: novoTransporteMatricula.trim().toUpperCase(),
@@ -525,7 +538,19 @@ export function RequisitionsCatalogManagement() {
             {openAddPanels.TRANSPORTES && (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <Input placeholder={tt('Código', 'Code')} className={inputFieldClassName} value={novoTransporteCodigo} onChange={(e) => setNovoTransporteCodigo(e.target.value)} />
+                  <Input placeholder={tt('Código', 'Code')} className={inputFieldClassName} value={(() => {
+                    // Mostra o próximo código sugerido
+                    const codigosExistentes = transportes.map(t => t.codigo).filter(Boolean);
+                    let maxNum = 0;
+                    codigosExistentes.forEach(codigo => {
+                      const match = /^V(\d{2})$/.exec(codigo);
+                      if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNum) maxNum = num;
+                      }
+                    });
+                    return `V${String(maxNum + 1).padStart(2, '0')}`;
+                  })()} readOnly disabled />
                   <Input placeholder={tt('Tipo', 'Type')} className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} />
                 </div>
                 <div>
