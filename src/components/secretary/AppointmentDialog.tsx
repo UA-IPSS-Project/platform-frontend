@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -14,6 +14,8 @@ import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiReque
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail, validateBirthDate } from '../../lib/validations';
 import { useTranslation } from 'react-i18next';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -43,7 +45,23 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingClose, setPendingClose] = useState(false);
   const dateLocale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT';
+
+  const isDirty = useMemo(() => {
+    return (
+      formData.nif !== '' ||
+      formData.name !== '' ||
+      formData.email !== '' ||
+      formData.contact !== '' ||
+      formData.dateOfBirth !== '' ||
+      formData.subject !== '' ||
+      formData.description !== '' ||
+      selectedFiles.length > 0
+    );
+  }, [formData, selectedFiles]);
+
+  const blocker = useUnsavedChangesWarning(isDirty);
 
   const setNifError = (message?: string) => {
     setErrors((prev) => {
@@ -212,6 +230,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     onClose();
   };
 
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingClose(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -365,7 +391,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
@@ -539,7 +565,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
+              <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
                 {t('appointmentDialog.actions.cancel')}
               </Button>
               <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
@@ -549,6 +575,20 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           </form>
         )}
       </DialogContent>
+      <UnsavedChangesModal 
+        isOpen={blocker.state === 'blocked' || pendingClose}
+        onConfirm={() => {
+          if (blocker.state === 'blocked') blocker.proceed?.();
+          if (pendingClose) {
+            setPendingClose(false);
+            handleClose();
+          }
+        }}
+        onCancel={() => {
+          if (blocker.state === 'blocked') blocker.reset?.();
+          if (pendingClose) setPendingClose(false);
+        }}
+      />
     </Dialog>
   );
 }
