@@ -1124,7 +1124,7 @@
       "slotOccupied": "Este horário já está ocupado"
     },
     "options": {
-      "shampoo": "Shampoo",
+      "shampoo": "Champô",
       "showerGel": "Gel de Banho",
       "towel": "Toalha",
       "soapCream": "Sabonete/Creme",
@@ -1209,7 +1209,8 @@
     "categories": {
       "detergentes": "Detergentes",
       "higiene": "Higiene",
-      "calcado": "Calçado"
+      "calcado": "Calçado",
+      "vestuario": "Vestuário"
     },
     "products": {
       "Detergente Roupa": "Detergente Roupa",
@@ -1220,7 +1221,15 @@
       "Champô": "Champô",
       "Toalhetes": "Toalhetes",
       "Fraldas Adulto": "Fraldas Adulto",
-      "Papel Higiénico": "Papel Higiénico"
+      "Papel Higiénico": "Papel Higiénico",
+      "Gel de Banho": "Gel de Banho",
+      "Toalha": "Toalha",
+      "Sabonete/Creme": "Sabonete/Creme",
+      "T-shirt/Camisola": "T-shirt/Camisola",
+      "Calças": "Calças",
+      "Roupa Interior": "Roupa Interior",
+      "Meias": "Meias",
+      "Agasalho/Casaco": "Agasalho/Casaco"
     }
   }
 }
