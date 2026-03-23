@@ -195,7 +195,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (!acc[item.categoria]) acc[item.categoria] = [];
         acc[item.categoria].push(item);
         return acc;
-    }, {});
+    }, {
+        'HIGIENE': [],
+        'DETERGENTES': [],
+        'CALCADO': []
+    });
 
     const getCategoryLabel = (cat: string) => {
         switch (cat) {
@@ -405,13 +409,18 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                         )}
                                     </div>
 
-                                    {/* Items - for calçado, two columns on large screens + sorting */}
-                                    <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0" : "flex flex-col"}>
-                                        {(categoria === 'CALCADO'
-                                            ? [...catItems].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
-                                            : catItems
-                                        ).map(item => renderItemRow(item, categoria === 'CALCADO'))}
-                                    </div>
+                                    {catItems.length === 0 ? (
+                                        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
+                                        </div>
+                                    ) : (
+                                        <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-0" : "flex flex-col"}>
+                                            {(categoria === 'CALCADO'
+                                                ? [...catItems].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
+                                                : catItems
+                                            ).map(item => renderItemRow(item, categoria === 'CALCADO'))}
+                                        </div>
+                                    )}
 
                                     {/* Total count for calçado */}
                                     {categoria === 'CALCADO' && (
@@ -474,17 +483,30 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             }
         };
 
-        const statsByCategory = stats.itens.reduce((acc, item) => {
+        // Initialize with all items from the inventory to show 0 for unconsumed items
+        const statsByCategory = items.reduce((acc, item) => {
             if (!acc[item.categoria]) acc[item.categoria] = [];
-            
-            const existing = acc[item.categoria].find(i => i.nome === item.nome);
-            if (existing) {
-                existing.quantidade += item.quantidade;
-            } else {
-                acc[item.categoria].push({ nome: item.nome, quantidade: item.quantidade });
-            }
+            acc[item.categoria].push({ nome: item.nome, quantidade: 0 });
             return acc;
-        }, {} as Record<string, { nome: string; quantidade: number }[]>);
+        }, {
+            'HIGIENE': [],
+            'DETERGENTES': [],
+            'CALCADO': []
+        } as Record<string, { nome: string; quantidade: number }[]>);
+
+        if (stats && stats.itens) {
+            for (const statItem of stats.itens) {
+                if (!statsByCategory[statItem.categoria]) {
+                    statsByCategory[statItem.categoria] = [];
+                }
+                const existing = statsByCategory[statItem.categoria].find(i => i.nome === statItem.nome);
+                if (existing) {
+                    existing.quantidade += statItem.quantidade;
+                } else {
+                    statsByCategory[statItem.categoria].push({ nome: statItem.nome, quantidade: statItem.quantidade });
+                }
+            }
+        }
 
         return (
             <div className="space-y-6">
@@ -519,7 +541,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
                         {/* Modular Category Bar Charts */}
                         {Object.entries(statsByCategory).length === 0 ? (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex items-center justify-center h-48 mt-6">
+                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center h-48 mt-6">
                                 <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
                             </div>
                         ) : (
@@ -535,8 +557,13 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                             <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-tight">
                                                 {catLabels[cat] || cat}
                                             </h3>
-                                            <div style={{ height: Math.max(200, items.length * 50 + 50) }} className="w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
+                                            {items.length === 0 ? (
+                                                <div className="flex-1 flex items-center justify-center text-sm text-gray-400 py-10">
+                                                    {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
+                                                </div>
+                                            ) : (
+                                                <div style={{ height: Math.max(200, items.length * 50 + 50) }} className="w-full">
+                                                    <ResponsiveContainer width="100%" height="100%">
                                                     <BarChart 
                                                         layout="vertical" 
                                                         data={items} 
@@ -553,7 +580,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                         <YAxis 
                                                             type="category"
                                                             dataKey="nome" 
-                                                            tickFormatter={(nome) => cat === 'CALCADO' ? nome : (t(`consumos.products.${nome}`, nome) as string)}
+                                                            tickFormatter={(nome) => cat === 'CALCADO' ? String(nome).replace(/N[º°]\s*/i, '').trim() : (t(`consumos.products.${nome}`, nome) as string)}
                                                             axisLine={false}
                                                             tickLine={false}
                                                             tick={{ fontSize: 12, fill: '#6B7280' }}
@@ -578,6 +605,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                     </BarChart>
                                                 </ResponsiveContainer>
                                             </div>
+                                            )}
                                         </div>
                                     );
                                 })}
