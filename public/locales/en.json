@@ -1209,7 +1209,8 @@
     "categories": {
       "detergentes": "Detergents",
       "higiene": "Hygiene",
-      "calcado": "Footwear"
+      "calcado": "Footwear",
+      "vestuario": "Clothing"
     },
     "products": {
       "Detergente Roupa": "Laundry Detergent",
@@ -1220,7 +1221,12 @@
       "Champô": "Shampoo",
       "Toalhetes": "Towelettes",
       "Fraldas Adulto": "Adult Diapers",
-      "Papel Higiénico": "Toilet Paper"
+      "Papel Higiénico": "Toilet Paper",
+      "T-shirt/Camisola": "T-shirt/Sweater",
+      "Calças": "Pants",
+      "Roupa Interior": "Underwear",
+      "Meias": "Socks",
+      "Agasalho/Casaco": "Coat/Jacket"
     }
   }
 }

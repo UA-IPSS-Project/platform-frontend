@@ -185,7 +185,7 @@ export function BalnearioAppointmentDetailsDialog({
                 balnearioDetails: {
                     produtosHigiene: hasHygiene,
                     lavagemRoupa: hasLaundry,
-                    roupas: roupasVal.map((r, i) => ({ id: i, categoria: r.categoria, tamanho: '', quantidade: r.quantidade })),
+                    roupas: roupasVal.map((r, i) => ({ id: i, categoria: r.categoria, tamanho: r.tamanho || '', quantidade: r.quantidade })),
                 }
             });
 
