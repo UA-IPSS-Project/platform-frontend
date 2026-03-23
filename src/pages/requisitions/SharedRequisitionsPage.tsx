@@ -448,11 +448,6 @@ export function SharedRequisitionsPage({
     validateAndSetField('horaRegresso');
   }, [createForm.tipo, createForm.dataSaida, createForm.horaSaida, createForm.dataRegresso, createForm.horaRegresso]);
 
-  useEffect(() => {
-    if (createForm.createTouched.tempoLimite) {
-      validateAndSetField('tempoLimite');
-    }
-  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite]);
 
 
 
@@ -538,6 +533,12 @@ export function SharedRequisitionsPage({
     createForm.setFieldError(field, error);
     return error;
   }, [validateCreateField, createForm]);
+
+  useEffect(() => {
+    if (createForm.createTouched.tempoLimite) {
+      validateAndSetField('tempoLimite');
+    }
+  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite, validateAndSetField]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -761,11 +762,11 @@ export function SharedRequisitionsPage({
   }, [currentUserId, createForm, validateAndSetField, t]);
 
   const confirmAndSubmit = useCallback(async () => {
+    setSubmitting(true);
     const dataHoraSaida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
     const dataHoraRegresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
 
     try {
-      setSubmitting(true);
 
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
