@@ -110,8 +110,8 @@ export const documentosApi = {
         if (params.tipo?.trim()) searchParams.append('tipo', params.tipo.trim());
         if (params.utenteNome?.trim()) searchParams.append('utenteNome', params.utenteNome.trim());
         if (params.utenteNif?.trim()) searchParams.append('utenteNif', params.utenteNif.trim());
-        if (params.desde?.trim()) searchParams.append('desde', params.desde.trim());
-        if (params.ate?.trim()) searchParams.append('ate', params.ate.trim());
+        if (params.marcacaoDesde?.trim()) searchParams.append('marcacaoDesde', params.marcacaoDesde.trim());
+        if (params.marcacaoAte?.trim()) searchParams.append('marcacaoAte', params.marcacaoAte.trim());
 
         const query = searchParams.toString();
         const endpoint = query ? `/api/documentos/pesquisar?${query}` : '/api/documentos/pesquisar';

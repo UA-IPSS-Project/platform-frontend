@@ -15,6 +15,6 @@ export interface PesquisaDocumentosParams {
     tipo?: string;
     utenteNome?: string;
     utenteNif?: string;
-    desde?: string;
-    ate?: string;
+    marcacaoDesde?: string;
+    marcacaoAte?: string;
 }
