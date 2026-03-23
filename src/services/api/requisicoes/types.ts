@@ -9,19 +9,9 @@ export interface FuncionarioResumo {
   tipo?: string;
 }
 
-export type TransporteCategoria =
-  | 'PESADO_DE_PASSAGEIROS'
-  | 'LIGEIRO_DE_PASSAGEIROS'
-  | 'LIGEIRO_DE_MERCADORIAS'
-  | 'LIGEIRO_ESPECIAL'
-  | 'LIGEIRO'
-  | 'PESADO'
-  | 'PASSAGEIROS'
-  | 'ADAPTADO';
-// NOTE: 'OUTROS' is kept for backward compatibility with historical data.
-// New materials should not use 'OUTROS' - see MATERIAL_CATEGORIA_OPTIONS for allowed user inputs.
-export type MaterialCategoria = 'ESCRITA' | 'PAPEL_E_ARQUIVO' | 'HIGIENE_E_LIMPEZA' | 'TECNOLOGIA' | 'OUTROS';
-export type ManutencaoCategoria = 'CATL' | 'RC' | 'PRE_ESCOLAR' | 'CRECHE';
+export type TransporteCategoria = string;
+export type MaterialCategoria = string;
+export type ManutencaoCategoria = string;
 
 export interface MaterialCatalogo {
   id: number;
@@ -165,6 +155,12 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
 export interface ManutencaoItemRequestPayload {
   itemId: number;
   observacoes?: string;
+}
+
+export interface CriarManutencaoItemCatalogoRequest {
+  categoria: string;
+  espaco: string;
+  itemVerificacao: string;
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {

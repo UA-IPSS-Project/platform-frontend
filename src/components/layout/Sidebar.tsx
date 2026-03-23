@@ -125,7 +125,11 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     {
       id: 'management',
       label: t('sidebar.management'),
-      icon: DatabaseIcon
+      icon: DatabaseIcon,
+      subitems: [
+        { id: 'management', label: t('userManagement.title', 'Gestão de Utilizadores'), icon: UserIcon },
+        { id: 'admin-area', label: t('userManagement.title2', 'Gestão da Plataforma'), icon: SlidersIcon },
+      ]
     },
   ];
 

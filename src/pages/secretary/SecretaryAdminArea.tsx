@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Package, Truck, Wrench, Settings2, Save, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Package, Truck, Wrench, Settings2, Save, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -36,11 +36,11 @@ function AdminOverview({ summaryCards }: Readonly<{
                 <GlassCard key={card.title} className="p-6 flex items-start justify-between">
                     <div>
                         <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
-                        <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                        <p className="mt-2 text-4xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
                     </div>
-                    <div className={`flex-shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
-                        <card.icon className="w-6 h-6" />
+                    <div className={`flex-shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.iconClassName}`}>
+                        <card.icon className="w-5 h-5" />
                     </div>
                 </GlassCard>
             ))}
@@ -234,10 +234,7 @@ export function SecretaryAdminArea() {
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
-                <p className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
-                    <ShieldCheck className="w-4 h-4" />
-                    {t('dashboard.admin.roleTitle')}
-                </p>
+
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.title')}</h1>
                 <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
                     {t('dashboard.admin.viewDescriptions.overview')}
@@ -256,7 +253,21 @@ export function SecretaryAdminArea() {
                 onSave={handleSaveSlotCapacities}
                 t={t}
             />
-            <RequisitionsCatalogManagement />
+            <div className="flex flex-col gap-6 mt-6">
+                <div>
+                    <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <Settings2 className="w-4 h-4" />
+                        {t('dashboard.admin.catalogs.title', 'Catálogos Administrativos')}
+                    </div>
+                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">
+                        {t('dashboard.admin.catalogs.subtitle', 'Gestão de Catálogos')}
+                    </h2>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
+                        {t('dashboard.admin.catalogs.description', 'Adicione, edite ou remova itens dos catálogos de materiais, transportes e tipos de manutenção.')}
+                    </p>
+                </div>
+                <RequisitionsCatalogManagement />
+            </div>
         </div>
     );
 }

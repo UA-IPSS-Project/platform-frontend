@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
   MaterialCategoria,
-  TipoManutencaoCatalogo,
+  ManutencaoItem,
   TransporteCategoria,
   requisicoesApi,
   type MaterialCatalogo,
@@ -14,34 +14,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useTranslation } from 'react-i18next';
 
-const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
-  { value: 'ESCRITA', label: 'Escrita' },
-  { value: 'PAPEL_E_ARQUIVO', label: 'Papel e arquivo' },
-  { value: 'HIGIENE_E_LIMPEZA', label: 'Higiene e limpeza' },
-  { value: 'TECNOLOGIA', label: 'Tecnologia' },
-  { value: 'OUTROS', label: 'Outros' },
-];
-
-const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
-  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
-  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
-  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
-  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
-  { value: 'LIGEIRO', label: 'Ligeiro' },
-  { value: 'PESADO', label: 'Pesado' },
-  { value: 'PASSAGEIROS', label: 'Passageiros' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
-];
-
-type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'TIPOS';
-
-const DEFAULT_OPEN_MATERIAL_GROUPS: Record<MaterialCategoria, boolean> = {
-  ESCRITA: true,
-  PAPEL_E_ARQUIVO: false,
-  HIGIENE_E_LIMPEZA: false,
-  TECNOLOGIA: false,
-  OUTROS: false,
-};
+type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'MANUTENCOES';
+type ExpandedFormState = 'EQUAL' | 'FORM' | 'LIST';
 
 const MAX_LOAD_CATALOGO_RETRIES = 4;
 
@@ -52,15 +26,15 @@ export function RequisitionsCatalogManagement() {
   const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
   const [savingMaterial, setSavingMaterial] = useState(false);
   const [savingTransporte, setSavingTransporte] = useState(false);
-  const [savingTipoManutencao, setSavingTipoManutencao] = useState(false);
+  const [savingManutencaoItem, setSavingManutencaoItem] = useState(false);
 
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
-  const [tiposManutencao, setTiposManutencao] = useState<TipoManutencaoCatalogo[]>([]);
+  const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
 
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null);
   const [editingTransporteId, setEditingTransporteId] = useState<number | null>(null);
-  const [editingTipoManutencaoId, setEditingTipoManutencaoId] = useState<number | null>(null);
+  const [editingManutencaoItemId, setEditingManutencaoItemId] = useState<number | null>(null);
 
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -76,8 +50,9 @@ export function RequisitionsCatalogManagement() {
   const [novoTransporteLotacao, setNovoTransporteLotacao] = useState('');
   const [novoTransporteDataMatricula, setNovoTransporteDataMatricula] = useState('');
 
-  const [novoTipoManutencaoNome, setNovoTipoManutencaoNome] = useState('');
-  const [novoTipoManutencaoDescricao, setNovoTipoManutencaoDescricao] = useState('');
+  const [novoManutencaoCategoria, setNovoManutencaoCategoria] = useState('');
+  const [novoManutencaoEspaco, setNovoManutencaoEspaco] = useState('');
+  const [novoManutencaoVerificacao, setNovoManutencaoVerificacao] = useState('');
 
   const [editMaterialNome, setEditMaterialNome] = useState('');
   const [editMaterialCategoria, setEditMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -93,26 +68,48 @@ export function RequisitionsCatalogManagement() {
   const [editTransporteLotacao, setEditTransporteLotacao] = useState('');
   const [editTransporteDataMatricula, setEditTransporteDataMatricula] = useState('');
 
-  const [editTipoManutencaoNome, setEditTipoManutencaoNome] = useState('');
-  const [editTipoManutencaoDescricao, setEditTipoManutencaoDescricao] = useState('');
+  const [editManutencaoCategoria, setEditManutencaoCategoria] = useState('');
+  const [editManutencaoEspaco, setEditManutencaoEspaco] = useState('');
+  const [editManutencaoVerificacao, setEditManutencaoVerificacao] = useState('');
 
   const [activePanel, setActivePanel] = useState<CatalogPanel>('MATERIAIS');
   const [openAddPanels, setOpenAddPanels] = useState<Record<CatalogPanel, boolean>>({
     MATERIAIS: true,
     TRANSPORTES: false,
-    TIPOS: false,
+    MANUTENCOES: false,
   });
-  const [openMaterialGroups, setOpenMaterialGroups] = useState<Record<MaterialCategoria, boolean>>(DEFAULT_OPEN_MATERIAL_GROUPS);
+  const [openMaterialGroups, setOpenMaterialGroups] = useState<Record<string, boolean>>({});
   const [openTransporteGroups, setOpenTransporteGroups] = useState<Record<string, boolean>>({});
+  const [expandedForm, setExpandedForm] = useState<ExpandedFormState>('EQUAL');
+
+  const uniqueMateriaisCategorias = Array.from(new Set(materiais.map(m => m.categoria).filter(Boolean)));
+  const uniqueTransportesCategorias = Array.from(new Set(transportes.map(t => t.categoria).filter(Boolean)));
+  const uniqueManutencaoCategorias = Array.from(new Set(manutencaoItems.map(m => m.categoria).filter(Boolean)));
+  const [openManutencaoGroups, setOpenManutencaoGroups] = useState<Record<string, boolean>>({});
+
+  const toggleManutencaoGroup = (categoria: string) => {
+    setOpenManutencaoGroups((prev) => ({
+      ...prev,
+      [categoria]: !prev[categoria],
+    }));
+  };
+
+  const manutencaoPorCategoria = uniqueManutencaoCategorias
+    .map((cat) => ({
+      value: cat,
+      label: cat,
+      items: manutencaoItems.filter((m) => m.categoria === cat),
+    }))
+    .filter((grupo) => grupo.items.length > 0);
 
   const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100';
   const inputFieldClassName = 'mt-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
 
   const loadCatalogo = async (retryCount = 0) => {
-    const [materiaisResult, transportesResult, tiposResult] = await Promise.allSettled([
+    const [materiaisResult, transportesResult, manutencaoResult] = await Promise.allSettled([
       requisicoesApi.listarMateriais(),
       requisicoesApi.listarTransportes(),
-      requisicoesApi.listarTiposManutencao(),
+      requisicoesApi.listarManutencaoItems(),
     ]);
 
     const pendingRetryableStatuses: number[] = [];
@@ -145,19 +142,19 @@ export function RequisitionsCatalogManagement() {
       }
     }
 
-    if (tiposResult.status === 'fulfilled') {
-      setTiposManutencao(Array.isArray(tiposResult.value) ? tiposResult.value : []);
+    if (manutencaoResult.status === 'fulfilled') {
+      setManutencaoItems(Array.isArray(manutencaoResult.value) ? manutencaoResult.value : []);
     } else {
-      const status = (tiposResult.reason as ApiRequestError)?.status;
+      const status = (manutencaoResult.reason as ApiRequestError)?.status;
       if (status !== 404 && status !== 401 && status !== 403) {
         if (isRetryableStatus(status)) {
           pendingRetryableStatuses.push(status ?? 0);
         } else {
-          toast.error((tiposResult.reason as Error)?.message || tt('Erro ao carregar tipos de manutenção.', 'Error loading maintenance types.'));
+          toast.error((manutencaoResult.reason as Error)?.message || tt('Erro ao carregar itens de manutenção.', 'Error loading maintenance items.'));
         }
       }
       if (status === 404) {
-        setTiposManutencao([]);
+        setManutencaoItems([]);
       }
     }
 
@@ -257,27 +254,29 @@ export function RequisitionsCatalogManagement() {
     }
   };
 
-  const handleCreateTipoManutencao = async () => {
-    if (!novoTipoManutencaoNome.trim()) {
-      toast.error(tt('O nome do tipo de manutenção é obrigatório.', 'Maintenance type name is required.'));
+  const handleCreateManutencaoItem = async () => {
+    if (!novoManutencaoCategoria.trim() || !novoManutencaoEspaco.trim() || !novoManutencaoVerificacao.trim()) {
+      toast.error(tt('Todos os campos são obrigatórios.', 'All fields are required.'));
       return;
     }
 
     try {
-      setSavingTipoManutencao(true);
-      const novoTipo = await requisicoesApi.criarTipoManutencao({
-        nome: novoTipoManutencaoNome.trim(),
-        descricao: novoTipoManutencaoDescricao.trim() || undefined,
+      setSavingManutencaoItem(true);
+      const novoItem = await requisicoesApi.criarManutencaoItem({
+        categoria: novoManutencaoCategoria.trim(),
+        espaco: novoManutencaoEspaco.trim(),
+        itemVerificacao: novoManutencaoVerificacao.trim(),
       });
-      setTiposManutencao((prev) => [...prev, novoTipo]);
-      setNovoTipoManutencaoNome('');
-      setNovoTipoManutencaoDescricao('');
+      setManutencaoItems((prev) => [...prev, novoItem]);
+      setNovoManutencaoCategoria('');
+      setNovoManutencaoEspaco('');
+      setNovoManutencaoVerificacao('');
       await loadCatalogo();
-      toast.success(tt('Tipo de manutenção criado com sucesso.', 'Maintenance type created successfully.'));
+      toast.success(tt('Item de manutenção criado.', 'Maintenance item created.'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao criar tipo de manutenção.', 'Error creating maintenance type.'));
+      toast.error(error?.message || tt('Erro ao criar item.', 'Error creating item.'));
     } finally {
-      setSavingTipoManutencao(false);
+      setSavingManutencaoItem(false);
     }
   };
 
@@ -301,10 +300,11 @@ export function RequisitionsCatalogManagement() {
     setEditTransporteDataMatricula(item.dataMatricula || '');
   };
 
-  const startEditTipoManutencao = (item: TipoManutencaoCatalogo) => {
-    setEditingTipoManutencaoId(item.id);
-    setEditTipoManutencaoNome(item.nome || '');
-    setEditTipoManutencaoDescricao(item.descricao || '');
+  const startEditManutencaoItem = (item: ManutencaoItem) => {
+    setEditingManutencaoItemId(item.id);
+    setEditManutencaoCategoria(item.categoria || '');
+    setEditManutencaoEspaco(item.espaco || '');
+    setEditManutencaoVerificacao(item.itemVerificacao || '');
   };
 
   const handleUpdateMaterial = async () => {
@@ -347,19 +347,20 @@ export function RequisitionsCatalogManagement() {
     }
   };
 
-  const handleUpdateTipoManutencao = async () => {
-    if (editingTipoManutencaoId == null) return;
+  const handleUpdateManutencaoItem = async () => {
+    if (editingManutencaoItemId == null) return;
     try {
-      const atualizado = await requisicoesApi.atualizarTipoManutencao(editingTipoManutencaoId, {
-        nome: editTipoManutencaoNome,
-        descricao: editTipoManutencaoDescricao || undefined,
+      const atualizado = await requisicoesApi.atualizarManutencaoItem(editingManutencaoItemId, {
+        categoria: editManutencaoCategoria.trim(),
+        espaco: editManutencaoEspaco.trim(),
+        itemVerificacao: editManutencaoVerificacao.trim(),
       });
-      setTiposManutencao((prev) => prev.map((item) => (item.id === editingTipoManutencaoId ? atualizado : item)));
-      setEditingTipoManutencaoId(null);
+      setManutencaoItems((prev) => prev.map((item) => (item.id === editingManutencaoItemId ? atualizado : item)));
+      setEditingManutencaoItemId(null);
       await loadCatalogo();
-      toast.success(tt('Tipo de manutenção atualizado com sucesso.', 'Maintenance type updated successfully.'));
+      toast.success(tt('Item atualizado com sucesso.', 'Item updated successfully.'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao atualizar tipo de manutenção.', 'Error updating maintenance type.'));
+      toast.error(error?.message || tt('Erro ao atualizar item.', 'Error updating item.'));
     }
   };
 
@@ -385,14 +386,14 @@ export function RequisitionsCatalogManagement() {
     }
   };
 
-  const handleDeleteTipoManutencao = async (id: number) => {
+  const handleDeleteManutencaoItem = async (id: number) => {
     try {
-      await requisicoesApi.apagarTipoManutencao(id);
-      setTiposManutencao((prev) => prev.filter((item) => item.id !== id));
+      await requisicoesApi.apagarManutencaoItem(id);
+      setManutencaoItems((prev) => prev.filter((item) => item.id !== id));
       await loadCatalogo();
-      toast.success(tt('Tipo de manutenção apagado com sucesso.', 'Maintenance type deleted successfully.'));
+      toast.success(tt('Item apagado com sucesso.', 'Item deleted successfully.'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao apagar tipo de manutenção.', 'Error deleting maintenance type.'));
+      toast.error(error?.message || tt('Erro ao apagar item.', 'Error deleting item.'));
     }
   };
 
@@ -402,7 +403,7 @@ export function RequisitionsCatalogManagement() {
       return {
         MATERIAIS: false,
         TRANSPORTES: false,
-        TIPOS: false,
+        MANUTENCOES: false,
         [panel]: willOpen,
       };
     });
@@ -423,21 +424,26 @@ export function RequisitionsCatalogManagement() {
     }));
   };
 
-  const materiaisPorCategoria = MATERIAL_CATEGORIA_OPTIONS.map((option) => ({
-    ...option,
-    items: materiais.filter((material) => material.categoria === option.value),
+  const materiaisPorCategoria = uniqueMateriaisCategorias.map((cat) => ({
+    value: cat,
+    label: cat,
+    items: materiais.filter((material) => material.categoria === cat),
   }));
 
-  const transportesPorCategoria = TRANSPORTE_CATEGORIA_OPTIONS
-    .map((option) => ({
-      ...option,
-      items: transportes.filter((t) => t.categoria === option.value),
+  const transportesPorCategoria = uniqueTransportesCategorias
+    .map((cat) => ({
+      value: cat,
+      label: cat,
+      items: transportes.filter((t) => t.categoria === cat),
     }))
     .filter((grupo) => grupo.items.length > 0);
 
+  const leftColSpan = expandedForm === 'FORM' ? 'xl:col-span-8' : (expandedForm === 'LIST' ? 'xl:col-span-4' : 'xl:col-span-5');
+  const rightColSpan = expandedForm === 'FORM' ? 'xl:col-span-4' : (expandedForm === 'LIST' ? 'xl:col-span-8' : 'xl:col-span-7');
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-      <div className="xl:col-span-5 space-y-4">
+      <div className={`${leftColSpan} space-y-4 transition-all duration-300`} onClick={() => setExpandedForm('FORM')}>
         <GlassCard className="p-4 space-y-3">
           <button
             type="button"
@@ -451,32 +457,35 @@ export function RequisitionsCatalogManagement() {
           {openAddPanels.MATERIAIS ? (
             <div className="space-y-3">
               <div>
-                <label htmlFor="admin-material-nome" className="text-sm text-gray-600 dark:text-gray-300">{tt('Nome', 'Name')}</label>
-                <Input id="admin-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} />
+                <label htmlFor="admin-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria (escolha ou crie nova)', 'Category (choose or create new)')}</label>
+                <Input
+                  id="admin-material-categoria"
+                  list="materiais-categorias-list"
+                  value={novoMaterialCategoria}
+                  onChange={(e) => setNovoMaterialCategoria(e.target.value)}
+                  className={inputFieldClassName}
+                  placeholder={tt('Ex: Escrita', 'Ex: Writing')}
+                />
+                <datalist id="materiais-categorias-list">
+                  {uniqueMateriaisCategorias.map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
               </div>
 
               <div>
-                <label htmlFor="admin-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
-                <select
-                  id="admin-material-categoria"
-                  value={novoMaterialCategoria}
-                  onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
-                  className={selectFieldClassName}
-                >
-                  {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                <label htmlFor="admin-material-nome" className="text-sm text-gray-600 dark:text-gray-300">{tt('Nome do material', 'Material name')}</label>
+                <Input id="admin-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="admin-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Atributo', 'Attribute')}</label>
-                  <Input id="admin-material-atributo" className={inputFieldClassName} value={novoMaterialAtributo} onChange={(e) => setNovoMaterialAtributo(e.target.value)} />
+                  <label htmlFor="admin-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Atributo (ex: Cor)', 'Attribute (ex: Color)')}</label>
+                  <Input id="admin-material-atributo" className={inputFieldClassName} value={novoMaterialAtributo} onChange={(e) => setNovoMaterialAtributo(e.target.value)} placeholder="Cor" />
                 </div>
                 <div>
-                  <label htmlFor="admin-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Valor do atributo', 'Attribute value')}</label>
-                  <Input id="admin-material-valor-atributo" className={inputFieldClassName} value={novoMaterialValorAtributo} onChange={(e) => setNovoMaterialValorAtributo(e.target.value)} />
+                  <label htmlFor="admin-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Valor do atributo (ex: Verde)', 'Attribute value (ex: Green)')}</label>
+                  <Input id="admin-material-valor-atributo" className={inputFieldClassName} value={novoMaterialValorAtributo} onChange={(e) => setNovoMaterialValorAtributo(e.target.value)} placeholder="Verde" />
                 </div>
               </div>
 
@@ -508,18 +517,21 @@ export function RequisitionsCatalogManagement() {
                   <label htmlFor="admin-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Tipo', 'Type')}</label>
                   <Input id="admin-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} />
                 </div>
-                <div>
-                  <label htmlFor="admin-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
-                  <select
+                <div className="md:col-span-2">
+                  <label htmlFor="admin-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria (escolha ou crie nova)', 'Category (choose or create new)')}</label>
+                  <Input
                     id="admin-transporte-categoria"
+                    list="transportes-categorias-list"
                     value={novoTransporteCategoria}
-                    onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                    className={selectFieldClassName}
-                  >
-                    {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                    onChange={(e) => setNovoTransporteCategoria(e.target.value)}
+                    className={inputFieldClassName}
+                    placeholder={tt('Ex: Ligeiro', 'Ex: Light')}
+                  />
+                  <datalist id="transportes-categorias-list">
+                    {uniqueTransportesCategorias.map(cat => (
+                      <option key={cat} value={cat} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
                 <div>
                   <label htmlFor="admin-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">{tt('Matrícula', 'License plate')}</label>
@@ -553,29 +565,49 @@ export function RequisitionsCatalogManagement() {
         <GlassCard className="p-4 space-y-3">
           <button
             type="button"
-            onClick={() => toggleAddPanel('TIPOS')}
+            onClick={() => toggleAddPanel('MANUTENCOES')}
             className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left"
           >
-            <span className="font-semibold text-gray-800 dark:text-white">{tt('Adicionar tipo de manutenção', 'Add maintenance type')}</span>
+            <span className="font-semibold text-gray-800 dark:text-white">{tt('Adicionar item de manutenção', 'Add maintenance type')}</span>
             <span className="text-sm text-gray-500">{openAddPanels.TIPOS ? '▾' : '▸'}</span>
           </button>
 
-          {openAddPanels.TIPOS ? (
+          {openAddPanels.MANUTENCOES ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input className={inputFieldClassName} placeholder={tt('Nome do tipo', 'Type name')} value={novoTipoManutencaoNome} onChange={(e) => setNovoTipoManutencaoNome(e.target.value)} />
-                <Input className={inputFieldClassName} placeholder={tt('Descrição (opcional)', 'Description (optional)')} value={novoTipoManutencaoDescricao} onChange={(e) => setNovoTipoManutencaoDescricao(e.target.value)} />
+              <div>
+                <label className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria (escolha ou crie nova)', 'Category')}</label>
+                <Input
+                  list="manutencao-categorias-list"
+                  className={inputFieldClassName}
+                  placeholder={tt('Ex: CATL', 'Ex: CATL')}
+                  value={novoManutencaoCategoria}
+                  onChange={(e) => setNovoManutencaoCategoria(e.target.value)}
+                />
+                <datalist id="manutencao-categorias-list">
+                  {uniqueManutencaoCategorias.map(cat => <option key={cat} value={cat} />)}
+                </datalist>
               </div>
 
-              <Button onClick={() => void handleCreateTipoManutencao()} disabled={savingTipoManutencao} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {savingTipoManutencao ? tt('A criar...', 'Creating...') : tt('Adicionar tipo de manutenção', 'Add maintenance type')}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{tt('Espaço', 'Space')}</label>
+                  <Input className={inputFieldClassName} placeholder={tt('Ex: Sala 1', 'Ex: Room 1')} value={novoManutencaoEspaco} onChange={(e) => setNovoManutencaoEspaco(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{tt('Item de verificação', 'Verification item')}</label>
+                  <Input className={inputFieldClassName} placeholder={tt('Ex: Lâmpadas', 'Ex: Lamps')} value={novoManutencaoVerificacao} onChange={(e) => setNovoManutencaoVerificacao(e.target.value)} />
+                </div>
+              </div>
+
+              <Button onClick={() => void handleCreateManutencaoItem()} disabled={savingManutencaoItem} className="bg-purple-600 hover:bg-purple-700 text-white">
+                {savingManutencaoItem ? tt('A criar...', 'Creating...') : tt('Adicionar item', 'Add item')}
               </Button>
             </div>
           ) : null}
         </GlassCard>
       </div>
 
-      <div className="xl:col-span-7">
+      <div className={`${rightColSpan} transition-all duration-300`} onClick={() => setExpandedForm('LIST')}>
         <GlassCard className="p-6 space-y-4">
           {activePanel === 'MATERIAIS' ? (
             <>
@@ -610,15 +642,12 @@ export function RequisitionsCatalogManagement() {
                                   </div>
                                   <div>
                                     <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                  <select
-                                    value={editMaterialCategoria}
-                                    onChange={(e) => setEditMaterialCategoria(e.target.value as MaterialCategoria)}
-                                    className={selectFieldClassName}
-                                  >
-                                    {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                                      <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                  </select>
+                                    <Input
+                                      list="materiais-categorias-list"
+                                      value={editMaterialCategoria}
+                                      onChange={(e) => setEditMaterialCategoria(e.target.value)}
+                                      className={inputFieldClassName}
+                                    />
                                   </div>
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
@@ -698,15 +727,12 @@ export function RequisitionsCatalogManagement() {
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                  <select
+                                  <Input
+                                    list="transportes-categorias-list"
                                     value={editTransporteCategoria}
-                                    onChange={(e) => setEditTransporteCategoria(e.target.value as TransporteCategoria)}
-                                    className={selectFieldClassName}
-                                  >
-                                    {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                                      <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                  </select>
+                                    onChange={(e) => setEditTransporteCategoria(e.target.value)}
+                                    className={inputFieldClassName}
+                                  />
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Matrícula', 'License plate')}</p>
@@ -772,40 +798,68 @@ export function RequisitionsCatalogManagement() {
             </>
           ) : null}
 
-          {activePanel === 'TIPOS' ? (
+          {activePanel === 'MANUTENCOES' ? (
             <>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">{tt('Editar tipos de manutenção', 'Edit maintenance types')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Tipos no catálogo', 'Types in catalog')}: {tiposManutencao.length}</p>
+              <h3 className="text-base font-semibold text-gray-800 dark:text-white">{tt('Editar itens de manutenção', 'Edit maintenance types')}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Itens no catálogo', 'Types in catalog')}: {manutencaoItems.length}</p>
 
-              <div className="space-y-2 max-h-[38rem] overflow-auto border border-gray-200 dark:border-gray-700 rounded-md p-2">
-                {tiposManutencao.map((item) => (
-                  <div key={item.id} className="rounded-md border border-gray-200 dark:border-gray-700 p-2 text-sm">
-                    {editingTipoManutencaoId === item.id ? (
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Nome', 'Name')}</p>
-                          <Input className={inputFieldClassName} value={editTipoManutencaoNome} onChange={(e) => setEditTipoManutencaoNome(e.target.value)} />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Descrição', 'Description')}</p>
-                          <Input className={inputFieldClassName} value={editTipoManutencaoDescricao} onChange={(e) => setEditTipoManutencaoDescricao(e.target.value)} />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => void handleUpdateTipoManutencao()}>{tt('Guardar', 'Save')}</Button>
-                          <Button variant="outline" onClick={() => setEditingTipoManutencaoId(null)}>{tt('Cancelar', 'Cancel')}</Button>
-                        </div>
+              <div className="space-y-2">
+                {manutencaoPorCategoria.length === 0 ? (
+                  <p className="text-sm text-gray-500">{tt('Sem itens no catálogo.', 'No items in catalog.')}</p>
+                ) : manutencaoPorCategoria.map((grupo) => (
+                  <div key={grupo.value} className="rounded-md border border-gray-200 dark:border-gray-700 p-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleManutencaoGroup(grupo.value)}
+                      className="w-full flex items-center justify-between text-left"
+                    >
+                      <span className="font-medium text-gray-800 dark:text-gray-100">
+                        {grupo.label} <span className="text-gray-500">({grupo.items.length})</span>
+                      </span>
+                      <span className="text-sm text-gray-500">{openManutencaoGroups[grupo.value] ? '▾' : '▸'}</span>
+                    </button>
+
+                    {openManutencaoGroups[grupo.value] ? (
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {grupo.items.map((item) => (
+                          <div key={item.id} className="rounded-md border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3 text-sm">
+                            {editingManutencaoItemId === item.id ? (
+                              <div className="space-y-2">
+                                <div>
+                                  <label className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
+                                  <Input list="manutencao-categorias-list" className={inputFieldClassName} value={editManutencaoCategoria} onChange={(e) => setEditManutencaoCategoria(e.target.value)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="text-xs text-gray-600 dark:text-gray-300">{tt('Espaço', 'Space')}</label>
+                                    <Input className={inputFieldClassName} value={editManutencaoEspaco} onChange={(e) => setEditManutencaoEspaco(e.target.value)} />
+                                  </div>
+                                  <div>
+                                    <label className="text-xs text-gray-600 dark:text-gray-300">{tt('Verificação', 'Verification')}</label>
+                                    <Input className={inputFieldClassName} value={editManutencaoVerificacao} onChange={(e) => setEditManutencaoVerificacao(e.target.value)} />
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => void handleUpdateManutencaoItem()}>{tt('Guardar', 'Save')}</Button>
+                                  <Button variant="outline" onClick={() => setEditingManutencaoItemId(null)}>{tt('Cancelar', 'Cancel')}</Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                <div>
+                                  <p className="font-semibold text-gray-900 dark:text-gray-100">{item.itemVerificacao}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Espaço', 'Space')}: {item.espaco}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button variant="outline" className="h-8 px-3" onClick={() => startEditManutencaoItem(item)}>{tt('Editar', 'Edit')}</Button>
+                                  <Button variant="outline" className="h-8 px-3" onClick={() => void handleDeleteManutencaoItem(item.id)}>{tt('Apagar', 'Delete')}</Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate">
-                          {[item.nome, item.descricao].filter(Boolean).join(' - ')}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button variant="outline" className="h-8 px-2" onClick={() => startEditTipoManutencao(item)}>{tt('Editar', 'Edit')}</Button>
-                          <Button variant="outline" className="h-8 px-2" onClick={() => void handleDeleteTipoManutencao(item.id)}>{tt('Apagar', 'Delete')}</Button>
-                        </div>
-                      </div>
-                    )}
+                    ) : null}
                   </div>
                 ))}
               </div>
