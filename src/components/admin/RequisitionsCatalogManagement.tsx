@@ -13,7 +13,7 @@ import { GlassCard } from '../ui/glass-card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useTranslation } from 'react-i18next';
-import { PackageIcon } from '../shared/CustomIcons';
+import { PackageIcon, TrashIcon } from '../shared/CustomIcons';
 
 type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'MANUTENCOES';
 type ExpandedFormState = 'EQUAL' | 'FORM' | 'LIST';
@@ -28,7 +28,7 @@ export function RequisitionsCatalogManagement() {
 
   const formatCategoryName = (name: string) => {
     if (!name) return '';
-    return name.replace(/_/g, ' ');
+    return name.replace(/_/g, ' ').toUpperCase();
   };
 
   const [savingMaterial, setSavingMaterial] = useState(false);
@@ -42,6 +42,13 @@ export function RequisitionsCatalogManagement() {
   const [customMaterialCategory, setCustomMaterialCategory] = useState('');
   const [customTransporteCategory, setCustomTransporteCategory] = useState('');
   const [customManutencaoCategory, setCustomManutencaoCategory] = useState('');
+
+  const [editMaterialCategoryMode, setEditMaterialCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [editTransporteCategoryMode, setEditTransporteCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [editManutencaoCategoryMode, setEditManutencaoCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [customEditMaterialCategory, setCustomEditMaterialCategory] = useState('');
+  const [customEditTransporteCategory, setCustomEditTransporteCategory] = useState('');
+  const [customEditManutencaoCategory, setCustomEditManutencaoCategory] = useState('');
 
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
@@ -328,6 +335,8 @@ export function RequisitionsCatalogManagement() {
     setEditMaterialCategoria(item.categoria || 'OUTROS');
     setEditMaterialAtributo(item.atributo || '');
     setEditMaterialValorAtributo(item.valorAtributo || '');
+    setEditMaterialCategoryMode('SELECT');
+    setCustomEditMaterialCategory('');
   };
 
   const startEditTransporte = (item: TransporteCatalogo) => {
@@ -340,6 +349,8 @@ export function RequisitionsCatalogManagement() {
     setEditTransporteModelo(item.modelo || '');
     setEditTransporteLotacao(item.lotacao ? String(item.lotacao) : '');
     setEditTransporteDataMatricula(item.dataMatricula || '');
+    setEditTransporteCategoryMode('SELECT');
+    setCustomEditTransporteCategory('');
   };
 
   const startEditManutencaoItem = (item: ManutencaoItem) => {
@@ -347,14 +358,22 @@ export function RequisitionsCatalogManagement() {
     setEditManutencaoCategoria(item.categoria || '');
     setEditManutencaoEspaco(item.espaco || '');
     setEditManutencaoVerificacao(item.itemVerificacao || '');
+    setEditManutencaoCategoryMode('SELECT');
+    setCustomEditManutencaoCategory('');
   };
 
   const handleUpdateMaterial = async () => {
     if (editingMaterialId == null) return;
     try {
+      const categoriaFinal = editMaterialCategoryMode === 'NEW' ? customEditMaterialCategory.trim() : editMaterialCategoria;
+      if (!categoriaFinal.trim()) {
+        toast.error(tt('A categoria é obrigatória.', 'Category is required.'));
+        return;
+      }
+
       const atualizado = await requisicoesApi.atualizarMaterialCatalogo(editingMaterialId, {
         nome: editMaterialNome,
-        categoria: editMaterialCategoria,
+        categoria: categoriaFinal,
         atributo: editMaterialAtributo,
         valorAtributo: editMaterialValorAtributo,
       });
@@ -370,10 +389,16 @@ export function RequisitionsCatalogManagement() {
   const handleUpdateTransporte = async () => {
     if (editingTransporteId == null) return;
     try {
+      const categoriaFinal = editTransporteCategoryMode === 'NEW' ? customEditTransporteCategory.trim() : editTransporteCategoria;
+      if (!categoriaFinal.trim()) {
+        toast.error(tt('A categoria é obrigatória.', 'Category is required.'));
+        return;
+      }
+
       const atualizado = await requisicoesApi.atualizarTransporteCatalogo(editingTransporteId, {
         codigo: editTransporteCodigo || undefined,
         tipo: editTransporteTipo,
-        categoria: editTransporteCategoria,
+        categoria: categoriaFinal,
         matricula: editTransporteMatricula,
         marca: editTransporteMarca || undefined,
         modelo: editTransporteModelo || undefined,
@@ -392,8 +417,14 @@ export function RequisitionsCatalogManagement() {
   const handleUpdateManutencaoItem = async () => {
     if (editingManutencaoItemId == null) return;
     try {
+      const categoriaFinal = editManutencaoCategoryMode === 'NEW' ? customEditManutencaoCategory.trim() : editManutencaoCategoria;
+      if (!categoriaFinal.trim()) {
+        toast.error(tt('A categoria é obrigatória.', 'Category is required.'));
+        return;
+      }
+
       const atualizado = await requisicoesApi.atualizarManutencaoItem(editingManutencaoItemId, {
-        categoria: editManutencaoCategoria.trim(),
+        categoria: categoriaFinal.trim(),
         espaco: editManutencaoEspaco.trim(),
         itemVerificacao: editManutencaoVerificacao.trim(),
       });
@@ -436,6 +467,33 @@ export function RequisitionsCatalogManagement() {
       toast.success(tt('Item apagado com sucesso.', 'Item deleted successfully.'));
     } catch (error: any) {
       toast.error(error?.message || tt('Erro ao apagar item.', 'Error deleting item.'));
+    }
+  };
+  
+  const handleDeleteCategory = async (category: string, type: 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO') => {
+    const formattedName = formatCategoryName(category);
+    const confirmed = window.confirm(tt(
+      `Tem a certeza que deseja eliminar TODOS os itens da categoria "${formattedName}"? Esta ação não pode ser desfeita.`,
+      `Are you sure you want to delete ALL items in category "${formattedName}"? This action cannot be undone.`
+    ));
+
+    if (!confirmed) return;
+
+    try {
+      if (type === 'MATERIAL') {
+        const itemsToDelete = materiais.filter(m => m.categoria === category);
+        await Promise.all(itemsToDelete.map(m => requisicoesApi.apagarMaterialCatalogo(m.id)));
+      } else if (type === 'TRANSPORTE') {
+        const itemsToDelete = transportes.filter(t => t.categoria === category);
+        await Promise.all(itemsToDelete.map(t => requisicoesApi.apagarTransporteCatalogo(t.id)));
+      } else if (type === 'MANUTENCAO') {
+        const itemsToDelete = manutencaoItems.filter(m => m.categoria === category);
+        await Promise.all(itemsToDelete.map(m => requisicoesApi.apagarManutencaoItem(m.id)));
+      }
+      await loadCatalogo();
+      toast.success(tt('Categoria removida com sucesso.', 'Category removed successfully.'));
+    } catch (error) {
+      toast.error(tt('Erro ao remover categoria.', 'Error removing category.'));
     }
   };
 
@@ -731,7 +789,20 @@ export function RequisitionsCatalogManagement() {
                       className="w-full flex items-center justify-between text-left"
                     >
                       <span className="font-medium text-gray-800 dark:text-gray-100">{formatCategoryName(grupo.label)} <span className="text-gray-500">({grupo.items.length})</span></span>
-                      <span className="text-sm text-gray-500">{openMaterialGroups[grupo.value] ? '▾' : '▸'}</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteCategory(grupo.value, 'MATERIAL');
+                          }}
+                          title={tt('Remover Categoria', 'Remove Category')}
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-gray-500">{openMaterialGroups[grupo.value] ? '▾' : '▸'}</span>
+                      </div>
                     </button>
 
                     {openMaterialGroups[grupo.value] ? (
@@ -750,12 +821,31 @@ export function RequisitionsCatalogManagement() {
                                   </div>
                                   <div>
                                     <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                    <Input
-                                      list="materiais-categorias-list"
-                                      value={editMaterialCategoria}
-                                      onChange={(e) => setEditMaterialCategoria(e.target.value)}
-                                      className={inputFieldClassName}
-                                    />
+                                    <select
+                                      value={editMaterialCategoryMode === 'NEW' ? 'NEW' : editMaterialCategoria}
+                                      onChange={(e) => {
+                                        if (e.target.value === 'NEW') {
+                                          setEditMaterialCategoryMode('NEW');
+                                        } else {
+                                          setEditMaterialCategoryMode('SELECT');
+                                          setEditMaterialCategoria(e.target.value as MaterialCategoria);
+                                        }
+                                      }}
+                                      className={selectFieldClassName}
+                                    >
+                                      {uniqueMateriaisCategorias.map(cat => (
+                                        <option key={cat} value={cat}>{formatCategoryName(cat)}</option>
+                                      ))}
+                                      <option value="NEW">-- {tt('Nova Categoria', 'New Category')} --</option>
+                                    </select>
+                                    {editMaterialCategoryMode === 'NEW' && (
+                                      <Input
+                                        className={inputFieldClassName + " mt-2"}
+                                        placeholder={tt('Nome da nova categoria', 'New category name')}
+                                        value={customEditMaterialCategory}
+                                        onChange={(e) => setCustomEditMaterialCategory(e.target.value)}
+                                      />
+                                    )}
                                   </div>
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
@@ -814,7 +904,20 @@ export function RequisitionsCatalogManagement() {
                       <span className="font-medium text-gray-800 dark:text-gray-100">
                         {formatCategoryName(grupo.label)} <span className="text-gray-500">({grupo.items.length} {tt('viatura', 'vehicle')}{grupo.items.length !== 1 ? 's' : ''})</span>
                       </span>
-                      <span className="text-sm text-gray-500">{openTransporteGroups[grupo.value] ? '▾' : '▸'}</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteCategory(grupo.value, 'TRANSPORTE');
+                          }}
+                          title={tt('Remover Categoria', 'Remove Category')}
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-gray-500">{openTransporteGroups[grupo.value] ? '▾' : '▸'}</span>
+                      </div>
                     </button>
 
                     {openTransporteGroups[grupo.value] ? (
@@ -835,12 +938,31 @@ export function RequisitionsCatalogManagement() {
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                  <Input
-                                    list="transportes-categorias-list"
-                                    value={editTransporteCategoria}
-                                    onChange={(e) => setEditTransporteCategoria(e.target.value)}
-                                    className={inputFieldClassName}
-                                  />
+                                  <select
+                                    value={editTransporteCategoryMode === 'NEW' ? 'NEW' : editTransporteCategoria}
+                                    onChange={(e) => {
+                                      if (e.target.value === 'NEW') {
+                                        setEditTransporteCategoryMode('NEW');
+                                      } else {
+                                        setEditTransporteCategoryMode('SELECT');
+                                        setEditTransporteCategoria(e.target.value as TransporteCategoria);
+                                      }
+                                    }}
+                                    className={selectFieldClassName}
+                                  >
+                                    {uniqueTransportesCategorias.map(cat => (
+                                      <option key={cat} value={cat}>{formatCategoryName(cat)}</option>
+                                    ))}
+                                    <option value="NEW">-- {tt('Nova Categoria', 'New Category')} --</option>
+                                  </select>
+                                  {editTransporteCategoryMode === 'NEW' && (
+                                    <Input
+                                      className={inputFieldClassName + " mt-2"}
+                                      placeholder={tt('Nome da nova categoria', 'New category name')}
+                                      value={customEditTransporteCategory}
+                                      onChange={(e) => setCustomEditTransporteCategory(e.target.value)}
+                                    />
+                                  )}
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Matrícula', 'License plate')}</p>
@@ -924,7 +1046,20 @@ export function RequisitionsCatalogManagement() {
                       <span className="font-medium text-gray-800 dark:text-gray-100">
                         {formatCategoryName(grupo.label)} <span className="text-gray-500">({grupo.items.length})</span>
                       </span>
-                      <span className="text-sm text-gray-500">{openManutencaoGroups[grupo.value] ? '▾' : '▸'}</span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDeleteCategory(grupo.value, 'MANUTENCAO');
+                          }}
+                          title={tt('Remover Categoria', 'Remove Category')}
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </Button>
+                        <span className="text-sm text-gray-500">{openManutencaoGroups[grupo.value] ? '▾' : '▸'}</span>
+                      </div>
                     </button>
 
                     {openManutencaoGroups[grupo.value] ? (
@@ -935,7 +1070,31 @@ export function RequisitionsCatalogManagement() {
                               <div className="space-y-2">
                                 <div>
                                   <label className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
-                                  <Input list="manutencao-categorias-list" className={inputFieldClassName} value={editManutencaoCategoria} onChange={(e) => setEditManutencaoCategoria(e.target.value)} />
+                                  <select
+                                    value={editManutencaoCategoryMode === 'NEW' ? 'NEW' : editManutencaoCategoria}
+                                    onChange={(e) => {
+                                      if (e.target.value === 'NEW') {
+                                        setEditManutencaoCategoryMode('NEW');
+                                      } else {
+                                        setEditManutencaoCategoryMode('SELECT');
+                                        setEditManutencaoCategoria(e.target.value);
+                                      }
+                                    }}
+                                    className={selectFieldClassName}
+                                  >
+                                    {uniqueManutencaoCategorias.map(cat => (
+                                      <option key={cat} value={cat}>{formatCategoryName(cat)}</option>
+                                    ))}
+                                    <option value="NEW">-- {tt('Nova Categoria', 'New Category')} --</option>
+                                  </select>
+                                  {editManutencaoCategoryMode === 'NEW' && (
+                                    <Input
+                                      className={inputFieldClassName + " mt-2"}
+                                      placeholder={tt('Nome da nova categoria', 'New category name')}
+                                      value={customEditManutencaoCategory}
+                                      onChange={(e) => setCustomEditManutencaoCategory(e.target.value)}
+                                    />
+                                  )}
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
