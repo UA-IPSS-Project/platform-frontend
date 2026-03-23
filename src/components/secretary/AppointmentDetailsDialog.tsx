@@ -460,12 +460,15 @@ function cleanFilename(name: string) {
       .catch(() => setSlotCapacity(1));
   }, [showRescheduleDialog]);
 
+  const rescheduleYear = rescheduleDate.getFullYear();
+  const rescheduleMonth = rescheduleDate.getMonth() + 1;
+
   // Load admin blocks for the current month
   useEffect(() => {
     if (!showRescheduleDialog) return;
     const loadBlocks = async () => {
       try {
-        const bloqueios = await calendarioApi.listarBloqueios(rescheduleDate.getFullYear(), rescheduleDate.getMonth() + 1);
+        const bloqueios = await calendarioApi.listarBloqueios(rescheduleYear, rescheduleMonth);
         const newBlocks = new Set<string>();
         const timeSlots = generateTimeSlots();
         bloqueios.forEach((b: any) => {
@@ -480,7 +483,7 @@ function cleanFilename(name: string) {
       } catch { /* ignore */ }
     };
     loadBlocks();
-  }, [rescheduleDate, showRescheduleDialog]);
+  }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
 
   // Filter available slots: exclude past, blocked, and full slots
   useEffect(() => {
