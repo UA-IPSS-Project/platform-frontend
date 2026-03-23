@@ -474,25 +474,17 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             }
         };
 
-        const statsByCategory = items.reduce((acc, item) => {
+        const statsByCategory = stats.itens.reduce((acc, item) => {
             if (!acc[item.categoria]) acc[item.categoria] = [];
-            acc[item.categoria].push({ nome: item.nome, quantidade: 0 });
+            
+            const existing = acc[item.categoria].find(i => i.nome === item.nome);
+            if (existing) {
+                existing.quantidade += item.quantidade;
+            } else {
+                acc[item.categoria].push({ nome: item.nome, quantidade: item.quantidade });
+            }
             return acc;
         }, {} as Record<string, { nome: string; quantidade: number }[]>);
-
-        if (stats && stats.itens) {
-            for (const statItem of stats.itens) {
-                if (!statsByCategory[statItem.categoria]) {
-                    statsByCategory[statItem.categoria] = [];
-                }
-                const existing = statsByCategory[statItem.categoria].find(i => i.nome === statItem.nome);
-                if (existing) {
-                    existing.quantidade += statItem.quantidade;
-                } else {
-                    statsByCategory[statItem.categoria].push({ nome: statItem.nome, quantidade: statItem.quantidade });
-                }
-            }
-        }
 
         return (
             <div className="space-y-6">
