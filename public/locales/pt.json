@@ -635,6 +635,10 @@
       "materialCategoryHygieneCleaning": "Higiene e limpeza",
       "materialCategoryTechnology": "Tecnologia",
       "materialCategoryOther": "Outros",
+      "maintenanceCategoryCATL": "CATL",
+      "maintenanceCategoryRC": "R/C",
+      "maintenanceCategoryPreschool": "Pré Escolar",
+      "maintenanceCategoryDaycare": "Creche",
       "noCategory": "Sem categoria",
       "capacityNotDefined": "Lotação não definida",
       "seat": "lugar",
@@ -734,6 +738,7 @@
       "subjectOptional": "Assunto (opcional)",
       "subjectPlaceholder": "Ex: Torneira com fuga",
       "close": "Fechar",
+      "clearSelection": "Limpar seleção",
       "creatingRequest": "A criar...",
       "createRequest": "Criar requisição",
       "goToGeneralRequests": "Ir para requisições gerais",
@@ -742,6 +747,7 @@
       "urgent": "Urgentes",
       "goToMaterialRequests": "Ir para requisições de material",
       "material": "Material",
+      "materials": "Materiais",
       "goToMaintenanceRequests": "Ir para requisições de manutenção",
       "maintenance": "Manutenção",
       "goToTransportRequests": "Ir para requisições de transporte",
@@ -784,7 +790,12 @@
       "attributeValue": "Valor do atributo",
       "attributeValuePlaceholder": "Ex: Azul, A4, 100ml",
       "creating": "A criar...",
-      "createMaterial": "Criar material"
+      "createMaterial": "Criar material",
+      "confirmTitle": "Confirmar Requisição",
+      "confirmMessage": "Verifique os detalhes da requisição antes de a submeter.",
+      "confirmCancelBtn": "Cancelar",
+      "confirmSubmitBtn": "Confirmar",
+      "availableItems": "Itens disponíveis"
     },
     "messages": {
       "created": "Requisição criada com sucesso.",
@@ -792,8 +803,11 @@
       "statusUpdated": "Estado da requisição atualizado com sucesso."
     },
     "errors": {
+      "deadlineCannotBePast": "A data limite não pode estar no passado.",
+      "deadlineBeforeDeparture": "A data limite deve ser anterior à data/hora de saída.",
       "requiredField": "Campo obrigatório.",
       "addOneMaterial": "Adicione pelo menos um material com quantidade válida.",
+      "addOneMaintenanceItem": "Selecione pelo menos um item de manutenção.",
       "invalidPassengers": "Indique um número de passageiros válido.",
       "selectOneVehicle": "Selecione pelo menos uma viatura.",
       "dateCannotBePast": "A data/hora não pode estar no passado.",

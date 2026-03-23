@@ -46,6 +46,12 @@ interface RequisitionsCreateTransportFormProps {
   lugaresEmFalta: number;
   loadingCatalogo: boolean;
   createErrors?: Partial<{
+    destino: string;
+    dataSaida: string;
+    horaSaida: string;
+    dataRegresso: string;
+    horaRegresso: string;
+    numeroPassageiros: string;
     transporteIds: string;
   }>;
   inputFieldClassName: string;
@@ -106,11 +112,12 @@ export function RequisitionsCreateTransportForm({
             <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
             <Input
               id="req-create-transporte-destino"
-              className={inputFieldClassName}
+              className={`${inputFieldClassName} ${createErrors?.destino ? '!border-red-500 !ring-red-500' : ''}`}
               value={destinoTransporte}
               onChange={(e) => onChangeDestino(e.target.value)}
               placeholder={t('requisitions.ui.destinationPlaceholder')}
             />
+            {createErrors?.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
           </div>
 
           <div>
@@ -130,11 +137,12 @@ export function RequisitionsCreateTransportForm({
               id="req-create-transporte-passageiros"
               type="number"
               min="1"
-              className={inputFieldClassName}
+              className={`${inputFieldClassName} ${createErrors?.numeroPassageiros ? '!border-red-500 !ring-red-500' : ''}`}
               value={numeroPassageiros}
               onChange={(e) => onChangeNumeroPassageiros(e.target.value)}
               placeholder={t('requisitions.ui.passengersPlaceholder')}
             />
+            {createErrors?.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
           </div>
         </div>
 
@@ -150,8 +158,9 @@ export function RequisitionsCreateTransportForm({
                   onChangeDataRegresso(value);
                 }
               }}
-              buttonClassName="mt-1"
+              buttonClassName={`mt-1 ${createErrors?.dataSaida ? '!border-red-500 !ring-red-500' : ''}`}
             />
+            {createErrors?.dataSaida && <p className="text-red-500 text-xs mt-1">{createErrors.dataSaida}</p>}
           </div>
 
           <div>
@@ -159,10 +168,11 @@ export function RequisitionsCreateTransportForm({
             <Input
               id="req-create-transporte-hora-saida"
               type="time"
-              className={inputFieldClassName}
+              className={`${inputFieldClassName} mt-1 ${createErrors?.horaSaida ? '!border-red-500 !ring-red-500' : ''}`}
               value={horaSaida}
               onChange={(e) => onChangeHoraSaida(e.target.value)}
             />
+            {createErrors?.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
           </div>
 
           <div>
@@ -171,8 +181,9 @@ export function RequisitionsCreateTransportForm({
               id="req-create-transporte-data-regresso"
               value={dataRegresso}
               onChange={onChangeDataRegresso}
-              buttonClassName="mt-1"
+              buttonClassName={`mt-1 ${createErrors?.dataRegresso ? '!border-red-500 !ring-red-500' : ''}`}
             />
+            {createErrors?.dataRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.dataRegresso}</p>}
           </div>
 
           <div>
@@ -180,10 +191,11 @@ export function RequisitionsCreateTransportForm({
             <Input
               id="req-create-transporte-hora-regresso"
               type="time"
-              className={inputFieldClassName}
+              className={`${inputFieldClassName} mt-1 ${createErrors?.horaRegresso ? '!border-red-500 !ring-red-500' : ''}`}
               value={horaRegresso}
               onChange={(e) => onChangeHoraRegresso(e.target.value)}
             />
+            {createErrors?.horaRegresso && <p className="text-red-500 text-xs mt-1">{createErrors.horaRegresso}</p>}
           </div>
         </div>
       </div>

@@ -81,7 +81,7 @@ function AdminOverview({
                             <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
                             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
                         </div>
-                        <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
+                        <div className={`flex-shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
                             <card.icon className="w-6 h-6" />
                         </div>
                     </GlassCard>
@@ -319,28 +319,28 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
             description: 'capacidade por horário',
             icon: CalendarDays,
-            iconClassName: 'bg-violet-500/20 text-violet-300',
+            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         },
         {
             title: 'Materiais',
             value: catalogCounts.materiais,
             description: 'itens no catálogo',
             icon: Package,
-            iconClassName: 'bg-blue-500/20 text-blue-300',
+            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         },
         {
             title: 'Transportes',
             value: catalogCounts.transportes,
             description: 'transportes no catálogo',
             icon: Truck,
-            iconClassName: 'bg-emerald-500/20 text-emerald-300',
+            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         },
         {
             title: 'Tipos de manutenção',
             value: catalogCounts.tiposManutencao,
             description: 'tipos disponíveis',
             icon: Wrench,
-            iconClassName: 'bg-fuchsia-500/20 text-fuchsia-300',
+            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         },
     ], [slotCapacities, catalogCounts]);
 
@@ -444,45 +444,45 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
 
     return (
         <>
-        <DashboardLayout
-            isDarkMode={isDarkMode}
-            onToggleDarkMode={onToggleDarkMode}
-            onLogout={onLogout}
-            onMenuToggle={() => {}}
-            roleTitle={t('dashboard.admin.roleTitle')}
-            navigationContent={AdminNavigation}
-            onNavigateToProfile={() => setCurrentView('profile')}
-            onNavigateToSettings={() => safeSetView('settings')}
-        >
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={currentView}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                >
-                    {renderAdminContent()}
-                </motion.div>
-            </AnimatePresence>
-        </DashboardLayout>
+            <DashboardLayout
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={onToggleDarkMode}
+                onLogout={onLogout}
+                onMenuToggle={() => { }}
+                roleTitle={t('dashboard.admin.roleTitle')}
+                navigationContent={AdminNavigation}
+                onNavigateToProfile={() => setCurrentView('profile')}
+                onNavigateToSettings={() => safeSetView('settings')}
+            >
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={currentView}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                    >
+                        {renderAdminContent()}
+                    </motion.div>
+                </AnimatePresence>
+            </DashboardLayout>
 
-      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Tem mudanças por guardar. Deseja descartá-las?
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                  <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
-                      Descartar
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
+            <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Tem mudanças por guardar. Deseja descartá-las?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                            Descartar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

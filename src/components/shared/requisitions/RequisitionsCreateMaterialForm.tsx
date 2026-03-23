@@ -31,8 +31,9 @@ interface RequisitionsCreateMaterialFormProps {
     label: string;
     itens: Array<{
       rowId: string;
+      materialId: number;
       descricao: string;
-      quantidade: number;
+      quantidade: string;
     }>;
   }>;
   materiaisError?: string;
@@ -160,6 +161,16 @@ export function RequisitionsCreateMaterialForm({
                                         className={quantityFieldClassName}
                                         value={linhaSelecionada?.quantidade ?? '1'}
                                         onChange={(event) => onUpdateVarianteQuantidade(variante.id, event.target.value)}
+                                        onBlur={(e) => {
+                                          if (!e.target.value) {
+                                            onUpdateVarianteQuantidade(variante.id, '1');
+                                          }
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.currentTarget.blur();
+                                          }
+                                        }}
                                       />
                                     </div>
                                   )}
@@ -198,7 +209,23 @@ export function RequisitionsCreateMaterialForm({
                       <p className="min-w-0 truncate text-sm text-gray-900 dark:text-gray-100" title={item.descricao}>
                         {item.descricao}
                       </p>
-                      <p className="text-sm text-center text-gray-700 dark:text-gray-300">{item.quantidade}</p>
+                      <Input
+                        type="number"
+                        min="1"
+                        className={`${quantityFieldClassName} w-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                        value={item.quantidade}
+                        onChange={(event) => onUpdateVarianteQuantidade(item.materialId, event.target.value)}
+                        onBlur={(e) => {
+                          if (!e.target.value) {
+                            onUpdateVarianteQuantidade(item.materialId, '1');
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur();
+                          }
+                        }}
+                      />
                       <Button
                         type="button"
                         variant="outline"
