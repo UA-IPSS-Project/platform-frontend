@@ -379,21 +379,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // ===== SLIDING WINDOW CACHE: Carregar bloqueios por semana =====
   // Carrega bloqueios de uma semana específica e armazena no cache
-  const loadWeekBlocks = async (date: Date, force = false) => {
+  const loadWeekBlocks = async (date: Date, _force = false) => {
     const { startOfWeek, endOfWeek, key } = getWeekRange(date);
 
     // Se já está em cache ou em carregamento, skip
-    if (!force && (blocksByWeek[key] || loadingBlockWeeks.has(key))) {
-      console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
-      return;
-    }
+    // if (!force && (blocksByWeek[key] || loadingBlockWeeks.has(key))) {
+    //   console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
+    //   return;
+    // }
 
-    console.log('[DEBUG] loadWeekBlocks start:', { key, start: startOfWeek, end: endOfWeek });
-    setLoadingBlockWeeks(prev => {
-      const next = new Set(prev);
-      next.add(key);
-      return next;
-    });
+    // console.log('[DEBUG] loadWeekBlocks start:', { key, start: startOfWeek, end: endOfWeek });
+    // setLoadingBlockWeeks(prev => {
+    //   const next = new Set(prev);
+    //   next.add(key);
+    //   return next;
+    // });
 
     try {
       // Buscar bloqueios da semana
@@ -426,21 +426,23 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         [key]: weekBlockedSlots,
       }));
 
-      console.log('[DEBUG] loadWeekBlocks done:', { key, count: weekBlockedSlots.size });
+      // console.log('[DEBUG] loadWeekBlocks done:', { key, count: weekBlockedSlots.size });
     } catch (error) {
       console.error('[ERROR] loadWeekBlocks:', error);
     } finally {
+      /*
       setLoadingBlockWeeks(prev => {
         const next = new Set(prev);
         next.delete(key);
         return next;
       });
+      */
     }
   };
 
   // ===== SLIDING WINDOW: Atualizar janela de bloqueios (2 semanas antes/depois) =====
   useEffect(() => {
-    console.log('[DEBUG] blocks sliding window update triggered:', { currentDate });
+    // console.log('[DEBUG] blocks sliding window update triggered:', { currentDate });
 
     // Calcular chaves das 5 semanas (2 antes, atual, 2 depois)
     const currentWeek = currentDate;
@@ -455,13 +457,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const { key: nextKey1 } = getWeekRange(nextWeek1);
     const { key: nextKey2 } = getWeekRange(nextWeek2);
 
-    console.log('[DEBUG] blocks window keys:', {
-      prevKey2,
-      prevKey1,
-      currentKey,
-      nextKey1,
-      nextKey2,
-    });
+    // console.log('[DEBUG] blocks window keys:', {
+    //   prevKey2,
+    //   prevKey1,
+    //   currentKey,
+    //   nextKey1,
+    //   nextKey2,
+    // });
 
     // Podar cache: manter apenas as 5 semanas da janela
     setBlocksByWeek(prev => {
@@ -486,7 +488,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   useEffect(() => {
     if (refreshTrigger === undefined) return;
 
-    console.log('[DEBUG] force reload blocks by refreshTrigger:', { refreshTrigger });
+    // console.log('[DEBUG] force reload blocks by refreshTrigger:', { refreshTrigger });
 
     const currentWeek = currentDate;
     const prevWeek1 = addDays(currentDate, -7);
@@ -509,7 +511,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       weekSet.forEach(slot => allBlocks.add(slot));
     });
     setBlockedSlots(allBlocks);
-    console.log('[DEBUG] blockedSlots aggregated:', { total: allBlocks.size });
+    // console.log('[DEBUG] blockedSlots aggregated:', { total: allBlocks.size });
   }, [blocksByWeek]);
 
   // Verificar se um slot está bloqueado (visualização + clique)
@@ -603,24 +605,24 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const handleSlotClick = async (date: Date, time: string) => {
-    toast.info(`[DEBUG] React recebeu o clique: ${time}`);
+    // toast.info(`[DEBUG] React recebeu o clique: ${time}`);
     try {
-      console.log('[DEBUG-SLOT] Clique detetado na data:', date, 'e hora:', time);
+      // console.log('[DEBUG-SLOT] Clique detetado na data:', date, 'e hora:', time);
 
       const slotAppointments = getSlotAppointments(date, time);
-      console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
+      // console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
 
       // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
       // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
       if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
-        console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
+        // console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
         openSlotNavigator(date, time);
         return;
       }
 
       const appointment = getAppointmentForSlot(date, time);
       const slotIsFull = slotAppointments.length >= slotCapacity;
-      console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
+      // console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
 
       // Se o slot ainda não estiver cheio, permitir criar nova marcação
       // mesmo quando já existem marcações nesse horário.
@@ -639,14 +641,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           return;
         }
 
-        console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
+        // console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
         onCreateAppointment(date, time);
         return;
       }
 
       // Se já existe marcação, permitir visualizar (mesmo no passado)
       if (appointment) {
-        console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
+        // console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
         // Verificar se é marcação própria
         const isOwn = slotAppointments.some(item =>
           (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
@@ -689,7 +691,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       // Validar se o horário não é no passado APENAS para criar nova marcação
       if (isSlotInPast(date, time)) {
-        console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
+        // console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
         toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
         return;
       }
@@ -697,7 +699,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
       const blocked = await isSlotBlocked(date, time);
       if (blocked) {
-        console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
+        // console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
         toast.error(tt('Horário indisponível', 'Time slot unavailable'));
         if (onRefresh) {
           // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
@@ -706,11 +708,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         return;
       }
 
-      console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
+      // console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
       onCreateAppointment(date, time);
     } catch (error: any) {
-      console.error('[DEBUG-SLOT] Crash em handleSlotClick:', error);
-      toast.error(`[DEBUG-CRASH] ${error.message || 'Erro Desconhecido'}`);
+      // console.error('[DEBUG-SLOT] Crash em handleSlotClick:', error);
+      // toast.error(`[DEBUG-CRASH] ${error.message || 'Erro Desconhecido'}`);
     }
   };
 
@@ -1181,14 +1183,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Carrega feriados de um ano se ainda não estiverem em cache
   const loadHolidays = async (year: number) => {
     if (holidaysByYear[year]) {
-      console.log('[DEBUG] loadHolidays skip (cached):', { year });
+      //   console.log('[DEBUG] loadHolidays skip (cached):', { year });
       return;
     }
-    console.log('[DEBUG] loadHolidays start:', { year });
+    // console.log('[DEBUG] loadHolidays start:', { year });
     try {
       const dates = await calendarioApi.listarFeriados(year);
       setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
-      console.log('[DEBUG] loadHolidays done:', { year, count: dates.length });
+      //   console.log('[DEBUG] loadHolidays done:', { year, count: dates.length });
     } catch (error) {
       console.error('[ERROR] loadHolidays:', error);
     }
@@ -1204,7 +1206,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // ===== SLIDING WINDOW: Carregar feriados dos anos das 5 semanas =====
   useEffect(() => {
-    console.log('[DEBUG] holidays sliding window update triggered:', { currentDate });
+    // console.log('[DEBUG] holidays sliding window update triggered:', { currentDate });
 
     // Calcular anos únicos nas 5 semanas (2 antes, atual, 2 depois)
     const currentWeek = currentDate;
@@ -1221,7 +1223,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       nextWeek2.getFullYear(),
     ]);
 
-    console.log('[DEBUG] holidays window years:', Array.from(years));
+    // console.log('[DEBUG] holidays window years:', Array.from(years));
 
     // Carregar feriados de cada ano único
     years.forEach(year => loadHolidays(year));

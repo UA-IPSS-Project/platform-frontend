@@ -14,6 +14,7 @@ import {
   RequisicaoResponse,
   TipoManutencaoCatalogo,
   TransporteCatalogo,
+  CriarManutencaoItemCatalogoRequest,
 } from './types';
 
 const toQueryString = (filters: RequisicaoFilters = {}): string => {
@@ -94,6 +95,23 @@ export const requisicoesApi = {
 
   apagarTipoManutencao: (id: number) =>
     apiRequest<void>(`/api/requisicoes/tipos-manutencao/${id}`, {
+      method: 'DELETE',
+    }),
+
+  criarManutencaoItem: (payload: CriarManutencaoItemCatalogoRequest) =>
+    apiRequest<ManutencaoItem>('/api/requisicoes/manutencao-items', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  atualizarManutencaoItem: (id: number, payload: CriarManutencaoItemCatalogoRequest) =>
+    apiRequest<ManutencaoItem>(`/api/requisicoes/manutencao-items/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  apagarManutencaoItem: (id: number) =>
+    apiRequest<void>(`/api/requisicoes/manutencao-items/${id}`, {
       method: 'DELETE',
     }),
 

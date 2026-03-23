@@ -213,10 +213,11 @@ export function SharedRequisitionsPage({
   }, []);
 
   const materiaisPorCategoria = useMemo(() => {
-    const map = new Map<MaterialCategoria, MaterialItemGroup[]>();
+    const map = new Map<string, MaterialItemGroup[]>();
+    const uniqueCategories = Array.from(new Set(catalog.materiais.map(m => m.categoria).filter((c): c is string => !!c)));
 
-    MATERIAL_CATEGORIA_OPTIONS.forEach((categoria) => {
-      const materiaisCategoria = catalog.materiais.filter((material) => material.categoria === categoria.value);
+    uniqueCategories.forEach((catValue) => {
+      const materiaisCategoria = catalog.materiais.filter((material) => material.categoria === catValue);
       const byNome = new Map<string, MaterialCatalogo[]>();
 
       materiaisCategoria.forEach((material) => {
@@ -226,13 +227,13 @@ export function SharedRequisitionsPage({
       });
 
       const grupos = Array.from(byNome.entries()).map(([nomeKey, variantes]) => ({
-        itemKey: `${categoria.value}:${nomeKey}`,
+        itemKey: `${catValue}:${nomeKey}`,
         nome: variantes[0]?.nome ?? 'Material',
-        categoria: categoria.value,
+        categoria: catValue as MaterialCategoria,
         variantes,
       }));
 
-      map.set(categoria.value, grupos);
+      map.set(catValue, grupos);
     });
 
     return map;
@@ -303,14 +304,18 @@ export function SharedRequisitionsPage({
     [transportesIndisponiveis, transportesOrdenados],
   );
 
-  const transportesPorCategoria = useMemo(
-    () => TRANSPORTE_CATEGORIA_OPTIONS.map((categoria) => ({
-      categoria: categoria.value,
-      label: categoria.label,
-      items: transportesOrdenados.filter((transporte) => transporte.categoria === categoria.value),
-    })).filter((grupo) => grupo.items.length > 0),
-    [transportesOrdenados],
-  );
+  const transportesPorCategoria = useMemo(() => {
+    const uniqueCategories = Array.from(new Set(catalog.transportes.map(t => t.categoria).filter((c): c is string => !!c)));
+    
+    return uniqueCategories.map((catValue) => {
+      const standardOption = TRANSPORTE_CATEGORIA_OPTIONS.find(opt => opt.value === catValue);
+      return {
+        categoria: catValue,
+        label: standardOption?.label ?? catValue,
+        items: transportesOrdenados.filter((transporte) => transporte.categoria === catValue),
+      };
+    }).filter((grupo) => grupo.items.length > 0);
+  }, [catalog.transportes, transportesOrdenados]);
 
   const passageirosSolicitados = useMemo(() => {
     const value = Number(createForm.numeroPassageiros || 0);
@@ -1172,7 +1177,7 @@ export function SharedRequisitionsPage({
   }, [monthlyRequisicoesAtual]);
 
   const materiaisAdicionadosAgrupados = useMemo(() => {
-    const grupos = new Map<MaterialCategoria, Array<{
+    const grupos = new Map<string, Array<{
       rowId: string;
       materialId: number;
       descricao: string;
@@ -1181,9 +1186,8 @@ export function SharedRequisitionsPage({
 
     createForm.materialLinhas.forEach((linha) => {
       const material = catalog.materiais.find((item) => String(item.id) === linha.materialId);
-      // NOTE: Materials with 'OUTROS' category are preserved for backward compatibility with historical data.
-      // Unknown/missing categories default to 'TECNOLOGIA', but 'OUTROS' is explicitly preserved if present.
-      const categoria = material?.categoria ?? 'TECNOLOGIA';
+      // NOTE: Materials with 'OUTROS' category are preserved for backward compatibility.
+      const categoria = material?.categoria ?? 'OUTROS';
       const descricao = [material?.nome ?? 'Material removido', material?.valorAtributo].filter(Boolean).join(' ');
       const grupoAtual = grupos.get(categoria) ?? [];
 
@@ -1197,13 +1201,14 @@ export function SharedRequisitionsPage({
       grupos.set(categoria, grupoAtual);
     });
 
-    return MATERIAL_CATEGORIA_OPTIONS
-      .map((categoria) => ({
-        categoria: categoria.value,
-        label: categoria.label,
-        itens: grupos.get(categoria.value) ?? [],
-      }))
-      .filter((grupo) => grupo.itens.length > 0);
+    return Array.from(grupos.entries()).map(([catValue, itens]) => {
+      const standardOption = MATERIAL_CATEGORIA_OPTIONS.find(opt => opt.value === catValue);
+      return {
+        categoria: catValue,
+        label: standardOption?.label ?? catValue,
+        itens,
+      };
+    });
   }, [catalog.materiais, createForm.materialLinhas]);
 
   const materiaisAdicionadosTotal = useMemo(
@@ -1352,11 +1357,14 @@ export function SharedRequisitionsPage({
                 materialLinhas={createForm.materialLinhas}
                 expandedMaterialItems={createForm.expandedMaterialItems}
                 expandedMaterialCategorias={createForm.expandedMaterialCategorias as Partial<Record<string, boolean>>}
-                materiaisPorCategoria={MATERIAL_CATEGORIA_OPTIONS.map((categoria) => ({
-                  categoria: categoria.value,
-                  label: categoria.label,
-                  itens: materiaisPorCategoria.get(categoria.value) ?? [],
-                }))}
+                materiaisPorCategoria={Array.from(materiaisPorCategoria.entries()).map(([catValue, itens]) => {
+                  const standardOption = MATERIAL_CATEGORIA_OPTIONS.find(opt => opt.value === catValue);
+                  return {
+                    categoria: catValue,
+                    label: standardOption?.label ?? catValue,
+                    itens,
+                  };
+                })}
                 materiaisAdicionados={[]}
                 materiaisAdicionadosTotal={materiaisAdicionadosTotal}
                 materiaisAdicionadosAgrupados={materiaisAdicionadosAgrupados}

@@ -288,7 +288,9 @@
     "admin": {
       "roleTitle": "Administrador",
       "title": "Painel de Administração",
-      "administrationOnlyArea": "Área reservada à administração",
+      "mainTitle": "Gestão de Plataforma",
+      "mainDescription": "Todas as alterações são refletidas em tempo real para todos os utilizadores.",
+      "administrationOnlyArea": "Área exclusiva para administração",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -346,6 +348,69 @@
       "messages": {
         "slotConfigUpdated": "Configuração de slots atualizada com sucesso"
       },
+      "catalogs": {
+        "title": "Configuração do Catálogo",
+        "description": "Adicione, edite ou remova itens e categorias. Todas as alterações afetam imediatamente toda a plataforma e todos os perfis de utilizador.",
+        "managementTitle": "Gestão de Materiais, Transportes e Manutenção",
+        "addMaterial": "Adicionar material",
+        "addTransport": "Adicionar transporte",
+        "addMaintenance": "Adicionar manutenção",
+        "category": "Categoria",
+        "newCategory": "Nova Categoria",
+        "materialName": "Nome do material",
+        "attribute": "Atributo",
+        "value": "Valor",
+        "code": "Código",
+        "type": "Tipo",
+        "plate": "Matrícula",
+        "brand": "Marca",
+        "model": "Modelo",
+        "capacity": "Lotação",
+        "regDate": "Data Matrícula",
+        "selectCategory": "Selecionar Categoria",
+        "newCategoryName": "Nome da Nova Categoria",
+        "addSpace": "1. Adicionar Espaço",
+        "spaceName": "Nome do Espaço",
+        "createSpace": "Criar Espaço",
+        "addElement": "2. Adicionar Elemento",
+        "verificationElement": "Elemento de Verificação",
+        "createElement": "Criar Elemento",
+        "materials": "Materiais",
+        "transports": "Transportes",
+        "maintenance": "Manutenção",
+        "spaces": "Espaços",
+        "elements": "Elementos",
+        "success": {
+          "materialCreated": "Material criado com sucesso.",
+          "transportCreated": "Transporte criado com sucesso.",
+          "materialUpdated": "Material atualizado com sucesso.",
+          "transportUpdated": "Transporte atualizado com sucesso.",
+          "materialDeleted": "Material apagado com sucesso.",
+          "transportDeleted": "Transporte apagado com sucesso.",
+          "spaceCreated": "Espaço criado!",
+          "elementCreated": "Elemento criado!",
+          "spaceUpdated": "Espaço atualizado.",
+          "elementUpdated": "Elemento atualizado.",
+          "spaceDeleted": "Espaço eliminado.",
+          "elementDeleted": "Elemento eliminado.",
+          "categoryRemoved": "Categoria removida."
+        },
+        "errors": {
+          "requiredFields": "Todos os campos são obrigatórios.",
+          "categoryRequired": "A categoria é obrigatória.",
+          "capacityPositive": "A lotação deve ser um número maior que zero.",
+          "loadMaterials": "Erro ao carregar materiais.",
+          "loadTransports": "Erro ao carregar transportes.",
+          "loadMaintenance": "Erro ao carregar itens de manutenção."
+        },
+        "confirm": {
+          "deleteMaterial": "Tem a certeza que deseja eliminar este material?",
+          "deleteTransport": "Tem a certeza que deseja eliminar este transporte?",
+          "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
+          "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
+          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
+        }
+      },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
         "saveSlotConfig": "Não foi possível guardar a configuração de slots"
@@ -375,7 +440,9 @@
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
-    "saving": "A guardar..."
+    "saving": "A guardar...",
+    "cancel": "Cancelar",
+    "ok": "OK"
   },
   "notifications": {
     "title": "Notificações",

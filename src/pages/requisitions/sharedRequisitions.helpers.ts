@@ -202,18 +202,31 @@ export const formatEstado = (estado: RequisicaoEstado) => {
   const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
   return key ? i18n.t(key) : estado;
 };
-export const formatMaterialCategoria = (categoria?: MaterialCategoria) =>
-  i18n.t(MATERIAL_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
-export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria) =>
-  i18n.t(MANUTENCAO_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
+export const formatMaterialCategoria = (categoria?: MaterialCategoria | string) => {
+  if (!categoria) return i18n.t('requisitions.labels.noCategory');
+  const option = MATERIAL_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
+  if (option) return i18n.t(option.label);
+  return categoria.replace(/_/g, ' ').toUpperCase();
+};
+
+export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria | string) => {
+  if (!categoria) return i18n.t('requisitions.labels.noCategory');
+  const option = MANUTENCAO_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
+  if (option) return i18n.t(option.label);
+  return categoria.replace(/_/g, ' ').toUpperCase();
+};
 
 export const formatManutencaoCategoriaDisplay = (categoria?: ManutencaoCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const typed = categoria as ManutencaoCategoria;
   return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? categoria;
 };
-export const formatTransporteCategoria = (categoria?: TransporteCategoria) =>
-  i18n.t(TRANSPORTE_CATEGORIA_OPTIONS.find((option) => option.value === categoria)?.label ?? categoria ?? 'requisitions.labels.noCategory');
+export const formatTransporteCategoria = (categoria?: TransporteCategoria | string) => {
+  if (!categoria) return i18n.t('requisitions.labels.noCategory');
+  const option = TRANSPORTE_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
+  if (option) return i18n.t(option.label);
+  return categoria.replace(/_/g, ' ').toUpperCase();
+};
 
 export const toIsoFromDateOnly = (date?: Date): string | undefined => {
   if (!date) return undefined;

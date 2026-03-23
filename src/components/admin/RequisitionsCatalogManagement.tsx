@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
   MaterialCategoria,
-  TipoManutencaoCatalogo,
+  ManutencaoItem,
   TransporteCategoria,
   requisicoesApi,
   type MaterialCatalogo,
@@ -13,54 +13,49 @@ import { GlassCard } from '../ui/glass-card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useTranslation } from 'react-i18next';
+import { TrashIcon } from '../shared/CustomIcons';
+import { Pencil } from 'lucide-react';
+import { DatePickerField } from '../ui/date-picker-field';
 
-const MATERIAL_CATEGORIA_OPTIONS: Array<{ value: MaterialCategoria; label: string }> = [
-  { value: 'ESCRITA', label: 'Escrita' },
-  { value: 'PAPEL_E_ARQUIVO', label: 'Papel e arquivo' },
-  { value: 'HIGIENE_E_LIMPEZA', label: 'Higiene e limpeza' },
-  { value: 'TECNOLOGIA', label: 'Tecnologia' },
-  { value: 'OUTROS', label: 'Outros' },
-];
-
-const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; label: string }> = [
-  { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'Ligeiro de passageiros' },
-  { value: 'PESADO_DE_PASSAGEIROS', label: 'Pesado de passageiros' },
-  { value: 'LIGEIRO_DE_MERCADORIAS', label: 'Ligeiro de mercadorias' },
-  { value: 'LIGEIRO_ESPECIAL', label: 'Ligeiro especial' },
-  { value: 'LIGEIRO', label: 'Ligeiro' },
-  { value: 'PESADO', label: 'Pesado' },
-  { value: 'PASSAGEIROS', label: 'Passageiros' },
-  { value: 'ADAPTADO', label: 'Adaptado' },
-];
-
-type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'TIPOS';
-
-const DEFAULT_OPEN_MATERIAL_GROUPS: Record<MaterialCategoria, boolean> = {
-  ESCRITA: true,
-  PAPEL_E_ARQUIVO: false,
-  HIGIENE_E_LIMPEZA: false,
-  TECNOLOGIA: false,
-  OUTROS: false,
-};
+type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'MANUTENCOES';
+type ExpandedFormState = 'EQUAL' | 'FORM' | 'LIST';
 
 const MAX_LOAD_CATALOGO_RETRIES = 4;
 
 const isRetryableStatus = (status?: number) => [500, 502, 503, 504].includes(status ?? 0);
 
 export function RequisitionsCatalogManagement() {
-  const { i18n } = useTranslation();
-  const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
+  const { t } = useTranslation();
+
+  const formatCategoryName = (name: string) => name.toUpperCase();
+
   const [savingMaterial, setSavingMaterial] = useState(false);
   const [savingTransporte, setSavingTransporte] = useState(false);
-  const [savingTipoManutencao, setSavingTipoManutencao] = useState(false);
 
+  // States for "Nova" category selection
+  const [materialCategoryMode, setMaterialCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [transporteCategoryMode, setTransporteCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [manutencaoCategoryMode, setManutencaoCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [customMaterialCategory, setCustomMaterialCategory] = useState('');
+  const [customTransporteCategory, setCustomTransporteCategory] = useState('');
+  const [customManutencaoCategory, setCustomManutencaoCategory] = useState('');
+
+  const [editMaterialCategoryMode, setEditMaterialCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [editTransporteCategoryMode, setEditTransporteCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
+  const [customEditMaterialCategory, setCustomEditMaterialCategory] = useState('');
+  const [customEditTransporteCategory, setCustomEditTransporteCategory] = useState('');
+
+  const [editingSpace, setEditingSpace] = useState<{ category: string; name: string } | null>(null);
+  const [editSpaceName, setEditSpaceName] = useState('');
+  const [editingElement, setEditingElement] = useState<{ category: string; name: string } | null>(null);
+  const [editElementName, setEditElementName] = useState('');
+  
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
-  const [tiposManutencao, setTiposManutencao] = useState<TipoManutencaoCatalogo[]>([]);
+  const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
 
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null);
   const [editingTransporteId, setEditingTransporteId] = useState<number | null>(null);
-  const [editingTipoManutencaoId, setEditingTipoManutencaoId] = useState<number | null>(null);
 
   const [novoMaterialNome, setNovoMaterialNome] = useState('');
   const [novoMaterialCategoria, setNovoMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -68,7 +63,7 @@ export function RequisitionsCatalogManagement() {
   const [novoMaterialValorAtributo, setNovoMaterialValorAtributo] = useState('');
 
   const [novoTransporteTipo, setNovoTransporteTipo] = useState('');
-  const [novoTransporteCodigo, setNovoTransporteCodigo] = useState('');
+  // Código de transporte é gerado automaticamente
   const [novoTransporteCategoria, setNovoTransporteCategoria] = useState<TransporteCategoria>('LIGEIRO');
   const [novoTransporteMatricula, setNovoTransporteMatricula] = useState('');
   const [novoTransporteMarca, setNovoTransporteMarca] = useState('');
@@ -76,8 +71,9 @@ export function RequisitionsCatalogManagement() {
   const [novoTransporteLotacao, setNovoTransporteLotacao] = useState('');
   const [novoTransporteDataMatricula, setNovoTransporteDataMatricula] = useState('');
 
-  const [novoTipoManutencaoNome, setNovoTipoManutencaoNome] = useState('');
-  const [novoTipoManutencaoDescricao, setNovoTipoManutencaoDescricao] = useState('');
+  const [novoManutencaoCategoria, setNovoManutencaoCategoria] = useState('');
+  const [novoManutencaoEspaco, setNovoManutencaoEspaco] = useState('');
+  const [novoManutencaoVerificacao, setNovoManutencaoVerificacao] = useState('');
 
   const [editMaterialNome, setEditMaterialNome] = useState('');
   const [editMaterialCategoria, setEditMaterialCategoria] = useState<MaterialCategoria>('OUTROS');
@@ -93,26 +89,44 @@ export function RequisitionsCatalogManagement() {
   const [editTransporteLotacao, setEditTransporteLotacao] = useState('');
   const [editTransporteDataMatricula, setEditTransporteDataMatricula] = useState('');
 
-  const [editTipoManutencaoNome, setEditTipoManutencaoNome] = useState('');
-  const [editTipoManutencaoDescricao, setEditTipoManutencaoDescricao] = useState('');
-
   const [activePanel, setActivePanel] = useState<CatalogPanel>('MATERIAIS');
   const [openAddPanels, setOpenAddPanels] = useState<Record<CatalogPanel, boolean>>({
     MATERIAIS: true,
     TRANSPORTES: false,
-    TIPOS: false,
+    MANUTENCOES: false,
   });
-  const [openMaterialGroups, setOpenMaterialGroups] = useState<Record<MaterialCategoria, boolean>>(DEFAULT_OPEN_MATERIAL_GROUPS);
+  const [openMaterialGroups, setOpenMaterialGroups] = useState<Record<string, boolean>>({});
   const [openTransporteGroups, setOpenTransporteGroups] = useState<Record<string, boolean>>({});
+  const [openManutencaoGroups, setOpenManutencaoGroups] = useState<Record<string, boolean>>({});
+  const [expandedForm, setExpandedForm] = useState<ExpandedFormState>('EQUAL');
+
+  const uniqueMateriaisCategorias = Array.from(new Set(materiais.map(m => m.categoria).filter((c): c is string => !!c)));
+  const uniqueTransportesCategorias = Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is string => !!c)));
+  const uniqueManutencaoCategorias = Array.from(new Set(manutencaoItems.map(m => m.categoria).filter((c): c is string => !!c)));
+
+  const toggleManutencaoGroup = (categoria: string) => {
+    setOpenManutencaoGroups((prev) => ({
+      ...prev,
+      [categoria]: !prev[categoria],
+    }));
+  };
+
+  const manutencaoPorCategoria = uniqueManutencaoCategorias
+    .map((cat: string) => ({
+      value: cat,
+      label: cat,
+      items: manutencaoItems.filter((m) => m.categoria === cat),
+    }))
+    .filter((grupo) => grupo.items.length > 0);
 
   const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100';
   const inputFieldClassName = 'mt-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
 
   const loadCatalogo = async (retryCount = 0) => {
-    const [materiaisResult, transportesResult, tiposResult] = await Promise.allSettled([
+    const [materiaisResult, transportesResult, manutencaoResult] = await Promise.allSettled([
       requisicoesApi.listarMateriais(),
       requisicoesApi.listarTransportes(),
-      requisicoesApi.listarTiposManutencao(),
+      requisicoesApi.listarManutencaoItems(),
     ]);
 
     const pendingRetryableStatuses: number[] = [];
@@ -121,51 +135,33 @@ export function RequisitionsCatalogManagement() {
       setMateriais(Array.isArray(materiaisResult.value) ? materiaisResult.value : []);
     } else {
       const status = (materiaisResult.reason as ApiRequestError)?.status;
-      if (status === 401 || status === 403) {
-        return;
-      }
-      if (isRetryableStatus(status)) {
-        pendingRetryableStatuses.push(status ?? 0);
-      } else {
-        toast.error((materiaisResult.reason as Error)?.message || tt('Erro ao carregar materiais.', 'Error loading materials.'));
-      }
+      if (status === 401 || status === 403) return;
+      if (isRetryableStatus(status)) pendingRetryableStatuses.push(status ?? 0);
+      else toast.error((materiaisResult.reason as Error)?.message || t('dashboard.admin.catalogs.errors.loadMaterials'));
     }
 
     if (transportesResult.status === 'fulfilled') {
       setTransportes(Array.isArray(transportesResult.value) ? transportesResult.value : []);
     } else {
       const status = (transportesResult.reason as ApiRequestError)?.status;
-      if (status === 401 || status === 403) {
-        return;
-      }
-      if (isRetryableStatus(status)) {
-        pendingRetryableStatuses.push(status ?? 0);
-      } else {
-        toast.error((transportesResult.reason as Error)?.message || tt('Erro ao carregar transportes.', 'Error loading transport options.'));
-      }
+      if (status === 401 || status === 403) return;
+      if (isRetryableStatus(status)) pendingRetryableStatuses.push(status ?? 0);
+      else toast.error((transportesResult.reason as Error)?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
     }
 
-    if (tiposResult.status === 'fulfilled') {
-      setTiposManutencao(Array.isArray(tiposResult.value) ? tiposResult.value : []);
+    if (manutencaoResult.status === 'fulfilled') {
+      setManutencaoItems(Array.isArray(manutencaoResult.value) ? manutencaoResult.value : []);
     } else {
-      const status = (tiposResult.reason as ApiRequestError)?.status;
+      const status = (manutencaoResult.reason as ApiRequestError)?.status;
       if (status !== 404 && status !== 401 && status !== 403) {
-        if (isRetryableStatus(status)) {
-          pendingRetryableStatuses.push(status ?? 0);
-        } else {
-          toast.error((tiposResult.reason as Error)?.message || tt('Erro ao carregar tipos de manutenção.', 'Error loading maintenance types.'));
-        }
+        if (isRetryableStatus(status)) pendingRetryableStatuses.push(status ?? 0);
+        else toast.error((manutencaoResult.reason as Error)?.message || t('dashboard.admin.catalogs.errors.loadMaintenance'));
       }
-      if (status === 404) {
-        setTiposManutencao([]);
-      }
+      if (status === 404) setManutencaoItems([]);
     }
 
     if (pendingRetryableStatuses.length > 0 && retryCount < MAX_LOAD_CATALOGO_RETRIES) {
-      const delay = 500 * (retryCount + 1);
-      setTimeout(() => {
-        void loadCatalogo(retryCount + 1);
-      }, delay);
+      setTimeout(() => void loadCatalogo(retryCount + 1), 500 * (retryCount + 1));
     }
   };
 
@@ -174,33 +170,36 @@ export function RequisitionsCatalogManagement() {
   }, []);
 
   const handleCreateMaterial = async () => {
-    if (!novoMaterialNome.trim()) {
-      toast.error(tt('O nome do material é obrigatório.', 'Material name is required.'));
-      return;
-    }
-    if (!novoMaterialAtributo.trim() || !novoMaterialValorAtributo.trim()) {
-      toast.error(tt('Atributo e valor do atributo são obrigatórios.', 'Attribute and attribute value are required.'));
+    if (!novoMaterialNome.trim() || !novoMaterialAtributo.trim() || !novoMaterialValorAtributo.trim()) {
+      toast.error(t('dashboard.admin.catalogs.errors.requiredFields'));
       return;
     }
 
     try {
+      const categoriaFinal = (materialCategoryMode === 'NEW' ? customMaterialCategory : novoMaterialCategoria).trim();
+      if (!categoriaFinal) {
+        toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
+        return;
+      }
+
       setSavingMaterial(true);
       const novoMaterial = await requisicoesApi.criarMaterialCatalogo({
         nome: novoMaterialNome.trim(),
-        categoria: novoMaterialCategoria,
+        categoria: categoriaFinal,
         atributo: novoMaterialAtributo.trim(),
         valorAtributo: novoMaterialValorAtributo.trim(),
       });
 
       setMateriais((prev) => [...prev, novoMaterial]);
       setNovoMaterialNome('');
-      setNovoMaterialCategoria('OUTROS');
+      setCustomMaterialCategory('');
+      setMaterialCategoryMode('SELECT');
       setNovoMaterialAtributo('');
       setNovoMaterialValorAtributo('');
       await loadCatalogo();
-      toast.success(tt('Material criado com sucesso.', 'Material created successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.materialCreated'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao criar material.', 'Error creating material.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaterials'));
     } finally {
       setSavingMaterial(false);
     }
@@ -208,30 +207,43 @@ export function RequisitionsCatalogManagement() {
 
   const handleCreateTransporte = async () => {
     if (
-      !novoTransporteCodigo.trim()
-      || !novoTransporteTipo.trim()
-      || !novoTransporteMatricula.trim()
-      || !novoTransporteMarca.trim()
-      || !novoTransporteModelo.trim()
-      || !novoTransporteLotacao.trim()
-      || !novoTransporteDataMatricula
+      !novoTransporteTipo.trim() || !novoTransporteMatricula.trim() ||
+      !novoTransporteMarca.trim() || !novoTransporteModelo.trim() || !novoTransporteLotacao.trim() || !novoTransporteDataMatricula
     ) {
-      toast.error(tt('Todos os campos de criação de transporte são obrigatórios.', 'All transport creation fields are required.'));
+      toast.error(t('dashboard.admin.catalogs.errors.requiredFields'));
       return;
     }
 
     const lotacao = Number(novoTransporteLotacao);
     if (!Number.isFinite(lotacao) || lotacao <= 0) {
-      toast.error(tt('A lotação deve ser um número maior que zero.', 'Capacity must be a number greater than zero.'));
+      toast.error(t('dashboard.admin.catalogs.errors.capacityPositive'));
       return;
     }
 
     try {
+      const categoriaFinal = (transporteCategoryMode === 'NEW' ? customTransporteCategory : novoTransporteCategoria).trim();
+      if (!categoriaFinal) {
+        toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
+        return;
+      }
+
       setSavingTransporte(true);
+      // Gerar código automaticamente: V01, V02, ...
+      const codigosExistentes = transportes.map(t => t.codigo).filter((c): c is string => !!c);
+      let maxNum = 0;
+      codigosExistentes.forEach(codigo => {
+        const match = /^V(\d{2})$/.exec(codigo);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const novoCodigo = `V${String(maxNum + 1).padStart(2, '0')}`;
+
       const novoTransporte = await requisicoesApi.criarTransporteCatalogo({
-        codigo: novoTransporteCodigo.trim().toUpperCase(),
+        codigo: novoCodigo,
         tipo: novoTransporteTipo.trim(),
-        categoria: novoTransporteCategoria,
+        categoria: categoriaFinal,
         matricula: novoTransporteMatricula.trim().toUpperCase(),
         marca: novoTransporteMarca.trim(),
         modelo: novoTransporteModelo.trim(),
@@ -241,97 +253,87 @@ export function RequisitionsCatalogManagement() {
 
       setTransportes((prev) => [...prev, novoTransporte]);
       setNovoTransporteTipo('');
-      setNovoTransporteCodigo('');
-      setNovoTransporteCategoria('LIGEIRO');
+      setCustomTransporteCategory('');
+      setTransporteCategoryMode('SELECT');
       setNovoTransporteMatricula('');
       setNovoTransporteMarca('');
       setNovoTransporteModelo('');
       setNovoTransporteLotacao('');
       setNovoTransporteDataMatricula('');
       await loadCatalogo();
-      toast.success(tt('Transporte criado com sucesso.', 'Transport created successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.transportCreated'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao criar transporte.', 'Error creating transport.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
     } finally {
       setSavingTransporte(false);
-    }
-  };
-
-  const handleCreateTipoManutencao = async () => {
-    if (!novoTipoManutencaoNome.trim()) {
-      toast.error(tt('O nome do tipo de manutenção é obrigatório.', 'Maintenance type name is required.'));
-      return;
-    }
-
-    try {
-      setSavingTipoManutencao(true);
-      const novoTipo = await requisicoesApi.criarTipoManutencao({
-        nome: novoTipoManutencaoNome.trim(),
-        descricao: novoTipoManutencaoDescricao.trim() || undefined,
-      });
-      setTiposManutencao((prev) => [...prev, novoTipo]);
-      setNovoTipoManutencaoNome('');
-      setNovoTipoManutencaoDescricao('');
-      await loadCatalogo();
-      toast.success(tt('Tipo de manutenção criado com sucesso.', 'Maintenance type created successfully.'));
-    } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao criar tipo de manutenção.', 'Error creating maintenance type.'));
-    } finally {
-      setSavingTipoManutencao(false);
     }
   };
 
   const startEditMaterial = (item: MaterialCatalogo) => {
     setEditingMaterialId(item.id);
     setEditMaterialNome(item.nome || '');
-    setEditMaterialCategoria(item.categoria || 'OUTROS');
     setEditMaterialAtributo(item.atributo || '');
     setEditMaterialValorAtributo(item.valorAtributo || '');
+
+    const catValue = item.categoria || 'OUTROS';
+    setEditMaterialCategoria(catValue as MaterialCategoria);
+    setEditMaterialCategoryMode('SELECT');
+    setCustomEditMaterialCategory('');
   };
 
   const startEditTransporte = (item: TransporteCatalogo) => {
     setEditingTransporteId(item.id);
     setEditTransporteTipo(item.tipo || '');
     setEditTransporteCodigo(item.codigo || '');
-    setEditTransporteCategoria(item.categoria || 'LIGEIRO');
     setEditTransporteMatricula(item.matricula || '');
     setEditTransporteMarca(item.marca || '');
     setEditTransporteModelo(item.modelo || '');
     setEditTransporteLotacao(item.lotacao ? String(item.lotacao) : '');
     setEditTransporteDataMatricula(item.dataMatricula || '');
-  };
 
-  const startEditTipoManutencao = (item: TipoManutencaoCatalogo) => {
-    setEditingTipoManutencaoId(item.id);
-    setEditTipoManutencaoNome(item.nome || '');
-    setEditTipoManutencaoDescricao(item.descricao || '');
+    const catValue = item.categoria || 'LIGEIRO';
+    setEditTransporteCategoria(catValue as TransporteCategoria);
+    setEditTransporteCategoryMode('SELECT');
+    setCustomEditTransporteCategory('');
   };
 
   const handleUpdateMaterial = async () => {
     if (editingMaterialId == null) return;
     try {
+      const categoriaFinal = (editMaterialCategoryMode === 'NEW' ? customEditMaterialCategory : editMaterialCategoria).trim();
+      if (!categoriaFinal) {
+        toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
+        return;
+      }
+
       const atualizado = await requisicoesApi.atualizarMaterialCatalogo(editingMaterialId, {
         nome: editMaterialNome,
-        categoria: editMaterialCategoria,
+        categoria: categoriaFinal,
         atributo: editMaterialAtributo,
         valorAtributo: editMaterialValorAtributo,
       });
       setMateriais((prev) => prev.map((item) => (item.id === editingMaterialId ? atualizado : item)));
       setEditingMaterialId(null);
       await loadCatalogo();
-      toast.success(tt('Material atualizado com sucesso.', 'Material updated successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.materialUpdated'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao atualizar material.', 'Error updating material.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaterials'));
     }
   };
 
   const handleUpdateTransporte = async () => {
     if (editingTransporteId == null) return;
     try {
+      const categoriaFinal = (editTransporteCategoryMode === 'NEW' ? customEditTransporteCategory : editTransporteCategoria).trim();
+      if (!categoriaFinal) {
+        toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
+        return;
+      }
+
       const atualizado = await requisicoesApi.atualizarTransporteCatalogo(editingTransporteId, {
         codigo: editTransporteCodigo || undefined,
         tipo: editTransporteTipo,
-        categoria: editTransporteCategoria,
+        categoria: categoriaFinal,
         matricula: editTransporteMatricula,
         marca: editTransporteMarca || undefined,
         modelo: editTransporteModelo || undefined,
@@ -341,477 +343,454 @@ export function RequisitionsCatalogManagement() {
       setTransportes((prev) => prev.map((item) => (item.id === editingTransporteId ? atualizado : item)));
       setEditingTransporteId(null);
       await loadCatalogo();
-      toast.success(tt('Transporte atualizado com sucesso.', 'Transport updated successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.transportUpdated'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao atualizar transporte.', 'Error updating transport.'));
-    }
-  };
-
-  const handleUpdateTipoManutencao = async () => {
-    if (editingTipoManutencaoId == null) return;
-    try {
-      const atualizado = await requisicoesApi.atualizarTipoManutencao(editingTipoManutencaoId, {
-        nome: editTipoManutencaoNome,
-        descricao: editTipoManutencaoDescricao || undefined,
-      });
-      setTiposManutencao((prev) => prev.map((item) => (item.id === editingTipoManutencaoId ? atualizado : item)));
-      setEditingTipoManutencaoId(null);
-      await loadCatalogo();
-      toast.success(tt('Tipo de manutenção atualizado com sucesso.', 'Maintenance type updated successfully.'));
-    } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao atualizar tipo de manutenção.', 'Error updating maintenance type.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
     }
   };
 
   const handleDeleteMaterial = async (id: number) => {
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteMaterial'))) return;
     try {
       await requisicoesApi.apagarMaterialCatalogo(id);
       setMateriais((prev) => prev.filter((item) => item.id !== id));
       await loadCatalogo();
-      toast.success(tt('Material apagado com sucesso.', 'Material deleted successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.materialDeleted'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao apagar material.', 'Error deleting material.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaterials'));
     }
   };
 
   const handleDeleteTransporte = async (id: number) => {
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteTransport'))) return;
     try {
       await requisicoesApi.apagarTransporteCatalogo(id);
       setTransportes((prev) => prev.filter((item) => item.id !== id));
       await loadCatalogo();
-      toast.success(tt('Transporte apagado com sucesso.', 'Transport deleted successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.transportDeleted'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao apagar transporte.', 'Error deleting transport.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
     }
   };
 
-  const handleDeleteTipoManutencao = async (id: number) => {
+  const handleUpdateSpace = async (category: string, oldName: string, newName: string) => {
+    if (!newName.trim() || oldName === newName) { setEditingSpace(null); return; }
     try {
-      await requisicoesApi.apagarTipoManutencao(id);
-      setTiposManutencao((prev) => prev.filter((item) => item.id !== id));
+      const itemsToUpdate = manutencaoItems.filter(i => i.categoria === category && i.espaco === oldName);
+      await Promise.all(itemsToUpdate.map(i => requisicoesApi.atualizarManutencaoItem(i.id, {
+        categoria: i.categoria,
+        espaco: newName.trim(),
+        itemVerificacao: i.itemVerificacao,
+      })));
+      setEditingSpace(null);
       await loadCatalogo();
-      toast.success(tt('Tipo de manutenção apagado com sucesso.', 'Maintenance type deleted successfully.'));
+      toast.success(t('dashboard.admin.catalogs.success.spaceUpdated'));
     } catch (error: any) {
-      toast.error(error?.message || tt('Erro ao apagar tipo de manutenção.', 'Error deleting maintenance type.'));
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaintenance'));
+    }
+  };
+
+  const handleUpdateElement = async (category: string, oldName: string, newName: string) => {
+    if (!newName.trim() || oldName === newName) { setEditingElement(null); return; }
+    try {
+      const itemsToUpdate = manutencaoItems.filter(i => i.categoria === category && i.itemVerificacao === oldName);
+      await Promise.all(itemsToUpdate.map(i => requisicoesApi.atualizarManutencaoItem(i.id, {
+        categoria: i.categoria,
+        espaco: i.espaco,
+        itemVerificacao: newName.trim(),
+      })));
+      setEditingElement(null);
+      await loadCatalogo();
+      toast.success(t('dashboard.admin.catalogs.success.elementUpdated'));
+    } catch (error: any) {
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaintenance'));
+    }
+  };
+
+  const handleDeleteSpace = async (category: string, name: string) => {
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteSpace', { name }))) return;
+    try {
+      const itemsToDelete = manutencaoItems.filter(i => i.categoria === category && i.espaco === name);
+      await Promise.all(itemsToDelete.map(i => requisicoesApi.apagarManutencaoItem(i.id)));
+      await loadCatalogo();
+      toast.success(t('dashboard.admin.catalogs.success.spaceDeleted'));
+    } catch (error: any) {
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaintenance'));
+    }
+  };
+
+  const handleDeleteElement = async (category: string, name: string) => {
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteElement', { name }))) return;
+    try {
+      const itemsToDelete = manutencaoItems.filter(i => i.categoria === category && i.itemVerificacao === name);
+      await Promise.all(itemsToDelete.map(i => requisicoesApi.apagarManutencaoItem(i.id)));
+      await loadCatalogo();
+      toast.success(t('dashboard.admin.catalogs.success.elementDeleted'));
+    } catch (error: any) {
+      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadMaintenance'));
+    }
+  };
+
+  const handleDeleteCategory = async (category: string, type: 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO') => {
+    const formattedName = formatCategoryName(category);
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteCategory', { name: formattedName }))) return;
+    try {
+      let itemsToDelete: {id: number}[] = [];
+      if (type === 'MATERIAL') itemsToDelete = materiais.filter(m => m.categoria === category);
+      else if (type === 'TRANSPORTE') itemsToDelete = transportes.filter(t => t.categoria === category);
+      else if (type === 'MANUTENCAO') itemsToDelete = manutencaoItems.filter(m => m.categoria === category);
+      
+      await Promise.all(itemsToDelete.map(i => {
+        if (type === 'MATERIAL') return requisicoesApi.apagarMaterialCatalogo(i.id);
+        if (type === 'TRANSPORTE') return requisicoesApi.apagarTransporteCatalogo(i.id);
+        return requisicoesApi.apagarManutencaoItem(i.id);
+      }));
+      await loadCatalogo();
+      toast.success(t('dashboard.admin.catalogs.success.categoryRemoved'));
+    } catch (error) {
+      toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
     }
   };
 
   const toggleAddPanel = (panel: CatalogPanel) => {
-    setOpenAddPanels((prev) => {
-      const willOpen = !prev[panel];
-      return {
-        MATERIAIS: false,
-        TRANSPORTES: false,
-        TIPOS: false,
-        [panel]: willOpen,
-      };
-    });
+    setOpenAddPanels(prev => ({ MATERIAIS: false, TRANSPORTES: false, MANUTENCOES: false, [panel]: !prev[panel] }));
     setActivePanel(panel);
   };
 
-  const toggleMaterialGroup = (categoria: MaterialCategoria) => {
-    setOpenMaterialGroups((prev) => ({
-      ...prev,
-      [categoria]: !prev[categoria],
-    }));
-  };
+  const toggleMaterialGroup = (categoria: string) => setOpenMaterialGroups(prev => ({ ...prev, [categoria]: !prev[categoria] }));
+  const toggleTransporteGroup = (categoria: string) => setOpenTransporteGroups(prev => ({ ...prev, [categoria]: !prev[categoria] }));
 
-  const toggleTransporteGroup = (categoria: string) => {
-    setOpenTransporteGroups((prev) => ({
-      ...prev,
-      [categoria]: !prev[categoria],
-    }));
-  };
-
-  const materiaisPorCategoria = MATERIAL_CATEGORIA_OPTIONS.map((option) => ({
-    ...option,
-    items: materiais.filter((material) => material.categoria === option.value),
+  const materiaisPorCategoria = uniqueMateriaisCategorias.map(cat => ({
+    value: cat, label: cat, items: materiais.filter(m => m.categoria === cat)
   }));
 
-  const transportesPorCategoria = TRANSPORTE_CATEGORIA_OPTIONS
-    .map((option) => ({
-      ...option,
-      items: transportes.filter((t) => t.categoria === option.value),
-    }))
-    .filter((grupo) => grupo.items.length > 0);
+  const transportesPorCategoria = uniqueTransportesCategorias.map(cat => ({
+    value: cat, label: cat, items: transportes.filter(t => t.categoria === cat)
+  })).filter(g => g.items.length > 0);
+
+  const leftColSpan = expandedForm === 'FORM' ? 'xl:col-span-8' : (expandedForm === 'LIST' ? 'xl:col-span-4' : 'xl:col-span-5');
+  const rightColSpan = expandedForm === 'FORM' ? 'xl:col-span-4' : (expandedForm === 'LIST' ? 'xl:col-span-8' : 'xl:col-span-7');
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-      <div className="xl:col-span-5 space-y-4">
-        <GlassCard className="p-4 space-y-3">
-          <button
-            type="button"
-            onClick={() => toggleAddPanel('MATERIAIS')}
-            className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left"
-          >
-            <span className="font-semibold text-gray-800 dark:text-white">{tt('Adicionar material', 'Add material')}</span>
-            <span className="text-sm text-gray-500">{openAddPanels.MATERIAIS ? '▾' : '▸'}</span>
-          </button>
-
-          {openAddPanels.MATERIAIS ? (
-            <div className="space-y-3">
-              <div>
-                <label htmlFor="admin-material-nome" className="text-sm text-gray-600 dark:text-gray-300">{tt('Nome', 'Name')}</label>
-                <Input id="admin-material-nome" className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} />
-              </div>
-
-              <div>
-                <label htmlFor="admin-material-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
-                <select
-                  id="admin-material-categoria"
-                  value={novoMaterialCategoria}
-                  onChange={(e) => setNovoMaterialCategoria(e.target.value as MaterialCategoria)}
-                  className={selectFieldClassName}
-                >
-                  {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <div className={`${leftColSpan} space-y-4 transition-all duration-300`} onClick={() => setExpandedForm('FORM')}>
+          {/* Material Add Panel */}
+          <GlassCard className="p-4 space-y-3">
+            <button onClick={() => toggleAddPanel('MATERIAIS')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
+              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addMaterial')}</span>
+              <span className="text-sm text-gray-500">{openAddPanels.MATERIAIS ? '▾' : '▸'}</span>
+            </button>
+            {openAddPanels.MATERIAIS && (
+              <div className="space-y-3">
                 <div>
-                  <label htmlFor="admin-material-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Atributo', 'Attribute')}</label>
-                  <Input id="admin-material-atributo" className={inputFieldClassName} value={novoMaterialAtributo} onChange={(e) => setNovoMaterialAtributo(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-material-valor-atributo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Valor do atributo', 'Attribute value')}</label>
-                  <Input id="admin-material-valor-atributo" className={inputFieldClassName} value={novoMaterialValorAtributo} onChange={(e) => setNovoMaterialValorAtributo(e.target.value)} />
-                </div>
-              </div>
-
-              <Button onClick={() => void handleCreateMaterial()} disabled={savingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {savingMaterial ? tt('A criar...', 'Creating...') : tt('Adicionar material', 'Add material')}
-              </Button>
-            </div>
-          ) : null}
-        </GlassCard>
-
-        <GlassCard className="p-4 space-y-3">
-          <button
-            type="button"
-            onClick={() => toggleAddPanel('TRANSPORTES')}
-            className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left"
-          >
-            <span className="font-semibold text-gray-800 dark:text-white">{tt('Adicionar transporte', 'Add transport')}</span>
-            <span className="text-sm text-gray-500">{openAddPanels.TRANSPORTES ? '▾' : '▸'}</span>
-          </button>
-
-          {openAddPanels.TRANSPORTES ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="admin-transporte-codigo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Código interno', 'Internal code')}</label>
-                  <Input id="admin-transporte-codigo" className={inputFieldClassName} value={novoTransporteCodigo} onChange={(e) => setNovoTransporteCodigo(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-transporte-tipo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Tipo', 'Type')}</label>
-                  <Input id="admin-transporte-tipo" className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-transporte-categoria" className="text-sm text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</label>
-                  <select
-                    id="admin-transporte-categoria"
-                    value={novoTransporteCategoria}
-                    onChange={(e) => setNovoTransporteCategoria(e.target.value as TransporteCategoria)}
-                    className={selectFieldClassName}
-                  >
-                    {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.category')}</label>
+                  <select value={materialCategoryMode === 'NEW' ? 'NEW' : novoMaterialCategoria} onChange={(e) => {
+                    if (e.target.value === 'NEW') setMaterialCategoryMode('NEW');
+                    else { setMaterialCategoryMode('SELECT'); setNovoMaterialCategoria(e.target.value as MaterialCategoria); }
+                  }} className={selectFieldClassName}>
+                    {uniqueMateriaisCategorias.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
+                    <option value="NEW">-- {t('dashboard.admin.catalogs.newCategory')} --</option>
                   </select>
+                  {materialCategoryMode === 'NEW' && <Input className={inputFieldClassName + " mt-2"} value={customMaterialCategory} onChange={(e) => setCustomMaterialCategory(e.target.value)} />}
                 </div>
                 <div>
-                  <label htmlFor="admin-transporte-matricula" className="text-sm text-gray-600 dark:text-gray-300">{tt('Matrícula', 'License plate')}</label>
-                  <Input id="admin-transporte-matricula" className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} />
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.materialName')}</label>
+                  <Input className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} />
                 </div>
-                <div>
-                  <label htmlFor="admin-transporte-lotacao" className="text-sm text-gray-600 dark:text-gray-300">{tt('Lotação', 'Capacity')}</label>
-                  <Input id="admin-transporte-lotacao" className={inputFieldClassName} type="number" min="1" value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-transporte-marca" className="text-sm text-gray-600 dark:text-gray-300">{tt('Marca', 'Brand')}</label>
-                  <Input id="admin-transporte-marca" className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-transporte-modelo" className="text-sm text-gray-600 dark:text-gray-300">{tt('Modelo', 'Model')}</label>
-                  <Input id="admin-transporte-modelo" className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} />
-                </div>
-                <div>
-                  <label htmlFor="admin-transporte-data" className="text-sm text-gray-600 dark:text-gray-300">{tt('Data matrícula', 'Registration date')}</label>
-                  <Input id="admin-transporte-data" className={inputFieldClassName} type="date" value={novoTransporteDataMatricula} onChange={(e) => setNovoTransporteDataMatricula(e.target.value)} />
-                </div>
-              </div>
-
-              <Button onClick={() => void handleCreateTransporte()} disabled={savingTransporte} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {savingTransporte ? tt('A criar...', 'Creating...') : tt('Adicionar transporte', 'Add transport')}
-              </Button>
-            </div>
-          ) : null}
-        </GlassCard>
-
-        <GlassCard className="p-4 space-y-3">
-          <button
-            type="button"
-            onClick={() => toggleAddPanel('TIPOS')}
-            className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left"
-          >
-            <span className="font-semibold text-gray-800 dark:text-white">{tt('Adicionar tipo de manutenção', 'Add maintenance type')}</span>
-            <span className="text-sm text-gray-500">{openAddPanels.TIPOS ? '▾' : '▸'}</span>
-          </button>
-
-          {openAddPanels.TIPOS ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input className={inputFieldClassName} placeholder={tt('Nome do tipo', 'Type name')} value={novoTipoManutencaoNome} onChange={(e) => setNovoTipoManutencaoNome(e.target.value)} />
-                <Input className={inputFieldClassName} placeholder={tt('Descrição (opcional)', 'Description (optional)')} value={novoTipoManutencaoDescricao} onChange={(e) => setNovoTipoManutencaoDescricao(e.target.value)} />
-              </div>
-
-              <Button onClick={() => void handleCreateTipoManutencao()} disabled={savingTipoManutencao} className="bg-purple-600 hover:bg-purple-700 text-white">
-                {savingTipoManutencao ? tt('A criar...', 'Creating...') : tt('Adicionar tipo de manutenção', 'Add maintenance type')}
-              </Button>
-            </div>
-          ) : null}
-        </GlassCard>
-      </div>
-
-      <div className="xl:col-span-7">
-        <GlassCard className="p-6 space-y-4">
-          {activePanel === 'MATERIAIS' ? (
-            <>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">{tt('Editar materiais por categoria', 'Edit materials by category')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Materiais no catálogo', 'Materials in catalog')}: {materiais.length}</p>
-
-              <div className="space-y-2">
-                {materiaisPorCategoria.map((grupo) => (
-                  <div key={grupo.value} className="rounded-md border border-gray-200 dark:border-gray-700 p-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleMaterialGroup(grupo.value)}
-                      className="w-full flex items-center justify-between text-left"
-                    >
-                      <span className="font-medium text-gray-800 dark:text-gray-100">{grupo.label} <span className="text-gray-500">({grupo.items.length})</span></span>
-                      <span className="text-sm text-gray-500">{openMaterialGroups[grupo.value] ? '▾' : '▸'}</span>
-                    </button>
-
-                    {openMaterialGroups[grupo.value] ? (
-                      <div className="mt-2 space-y-2 max-h-72 overflow-auto">
-                        {grupo.items.length === 0 ? (
-                          <p className="text-sm text-gray-500">{tt('Sem materiais nesta categoria.', 'No materials in this category.')}</p>
-                        ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {grupo.items.map((item) => (
-                              <div key={item.id} className="rounded-md border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3 text-sm">
-                              {editingMaterialId === item.id ? (
-                                <div className="space-y-2">
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Nome', 'Name')}</p>
-                                    <Input className={inputFieldClassName} value={editMaterialNome} onChange={(e) => setEditMaterialNome(e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                  <select
-                                    value={editMaterialCategoria}
-                                    onChange={(e) => setEditMaterialCategoria(e.target.value as MaterialCategoria)}
-                                    className={selectFieldClassName}
-                                  >
-                                    {MATERIAL_CATEGORIA_OPTIONS.map((option) => (
-                                      <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                  </select>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Atributo', 'Attribute')}</p>
-                                      <Input className={inputFieldClassName} value={editMaterialAtributo} onChange={(e) => setEditMaterialAtributo(e.target.value)} />
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Valor do atributo', 'Attribute value')}</p>
-                                      <Input className={inputFieldClassName} value={editMaterialValorAtributo} onChange={(e) => setEditMaterialValorAtributo(e.target.value)} />
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => void handleUpdateMaterial()}>{tt('Guardar', 'Save')}</Button>
-                                    <Button variant="outline" onClick={() => setEditingMaterialId(null)}>{tt('Cancelar', 'Cancel')}</Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <div>
-                                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate" title={item.nome}>{item.nome}</p>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400">{item.atributo}: {item.valorAtributo}</p>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" className="h-8 px-3" onClick={() => startEditMaterial(item)}>{tt('Editar', 'Edit')}</Button>
-                                    <Button variant="outline" className="h-8 px-3" onClick={() => void handleDeleteMaterial(item.id)}>{tt('Apagar', 'Delete')}</Button>
-                                  </div>
-                                </div>
-                              )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.attribute')}</label>
+                    <Input className={inputFieldClassName} value={novoMaterialAtributo} onChange={(e) => setNovoMaterialAtributo(e.target.value)} />
                   </div>
-                ))}
+                  <div>
+                    <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.value')}</label>
+                    <Input className={inputFieldClassName} value={novoMaterialValorAtributo} onChange={(e) => setNovoMaterialValorAtributo(e.target.value)} />
+                  </div>
+                </div>
+                <Button onClick={() => void handleCreateMaterial()} disabled={savingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">{t('dashboard.admin.catalogs.addMaterial')}</Button>
               </div>
-            </>
-          ) : null}
+            )}
+          </GlassCard>
 
-          {activePanel === 'TRANSPORTES' ? (
-            <>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">{tt('Editar transportes', 'Edit transport options')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Transportes no catálogo', 'Transport options in catalog')}: {transportes.length}</p>
+          {/* Transporte Add Panel */}
+          <GlassCard className="p-4 space-y-3">
+            <button onClick={() => toggleAddPanel('TRANSPORTES')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
+              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addTransport')}</span>
+              <span className="text-sm text-gray-500">{openAddPanels.TRANSPORTES ? '▾' : '▸'}</span>
+            </button>
+            {openAddPanels.TRANSPORTES && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Input placeholder={t('dashboard.admin.catalogs.code')} className={inputFieldClassName} value={(() => {
+                    // Mostra o próximo código sugerido
+                    const codigosExistentes = transportes.map(t => t.codigo).filter((c): c is string => !!c);
+                    let maxNum = 0;
+                    codigosExistentes.forEach(codigo => {
+                      const match = /^V(\d{2})$/.exec(codigo);
+                      if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNum) maxNum = num;
+                      }
+                    });
+                    return `V${String(maxNum + 1).padStart(2, '0')}`;
+                  })()} readOnly disabled />
+                  <Input placeholder={t('dashboard.admin.catalogs.type')} className={inputFieldClassName} value={novoTransporteTipo} onChange={(e) => setNovoTransporteTipo(e.target.value)} />
+                </div>
+                <div>
+                  <select value={transporteCategoryMode === 'NEW' ? 'NEW' : novoTransporteCategoria} onChange={(e) => {
+                    if (e.target.value === 'NEW') setTransporteCategoryMode('NEW');
+                    else { setTransporteCategoryMode('SELECT'); setNovoTransporteCategoria(e.target.value as TransporteCategoria); }
+                  }} className={selectFieldClassName}>
+                    {uniqueTransportesCategorias.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
+                    <option value="NEW">-- {t('dashboard.admin.catalogs.newCategory')} --</option>
+                  </select>
+                  {transporteCategoryMode === 'NEW' && <Input className={inputFieldClassName + " mt-2"} value={customTransporteCategory} onChange={(e) => setCustomTransporteCategory(e.target.value)} />}
+                </div>
+                <Input placeholder={t('dashboard.admin.catalogs.plate')} className={inputFieldClassName} value={novoTransporteMatricula} onChange={(e) => setNovoTransporteMatricula(e.target.value)} />
+                <div className="grid grid-cols-2 gap-3">
+                  <Input placeholder={t('dashboard.admin.catalogs.brand')} className={inputFieldClassName} value={novoTransporteMarca} onChange={(e) => setNovoTransporteMarca(e.target.value)} />
+                  <Input placeholder={t('dashboard.admin.catalogs.model')} className={inputFieldClassName} value={novoTransporteModelo} onChange={(e) => setNovoTransporteModelo(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Input placeholder={t('dashboard.admin.catalogs.capacity')} type="number" className={inputFieldClassName} value={novoTransporteLotacao} onChange={(e) => setNovoTransporteLotacao(e.target.value)} />
+                  <div className="mt-1">
+                    <DatePickerField
+                      value={novoTransporteDataMatricula}
+                      onChange={(val) => setNovoTransporteDataMatricula(val)}
+                      placeholder={t('dashboard.admin.catalogs.regDate')}
+                    />
+                  </div>
+                </div>
+                <Button onClick={() => void handleCreateTransporte()} disabled={savingTransporte} className="bg-purple-600 hover:bg-purple-700 text-white">{t('dashboard.admin.catalogs.addTransport')}</Button>
+              </div>
+            )}
+          </GlassCard>
 
-              <div className="space-y-2">
-                {transportesPorCategoria.length === 0 ? (
-                  <p className="text-sm text-gray-500">{tt('Sem transportes no catálogo.', 'No transport options in catalog.')}</p>
-                ) : transportesPorCategoria.map((grupo) => (
-                  <div key={grupo.value} className="rounded-md border border-gray-200 dark:border-gray-700 p-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleTransporteGroup(grupo.value)}
-                      className="w-full flex items-center justify-between text-left"
-                    >
-                      <span className="font-medium text-gray-800 dark:text-gray-100">
-                        {grupo.label} <span className="text-gray-500">({grupo.items.length} {tt('viatura', 'vehicle')}{grupo.items.length !== 1 ? 's' : ''})</span>
-                      </span>
-                      <span className="text-sm text-gray-500">{openTransporteGroups[grupo.value] ? '▾' : '▸'}</span>
-                    </button>
+          {/* Manutencao Add Panel */}
+          <GlassCard className="p-4 space-y-3">
+            <button onClick={() => toggleAddPanel('MANUTENCOES')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
+              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addMaintenance')}</span>
+              <span className="text-sm text-gray-500">{openAddPanels.MANUTENCOES ? '▾' : '▸'}</span>
+            </button>
+            {openAddPanels.MANUTENCOES && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.category')}</label>
+                  <select value={manutencaoCategoryMode === 'NEW' ? 'NEW' : novoManutencaoCategoria} onChange={(e) => {
+                    if (e.target.value === 'NEW') setManutencaoCategoryMode('NEW');
+                    else { setManutencaoCategoryMode('SELECT'); setNovoManutencaoCategoria(e.target.value); }
+                  }} className={selectFieldClassName}>
+                    <option value="">-- {t('dashboard.admin.catalogs.selectCategory')} --</option>
+                    {uniqueManutencaoCategorias.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
+                    <option value="NEW">-- {t('dashboard.admin.catalogs.newCategory')} --</option>
+                  </select>
+                  {manutencaoCategoryMode === 'NEW' && <Input className={inputFieldClassName + " mt-2"} placeholder={t('dashboard.admin.catalogs.newCategoryName')} value={customManutencaoCategory} onChange={(e) => setCustomManutencaoCategory(e.target.value)} />}
+                </div>
 
-                    {openTransporteGroups[grupo.value] ? (
-                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {grupo.items.map((item) => (
-                          <div key={item.id} className="rounded-md border border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-gray-900/40 p-3 text-sm">
-                            {editingTransporteId === item.id ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3 p-4 border border-purple-100 dark:border-purple-900/30 rounded-lg bg-purple-50/20">
+                    <h4 className="text-sm font-semibold text-purple-700">{t('dashboard.admin.catalogs.addSpace')}</h4>
+                    <Input placeholder={t('dashboard.admin.catalogs.spaceName')} value={novoManutencaoEspaco} onChange={(e) => setNovoManutencaoEspaco(e.target.value)} className="h-9" />
+                    <Button className="w-full h-9 bg-purple-600" onClick={async () => {
+                      const cat = (manutencaoCategoryMode === 'NEW' ? customManutencaoCategory : novoManutencaoCategoria).trim();
+                      if (!cat || !novoManutencaoEspaco.trim()) { toast.error(t('dashboard.admin.catalogs.errors.requiredFields')); return; }
+                      try {
+                        const elements = Array.from(new Set(manutencaoItems.filter(i => i.categoria === cat).map(i => i.itemVerificacao)));
+                        const toCreate = elements.length > 0 ? elements : ['GERAL'];
+                        await Promise.all(toCreate.map(el => requisicoesApi.criarManutencaoItem({ categoria: cat, espaco: novoManutencaoEspaco.trim(), itemVerificacao: el })));
+                        setNovoManutencaoEspaco(''); await loadCatalogo(); toast.success(t('dashboard.admin.catalogs.success.spaceCreated'));
+                      } catch (err: any) { toast.error(err.message); }
+                    }}>{t('dashboard.admin.catalogs.createSpace')}</Button>
+                  </div>
+
+                  <div className="space-y-3 p-4 border border-blue-100 dark:border-blue-900/30 rounded-lg bg-blue-50/20">
+                    <h4 className="text-sm font-semibold text-blue-700">{t('dashboard.admin.catalogs.addElement')}</h4>
+                    <Input placeholder={t('dashboard.admin.catalogs.verificationElement')} value={novoManutencaoVerificacao} onChange={(e) => setNovoManutencaoVerificacao(e.target.value)} className="h-9" />
+                    <Button className="w-full h-9 bg-blue-600" onClick={async () => {
+                      const cat = (manutencaoCategoryMode === 'NEW' ? customManutencaoCategory : novoManutencaoCategoria).trim();
+                      if (!cat || !novoManutencaoVerificacao.trim()) { toast.error(t('dashboard.admin.catalogs.errors.requiredFields')); return; }
+                      try {
+                        const spaces = Array.from(new Set(manutencaoItems.filter(i => i.categoria === cat).map(i => i.espaco)));
+                        const toCreate = spaces.length > 0 ? spaces : ['GERAL'];
+                        await Promise.all(toCreate.map(sp => requisicoesApi.criarManutencaoItem({ categoria: cat, espaco: sp, itemVerificacao: novoManutencaoVerificacao.trim() })));
+                        setNovoManutencaoVerificacao(''); await loadCatalogo(); toast.success(t('dashboard.admin.catalogs.success.elementCreated'));
+                      } catch (err: any) { toast.error(err.message); }
+                    }}>{t('dashboard.admin.catalogs.createElement')}</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </GlassCard>
+        </div>
+
+        {/* Right column: LIST */}
+        <div className={`${rightColSpan} transition-all duration-300`} onClick={() => setExpandedForm('LIST')}>
+          <GlassCard className="p-6 space-y-4">
+            {activePanel === 'MATERIAIS' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold">{t('dashboard.admin.catalogs.materials')} ({materiais.length})</h3>
+                {materiaisPorCategoria.map(grupo => (
+                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <button onClick={() => toggleMaterialGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
+                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'MATERIAL')}><TrashIcon className="w-4 h-4" /></Button>
+                    </div>
+                    {openMaterialGroups[grupo.value] && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                        {grupo.items.map(item => (
+                          <div key={item.id} className="p-2 border dark:border-gray-700 rounded-sm bg-gray-50/50 dark:bg-gray-800/50">
+                            {editingMaterialId === item.id ? (
                               <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Código', 'Code')}</p>
-                                    <Input className={inputFieldClassName} value={editTransporteCodigo} onChange={(e) => setEditTransporteCodigo(e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Tipo', 'Type')}</p>
-                                    <Input className={inputFieldClassName} value={editTransporteTipo} onChange={(e) => setEditTransporteTipo(e.target.value)} />
-                                  </div>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Categoria', 'Category')}</p>
-                                  <select
-                                    value={editTransporteCategoria}
-                                    onChange={(e) => setEditTransporteCategoria(e.target.value as TransporteCategoria)}
-                                    className={selectFieldClassName}
-                                  >
-                                    {TRANSPORTE_CATEGORIA_OPTIONS.map((option) => (
-                                      <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                  </select>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Matrícula', 'License plate')}</p>
-                                  <Input className={inputFieldClassName} value={editTransporteMatricula} onChange={(e) => setEditTransporteMatricula(e.target.value)} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Marca', 'Brand')}</p>
-                                    <Input className={inputFieldClassName} value={editTransporteMarca} onChange={(e) => setEditTransporteMarca(e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Modelo', 'Model')}</p>
-                                    <Input className={inputFieldClassName} value={editTransporteModelo} onChange={(e) => setEditTransporteModelo(e.target.value)} />
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Lotação', 'Capacity')}</p>
-                                    <Input className={inputFieldClassName} type="number" min="1" value={editTransporteLotacao} onChange={(e) => setEditTransporteLotacao(e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Data matrícula', 'Registration date')}</p>
-                                    <Input className={inputFieldClassName} type="date" value={editTransporteDataMatricula} onChange={(e) => setEditTransporteDataMatricula(e.target.value)} />
-                                  </div>
-                                </div>
+                                <Input value={editMaterialNome} onChange={(e) => setEditMaterialNome(e.target.value)} className="h-8" />
                                 <div className="flex gap-2">
-                                  <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => void handleUpdateTransporte()}>{tt('Guardar', 'Save')}</Button>
-                                  <Button variant="outline" onClick={() => setEditingTransporteId(null)}>{tt('Cancelar', 'Cancel')}</Button>
+                                  <Button size="sm" onClick={() => void handleUpdateMaterial()}>{t('common.ok')}</Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingMaterialId(null)}>{t('common.cancel')}</Button>
                                 </div>
                               </div>
                             ) : (
-                              <div className="space-y-3">
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="space-y-1 min-w-0">
-                                    {item.codigo ? (
-                                      <span className="inline-block text-xs font-semibold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded px-2 py-0.5 mb-1">{item.codigo}</span>
-                                    ) : null}
-                                    <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">{item.tipo}</p>
-                                    {item.marca || item.modelo ? (
-                                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{[item.marca, item.modelo].filter(Boolean).join(' ')}</p>
-                                    ) : null}
-                                    {item.matricula ? (
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{item.matricula}</p>
-                                    ) : null}
-                                    {item.lotacao ? (
-                                      <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Lotação', 'Capacity')}: {item.lotacao} {tt('lugares', 'seats')}</p>
-                                    ) : null}
-                                  </div>
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm">
+                                  <span className="font-medium">{item.nome}</span>
+                                  <p className="text-xs text-gray-500">{item.atributo}: {item.valorAtributo}</p>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Button variant="outline" className="h-8 px-3" onClick={() => startEditTransporte(item)}>{tt('Editar', 'Edit')}</Button>
-                                  <Button variant="outline" className="h-8 px-3" onClick={() => void handleDeleteTransporte(item.id)}>{tt('Apagar', 'Delete')}</Button>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditMaterial(item)}>
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteMaterial(item.id)}>
+                                    <TrashIcon className="w-4 h-4" />
+                                  </Button>
                                 </div>
                               </div>
                             )}
                           </div>
                         ))}
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 ))}
               </div>
-            </>
-          ) : null}
+            )}
 
-          {activePanel === 'TIPOS' ? (
-            <>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-white">{tt('Editar tipos de manutenção', 'Edit maintenance types')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{tt('Tipos no catálogo', 'Types in catalog')}: {tiposManutencao.length}</p>
-
-              <div className="space-y-2 max-h-[38rem] overflow-auto border border-gray-200 dark:border-gray-700 rounded-md p-2">
-                {tiposManutencao.map((item) => (
-                  <div key={item.id} className="rounded-md border border-gray-200 dark:border-gray-700 p-2 text-sm">
-                    {editingTipoManutencaoId === item.id ? (
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Nome', 'Name')}</p>
-                          <Input className={inputFieldClassName} value={editTipoManutencaoNome} onChange={(e) => setEditTipoManutencaoNome(e.target.value)} />
+            {activePanel === 'MANUTENCOES' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold">{t('dashboard.admin.catalogs.maintenance')} ({manutencaoItems.length})</h3>
+                {manutencaoPorCategoria.map(grupo => (
+                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                    <div className="flex items-center justify-between">
+                      <button onClick={() => toggleManutencaoGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
+                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'MANUTENCAO')}><TrashIcon className="w-4 h-4" /></Button>
+                    </div>
+                    {openManutencaoGroups[grupo.value] && (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
+                        {/* Table 1: Spaces */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase text-gray-500">{t('dashboard.admin.catalogs.spaces')}</h4>
+                          <div className="border rounded divide-y dark:border-gray-700 dark:divide-gray-700">
+                            {Array.from(new Set(grupo.items.map(i => i.espaco))).sort().map(space => (
+                              <div key={space} className="flex items-center justify-between p-2 text-sm">
+                                {editingSpace?.category === grupo.value && editingSpace.name === space ? (
+                                  <Input value={editSpaceName} onChange={(e) => setEditSpaceName(e.target.value)} className="h-7" autoFocus onBlur={() => void handleUpdateSpace(grupo.value, space, editSpaceName)} />
+                                ) : (
+                                  <>
+                                    <span>{space}</span>
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingSpace({category: grupo.value, name: space}); setEditSpaceName(space); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteSpace(grupo.value, space)}>
+                                        <TrashIcon className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{tt('Descrição', 'Description')}</p>
-                          <Input className={inputFieldClassName} value={editTipoManutencaoDescricao} onChange={(e) => setEditTipoManutencaoDescricao(e.target.value)} />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={() => void handleUpdateTipoManutencao()}>{tt('Guardar', 'Save')}</Button>
-                          <Button variant="outline" onClick={() => setEditingTipoManutencaoId(null)}>{tt('Cancelar', 'Cancel')}</Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate">
-                          {[item.nome, item.descricao].filter(Boolean).join(' - ')}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button variant="outline" className="h-8 px-2" onClick={() => startEditTipoManutencao(item)}>{tt('Editar', 'Edit')}</Button>
-                          <Button variant="outline" className="h-8 px-2" onClick={() => void handleDeleteTipoManutencao(item.id)}>{tt('Apagar', 'Delete')}</Button>
+                        {/* Table 2: Elements */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase text-gray-500">{t('dashboard.admin.catalogs.elements')}</h4>
+                          <div className="border rounded divide-y dark:border-gray-700 dark:divide-gray-700">
+                            {Array.from(new Set(grupo.items.map(i => i.itemVerificacao))).sort().map(el => (
+                              <div key={el} className="flex items-center justify-between p-2 text-sm">
+                                {editingElement?.category === grupo.value && editingElement.name === el ? (
+                                  <Input value={editElementName} onChange={(e) => setEditElementName(e.target.value)} className="h-7" autoFocus onBlur={() => void handleUpdateElement(grupo.value, el, editElementName)} />
+                                ) : (
+                                  <>
+                                    <span>{el}</span>
+                                    <div className="flex gap-1">
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingElement({category: grupo.value, name: el}); setEditElementName(el); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteElement(grupo.value, el)}>
+                                        <TrashIcon className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
-            </>
-          ) : null}
-        </GlassCard>
+            )}
+
+            {activePanel === 'TRANSPORTES' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold">{t('dashboard.admin.catalogs.transports')} ({transportes.length})</h3>
+                {transportesPorCategoria.map(grupo => (
+                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <button onClick={() => toggleTransporteGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
+                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'TRANSPORTE')}><TrashIcon className="w-4 h-4" /></Button>
+                    </div>
+                    {openTransporteGroups[grupo.value] && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                        {grupo.items.map(item => (
+                          <div key={item.id} className="p-2 border dark:border-gray-700 rounded-sm bg-gray-50/50 dark:bg-gray-800/50">
+                            <div className="flex items-center justify-between">
+                              {editingTransporteId === item.id ? (
+                                <div className="space-y-2 w-full">
+                                  <Input value={editTransporteMatricula} onChange={(e) => setEditTransporteMatricula(e.target.value.toUpperCase())} className="h-8" placeholder={t('dashboard.admin.catalogs.plate')} />
+                                  <Input value={editTransporteTipo} onChange={(e) => setEditTransporteTipo(e.target.value)} className="h-8" placeholder={t('dashboard.admin.catalogs.type')} />
+                                  <div className="flex gap-2">
+                                    <Button size="sm" onClick={() => void handleUpdateTransporte()}>{t('common.ok')}</Button>
+                                    <Button size="sm" variant="outline" onClick={() => setEditingTransporteId(null)}>{t('common.cancel')}</Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="text-sm">
+                                    <span className="font-medium">{item.matricula}</span>
+                                    <p className="text-xs text-gray-500">{item.tipo} · {item.marca} {item.modelo}</p>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditTransporte(item)}>
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteTransporte(item.id)}>
+                                      <TrashIcon className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </GlassCard>
+        </div>
       </div>
     </div>
   );
