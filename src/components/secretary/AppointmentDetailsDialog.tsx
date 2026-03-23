@@ -4,10 +4,10 @@ import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Label } from '../ui/label';
+import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
 import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload } from 'lucide-react';
@@ -79,11 +79,8 @@ export function AppointmentDetailsDialog({
 
   // Estados para reagendamento
   const today = new Date();
-  const [rescheduleYear, setRescheduleYear] = useState(today.getFullYear());
-  const [rescheduleMonth, setRescheduleMonth] = useState(today.getMonth());
-  const [rescheduleDay, setRescheduleDay] = useState(today.getDate());
+  const [rescheduleDate, setRescheduleDate] = useState<Date>(today);
   const [rescheduleTime, setRescheduleTime] = useState('');
-  const rescheduleYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
 
   useEffect(() => {
     if (!open) {
@@ -413,6 +410,7 @@ function cleanFilename(name: string) {
 
   // Availability Logic for Rescheduling
   const [availableRescheduleSlots, setAvailableRescheduleSlots] = useState<string[]>([]);
+  const [slotCapacity, setSlotCapacity] = useState<number>(1);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
@@ -427,71 +425,22 @@ function cleanFilename(name: string) {
     return slots;
   };
 
-  const isSlotBooked = (date: Date, time: string) => {
-    return existingAppointments.some(apt => {
-      const aptDate = new Date(apt.date);
-      aptDate.setHours(0, 0, 0, 0);
-      const slotDate = new Date(date);
-      slotDate.setHours(0, 0, 0, 0);
-
-      // Don't block the CURRENT appointment (we are rescheduling it)
-      if (apt.id === appointment.id) return false;
-
-      return aptDate.getTime() === slotDate.getTime() &&
-        apt.time === time &&
-        apt.status !== 'cancelled';
-    });
-  };
-
-  // Load blocks when Year/Month changes in Reschedule Dialog
-  useEffect(() => {
-    if (!showRescheduleDialog) return;
-
-    const loadBlocks = async () => {
-      try {
-        const bloqueios = await calendarioApi.listarBloqueios(rescheduleYear, rescheduleMonth + 1);
-        const newBlocks = new Set<string>();
-        const timeSlots = generateTimeSlots();
-
-        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
-          const date = new Date(bloqueio.data);
-          const dateStr = date.toISOString().split('T')[0];
-
-          if (bloqueio.horaInicio && bloqueio.horaFim) {
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
-
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlocks.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
-        });
-        setQuickMonthBlocks(newBlocks);
-      } catch (error) {
-        console.error('Erro ao carregar bloqueios para reagendamento:', error);
-      }
-    };
-
-    loadBlocks();
-  }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
-
   useEffect(() => {
     if (!showRescheduleDialog) return;
 
     const loadHolidays = async () => {
-      if (holidaysByYear[rescheduleYear]) return;
+      const year = rescheduleDate.getFullYear();
+      if (holidaysByYear[year]) return;
       try {
-        const dates = await calendarioApi.listarFeriados(rescheduleYear);
-        setHolidaysByYear(prev => ({ ...prev, [rescheduleYear]: new Set(dates) }));
+        const dates = await calendarioApi.listarFeriados(year);
+        setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
       } catch (error) {
         console.error('Erro ao carregar feriados para reagendamento:', error);
       }
     };
 
     loadHolidays();
-  }, [rescheduleYear, showRescheduleDialog, holidaysByYear]);
+  }, [rescheduleDate, showRescheduleDialog, holidaysByYear]);
 
   const isHoliday = (date: Date) => {
     const set = holidaysByYear[date.getFullYear()];
@@ -500,81 +449,105 @@ function cleanFilename(name: string) {
     return set.has(key);
   };
 
-  // Update available slots when blocks, booked slots or date changes
+  // Fetch slot capacity once when dialog opens
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+    calendarioApi.listarConfiguracaoSlots()
+      .then((cfgs: any[]) => {
+        const cfg = cfgs.find(c => c.tipo === 'SECRETARIA');
+        setSlotCapacity(Math.max(1, cfg?.capacidadePorSlot ?? 1));
+      })
+      .catch(() => setSlotCapacity(1));
+  }, [showRescheduleDialog]);
+
+  // Load admin blocks for the current month
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+    const loadBlocks = async () => {
+      try {
+        const bloqueios = await calendarioApi.listarBloqueios(rescheduleDate.getFullYear(), rescheduleDate.getMonth() + 1);
+        const newBlocks = new Set<string>();
+        const timeSlots = generateTimeSlots();
+        bloqueios.forEach((b: any) => {
+          const dateStr = new Date(b.data).toISOString().split('T')[0];
+          if (b.horaInicio && b.horaFim) {
+            timeSlots.forEach(slot => {
+              if (slot >= b.horaInicio && slot < b.horaFim) newBlocks.add(`${dateStr}_${slot}`);
+            });
+          }
+        });
+        setQuickMonthBlocks(newBlocks);
+      } catch { /* ignore */ }
+    };
+    loadBlocks();
+  }, [rescheduleDate, showRescheduleDialog]);
+
+  // Filter available slots: exclude past, blocked, and full slots
   useEffect(() => {
     if (!showRescheduleDialog) return;
 
-    const selectedDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    const selectedDate = new Date(rescheduleDate);
+    selectedDate.setHours(0, 0, 0, 0);
     const dateStr = selectedDate.toISOString().split('T')[0];
-    const timeSlots = generateTimeSlots();
-    const dayOfWeek = selectedDate.getDay();
-    const isHolidayDate = isHoliday(selectedDate);
+    const now = new Date();
 
-    // Block weekends immediately
-    if (dayOfWeek === 0 || dayOfWeek === 6 || isHolidayDate) {
-      setAvailableRescheduleSlots([]);
-      setRescheduleTime('');
-      return;
-    }
+    const available = generateTimeSlots().filter(slot => {
+      // Past
+      const [h, m] = slot.split(':').map(Number);
+      const slotDt = new Date(selectedDate);
+      slotDt.setHours(h, m);
+      if (slotDt <= now) return false;
 
-    const available = timeSlots.filter(slot => {
-      const key = `${dateStr}_${slot}`;
+      // Admin block
+      if (quickMonthBlocks.has(`${dateStr}_${slot}`)) return false;
 
-      // Check Past
-      const [h, m] = slot.split(':');
-      const slotDateTime = new Date(selectedDate);
-      slotDateTime.setHours(parseInt(h), parseInt(m));
-      const isPast = slotDateTime <= new Date();
+      // Capacity: count non-cancelled appointments at this slot, excluding the one being rescheduled
+      const occupied = existingAppointments.filter(apt => {
+        if (apt.id === appointment.id) return false;
+        if (apt.status === 'cancelled') return false;
+        const aptDate = new Date(apt.date);
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate.getTime() === selectedDate.getTime() && apt.time === slot;
+      }).length;
+      if (occupied >= slotCapacity) return false;
 
-      // Check Blocks from API
-      const isBlocked = quickMonthBlocks.has(key);
-
-      // Check Existing Appointments
-      const isBooked = isSlotBooked(selectedDate, slot);
-
-      return !isPast && !isBlocked && !isBooked;
+      return true;
     });
 
     setAvailableRescheduleSlots(available);
+    setRescheduleTime(prev => (available.includes(prev) ? prev : ''));
+  }, [rescheduleDate, quickMonthBlocks, slotCapacity, existingAppointments, showRescheduleDialog]);
 
-    // Clear selection if not available, or keep if valid
-    setRescheduleTime(prev => {
-      if (available.includes(prev)) return prev;
-      return '';
-    });
-
-  }, [rescheduleYear, rescheduleMonth, rescheduleDay, quickMonthBlocks, existingAppointments, showRescheduleDialog]);
 
   const handleReschedule = async () => {
     if (!rescheduleTime) return;
 
     // Combinar data e hora
     const [hours, minutes] = rescheduleTime.split(':');
-    const newDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    const newDate = new Date(rescheduleDate);
     newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     try {
-      // API call to backend
+      // API call to backend - backend handles all validation
       await marcacoesApi.reagendar(Number(appointment.id), newDate.toISOString());
 
       onUpdate(appointment.id, {
         date: newDate,
         time: rescheduleTime,
-        status: 'scheduled' // Optionally reset status if backend does it
+        status: 'scheduled'
       });
 
       toast.success(t('appointmentDetails.rescheduledSuccess'));
       setShowRescheduleDialog(false);
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao reagendar:", error);
-      toast.error(t('appointmentDetails.rescheduledFailed'));
+      const msg = error?.response?.data?.message || error?.message || t('appointmentDetails.rescheduledFailed');
+      toast.error(msg);
     }
   };
 
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
+
 
   const invalidDocuments = appointment.documents?.filter(doc => doc.invalid) || [];
 
@@ -996,9 +969,7 @@ function cleanFilename(name: string) {
                     className="w-full gap-2"
                     onClick={() => {
                       const aptDate = new Date(appointment.date);
-                      setRescheduleYear(aptDate.getFullYear());
-                      setRescheduleMonth(aptDate.getMonth());
-                      setRescheduleDay(aptDate.getDate());
+                      setRescheduleDate(aptDate);
                       setRescheduleTime(appointment.time);
                       setShowRescheduleDialog(true);
                     }}
@@ -1164,76 +1135,56 @@ function cleanFilename(name: string) {
             </DialogPrimitive.Description>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
-            <div className="flex items-end gap-4 flex-wrap">
-              {/* Ano */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleYear')}</Label>
-                <Select value={String(rescheduleYear)} onValueChange={(value) => setRescheduleYear(Number(value))}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rescheduleYearOptions.map((year) => (
-                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex flex-col sm:flex-row gap-6 mt-4 items-start">
+            {/* Calendário */}
+            <div className="flex flex-col items-center">
+              <CalendarComponent
+                mode="single"
+                selected={rescheduleDate}
+                onSelect={(d) => {
+                  if (d) {
+                    setRescheduleDate(d);
+                    setRescheduleTime('');
+                  }
+                }}
+                disabled={(d) => {
+                  const dow = d.getDay();
+                  if (dow === 0 || dow === 6) return true;
+                  if (isHoliday(d)) return true;
+                  const todayStart = new Date();
+                  todayStart.setHours(0, 0, 0, 0);
+                  if (d < todayStart) return true;
+                  return false;
+                }}
+                initialFocus
+              />
+            </div>
 
-              {/* Mês */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleMonth')}</Label>
-                <Select value={String(rescheduleMonth)} onValueChange={(value) => setRescheduleMonth(Number(value))}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {Array.from({ length: 12 }, (_, idx) => (
-                      <SelectItem key={idx} value={String(idx)}>
-                        {new Date(rescheduleYear, idx).toLocaleDateString(locale, { month: 'long' })}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Dia */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[100px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleDay')}</Label>
-                <Select
-                  value={String(rescheduleDay)}
-                  onValueChange={(value) => setRescheduleDay(Math.min(Number(value), getDaysInMonth(rescheduleYear, rescheduleMonth)))}
-                >
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => {
-                      const testDate = new Date(rescheduleYear, rescheduleMonth, day);
-                      const dayOfWeek = testDate.getDay();
-                      if (dayOfWeek === 0 || dayOfWeek === 6 || isHoliday(testDate)) return null;
-
-                      return <SelectItem key={day} value={String(day)}>{day}</SelectItem>;
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Horário */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
-                <Select value={rescheduleTime} onValueChange={setRescheduleTime} disabled={!availableRescheduleSlots.length}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue placeholder={availableRescheduleSlots.length ? t('appointmentDetails.rescheduleSelectPlaceholder') : t('appointmentDetails.rescheduleUnavailable')} />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {availableRescheduleSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Horário */}
+            <div className="flex flex-col gap-2 flex-1 min-w-[150px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
+              {availableRescheduleSlots.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                  {t('appointmentDetails.rescheduleUnavailable')}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                  {availableRescheduleSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setRescheduleTime(slot)}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                        rescheduleTime === slot
+                          ? 'bg-yellow-500 text-white border-yellow-500'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
