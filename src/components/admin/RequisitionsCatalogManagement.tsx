@@ -14,6 +14,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { useTranslation } from 'react-i18next';
 import { TrashIcon } from '../shared/CustomIcons';
+import { Pencil } from 'lucide-react';
 import { DatePickerField } from '../ui/date-picker-field';
 
 type CatalogPanel = 'MATERIAIS' | 'TRANSPORTES' | 'MANUTENCOES';
@@ -654,8 +655,12 @@ export function RequisitionsCatalogManagement() {
                                   <p className="text-xs text-gray-500">{item.atributo}: {item.valorAtributo}</p>
                                 </div>
                                 <div className="flex gap-1">
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditMaterial(item)}>Ed</Button>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteMaterial(item.id)}>Del</Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditMaterial(item)}>
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteMaterial(item.id)}>
+                                    <TrashIcon className="w-4 h-4" />
+                                  </Button>
                                 </div>
                               </div>
                             )}
@@ -691,8 +696,12 @@ export function RequisitionsCatalogManagement() {
                                   <>
                                     <span>{space}</span>
                                     <div className="flex gap-1">
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingSpace({category: grupo.value, name: space}); setEditSpaceName(space); }}>✎</Button>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteSpace(grupo.value, space)}>×</Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingSpace({category: grupo.value, name: space}); setEditSpaceName(space); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteSpace(grupo.value, space)}>
+                                        <TrashIcon className="w-3 h-3" />
+                                      </Button>
                                     </div>
                                   </>
                                 )}
@@ -712,8 +721,12 @@ export function RequisitionsCatalogManagement() {
                                   <>
                                     <span>{el}</span>
                                     <div className="flex gap-1">
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingElement({category: grupo.value, name: el}); setEditElementName(el); }}>✎</Button>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteElement(grupo.value, el)}>×</Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingElement({category: grupo.value, name: el}); setEditElementName(el); }}>
+                                        <Pencil className="w-3 h-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteElement(grupo.value, el)}>
+                                        <TrashIcon className="w-3 h-3" />
+                                      </Button>
                                     </div>
                                   </>
                                 )}
@@ -758,8 +771,12 @@ export function RequisitionsCatalogManagement() {
                                     <p className="text-xs text-gray-500">{item.tipo} · {item.marca} {item.modelo}</p>
                                   </div>
                                   <div className="flex gap-1">
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditTransporte(item)}>Ed</Button>
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteTransporte(item.id)}>×</Button>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditTransporte(item)}>
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteTransporte(item.id)}>
+                                      <TrashIcon className="w-4 h-4" />
+                                    </Button>
                                   </div>
                                 </>
                               )}
