@@ -334,6 +334,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         ]}
         isActive={['management', 'admin-area'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('management')}
       />
     </>
   );
