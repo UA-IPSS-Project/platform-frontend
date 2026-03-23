@@ -438,6 +438,12 @@ export function RequisitionsCatalogManagement() {
   };
 
   const handleDeleteMaterial = async (id: number) => {
+    const confirmed = window.confirm(tt(
+      'Tem a certeza que deseja eliminar este material?',
+      'Are you sure you want to delete this material?'
+    ));
+    if (!confirmed) return;
+
     try {
       await requisicoesApi.apagarMaterialCatalogo(id);
       setMateriais((prev) => prev.filter((item) => item.id !== id));
@@ -449,6 +455,12 @@ export function RequisitionsCatalogManagement() {
   };
 
   const handleDeleteTransporte = async (id: number) => {
+    const confirmed = window.confirm(tt(
+      'Tem a certeza que deseja eliminar este transporte?',
+      'Are you sure you want to delete this transport?'
+    ));
+    if (!confirmed) return;
+
     try {
       await requisicoesApi.apagarTransporteCatalogo(id);
       setTransportes((prev) => prev.filter((item) => item.id !== id));
@@ -460,6 +472,12 @@ export function RequisitionsCatalogManagement() {
   };
 
   const handleDeleteManutencaoItem = async (id: number) => {
+    const confirmed = window.confirm(tt(
+      'Tem a certeza que deseja eliminar este item de manutenção?',
+      'Are you sure you want to delete this maintenance item?'
+    ));
+    if (!confirmed) return;
+
     try {
       await requisicoesApi.apagarManutencaoItem(id);
       setManutencaoItems((prev) => prev.filter((item) => item.id !== id));
