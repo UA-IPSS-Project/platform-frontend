@@ -1124,7 +1124,7 @@
       "slotOccupied": "Este horário já está ocupado"
     },
     "options": {
-      "shampoo": "Shampoo",
+      "shampoo": "Champô",
       "showerGel": "Gel de Banho",
       "towel": "Toalha",
       "soapCream": "Sabonete/Creme",
@@ -1222,6 +1222,9 @@
       "Toalhetes": "Toalhetes",
       "Fraldas Adulto": "Fraldas Adulto",
       "Papel Higiénico": "Papel Higiénico",
+      "Gel de Banho": "Gel de Banho",
+      "Toalha": "Toalha",
+      "Sabonete/Creme": "Sabonete/Creme",
       "T-shirt/Camisola": "T-shirt/Camisola",
       "Calças": "Calças",
       "Roupa Interior": "Roupa Interior",

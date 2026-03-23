@@ -35,7 +35,7 @@ interface BalnearioAppointmentDetailsDialogProps {
 }
 
 const HYGIENE_OPTIONS = [
-    { value: 'Shampoo', labelKey: 'balnearioAppointment.options.shampoo' },
+    { value: 'Champô', labelKey: 'balnearioAppointment.options.shampoo' },
     { value: 'Gel de Banho', labelKey: 'balnearioAppointment.options.showerGel' },
     { value: 'Toalha', labelKey: 'balnearioAppointment.options.towel' },
     { value: 'Sabonete/Creme', labelKey: 'balnearioAppointment.options.soapCream' },
