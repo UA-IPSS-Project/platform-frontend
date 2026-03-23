@@ -7,8 +7,8 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
-import { XIcon, UserIcon } from '../shared/CustomIcons';
-import { ClipboardList, Save, AlertTriangle } from 'lucide-react';
+import { XIcon } from '../shared/CustomIcons';
+import { Save, AlertTriangle } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogContent,
@@ -348,7 +348,6 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Patient Name */}
                     <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
                         <Label className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 mb-2">
-                            <UserIcon className="w-4 h-4" />
                             {t('balnearioAppointmentDetails.patientName')}
                         </Label>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
@@ -369,7 +368,6 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Editable Checklist */}
                     <div>
                         <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
-                            <ClipboardList className="w-4 h-4 text-purple-600" />
                             {t('balnearioAppointmentDetails.markedNeeds')}
                             {isEditable && <span className="text-xs font-normal text-gray-500">({t('balnearioAppointmentDetails.editable')})</span>}
                         </Label>

@@ -309,8 +309,8 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                         <div className="space-y-4">
                             {/* Hygiene */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -332,11 +332,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
 
                             {/* Laundry */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -358,11 +358,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
 
                             {/* Clothing */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {CLOTHING_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -414,7 +414,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
                         </div>
                     </div>
 
