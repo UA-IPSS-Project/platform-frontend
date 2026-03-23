@@ -247,7 +247,8 @@ export type CreateField =
   | 'dataRegresso'
   | 'horaRegresso'
   | 'numeroPassageiros'
-  | 'transporteIds';
+  | 'transporteIds'
+  | 'manutencaoItens';
 
 export const createEmptyMaterialLinha = () => ({
   rowId:

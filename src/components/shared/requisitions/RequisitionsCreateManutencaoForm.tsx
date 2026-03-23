@@ -17,6 +17,8 @@ interface RequisitionsCreateManutencaoFormProps {
   manutencaoObservacoesPorCategoria: Record<ManutencaoCategoria, string>;
   onUpdateObservacaoCategoria: (categoria: ManutencaoCategoria, observacao: string) => void;
   t: (key: string) => string;
+  manutencaoError?: string;
+  onClearSelection: () => void;
 }
 
 export function RequisitionsCreateManutencaoForm({
@@ -28,6 +30,8 @@ export function RequisitionsCreateManutencaoForm({
   manutencaoObservacoesPorCategoria,
   onUpdateObservacaoCategoria,
   t,
+  manutencaoError,
+  onClearSelection,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
   const itemsPorCategoria = manutencaoItems.reduce(
     (acc, item) => {
@@ -146,11 +150,22 @@ export function RequisitionsCreateManutencaoForm({
         })}
       </div>
 
+      {manutencaoError && (
+        <p className="text-red-500 text-sm">{manutencaoError}</p>
+      )}
+
       {selectedManutencaoItemIds.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-blue-50 dark:bg-blue-900/20 space-y-2">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-blue-50 dark:bg-blue-900/20 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             ✓ {selectedManutencaoItemIds.length} item(ns) selecionado(s)
           </p>
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors"
+          >
+            {t('requisitions.ui.clearSelection')}
+          </button>
         </div>
       )}
     </div>

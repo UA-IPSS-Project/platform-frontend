@@ -3,6 +3,7 @@ import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../components/ui/dialog';
 import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
@@ -100,6 +101,7 @@ export function SharedRequisitionsPage({
   const [conflitoTransportesNomes, setConflitoTransportesNomes] = useState<string[]>([]);
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
@@ -452,9 +454,7 @@ export function SharedRequisitionsPage({
     }
   }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite]);
 
-  const setFieldTouched = useCallback((field: CreateField) => {
-    createForm.setFieldTouched(field);
-  }, [createForm]);
+
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = useCallback((field: CreateField): string | undefined => {
@@ -483,6 +483,11 @@ export function SharedRequisitionsPage({
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
       if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
+      return undefined;
+    }
+
+    if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
+      if (createForm.selectedManutencaoItemIds.length === 0) return t('requisitions.errors.addOneMaintenanceItem');
       return undefined;
     }
 
@@ -528,11 +533,11 @@ export function SharedRequisitionsPage({
   const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
     const error = validateCreateField(field);
     if (markTouched) {
-      setFieldTouched(field);
+      createForm.setFieldTouched(field);
     }
     createForm.setFieldError(field, error);
     return error;
-  }, [validateCreateField, setFieldTouched, createForm]);
+  }, [validateCreateField, createForm]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -540,7 +545,8 @@ export function SharedRequisitionsPage({
     const mapped: Partial<Record<CreateField, string>> = {};
     Object.entries(error.fieldErrors).forEach(([key, value]) => {
       if (key === 'descricao') mapped.descricao = value;
-      if (key === 'itens') mapped.materialItens = value;
+      if (key === 'itens' && createForm.tipo === 'MATERIAL') mapped.materialItens = value;
+      if (key === 'manutencaoItens') mapped.manutencaoItens = value;
       if (key === 'destino') mapped.destino = value;
       if (key === 'dataHoraSaida') {
         mapped.dataSaida = value;
@@ -709,7 +715,7 @@ export function SharedRequisitionsPage({
     }
   }, [recommendedTransportIds, createForm, validateAndSetField]);
 
-  const handleCreate = useCallback(async () => {
+  const handlePreSubmit = useCallback(() => {
     if (!currentUserId) {
       toast.error(t('requisitions.errors.missingAuthenticatedUser'));
       return;
@@ -732,6 +738,9 @@ export function SharedRequisitionsPage({
         'transporteIds',
       );
     }
+    if (createForm.tipo === 'MANUTENCAO') {
+      fieldsToValidate.push('manutencaoItens');
+    }
 
     const validationErrors = fieldsToValidate
       .map((field) => ({ field, error: validateAndSetField(field, true) }))
@@ -741,6 +750,10 @@ export function SharedRequisitionsPage({
       return;
     }
 
+    setIsConfirmModalOpen(true);
+  }, [currentUserId, createForm, validateAndSetField, t]);
+
+  const confirmAndSubmit = useCallback(async () => {
     const dataHoraSaida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
     const dataHoraRegresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
 
@@ -768,7 +781,6 @@ export function SharedRequisitionsPage({
           ...payloadBase,
           itens: itensDedupe,
         });
-        // Refresh catalog after creating material
         catalog.fetchCatalogo();
         toast.success(t('requisitions.messages.materialCreated'));
       } else if (createForm.tipo === 'TRANSPORTE') {
@@ -801,6 +813,7 @@ export function SharedRequisitionsPage({
         toast.success(t('requisitions.messages.created'));
       }
       handleResetCreateForm();
+      setIsConfirmModalOpen(false);
       setActiveSection('list');
       await fetchRequisicoes();
     } catch (error: any) {
@@ -815,6 +828,7 @@ export function SharedRequisitionsPage({
           });
           return next;
         });
+        setIsConfirmModalOpen(false); // Close if form error mapping fails
       } else {
         toast.error(error?.message || t('requisitions.errors.createFailed'));
       }
@@ -1414,19 +1428,12 @@ export function SharedRequisitionsPage({
                 passageirosSolicitados={passageirosSolicitados}
                 lugaresEmFalta={lugaresEmFalta}
                 loadingCatalogo={catalog.loadingCatalogo}
-                createErrors={{ transporteIds: createForm.createErrors.transporteIds }}
+                createErrors={createForm.createErrors}
                 inputFieldClassName={inputFieldClassName}
                 selectFieldClassName={selectFieldClassName}
                 onApplySuggestion={handleAplicarSugestaoTransporte}
                 t={t}
               />
-
-              {createForm.createErrors.destino && <p className="text-red-500 text-xs">{createForm.createErrors.destino}</p>}
-              {createForm.createErrors.dataSaida && <p className="text-red-500 text-xs">{createForm.createErrors.dataSaida}</p>}
-              {createForm.createErrors.horaSaida && <p className="text-red-500 text-xs">{createForm.createErrors.horaSaida}</p>}
-              {createForm.createErrors.dataRegresso && <p className="text-red-500 text-xs">{createForm.createErrors.dataRegresso}</p>}
-              {createForm.createErrors.horaRegresso && <p className="text-red-500 text-xs">{createForm.createErrors.horaRegresso}</p>}
-              {createForm.createErrors.numeroPassageiros && <p className="text-red-500 text-xs">{createForm.createErrors.numeroPassageiros}</p>}
             </div>
           )}
 
@@ -1438,9 +1445,17 @@ export function SharedRequisitionsPage({
                 selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
                 onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
-                onToggleItem={toggleManutencaoItem}
+                onToggleItem={(id, checked) => {
+                  toggleManutencaoItem(id, checked);
+                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
+                }}
                 onUpdateObservacaoCategoria={updateManutencaoObservacaoCategoria}
                 t={t}
+                manutencaoError={createForm.createErrors.manutencaoItens}
+                onClearSelection={() => {
+                  createForm.setSelectedManutencaoItemIds([]);
+                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
+                }}
               />
             </div>
           )}
@@ -1458,7 +1473,7 @@ export function SharedRequisitionsPage({
         >
           {t('requisitions.ui.close')}
         </Button>
-        <Button onClick={handleCreate} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+        <Button onClick={handlePreSubmit} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
           {submitting ? t('requisitions.ui.creatingRequest') : t('requisitions.ui.createRequest')}
         </Button>
       </div>
@@ -1688,6 +1703,130 @@ export function SharedRequisitionsPage({
         onCreate={handleCriarMaterialCatalogo}
         t={t}
       />
+
+      {/* Confirmation Modal */}
+      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>{t('requisitions.ui.confirmTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('requisitions.ui.confirmMessage')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 my-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-md text-sm border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
+              <span className="text-gray-500 font-medium">{t('requisitions.ui.type')}:</span>
+              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+                {t(`requisitions.labels.${{ MATERIAL: 'material', TRANSPORTE: 'transport', MANUTENCAO: 'maintenance' }[createForm.tipo]}`)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
+              <span className="text-gray-500 font-medium">{t('requisitions.ui.priority')}:</span>
+              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+                {t(`requisitions.labels.${{ BAIXA: 'low', MEDIA: 'medium', ALTA: 'high', URGENTE: 'urgent' }[createForm.prioridade]}`)}
+              </span>
+            </div>
+            {createForm.tempoLimite && (
+              <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
+                <span className="text-gray-500 font-medium">{t('requisitions.ui.deadlineDate')}:</span>
+                <span className="text-gray-900 dark:text-gray-100">{new Date(createForm.tempoLimite).toLocaleDateString('pt-PT')}</span>
+              </div>
+            )}
+            
+            {createForm.tipo === 'MATERIAL' && (
+              <div>
+                <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.materials')}:</span>
+                <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                  {createForm.materialLinhas.filter(l => l.materialId && Number(l.quantidade) > 0).map((l, idx) => {
+                    const itemName = catalog.materiais.find(m => m.id === Number(l.materialId))?.nome || `#${l.materialId}`;
+                    return <li key={idx}>{itemName} x {l.quantidade}</li>;
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {createForm.tipo === 'TRANSPORTE' && (
+              <>
+                <div className="flex flex-col border-b pb-2 border-gray-200 dark:border-gray-800">
+                  <span className="text-gray-500 font-medium">{t('requisitions.ui.destination')}:</span>
+                  <span className="text-gray-900 dark:text-gray-100">{createForm.destinoTransporte}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
+                  <span className="text-gray-500 font-medium">{t('requisitions.ui.passengersCount')}:</span>
+                  <span className="text-gray-900 dark:text-gray-100">{passageirosSolicitados}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.suggestedAndSelectedVehicles')}:</span>
+                  <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                    {createForm.selectedTransportIds.map((id, idx) => {
+                      const tInfo = catalog.transportes.find(x => x.id === Number(id));
+                      return <li key={idx}>{tInfo ? formatTransporteDisplay(tInfo) : `#${id}`}</li>;
+                    })}
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItemIds.length > 0 && (
+              <div>
+                <span className="text-gray-500 font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
+                {(() => {
+                  const grouped = createForm.selectedManutencaoItemIds.reduce((acc, id) => {
+                    const mInfo = catalog.manutencaoItems.find((m) => m.id === id);
+                    if (mInfo) {
+                      if (!acc[mInfo.categoria]) acc[mInfo.categoria] = [];
+                      acc[mInfo.categoria].push(mInfo);
+                    }
+                    return acc;
+                  }, {} as Record<string, typeof catalog.manutencaoItems>);
+                  
+                  const labelMap: Record<string, string> = {
+                    CATL: t('requisitions.labels.maintenanceCategoryCATL'),
+                    RC: t('requisitions.labels.maintenanceCategoryRC'),
+                    PRE_ESCOLAR: t('requisitions.labels.maintenanceCategoryPreschool'),
+                    CRECHE: t('requisitions.labels.maintenanceCategoryDaycare')
+                  };
+
+                  return Object.entries(grouped).map(([categoria, items]) => (
+                    <div key={categoria} className="mb-2 last:mb-0 ml-2">
+                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                        {labelMap[categoria] || categoria}:
+                      </p>
+                      {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-1 italic">
+                          Obs: {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria]}
+                        </p>
+                      )}
+                      <ul className="list-disc pl-5 mt-1 text-gray-700 dark:text-gray-300">
+                        {items.map((item, idx) => (
+                          <li key={idx} className="text-sm">{item.espaco} - {item.itemVerificacao}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+
+            {createForm.descricao && (
+              <div className="flex flex-col mt-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                <span className="text-gray-500 font-medium">{t('requisitions.ui.description')}:</span>
+                <span className="text-gray-900 dark:text-gray-100 truncate">{createForm.descricao}</span>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} disabled={submitting}>
+              {t('requisitions.ui.confirmCancelBtn')}
+            </Button>
+            <Button onClick={() => void confirmAndSubmit()} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+              {submitting ? t('requisitions.ui.creating') : t('requisitions.ui.confirmSubmitBtn')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
