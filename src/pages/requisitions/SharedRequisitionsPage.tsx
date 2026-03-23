@@ -671,15 +671,22 @@ export function SharedRequisitionsPage({
   }, [createForm, toggleVariante]);
 
   const updateVarianteQuantidade = useCallback((materialId: number, quantidade: string) => {
-    if (!quantidade) return;
+    let finalValue = quantidade;
 
-    const valor = Number(quantidade);
-    if (!Number.isFinite(valor) || valor < 1) return;
+    if (finalValue !== '') {
+      const valor = Number(finalValue);
+      if (Number.isNaN(valor)) return;
+      if (valor < 1) {
+        finalValue = '1';
+      } else {
+        finalValue = String(Math.floor(valor));
+      }
+    }
 
     createForm.setMaterialLinhas((prev) =>
       prev.map((linha) =>
         linha.materialId === String(materialId)
-          ? { ...linha, quantidade }
+          ? { ...linha, quantidade: finalValue }
           : linha,
       ),
     );
@@ -1166,8 +1173,9 @@ export function SharedRequisitionsPage({
   const materiaisAdicionadosAgrupados = useMemo(() => {
     const grupos = new Map<MaterialCategoria, Array<{
       rowId: string;
+      materialId: number;
       descricao: string;
-      quantidade: number;
+      quantidade: string;
     }>>();
 
     createForm.materialLinhas.forEach((linha) => {
@@ -1180,8 +1188,9 @@ export function SharedRequisitionsPage({
 
       grupoAtual.push({
         rowId: linha.rowId,
+        materialId: Number(linha.materialId),
         descricao,
-        quantidade: Number(linha.quantidade || 0),
+        quantidade: linha.quantidade,
       });
 
       grupos.set(categoria, grupoAtual);
