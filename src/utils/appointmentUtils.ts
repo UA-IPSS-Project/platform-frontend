@@ -42,13 +42,14 @@ export const mapApiToAppointment = (m: any): Appointment => {
         patientContact: status === 'reserved' ? '' : (isBalneario ? '' : (utente?.telefone || 'N/A')),
         patientEmail: status === 'reserved' ? '' : (isBalneario ? '' : (utente?.email || 'Email não disponível')),
         subject: status === 'reserved' ? 'reserved' : (isBalneario ? 'Balneário Social' : (m.marcacaoSecretaria?.assunto || 'Sem assunto')),
-        description: status === 'reserved' ? '' : (isBalneario ? 'Serviços Logísticos' : (m.marcacaoSecretaria?.descricao || '')),
+        description: status === 'reserved' ? '' : (isBalneario ? (m.marcacaoBalneario.observacoes || 'Serviços Logísticos') : (m.marcacaoSecretaria?.descricao || '')),
         status: status,
         cancellationReason: status === 'cancelled' ? (m.motivoCancelamento || m.marcacaoSecretaria?.motivoCancelamento || 'Motivo não especificado') : undefined,
         attendantName: m.atendenteNome,
         balnearioDetails: isBalneario ? {
             produtosHigiene: m.marcacaoBalneario.produtosHigiene,
             lavagemRoupa: m.marcacaoBalneario.lavagemRoupa,
+            observacoes: m.marcacaoBalneario.observacoes,
             roupas: m.marcacaoBalneario.roupas || []
         } : undefined
     };

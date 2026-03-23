@@ -8,7 +8,19 @@ import { Checkbox } from '../ui/checkbox';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { calendarioApi, apiRequest } from '../../services/api';
+import { armazemApi, StockCheckResult } from '../../services/api/armazem/armazemApi';
 import { useTranslation } from 'react-i18next';
+import { AlertTriangle } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from '../ui/alert-dialog';
 
 interface BalnearioAppointmentDialogProps {
     open: boolean;
@@ -42,7 +54,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     const { t, i18n } = useTranslation();
     const [name, setName] = useState('');
     const [selectedOptions, setSelectedOptions] = useState<Record<string, boolean>>({});
+    const [shoeSize, setShoeSize] = useState('');
     const [notes, setNotes] = useState('');
+    const [stockLevels, setStockLevels] = useState<Record<string, StockCheckResult>>({});
+    const [shoeSizeStock, setShoeSizeStock] = useState<StockCheckResult | null>(null);
+    const [showStockWarning, setShowStockWarning] = useState(false);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -124,6 +140,58 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             ...prev,
             [option]: !prev[option]
         }));
+        // If unchecking shoes, clear shoe size
+        if (option === 'Sapatos/Sapatilhas' && selectedOptions[option]) {
+            setShoeSize('');
+            setShoeSizeStock(null);
+        }
+    };
+
+    // Fetch stock levels when dialog opens
+    useEffect(() => {
+        if (open) {
+            const allItems = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].map(o => o.value);
+            armazemApi.verificarStock(allItems).then(setStockLevels).catch(() => {});
+        }
+    }, [open]);
+
+    // Check shoe size stock
+    useEffect(() => {
+        if (shoeSize && shoeSize.length >= 2) {
+            armazemApi.verificarStockCalcado([shoeSize]).then(result => {
+                setShoeSizeStock(result[shoeSize] || null);
+            }).catch(() => {});
+        } else {
+            setShoeSizeStock(null);
+        }
+    }, [shoeSize]);
+
+    const getStockWarning = (optionValue: string): string | null => {
+        const stock = stockLevels[optionValue];
+        if (!stock || !stock.tracked) return null;
+        if (stock.esgotado) return t('consumos.outOfStock', 'Esgotado no armazém');
+        if (stock.estado === 'BAIXO') return t('consumos.lowStock', 'Stock baixo no armazém');
+        return null;
+    };
+
+    // Check if any selected items have stock issues
+    const hasStockWarnings = (): boolean => {
+        for (const [option, isSelected] of Object.entries(selectedOptions)) {
+            if (!isSelected) continue;
+            if (option === 'Sapatos/Sapatilhas') {
+                if (shoeSizeStock && shoeSizeStock.tracked && (shoeSizeStock.esgotado || shoeSizeStock.estado === 'BAIXO')) return true;
+            } else {
+                const warning = getStockWarning(option);
+                if (warning) return true;
+            }
+        }
+        return false;
+    };
+
+    // Handle shoe size input - only digits, max 2 chars
+    const handleShoeSizeChange = (value: string) => {
+        const digits = value.replace(/\D/g, '').slice(0, 2);
+        setShoeSize(digits);
     };
 
     const optionId = (group: string, option: string) =>
@@ -131,9 +199,14 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (hasStockWarnings()) {
+            setShowStockWarning(true);
+            return;
+        }
+        await doSubmit();
+    };
 
-
-
+    const doSubmit = async () => {
         setIsLoading(true);
 
         try {
@@ -144,7 +217,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             // Map checklist options to specific booleans and clothing/items array
             let hasHygiene = false;
             let hasLaundry = false;
-            const roupasVal: { categoria: string, quantidade: number }[] = [];
+            const roupasVal: { categoria: string; tamanho?: string; quantidade: number }[] = [];
 
             Object.entries(selectedOptions).forEach(([option, isSelected]) => {
                 if (!isSelected) return;
@@ -156,7 +229,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     hasLaundry = true;
                     roupasVal.push({ categoria: option, quantidade: 1 });
                 } else if (CLOTHING_OPTIONS.some(item => item.value === option)) {
-                    roupasVal.push({ categoria: option, quantidade: 1 });
+                    if (option === 'Sapatos/Sapatilhas' && shoeSize) {
+                        roupasVal.push({ categoria: option, tamanho: shoeSize, quantidade: 1 });
+                    } else {
+                        roupasVal.push({ categoria: option, quantidade: 1 });
+                    }
                 }
             });
 
@@ -167,6 +244,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 lavagemRoupa: hasLaundry,
                 responsavelId: funcionarioId,
                 roupas: roupasVal,
+                observacoes: notes,
                 reservaId: tempReservaId
             };
 
@@ -194,6 +272,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     };
 
     return (
+        <>
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
                 <DialogHeader>
@@ -230,58 +309,112 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                         <div className="space-y-4">
                             {/* Hygiene */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
-                                        <div key={opt.value} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={optionId('higiene', opt.value)}
-                                                checked={selectedOptions[opt.value] || false}
-                                                onCheckedChange={() => toggleOption(opt.value)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
-                                            />
-                                            <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                        <div key={opt.value} className="flex flex-col">
+                                            <div className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={optionId('higiene', opt.value)}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                            </div>
+                                            {selectedOptions[opt.value] && getStockWarning(opt.value) && (
+                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    {getStockWarning(opt.value)}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
 
                             {/* Laundry */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
-                                        <div key={opt.value} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={optionId('lavandaria', opt.value)}
-                                                checked={selectedOptions[opt.value] || false}
-                                                onCheckedChange={() => toggleOption(opt.value)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
-                                            />
-                                            <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                        <div key={opt.value} className="flex flex-col">
+                                            <div className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={optionId('lavandaria', opt.value)}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                            </div>
+                                            {selectedOptions[opt.value] && getStockWarning(opt.value) && (
+                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    {getStockWarning(opt.value)}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
 
                             {/* Clothing */}
-                            <fieldset className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <legend className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</legend>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {CLOTHING_OPTIONS.map((opt) => (
-                                        <div key={opt.value} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={optionId('vestuario', opt.value)}
-                                                checked={selectedOptions[opt.value] || false}
-                                                onCheckedChange={() => toggleOption(opt.value)}
-                                                className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
-                                            />
-                                            <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                {CLOTHING_OPTIONS.map((opt) => (
+                                        <div key={opt.value} className="flex flex-col">
+                                            <div className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={optionId('vestuario', opt.value)}
+                                                    checked={selectedOptions[opt.value] || false}
+                                                    onCheckedChange={() => toggleOption(opt.value)}
+                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                />
+                                                <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                            </div>
+                                            {/* Shoe size input */}
+                                            {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (
+                                                <div className="ml-8 mt-2 space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <Label className="text-xs text-gray-500 dark:text-gray-400">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
+                                                        <Input
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            value={shoeSize}
+                                                            onChange={(e) => handleShoeSizeChange(e.target.value)}
+                                                            placeholder="35-46"
+                                                            className="w-20 h-7 text-sm text-center border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                                                            maxLength={2}
+                                                        />
+                                                    </div>
+                                                    {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
+                                                        <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                            <AlertTriangle className="w-3 h-3" />
+                                                            {t('consumos.outOfStock', 'Esgotado no armazém')}
+                                                        </p>
+                                                    )}
+                                                    {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
+                                                        <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                                                            <AlertTriangle className="w-3 h-3" />
+                                                            {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {/* Stock warning for non-shoe items */}
+                                            {opt.value !== 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && getStockWarning(opt.value) && (
+                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    {getStockWarning(opt.value)}
+                                                </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
-                            </fieldset>
+                            </div>
                         </div>
                     </div>
 
@@ -308,5 +441,30 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 </form>
             </DialogContent>
         </Dialog>
+
+        {/* Stock warning confirmation popup */}
+        <AlertDialog open={showStockWarning} onOpenChange={setShowStockWarning}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                        {t('consumos.stockWarningTitle', 'Aviso de Stock')}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {t('consumos.stockWarningDescription', 'Alguns itens selecionados estão com stock baixo ou esgotados no armazém. Deseja continuar mesmo assim?')}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={() => { setShowStockWarning(false); doSubmit(); }}
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                        {t('consumos.stockWarningContinue', 'Sim, continuar')}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }

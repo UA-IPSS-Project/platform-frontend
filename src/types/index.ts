@@ -17,6 +17,7 @@ export interface Appointment {
     balnearioDetails?: {
         produtosHigiene: boolean;
         lavagemRoupa: boolean;
+        observacoes?: string;
         roupas: {
             id: number;
             categoria: string;
