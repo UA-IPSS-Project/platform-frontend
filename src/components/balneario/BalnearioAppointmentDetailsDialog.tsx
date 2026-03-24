@@ -35,7 +35,7 @@ interface BalnearioAppointmentDetailsDialogProps {
 }
 
 const HYGIENE_OPTIONS = [
-    { value: 'Shampoo', labelKey: 'balnearioAppointment.options.shampoo' },
+    { value: 'Champô', labelKey: 'balnearioAppointment.options.shampoo' },
     { value: 'Gel de Banho', labelKey: 'balnearioAppointment.options.showerGel' },
     { value: 'Toalha', labelKey: 'balnearioAppointment.options.towel' },
     { value: 'Sabonete/Creme', labelKey: 'balnearioAppointment.options.soapCream' },
@@ -185,7 +185,7 @@ export function BalnearioAppointmentDetailsDialog({
                 balnearioDetails: {
                     produtosHigiene: hasHygiene,
                     lavagemRoupa: hasLaundry,
-                    roupas: roupasVal.map((r, i) => ({ id: i, categoria: r.categoria, tamanho: '', quantidade: r.quantidade })),
+                    roupas: roupasVal.map((r, i) => ({ id: i, categoria: r.categoria, tamanho: r.tamanho || '', quantidade: r.quantidade })),
                 }
             });
 
