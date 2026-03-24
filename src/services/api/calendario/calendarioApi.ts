@@ -1,5 +1,5 @@
 import { apiRequest } from '../core/client';
-import { BloqueioAgenda } from './types';
+import { BloqueioAgenda, ConfiguracaoSlot } from './types';
 
 export const calendarioApi = {
     // Verificar se um slot específico está bloqueado
@@ -18,5 +18,16 @@ export const calendarioApi = {
     listarFeriados: (ano: number) =>
         apiRequest<string[]>(`/api/calendario/feriados?ano=${ano}`, {
             method: 'GET',
+        }),
+
+    listarConfiguracaoSlots: () =>
+        apiRequest<ConfiguracaoSlot[]>('/api/calendario/configuracao-slots', {
+            method: 'GET',
+        }),
+
+    atualizarConfiguracaoSlot: (tipo: 'SECRETARIA' | 'BALNEARIO', capacidadePorSlot: number) =>
+        apiRequest<ConfiguracaoSlot>(`/api/calendario/configuracao-slots/${tipo}`, {
+            method: 'PUT',
+            body: JSON.stringify({ capacidadePorSlot }),
         }),
 };

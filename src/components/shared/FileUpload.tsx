@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useId } from 'react';
 import { Upload, X, File as FileIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatFileSize } from '../../utils/fileUtils';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadProps {
     selectedFiles: File[];
@@ -9,6 +10,8 @@ interface FileUploadProps {
     maxSizeMB?: number;
     accept?: string;
     isUploading?: boolean;
+    inputId?: string;
+    describedById?: string;
 }
 
 export function FileUpload({
@@ -16,21 +19,47 @@ export function FileUpload({
     onChange,
     maxSizeMB = 10,
     accept = ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif",
-    isUploading = false
+    isUploading = false,
+    inputId,
+    describedById,
 }: FileUploadProps) {
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation();
+    const generatedId = useId();
+    const resolvedInputId = inputId ?? `file-upload-${generatedId}`;
+    const helperId = describedById ?? `${resolvedInputId}-help`;
 
+    const MAX_FILES = 10;
+    const MAX_TOTAL_SIZE_MB = 20;
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files && files.length > 0) {
             const newFiles = Array.from(files);
             const MAX_FILE_SIZE = maxSizeMB * 1024 * 1024;
+            const MAX_TOTAL_SIZE = MAX_TOTAL_SIZE_MB * 1024 * 1024;
 
             const oversizedFiles = newFiles.filter(file => file.size > MAX_FILE_SIZE);
-
             if (oversizedFiles.length > 0) {
                 const fileNames = oversizedFiles.map(f => f.name).join(', ');
-                toast.error(`Ficheiro(s) excede(m) ${maxSizeMB}MB: ${fileNames}`);
+                toast.error(t('fileUpload.errors.maxSizeExceeded', {
+                    maxSizeMB,
+                    fileNames,
+                }));
+                return;
+            }
+
+            if (selectedFiles.length + newFiles.length > MAX_FILES) {
+                toast.error(t('fileUpload.errors.maxFilesExceeded', {
+                    maxFiles: MAX_FILES
+                }));
+                return;
+            }
+
+            // Check total size
+            const totalSize = [...selectedFiles, ...newFiles].reduce((acc, file) => acc + file.size, 0);
+            if (totalSize > MAX_TOTAL_SIZE) {
+                toast.error(t('fileUpload.errors.maxTotalSizeExceeded', {
+                    maxTotalSizeMB: MAX_TOTAL_SIZE_MB
+                }));
                 return;
             }
 
@@ -46,30 +75,31 @@ export function FileUpload({
 
     return (
         <div className="space-y-2">
-            <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-                accept={accept}
-                disabled={isUploading}
-            />
-            <div
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 cursor-pointer transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            <label
+                htmlFor={resolvedInputId}
+                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 transition-colors focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
+                <input
+                    id={resolvedInputId}
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="sr-only"
+                    accept={accept}
+                    disabled={isUploading}
+                    aria-describedby={helperId}
+                />
                 <Upload className="w-8 h-8 mb-2 text-purple-600 dark:text-purple-400" />
-                <p className="font-medium text-gray-900 dark:text-gray-100">Clique para selecionar ficheiros</p>
-                <p className="text-xs text-gray-500 mt-1">
-                    Suporta ficheiros de até {maxSizeMB}MB
+                <p className="font-medium text-gray-900 dark:text-gray-100">{t('fileUpload.selectPrompt')}</p>
+                <p id={helperId} className="text-xs text-gray-500 mt-1">
+                    {t('fileUpload.maxSizeHint', { maxSizeMB })}
                 </p>
-            </div>
+            </label>
 
             {selectedFiles.length > 0 && (
                 <div className="space-y-2 mt-4">
                     <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">
-                        Ficheiros selecionados ({selectedFiles.length})
+                        {t('fileUpload.selectedFiles', { count: selectedFiles.length })}
                     </h3>
                     <div className="max-h-60 overflow-y-auto space-y-2">
                         {selectedFiles.map((file, index) => (
@@ -93,7 +123,7 @@ export function FileUpload({
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); removeFile(index); }}
                                         className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex-shrink-0 text-gray-500 dark:text-gray-400"
-                                        aria-label="Remover ficheiro"
+                                        aria-label={t('fileUpload.removeFileAriaLabel')}
                                     >
                                         <X className="w-4 h-4" />
                                     </button>

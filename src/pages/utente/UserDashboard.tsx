@@ -6,7 +6,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
@@ -20,6 +20,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface UserDashboardProps {
   user: {
@@ -35,8 +46,10 @@ interface UserDashboardProps {
 
 export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: UserDashboardProps) {
   const { user: authUser } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [userData, setUserData] = useState(user);
 
   const {
     allAppointments,
@@ -65,6 +78,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const [showNotifications, setShowNotifications] = useState(false);
   const [highlightedNotificationId, setHighlightedNotificationId] = useState<string | null>(null);
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+
+  const handleProfileDirtyChange = (isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  };
   const [currentDate, setCurrentDate] = useState(() => {
     const saved = sessionStorage.getItem('utente_currentDate');
     return saved ? new Date(saved) : new Date();
@@ -118,18 +138,60 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (getCurrentView() === 'history') carregarHistorico();
   }, [location.pathname, historyStartDate, historyEndDate, authUser?.id]);
 
+  useEffect(() => {
+    setUserData({
+      name: authUser?.nome || user.name,
+      nif: authUser?.nif || user.nif,
+      contact: authUser?.telefone || user.contact,
+      email: authUser?.email || user.email,
+    });
+  }, [authUser?.email, authUser?.nif, authUser?.nome, authUser?.telefone, user]);
+
 
   const visibleAppointments = useMemo(
-    () => allAppointments.filter((apt) => apt.patientNIF === user.nif),
-    [allAppointments, user.nif]
+    () => allAppointments.filter((apt) => apt.patientNIF === userData.nif),
+    [allAppointments, userData.nif]
   );
 
+  const handleUpdateUser = (updatedUser: { name: string; nif: string; contact: string; email: string }) => {
+    setUserData(updatedUser);
+  };
+
+  const navigateWithGuard = (path: string) => {
+    if (currentView === 'profile' && profileIsDirty && path !== '/dashboard/profile') {
+      setPendingPath(path);
+      setShowLeaveConfirm(true);
+      return;
+    }
+
+    navigate(path);
+  };
+
+  const confirmLeaveProfile = () => {
+    const nextPath = pendingPath;
+    const draftStorageKey = getProfileDraftStorageKey(authUser?.id || 0);
+
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    setPendingPath(null);
+
+    if (nextPath) {
+      navigate(nextPath);
+    }
+
+    // Remove draft after navigation to avoid being recreated by the profile page
+    // effect while it is still mounted during the transition.
+    requestAnimationFrame(() => {
+      sessionStorage.removeItem(draftStorageKey);
+    });
+  };
+
   const handleNavigate = (view: string) => {
-    if (view === 'appointments') navigate('/dashboard');
-    else if (view === 'history') navigate('/dashboard/history');
-    else if (view === 'profile') navigate('/dashboard/profile');
-    else if (view === 'notificacoes') navigate('/dashboard/notifications');
-    else navigate(`/dashboard/${view}`);
+    if (view === 'appointments') navigateWithGuard('/dashboard');
+    else if (view === 'history') navigateWithGuard('/dashboard/history');
+    else if (view === 'profile') navigateWithGuard('/dashboard/profile');
+    else if (view === 'notificacoes') navigateWithGuard('/dashboard/notifications');
+    else navigateWithGuard(`/dashboard/${view}`);
   };
 
   const handleCreateAppointment = async (date: Date, time: string) => {
@@ -139,11 +201,13 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   };
 
   const handleViewAppointment = async (appointment: Appointment) => {
+    // Sempre atualizar primeiro, antes de qualquer ação
+    await refreshAppointments();
     try {
       const latestData = await marcacoesApi.obterPorId(parseInt(appointment.id));
       const dateTime = new Date(latestData.data);
       const utente = latestData.marcacaoSecretaria?.utente;
-      const isOwn = utente?.nif === user.nif || appointment.patientNIF === user.nif;
+      const isOwn = utente?.nif === userData.nif || appointment.patientNIF === userData.nif;
 
       const status = mapStatusFromApiToUi(latestData.estado);
 
@@ -190,21 +254,21 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     <>
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
-        onClick={() => navigate('/dashboard')}
+        onClick={() => navigateWithGuard('/dashboard')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Secretaria
+        {t('sidebar.secretary')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
         isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-        onSelect={(id) => navigate(`/dashboard/${id}`)}
+        onSelect={(id) => navigateWithGuard(`/dashboard/${id}`)}
       />
     </>
   );
@@ -216,8 +280,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Utente"
+        roleTitle={t('dashboard.user')}
         navigationContent={UserNavigation}
+        onNavigateToProfile={() => navigateWithGuard('/dashboard/profile')}
+        onNavigateToSettings={() => navigateWithGuard('/dashboard/settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}
@@ -230,7 +296,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onDeleteNotification={handleDeleteNotification}
         onDeleteAllNotifications={handleDeleteAllNotifications}
         onNavigateToNotifications={() => {
-          navigate('/dashboard/notifications');
+          navigateWithGuard('/dashboard/notifications');
           setShowNotifications(false);
         }}
       >
@@ -304,14 +370,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 <ProfilePage
                   user={{
                     id: authUser?.id || 0,
-                    name: authUser?.nome || user.name,
-                    nif: authUser?.nif || user.nif,
-                    contact: authUser?.telefone || user.contact,
-                    email: authUser?.email || user.email,
+                    ...userData,
                   }}
                   onBack={() => navigate('/dashboard')}
-                  onUpdateUser={() => { }}
+                  onUpdateUser={handleUpdateUser}
                   isDarkMode={isDarkMode}
+                  onDirtyChange={handleProfileDirtyChange}
                 />
               } />
 
@@ -361,6 +425,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       navigate('/dashboard');
                       setShowNotifications(false);
                       const slotDate = new Date(dateStr);
+                      setCurrentDate(slotDate);
                       setHighlightedSlot({ date: slotDate, time });
                       setTimeout(() => setHighlightedSlot(null), 5000);
                     },
@@ -431,6 +496,33 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
           existingAppointments={[...allAppointments, ...blockedAppointments]}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => {
+        if (!open) {
+          setPendingPath(null);
+          setShowLeaveConfirm(false);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setPendingPath(null);
+              setShowLeaveConfirm(false);
+            }}>
+              Ficar
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

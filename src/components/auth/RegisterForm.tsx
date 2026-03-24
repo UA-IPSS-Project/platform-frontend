@@ -4,9 +4,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
-import { ArrowLeft, Check, X, Calendar as CalendarIcon, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
+import { ArrowLeft, Check, X, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
+import { DatePickerField } from '../ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
@@ -20,16 +19,31 @@ import {
   validatePassword,
   isPasswordValid as checkPasswordValid,
   validateBirthDate,
-  formatDate,
   type PasswordValidation
 } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
 
 interface RegisterFormProps {
   onNavigateToLogin: () => void;
   initialAccountType?: 'user' | 'employee';
 }
 
+const toInputDate = (value: string): string => {
+  if (!value) return '';
+  const [day, month, year] = value.split('/');
+  if (!day || !month || !year) return '';
+  return `${year}-${month}-${day}`;
+};
+
+const toDisplayDate = (value: string): string => {
+  if (!value) return '';
+  const [year, month, day] = value.split('-');
+  if (!day || !month || !year) return '';
+  return `${day}/${month}/${year}`;
+};
+
 export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     nif: '',
@@ -45,9 +59,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
-  const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
-  const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
 
@@ -63,62 +74,62 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     const newErrors: Record<string, string> = {};
 
     const nameValidation = validateName(formData.name);
-    if (!nameValidation.valid) newErrors.name = nameValidation.error || 'Nome inválido';
+    if (!nameValidation.valid) newErrors.name = nameValidation.error || t('auth.invalidName');
 
     if (!formData.nif) {
-      newErrors.nif = 'NIF é obrigatório';
+      newErrors.nif = t('auth.nifRequired');
     } else if (!validateNIF(formData.nif)) {
-      newErrors.nif = 'NIF deve ter 9 dígitos';
+      newErrors.nif = t('auth.nifMustHave9Digits');
     }
 
     if (!formData.contact) {
-      newErrors.contact = 'Contacto é obrigatório';
+      newErrors.contact = t('auth.contactRequired');
     } else if (!validateContact(formData.contact)) {
-      newErrors.contact = 'Contacto deve ter 9 dígitos';
+      newErrors.contact = t('auth.contactMustHave9Digits');
     }
 
     if (!formData.email) {
-      newErrors.email = 'Email é obrigatório';
+      newErrors.email = t('auth.emailRequired');
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('auth.emailInvalid');
     }
 
     if (accountType === 'employee') {
       // require institutional email
       if (!formData.email.endsWith('@florinhasdovouga.pt')) {
-        newErrors.email = 'Use um email institucional (@florinhasdovouga.pt)';
+        newErrors.email = t('auth.useInstitutionalEmail');
       }
     }
 
     if (accountType === 'employee') {
       if (!employeeRole) {
-        newErrors.employeeRole = 'Role é obrigatória para funcionários';
+        newErrors.employeeRole = t('auth.roleRequiredEmployee');
       }
     }
 
     if (!formData.birthDate) {
-      newErrors.birthDate = 'Data de nascimento é obrigatória';
+      newErrors.birthDate = t('appointmentDialog.errors.birthDateRequired');
     } else {
       const birthValidation = validateBirthDate(formData.birthDate);
       if (!birthValidation.valid) {
-        newErrors.birthDate = birthValidation.error || 'Data inválida';
+        newErrors.birthDate = birthValidation.error || t('appointmentDialog.errors.dateInvalid');
       }
     }
 
     if (!formData.password) {
-      newErrors.password = 'Palavra-passe é obrigatória';
+      newErrors.password = t('auth.passwordRequired');
     } else if (!isPasswordValid) {
-      newErrors.password = 'Palavra-passe não cumpre os requisitos';
+      newErrors.password = t('auth.passwordRequirementsNotMet');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirmação de palavra-passe é obrigatória';
+      newErrors.confirmPassword = t('auth.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'As palavras-passe não coincidem';
+      newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
     }
 
     if (!formData.termsAccepted) {
-      newErrors.termsAccepted = 'Deve aceitar os termos de uso para se registar';
+      newErrors.termsAccepted = t('auth.mustAcceptTermsRegister');
     }
 
     setErrors(newErrors);
@@ -166,7 +177,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Por favor, corrija os erros no formulário');
+      toast.error(t('auth.fixFormErrors'));
       return;
     }
 
@@ -185,7 +196,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           password: formData.password,
           termsAccepted: formData.termsAccepted,
         });
-        toast.success('Conta criada com sucesso!');
+        toast.success(t('auth.accountCreatedSuccess'));
         onNavigateToLogin();
       } else {
         await registerFuncionario({
@@ -199,12 +210,12 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           termsAccepted: formData.termsAccepted,
         });
         // Employee registration success
-        toast.success('Conta criada com sucesso! Aguarde aprovação da secretaria.');
+        toast.success(t('auth.employeeAccountCreatedSuccess'));
         onNavigateToLogin();
       }
 
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar conta');
+      toast.error(error.message || t('auth.errorCreatingAccount'));
     }
   };
 
@@ -239,12 +250,12 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Voltar ao Login</span>
+        <span>{t('auth.backToLogin')}</span>
       </button>
 
       <div className="text-center mb-8">
-        <h1 className="text-gray-800 dark:text-gray-100 mb-2">Criar Conta</h1>
-        <p className="text-gray-600 dark:text-gray-400">Registe-se no sistema</p>
+        <h1 className="text-gray-800 dark:text-gray-100 mb-2">{t('auth.createAccount')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('auth.registerInSystem')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -259,7 +270,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
-            Nome Completo *
+            {t('auth.fullName')} *
           </Label>
           <Input
             id="name"
@@ -282,43 +293,13 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label className="text-gray-700 dark:text-gray-300">
-            Data de Nascimento *
+            {t('auth.birthDate')} *
           </Label>
-          <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
-            setBirthDatePickerOpen(open);
-            if (open) {
-              // when opening, focus calendar to existing birthDate or today
-              setCalendarMonth(birthDateValue ?? new Date());
-            }
-          }}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={`w-full justify-between bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''
-                  }`}
-              >
-                {formData.birthDate || 'Selecionar data'}
-                <CalendarIcon className="w-4 h-4 opacity-70" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-              <Calendar
-                mode="single"
-                selected={birthDateValue}
-                month={calendarMonth}
-                onMonthChange={(d) => setCalendarMonth(d)}
-                initialFocus
-                onSelect={(date) => {
-                  if (date) {
-                    setBirthDateValue(date);
-                    handleChange('birthDate', formatDate(date));
-                    setBirthDatePickerOpen(false);
-                  }
-                }}
-              />
-            </PopoverContent>
-          </Popover>
+          <DatePickerField
+            value={toInputDate(formData.birthDate)}
+            onChange={(value) => handleChange('birthDate', toDisplayDate(value))}
+            buttonClassName={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''}`}
+          />
           {errors.birthDate && <p className="text-red-500 text-sm">{errors.birthDate}</p>}
         </div>
 
@@ -343,7 +324,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
           <div className="space-y-2">
             <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-              Contacto *
+              {t('auth.contact')} *
             </Label>
             <Input
               id="contact"
@@ -361,7 +342,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         {accountType === 'employee' ? (
           <div className="space-y-3">
-            <Label className="text-gray-700 dark:text-gray-300">Email Institucional *</Label>
+            <Label className="text-gray-700 dark:text-gray-300">{t('auth.institutionalEmailLabel')} *</Label>
 
             <div className="space-y-3">
               {/* Option 1: Auto Generated */}
@@ -381,7 +362,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 <div className="flex flex-col">
                   {/* <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automático</span> */}
                   <span className={`text-sm font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome primeiro)'}
+                    {formData.name ? generateInstitutionalEmail(formData.name) : t('auth.fillNameFirst')}
                   </span>
                 </div>
               </div>
@@ -402,7 +383,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                     {emailSelection === 'manual' && <div className="w-2 h-2 rounded-full bg-white" />}
                   </div>
                   <span className={`text-sm font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                    Outro
+                    {t('auth.other')}
                   </span>
                 </div>
 
@@ -447,17 +428,17 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         {
           accountType === 'employee' && (
             <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300">Função *</Label>
+              <Label className="text-gray-700 dark:text-gray-300">{t('auth.role')} *</Label>
               <div className="flex items-center gap-2">
                 <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
                   <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
-                    <SelectValue placeholder="Selecione a função" />
+                    <SelectValue placeholder={t('auth.selectRole')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Secretaria">Secretaria</SelectItem>
-                    <SelectItem value="Balneário Social">Balneário Social</SelectItem>
-                    <SelectItem value="Escola">Escola</SelectItem>
-                    <SelectItem value="Serviços Internos">Serviços Internos</SelectItem>
+                    <SelectItem value="Secretaria">{t('auth.roleSecretary')}</SelectItem>
+                    <SelectItem value="Balneário Social">{t('auth.roleSocialBath')}</SelectItem>
+                    <SelectItem value="Escola">{t('auth.roleSchool')}</SelectItem>
+                    <SelectItem value="Serviços Internos">{t('auth.roleInternalServices')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -468,7 +449,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
-            Palavra-passe *
+            {t('auth.password')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
             ? 'border-red-500 focus-within:ring-red-500/50'
@@ -495,15 +476,15 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             <div className="space-y-1 text-sm">
               <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.minLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Min. 8 caracteres</span>
+                <span>{t('auth.passwordRuleMinLength')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasUpperLower ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Maiúsculas e minúsculas</span>
+                <span>{t('auth.passwordRuleCases')}</span>
               </div>
               <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
                 {passwordValidation.hasNumber ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
-                <span>Números</span>
+                <span>{t('auth.passwordRuleNumbers')}</span>
               </div>
             </div>
           )}
@@ -512,7 +493,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <div className="space-y-2">
           <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-gray-300">
-            Confirmar Palavra-passe *
+            {t('auth.confirmPassword')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.confirmPassword
             ? 'border-red-500 focus-within:ring-red-500/50'
@@ -556,7 +537,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 htmlFor="termsAccepted"
                 className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
               >
-                Aceito os{' '}
+                {t('auth.acceptTermsPrefix')}{' '}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -565,7 +546,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                   }}
                   className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
                 >
-                  termos de uso e política de privacidade
+                  {t('auth.termsAndPrivacy')}
                 </button>
               </label>
             </div>
@@ -579,7 +560,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           type="submit"
           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200 mt-6"
         >
-          Criar Conta
+          {t('auth.createAccount')}
         </Button>
       </form>
 

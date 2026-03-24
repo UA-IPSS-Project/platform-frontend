@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GlassCard } from '../ui/glass-card';
 import {
   Calendar,
@@ -89,7 +89,13 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
       {/* Stats Grid - Flex row for side-by-side */}
       <div className="flex flex-row gap-6 w-full overflow-x-auto pb-2">
         {stats.map((stat, index) => (
-          <div key={index} onClick={() => onNavigate(stat.view)} className="cursor-pointer group flex-1 min-w-[200px]">
+          <button
+            key={index}
+            type="button"
+            onClick={() => onNavigate(stat.view)}
+            className="cursor-pointer group flex-1 min-w-[200px] p-0 text-left bg-transparent border-0"
+            aria-label={`Abrir ${stat.label}`}
+          >
             <GlassCard className="p-6 h-full hover:shadow-xl transition-all duration-300 transform group-hover:-translate-y-1 relative overflow-hidden flex flex-col justify-center">
               <div className="relative z-10 flex items-center justify-between w-full">
                 <div className="flex flex-col min-w-0">
@@ -104,7 +110,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                 </div>
               </div>
             </GlassCard>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -122,18 +128,30 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                 Ver tudo <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full ${activity.color} mt-2 flex-shrink-0`} />
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-medium ${textClass} text-sm`}>{activity.text}</p>
-                      <p className={`text-xs ${textSecondaryClass} mt-1`}>{activity.time}</p>
+            <div className="p-4 space-y-3">
+              {recentActivity.map((activity, index) => {
+                const iconMap: Record<string, React.ReactNode> = {
+                  marcacao: <Calendar className="w-5 h-5" />,
+                  candidatura: <FileText className="w-5 h-5" />,
+                  requisicao: <ClipboardList className="w-5 h-5" />,
+                  utente: <Users className="w-5 h-5" />,
+                };
+                return (
+                  <div key={index} className="group p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0 ${activity.color}`}>
+                      {iconMap[activity.type] ?? <Calendar className="w-5 h-5" />}
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}>{activity.text}</p>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
+                        <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-purple-500 transition-colors transform group-hover:translate-x-1" />
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </GlassCard>
         </div>

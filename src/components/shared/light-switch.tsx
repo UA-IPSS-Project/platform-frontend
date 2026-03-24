@@ -32,7 +32,6 @@ export function LightSwitch({ value, onChange, variant = 'default', className }:
                         !isEmployee ? "text-purple-700 dark:text-purple-300" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     )}
                 >
-                    <User className="w-3.5 h-3.5" />
                     Utilizador
                 </button>
 
@@ -45,7 +44,6 @@ export function LightSwitch({ value, onChange, variant = 'default', className }:
                         isEmployee ? "text-purple-700 dark:text-purple-300" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                     )}
                 >
-                    <Briefcase className="w-3.5 h-3.5" />
                     Funcionário
                 </button>
             </div>
@@ -72,7 +70,6 @@ export function LightSwitch({ value, onChange, variant = 'default', className }:
                     !isEmployee ? "text-white" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 )}
             >
-                <User className="w-4 h-4" />
                 Utilizador
             </button>
 
@@ -85,7 +82,6 @@ export function LightSwitch({ value, onChange, variant = 'default', className }:
                     isEmployee ? "text-white" : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                 )}
             >
-                <Briefcase className="w-4 h-4" />
                 Funcionário
             </button>
         </div>

@@ -21,3 +21,8 @@ export * from './documentos/types';
 
 export * from './notificacoes/notificationsApi';
 export * from './notificacoes/types';
+
+export * from './requisicoes/requisicoesApi';
+export * from './requisicoes/types';
+
+export * from './armazem/armazemApi';

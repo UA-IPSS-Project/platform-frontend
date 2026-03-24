@@ -42,7 +42,7 @@ export function useNotificationAction(
   callbacks?: NotificationActionCallbacks
 ): NotificationAction {
   return useMemo(() => {
-    if (!notification || !notification.type) {
+    if (!notification?.type) {
       return {
         label: 'Fechar',
         variant: 'outline',
@@ -53,6 +53,31 @@ export function useNotificationAction(
     // Mapa de ações baseado no tipo de notificação do backend
     switch (notification.type) {
       case 'LEMBRETE':
+        // Notificação de marcação criada: abrir calendário no slot da marcação.
+        if (notification.metadata?.notificationSubtype === 'CREATED') {
+          return {
+            label: 'Ver no Calendário',
+            variant: 'default',
+            execute: () => {
+              const createdDate = notification.metadata?.createdDate;
+              const createdTime = notification.metadata?.createdTime;
+
+              if (createdDate && createdTime && callbacks?.onNavigateToCancelledSlot) {
+                callbacks.onNavigateToCancelledSlot(createdDate, createdTime);
+                return;
+              }
+
+              // Fallback para abrir detalhe da marcação quando metadata de slot não existe.
+              const appointmentId = notification.metadata?.appointmentId;
+              if (appointmentId && callbacks?.onNavigateToAppointment) {
+                callbacks.onNavigateToAppointment(appointmentId);
+              } else {
+                console.log('TODO: Abrir calendário para marcação criada:', { createdDate, createdTime, appointmentId });
+              }
+            },
+          };
+        }
+
         return {
           label: 'Ver Marcação',
           variant: 'default',
@@ -68,15 +93,13 @@ export function useNotificationAction(
 
       case 'CANCELAMENTO':
         return {
-          label: 'Ver no Calendário',
+          label: 'Ver Histórico',
           variant: 'default',
           execute: () => {
-            const cancelledDate = notification.metadata?.cancelledDate;
-            const cancelledTime = notification.metadata?.cancelledTime;
-            if (cancelledDate && cancelledTime && callbacks?.onNavigateToCancelledSlot) {
-              callbacks.onNavigateToCancelledSlot(cancelledDate, cancelledTime);
+            if (callbacks?.onNavigateToHistory) {
+              callbacks.onNavigateToHistory(notification.metadata?.appointmentId ?? '');
             } else {
-              console.log('TODO: Redirecionar para calendário com slot cancelado:', { cancelledDate, cancelledTime });
+              console.log('TODO: Redirecionar para histórico de marcações');
             }
           },
         };

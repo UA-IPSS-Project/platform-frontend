@@ -114,7 +114,7 @@ export const marcacoesApi = {
         }),
 
     // Reservar slot temporário
-    reservarSlot: (data: { data: string; utenteId: number; criadoPorId: number }) =>
+    reservarSlot: (data: { data: string; utenteId?: number; criadoPorId?: number; tipoAgenda?: 'SECRETARIA' | 'BALNEARIO' }) =>
         apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
             method: 'POST',
             body: JSON.stringify(data),

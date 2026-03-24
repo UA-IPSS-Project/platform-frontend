@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -6,15 +6,16 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { FileUpload } from '../shared/FileUpload';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
-import SUBJECTS from '../../lib/subjects';
+import { DatePickerField } from '../ui/date-picker-field';
+import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
 import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail, validateBirthDate } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ interface AppointmentDialogProps {
 }
 
 export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: AppointmentDialogProps) {
+  const { t, i18n } = useTranslation();
   const [formData, setFormData] = useState({
     nif: '',
     name: '',
@@ -43,16 +45,54 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [birthDatePickerOpen, setBirthDatePickerOpen] = useState(false);
-  const [birthDateValue, setBirthDateValue] = useState<Date | undefined>(undefined);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date());
+  const [pendingClose, setPendingClose] = useState(false);
+  const dateLocale = i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT';
 
-  // Gracefully synchronize the calendar view to the selected date only when it explicitly updates
-  useEffect(() => {
-    if (birthDateValue) {
-      setCalendarMonth(birthDateValue);
+  const isDirty = useMemo(() => {
+    return (
+      formData.nif !== '' ||
+      formData.name !== '' ||
+      formData.email !== '' ||
+      formData.contact !== '' ||
+      formData.dateOfBirth !== '' ||
+      formData.subject !== '' ||
+      formData.description !== '' ||
+      selectedFiles.length > 0
+    );
+  }, [formData, selectedFiles]);
+
+  const blocker = useUnsavedChangesWarning(isDirty);
+
+  const setNifError = (message?: string) => {
+    setErrors((prev) => {
+      if (!message) {
+        if (!prev.nif) return prev;
+        const { nif, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, nif: message };
+    });
+  };
+
+  const handleNifChange = (rawValue: string) => {
+    const nif = rawValue.replace(/\D/g, '');
+    setFormData((prev) => ({ ...prev, nif }));
+
+    // While typing, clear previous lookup data and only show hard error when 9 digits are present and invalid.
+    if (nif.length < 9) {
+      setOriginalUser(null);
+      setNifError(undefined);
+      return;
     }
-  }, [birthDateValue]);
+
+    if (!validateNIF(nif)) {
+      setOriginalUser(null);
+      setNifError(t('appointmentDialog.errors.nifInvalid'));
+      return;
+    }
+
+    setNifError(undefined);
+  };
 
   // Reservar slot ao abrir o dialog
   useEffect(() => {
@@ -77,7 +117,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       // Validate if date/time is not in the past
       const now = new Date();
       if (dateTime <= now) {
-        toast.error('Não é possível marcar para uma data/hora no passado');
+        toast.error(t('appointmentDialog.errors.pastDate'));
         onClose();
         return;
       }
@@ -86,7 +126,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const dateStr = date.toISOString().split('T')[0];
       const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
       if (isBlocked) {
-        toast.error('Horário indisponível');
+        toast.error(t('appointmentDialog.errors.slotUnavailable'));
         onClose();
         return;
       }
@@ -99,15 +139,16 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         body: JSON.stringify({
           data: localDateTime,
           criadoPorId: funcionarioId,
+          tipoAgenda: 'SECRETARIA',
         }),
       });
 
       setTempReservaId(data.tempId);
       tempReservaRef.current = data.tempId;
-      console.log('Slot reservado temporariamente:', data.tempId);
+      console.log(t('appointmentDialog.messages.slotReserved'), data.tempId);
     } catch (error: any) {
       console.error('Erro ao reservar slot:', error);
-      toast.error(error.message || 'Este horário já está ocupado');
+      toast.error(error.message || t('appointmentDialog.errors.slotOccupied'));
       onClose();
     }
   };
@@ -130,7 +171,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
         method: 'DELETE',
       });
-      console.log('Slot liberado:', tempReservaId);
+      console.log(t('appointmentDialog.messages.slotReleased'), tempReservaId);
       setTempReservaId(null);
       tempReservaRef.current = null;
     } catch (error) {
@@ -143,6 +184,13 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     console.log('NIF changed:', formData.nif, 'Length:', formData.nif.length);
     const checkNif = async () => {
       if (formData.nif.length === 9) {
+        if (!validateNIF(formData.nif)) {
+          setOriginalUser(null);
+          setNifError(t('appointmentDialog.errors.nifInvalid'));
+          return;
+        }
+
+        setNifError(undefined);
         console.log('NIF reached 9 digits. Triggering search for:', formData.nif);
         try {
           const user = await utilizadoresApi.buscarPorNif(formData.nif);
@@ -156,15 +204,15 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               dateOfBirth: user.dataNascimento ? user.dataNascimento.split('T')[0] : ''
             }));
             setOriginalUser(user);
-            toast.success('Dados do utente carregados');
+            toast.success(t('appointmentDialog.messages.userLoaded'));
           } else {
             // Should not happen if API throws 404, but coverage
-            toast.info('Utente não encontrado com este NIF.');
+            toast.info(t('appointmentDialog.messages.userNotFound'));
             setOriginalUser(null);
           }
         } catch (e) {
           console.error('Error fetching user by NIF:', e);
-          toast.info('Utente não encontrado na base de dados (ou erro de rede).');
+          toast.info(t('appointmentDialog.messages.userNotFoundOrNetwork'));
           setOriginalUser(null);
         }
       }
@@ -182,40 +230,48 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     onClose();
   };
 
+  const requestClose = () => {
+    if (isDirty) {
+      setPendingClose(true);
+    } else {
+      handleClose();
+    }
+  };
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!validateNIF(formData.nif)) {
-      newErrors.nif = 'NIF deve ter 9 dígitos';
+      newErrors.nif = t('appointmentDialog.errors.nifMustHave9Digits');
     }
     const nameValidation = validateName(formData.name);
     if (!nameValidation.valid) {
-      newErrors.name = nameValidation.error || 'Nome inválido';
+      newErrors.name = nameValidation.error || t('appointmentDialog.errors.nameInvalid');
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email é obrigatório';
+      newErrors.email = t('appointmentDialog.errors.emailRequired');
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email inválido';
+      newErrors.email = t('appointmentDialog.errors.emailInvalid');
     }
     if (!validateContact(formData.contact)) {
-      newErrors.contact = 'Contacto deve ter 9 dígitos';
+      newErrors.contact = t('appointmentDialog.errors.contactInvalid');
     }
 
     // Mandatory Date of Birth validation
     if (!formData.dateOfBirth) {
-      newErrors.dateOfBirth = 'Data de nascimento é obrigatória';
+      newErrors.dateOfBirth = t('appointmentDialog.errors.birthDateRequired');
     } else {
       // Reformat from YYYY-MM-DD to DD/MM/YYYY for the validator
       const [year, month, day] = formData.dateOfBirth.split('-');
       const formattedDateForValidation = `${day}/${month}/${year}`;
       const birthValidation = validateBirthDate(formattedDateForValidation);
       if (!birthValidation.valid) {
-        newErrors.dateOfBirth = birthValidation.error || 'Data inválida';
+        newErrors.dateOfBirth = birthValidation.error || t('appointmentDialog.errors.dateInvalid');
       }
     }
 
     if (!formData.subject) {
-      newErrors.subject = 'Selecione um assunto';
+      newErrors.subject = t('appointmentDialog.errors.subjectRequired');
     }
 
     setErrors(newErrors);
@@ -240,14 +296,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             telefone: formData.contact,
             dataNasc: formData.dateOfBirth || undefined,
           });
-          toast.success('Dados do utilizador atualizados');
+          toast.success(t('appointmentDialog.messages.userUpdated'));
 
           // Wait 1 second to ensure persistence/propagation and provide visual feedback
           await new Promise(resolve => setTimeout(resolve, 1000));
 
         } catch (e) {
           console.error('Failed to update user', e);
-          toast.error('Erro ao atualizar dados do utilizador');
+          toast.error(t('appointmentDialog.errors.updateUserFailed'));
           throw e; // Stop here if update fails
         }
       }
@@ -266,6 +322,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         utenteNome: formData.name,
         utenteEmail: formData.email,
         utenteTelefone: formData.contact,
+        utenteDataNasc: formData.dateOfBirth || undefined,
       };
 
       const response = await apiRequest<{ id: number }>('/api/marcacoes/presencial', {
@@ -274,16 +331,16 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       });
 
       console.log('[AppointmentDialog] Marcação criada no backend, aguardando 500ms antes de recarregar...');
-      toast.success('Marcação criada com sucesso!');
+      toast.success(t('appointmentDialog.messages.appointmentCreated'));
 
       // Se houver ficheiros selecionados, fazer upload
       if (selectedFiles.length > 0) {
         try {
           await documentosApi.uploadDocumentos(response.id, selectedFiles);
-          toast.success(`${selectedFiles.length} documento(s) enviado(s) com sucesso!`);
+          toast.success(t('appointmentDialog.messages.documentsUploaded', { count: selectedFiles.length }));
         } catch (uploadError) {
           console.error('Erro ao enviar documentos:', uploadError);
-          toast.error('Marcação criada, mas houve erro ao enviar documentos');
+          toast.error(t('appointmentDialog.messages.documentsUploadError'));
         }
       }
 
@@ -295,7 +352,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       onClose();
     } catch (error: any) {
       console.error('Erro ao criar marcação:', error);
-      toast.error(`Erro: ${error.message || 'Falha na criação'}`);
+      toast.error(t('appointmentDialog.errors.creationFailed', { message: error.message || 'Falha na criação' }));
     } finally {
       setIsLoading(false);
       setShowConfirmation(false);
@@ -306,7 +363,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Por favor, corrija os erros no formulário');
+      toast.error(t('appointmentDialog.errors.fixForm'));
       return;
     }
 
@@ -334,16 +391,16 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">Novo Agendamento</DialogTitle>
+          <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            {date.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} às {time}
+            {date.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
           </p>
         </DialogHeader>
         <DialogPrimitive.Description className="sr-only">
-          Preencha os dados do utente para criar uma nova marcação
+          {t('appointmentDialog.description')}
         </DialogPrimitive.Description>
 
         {showConfirmation ? (
@@ -351,26 +408,26 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 flex gap-3">
               <AlertCircleIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <div>
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300">Alterações detetadas</h4>
+                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300">{t('appointmentDialog.confirm.title')}</h4>
                 <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
-                  Os dados do utente foram alterados. Deseja atualizar a ficha do utente com as novas informações antes de criar a marcação?
+                  {t('appointmentDialog.confirm.body')}
                 </p>
                 <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
                   <ul className="list-disc pl-4">
-                    {formData.name !== originalUser?.nome && <li>Nome alterado</li>}
-                    {formData.email !== originalUser?.email && <li>Email alterado</li>}
-                    {formData.contact !== originalUser?.telefone && <li>Contacto alterado</li>}
-                    {formData.dateOfBirth !== (originalUser?.dataNascimento?.split('T')[0] || '') && <li>Data de nasc. alterada</li>}
+                    {formData.name !== originalUser?.nome && <li>{t('appointmentDialog.confirm.nameChanged')}</li>}
+                    {formData.email !== originalUser?.email && <li>{t('appointmentDialog.confirm.emailChanged')}</li>}
+                    {formData.contact !== originalUser?.telefone && <li>{t('appointmentDialog.confirm.contactChanged')}</li>}
+                    {formData.dateOfBirth !== (originalUser?.dataNascimento?.split('T')[0] || '') && <li>{t('appointmentDialog.confirm.birthDateChanged')}</li>}
                   </ul>
                 </div>
               </div>
             </div>
             <div className="flex gap-3 pt-2">
               <Button variant="outline" onClick={() => setShowConfirmation(false)} className="flex-1">
-                Voltar / Corrigir
+                {t('appointmentDialog.confirm.back')}
               </Button>
               <Button onClick={() => { setIsLoading(true); processCreation(); }} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
-                Confirmar e Marcar
+                {t('appointmentDialog.confirm.confirmAndBook')}
               </Button>
             </div>
           </div>
@@ -378,118 +435,117 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nif" className="text-gray-900 dark:text-gray-100">NIF *</Label>
+                <Label htmlFor="nif" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.nif')}</Label>
                 <Input
                   id="nif"
                   type="text"
-                  placeholder="123456789"
+                  placeholder={t('appointmentDialog.fields.nifPlaceholder')}
                   maxLength={9}
                   value={formData.nif}
-                  onChange={(e) => setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') })}
+                  onChange={(e) => handleNifChange(e.target.value)}
+                  onBlur={() => {
+                    if (!formData.nif) {
+                      setNifError(t('appointmentDialog.errors.nifRequired'));
+                      return;
+                    }
+                    if (!validateNIF(formData.nif)) {
+                      setNifError(t('appointmentDialog.errors.nifInvalid'));
+                      return;
+                    }
+                    setNifError(undefined);
+                  }}
+                  aria-invalid={!!errors.nif}
+                  aria-describedby={errors.nif ? 'nif-error' : undefined}
                   className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
                 />
-                {errors.nif && <p className="text-sm text-red-500">{errors.nif}</p>}
+                {errors.nif && <p id="nif-error" className="text-sm text-red-500">{errors.nif}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">Data de Nascimento *</Label>
-                <Popover open={birthDatePickerOpen} onOpenChange={(open) => {
-                  setBirthDatePickerOpen(open);
-                }}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={`w-full justify-between bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
-                    >
-                      {formData.dateOfBirth || 'Selecionar data'}
-                      <CalendarIcon className="w-4 h-4 opacity-70" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 border-0 bg-transparent shadow-none w-auto" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={birthDateValue}
-                      month={calendarMonth}
-                      onMonthChange={(d: Date) => setCalendarMonth(d)}
-                      initialFocus
-                      onSelect={(date: Date | undefined) => {
-                        if (date) {
-                          setBirthDateValue(date);
-                          const formatted = date.toISOString().split('T')[0];
-                          setFormData({ ...formData, dateOfBirth: formatted });
-                          setBirthDatePickerOpen(false);
-                        }
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.birthDate')}</Label>
+                <DatePickerField
+                  id="dob"
+                  value={formData.dateOfBirth}
+                  onChange={(value) => setFormData({ ...formData, dateOfBirth: value })}
+                  buttonClassName={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
+                />
                 {errors.dateOfBirth && <p className="text-sm text-red-500">{errors.dateOfBirth}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">Nome *</Label>
+              <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.name')}</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Nome completo"
+                placeholder={t('appointmentDialog.fields.name')}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'name-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
               />
-              {errors.name && <p className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
+              {errors.name && <p id="name-error" className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">Email *</Label>
+              <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="exemplo@email.com"
+                placeholder={t('appointmentDialog.fields.emailPlaceholder')}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
               />
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p id="email-error" className="text-sm text-red-500">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">Contacto *</Label>
+              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.contact')}</Label>
               <Input
                 id="contact"
                 type="text"
-                placeholder="912345678"
+                placeholder={t('appointmentDialog.fields.contactPlaceholder')}
                 maxLength={9}
                 value={formData.contact}
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
+                aria-invalid={!!errors.contact}
+                aria-describedby={errors.contact ? 'contact-error' : undefined}
                 className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.contact ? 'border-red-500' : ''}`}
               />
-              {errors.contact && <p className="text-sm text-red-500">{errors.contact}</p>}
+              {errors.contact && <p id="contact-error" className="text-sm text-red-500">{errors.contact}</p>}
             </div>
 
 
             <div className="space-y-2">
-              <Label htmlFor="subject" className="text-gray-900 dark:text-gray-100">Assunto *</Label>
+              <Label htmlFor="secretary-subject" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.subject')}</Label>
               <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
-                <SelectTrigger className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="Selecione o assunto" />
+                <SelectTrigger
+                  id="secretary-subject"
+                  aria-invalid={!!errors.subject}
+                  aria-describedby={errors.subject ? 'secretary-subject-error' : undefined}
+                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
+                >
+                  <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                   {SUBJECTS.map((subject) => (
                     <SelectItem key={subject} value={subject} className="text-gray-900 dark:text-gray-100">
-                      {subject}
+                      {getSubjectLabel(subject, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.subject && <p className="text-sm text-red-500">{errors.subject}</p>}
+              {errors.subject && <p id="secretary-subject-error" className="text-sm text-red-500">{errors.subject}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">Descrição curta</Label>
+              <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.shortDescription')}</Label>
               <Textarea
                 id="description"
-                placeholder="Descreva brevemente o motivo da marcação..."
+                placeholder={t('appointmentDialog.fields.shortDescriptionPlaceholder')}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
@@ -498,8 +554,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="space-y-2">
-              <Label className="text-gray-900 dark:text-gray-100 mb-2 block">Anexar documentos (opcional)</Label>
+              <Label htmlFor="secretary-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
               <FileUpload
+                inputId="secretary-upload"
+                describedById="secretary-upload-help"
                 selectedFiles={selectedFiles}
                 onChange={setSelectedFiles}
                 isUploading={isLoading}
@@ -507,16 +565,32 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
-                Cancelar
+              <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
+                {t('appointmentDialog.actions.cancel')}
               </Button>
               <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
-                {isLoading ? 'A marcar...' : 'Marcar'}
+                {isLoading ? t('appointmentDialog.actions.booking') : t('appointmentDialog.actions.book')}
               </Button>
             </div>
           </form>
         )}
       </DialogContent>
+      <UnsavedChangesModal 
+        isOpen={blocker.state === 'blocked' || pendingClose}
+        onConfirm={() => {
+          if (blocker.state === 'blocked') blocker.proceed?.();
+          if (pendingClose) {
+            setPendingClose(false);
+            setTimeout(() => {
+              handleClose();
+            }, 100);
+          }
+        }}
+        onCancel={() => {
+          if (blocker.state === 'blocked') blocker.reset?.();
+          if (pendingClose) setPendingClose(false);
+        }}
+      />
     </Dialog>
   );
 }

@@ -8,6 +8,19 @@ export interface ValidationResult {
     error?: string;
 }
 
+export type EmployeeLoginEmailValidationError =
+    | 'invalidInstitutionalEmail'
+    | 'useInstitutionalEmail';
+
+export interface EmployeeLoginEmailValidationResult {
+    valid: boolean;
+    errorKey?: EmployeeLoginEmailValidationError;
+}
+
+export const CALENDAR_YEAR_MIN = 1900;
+
+export const getCalendarYearMax = (): number => new Date().getFullYear() + 10;
+
 export interface PasswordValidation {
     minLength: boolean;
     hasUpperLower: boolean;
@@ -68,7 +81,21 @@ export const validateName = (name: string): ValidationResult => {
  * Validates Portuguese NIF (9 digits)
  */
 export const validateNIF = (nif: string): boolean => {
-    return /^\d{9}$/.test(nif);
+    if (!/^\d{9}$/.test(nif)) return false;
+
+    // Reject clearly invalid repeated sequences.
+    if (/^(\d)\1{8}$/.test(nif)) return false;
+
+    const digits = nif.split('').map(Number);
+    const checkDigit = digits[8];
+    const sum = digits
+        .slice(0, 8)
+        .reduce((acc, digit, index) => acc + digit * (9 - index), 0);
+
+    const mod11 = sum % 11;
+    const expected = mod11 < 2 ? 0 : 11 - mod11;
+
+    return checkDigit === expected;
 };
 
 /**
@@ -83,6 +110,37 @@ export const validateContact = (contact: string): boolean => {
  */
 export const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+/**
+ * Validates employee login email against a configurable institutional domain.
+ * Returns error keys so UI can translate messages with i18n.
+ */
+export const validateEmployeeLoginEmail = (
+    identifier: string,
+    domain: string
+): EmployeeLoginEmailValidationResult => {
+    const normalizedIdentifier = identifier.trim();
+    const normalizedDomain = domain.trim();
+
+    if (!normalizedIdentifier.includes('@')) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    // Domain must look like "@example.com" (single @ prefix is required).
+    if (!/^@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(normalizedDomain)) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    if (!normalizedIdentifier.endsWith(normalizedDomain)) {
+        return { valid: false, errorKey: 'useInstitutionalEmail' };
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedIdentifier)) {
+        return { valid: false, errorKey: 'invalidInstitutionalEmail' };
+    }
+
+    return { valid: true };
 };
 
 /**
@@ -155,4 +213,23 @@ export const formatDate = (date: Date): string => {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
+};
+
+/**
+ * Validates a calendar year input.
+ * Rules: numeric only, exactly 4 digits, and within supported calendar bounds.
+ */
+export const validateCalendarYear = (yearInput: string): ValidationResult => {
+    if (!/^\d{4}$/.test(yearInput)) {
+        return { valid: false, error: 'O ano deve ter exatamente 4 dígitos numéricos' };
+    }
+
+    const year = Number(yearInput);
+    const maxYear = getCalendarYearMax();
+
+    if (year < CALENDAR_YEAR_MIN || year > maxYear) {
+        return { valid: false, error: `O ano deve estar entre ${CALENDAR_YEAR_MIN} e ${maxYear}` };
+    }
+
+    return { valid: true };
 };

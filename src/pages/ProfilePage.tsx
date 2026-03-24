@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -8,6 +8,17 @@ import { utilizadoresApi } from '../services/api';
 import { ChevronDown, ChevronRight, Lock } from 'lucide-react';
 import { ChangePasswordDialog } from '../components/auth/ChangePasswordDialog';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 
 interface ProfilePageProps {
   user: {
@@ -22,6 +33,33 @@ interface ProfilePageProps {
   onUpdateUser: (user: { name: string; nif: string; contact: string; email: string }) => void;
   isDarkMode: boolean;
   isEmployee?: boolean;
+  onDirtyChange?: (isDirty: boolean) => void;
+}
+
+interface ProfileFormData {
+  fullName: string;
+  address: string;
+  postalCode: string;
+  dateOfBirth: string;
+  parish: string;
+  phonePersonal: string;
+  nif: string;
+  email: string;
+  profession: string;
+  workLocation: string;
+  workAddress: string;
+  workPhone: string;
+}
+
+interface ProfileDraftState {
+  isEditing: boolean;
+  expanded: {
+    personal: boolean;
+    address: boolean;
+    professional: boolean;
+  };
+  formData: ProfileFormData;
+  baseData: ProfileFormData;
 }
 
 // Função para formatar data no formato português
@@ -35,62 +73,157 @@ const formatDateToPT = (dateString: string | undefined): string => {
   }
 };
 
-export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false }: ProfilePageProps) {
+const createEmptyFormData = (): ProfileFormData => ({
+  fullName: '',
+  address: '',
+  postalCode: '',
+  dateOfBirth: '',
+  parish: '',
+  phonePersonal: '',
+  nif: '',
+  email: '',
+  profession: '',
+  workLocation: '',
+  workAddress: '',
+  workPhone: '',
+});
+
+const mapApiUserToFormData = (data: {
+  nome: string;
+  morada?: string;
+  codigoPostal?: string;
+  dataNascimento?: string;
+  freguesia?: string;
+  telefone?: string;
+  nif: string;
+  email: string;
+  profissao?: string;
+  localEmprego?: string;
+  moradaEmprego?: string;
+  telefoneEmprego?: string;
+}): ProfileFormData => ({
+  fullName: data.nome,
+  address: data.morada || '',
+  postalCode: data.codigoPostal || '',
+  dateOfBirth: formatDateToPT(data.dataNascimento),
+  parish: data.freguesia || '',
+  phonePersonal: data.telefone || '',
+  nif: data.nif,
+  email: data.email,
+  profession: data.profissao || '',
+  workLocation: data.localEmprego || '',
+  workAddress: data.moradaEmprego || '',
+  workPhone: data.telefoneEmprego || '',
+});
+
+export const getProfileDraftStorageKey = (userId: number) => `profile-page-draft:${userId}`;
+
+const mergeDraftWithLatestData = (draft: ProfileDraftState, latestData: ProfileFormData): ProfileFormData => {
+  const merged = { ...latestData };
+
+  (Object.keys(latestData) as Array<keyof ProfileFormData>).forEach((key) => {
+    if (draft.formData[key] !== draft.baseData[key]) {
+      merged[key] = draft.formData[key];
+    }
+  });
+
+  return merged;
+};
+
+export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee = false, onDirtyChange }: ProfilePageProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
   const [expanded, setExpanded] = useState({
     personal: true,
-    address: true, // User wanted to "hide fields", maybe default false? Keeping true for better UX unless specified "start hidden".
-    professional: true
+    address: false,
+    professional: false
   });
 
-  const [formData, setFormData] = useState({
-    fullName: user.name,
-    address: 'Rua das Flores, 123',
-    postalCode: '1000-001',
-    dateOfBirth: user?.birthDate || '15/01/1990',
-    parish: 'São Pedro',
-    phonePersonal: user.contact,
-    nif: user.nif,
-    email: user.email,
-    profession: 'Engenheiro',
-    workLocation: 'Tech Company',
-    workAddress: 'Av. Principal, 456',
-    workPhone: '217654321',
-  });
+  const [formData, setFormData] = useState<ProfileFormData>(createEmptyFormData());
+  const [baseData, setBaseData] = useState<ProfileFormData>(createEmptyFormData());
+  const storageKey = getProfileDraftStorageKey(user.id);
+
+  const loadUserData = useCallback(async (options?: { restoreDraft?: boolean }) => {
+    const shouldRestoreDraft = options?.restoreDraft ?? true;
+    setLoading(true);
+    try {
+      const data = await utilizadoresApi.obterPorId(user.id);
+      const mappedData = mapApiUserToFormData(data);
+      const savedDraftRaw = sessionStorage.getItem(storageKey);
+
+      if (shouldRestoreDraft && savedDraftRaw) {
+        try {
+          const savedDraft = JSON.parse(savedDraftRaw) as ProfileDraftState;
+          setExpanded(savedDraft.expanded);
+
+          if (savedDraft.isEditing) {
+            setIsEditing(true);
+            setFormData(mergeDraftWithLatestData(savedDraft, mappedData));
+            setBaseData(savedDraft.baseData);
+          } else {
+            setIsEditing(false);
+            setFormData(mappedData);
+            setBaseData(mappedData);
+          }
+        } catch {
+          setFormData(mappedData);
+          setBaseData(mappedData);
+        }
+      } else {
+        setFormData(mappedData);
+        setBaseData(mappedData);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao carregar dados do utilizador:', error);
+      toast.error(t('profile.errors.loadProfile'));
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [storageKey, user.id]);
 
   // Carregar dados do utilizador da API
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        setLoading(true);
-        const data = await utilizadoresApi.obterPorId(user.id);
-        setFormData({
-          fullName: data.nome,
-          address: data.morada || '',
-          postalCode: data.codigoPostal || '',
-          dateOfBirth: formatDateToPT(data.dataNascimento),
-          parish: data.freguesia || '',
-          phonePersonal: data.telefone || '',
-          nif: data.nif,
-          email: data.email,
-          profession: data.profissao || '',
-          workLocation: data.localEmprego || '',
-          workAddress: data.moradaEmprego || '',
-          workPhone: data.telefoneEmprego || '',
-        });
-      } catch (error) {
-        console.error('Erro ao carregar dados do utilizador:', error);
-        toast.error('Erro ao carregar dados do perfil');
-      } finally {
-        setLoading(false);
-      }
+    void loadUserData();
+  }, [loadUserData]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const draftState: ProfileDraftState = {
+      isEditing,
+      expanded,
+      formData,
+      baseData: createEmptyFormData(),
     };
 
-    carregarDados();
-  }, [user.id]);
+    const savedDraftRaw = sessionStorage.getItem(storageKey);
+    if (savedDraftRaw) {
+      try {
+        const savedDraft = JSON.parse(savedDraftRaw) as ProfileDraftState;
+        draftState.baseData = savedDraft.baseData;
+      } catch {
+        draftState.baseData = formData;
+      }
+    } else {
+      draftState.baseData = formData;
+    }
+
+    if (!isEditing) {
+      draftState.baseData = formData;
+    }
+
+    sessionStorage.setItem(storageKey, JSON.stringify(draftState));
+  }, [expanded, formData, isEditing, loading, storageKey]);
 
   const handleSave = async () => {
     try {
@@ -108,55 +241,95 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       });
 
       // Recarregar dados da API após salvar
-      const dadosAtualizados = await utilizadoresApi.obterPorId(user.id);
-      setFormData({
-        fullName: dadosAtualizados.nome,
-        address: dadosAtualizados.morada || '',
-        postalCode: dadosAtualizados.codigoPostal || '',
-        dateOfBirth: formatDateToPT(dadosAtualizados.dataNascimento),
-        parish: dadosAtualizados.freguesia || '',
-        phonePersonal: dadosAtualizados.telefone || '',
-        nif: dadosAtualizados.nif,
-        email: dadosAtualizados.email,
-        profession: dadosAtualizados.profissao || '',
-        workLocation: dadosAtualizados.localEmprego || '',
-        workAddress: dadosAtualizados.moradaEmprego || '',
-        workPhone: dadosAtualizados.telefoneEmprego || '',
-      });
+      const dadosAtualizados = await loadUserData();
+
+      if (!dadosAtualizados) {
+        return;
+      }
 
       onUpdateUser({
         name: dadosAtualizados.nome,
         nif: dadosAtualizados.nif,
-        contact: dadosAtualizados.telefone,
+        contact: dadosAtualizados.telefone || '',
         email: dadosAtualizados.email,
       });
 
       setIsEditing(false);
-      toast.success('Perfil atualizado com sucesso');
+      sessionStorage.removeItem(storageKey);
+      toast.success(t('profile.messages.updatedSuccess'));
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      toast.error('Erro ao atualizar perfil');
+      toast.error(t('profile.errors.updateProfile'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      fullName: user.name,
-      address: 'Rua das Flores, 123',
-      postalCode: '1000-001',
-      dateOfBirth: user?.birthDate || '15/01/1990',
-      parish: 'São Pedro',
-      phonePersonal: user.contact,
-      nif: user.nif,
-      email: user.email,
-      profession: 'Engenheiro',
-      workLocation: 'Tech Company',
-      workAddress: 'Av. Principal, 456',
-      workPhone: '217654321',
-    });
+  const resetDraftAndExitEditMode = useCallback(async () => {
+    sessionStorage.removeItem(storageKey);
+    await loadUserData({ restoreDraft: false });
     setIsEditing(false);
+  }, [loadUserData, storageKey]);
+
+  // Computed: whether the user has unsaved changes
+  const hasUnsavedChanges = isEditing && JSON.stringify(formData) !== JSON.stringify(baseData);
+
+  // Notify parent when dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Guard: show dialog before leaving if there are unsaved changes
+  const requestLeave = (action?: () => void) => {
+    if (hasUnsavedChanges) {
+      pendingActionRef.current = action ?? null;
+      setShowUnsavedDialog(true);
+    } else {
+      action?.();
+    }
+  };
+
+  const confirmDiscard = async () => {
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+
+    await resetDraftAndExitEditMode();
+
+    setShowUnsavedDialog(false);
+    action?.();
+  };
+
+  const cancelDiscard = () => {
+    pendingActionRef.current = null;
+    setShowUnsavedDialog(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (hasUnsavedChanges) {
+      requestLeave();
+      return;
+    }
+
+    // No changes: just leave edit mode immediately.
+    setIsEditing(false);
+    sessionStorage.removeItem(storageKey);
   };
 
   const toggleSection = (section: keyof typeof expanded) => {
@@ -204,7 +377,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="text-gray-600 dark:text-gray-400">A carregar...</div>
+        <div className="text-gray-600 dark:text-gray-400">{t('profile.loading')}</div>
       </div>
     );
   }
@@ -214,60 +387,42 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
       <div className="w-full max-w-2xl">
         {/* Back Button */}
         <button
-          onClick={onBack}
+          onClick={() => requestLeave(onBack)}
           className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
-          <span>Voltar</span>
+          <span>{t('common.back')}</span>
         </button>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8">
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-5 sm:p-8">
           {/* Header */}
-          <div className="flex items-start justify-between mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                 <UserIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h1 className="text-xl text-gray-900 dark:text-gray-100">Perfil do Utilizador</h1>
+                <h1 className="text-xl text-gray-900 dark:text-gray-100">{t('profile.title')}</h1>
                 <p className="text-sm text-purple-600 dark:text-purple-400">{formData.email}</p>
               </div>
             </div>
-            {!isEditing ? (
-              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
+            {!isEditing && (
+              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 ${isMobile ? 'w-full justify-center' : ''}`}
+                  className="w-full sm:w-auto justify-center border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
-                  {isMobile ? 'Palavra-passe' : 'Mudar Palavra-passe'}
+                  {isMobile ? t('profile.passwordShort') : t('profile.changePassword')}
                 </Button>
                 <Button
-                  onClick={() => setIsEditing(true)}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  onClick={() => { setBaseData({ ...formData }); setIsEditing(true); }}
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
                   disabled={loading}
                 >
-                  Editar
-                </Button>
-              </div>
-            ) : (
-              <div className={`flex gap-2 ${isMobile ? 'flex-col w-full' : ''}`}>
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
-                  disabled={loading}
-                >
-                  {loading ? 'A guardar...' : 'Guardar'}
+                  {t('common.edit')}
                 </Button>
               </div>
             )}
@@ -276,28 +431,28 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
           <div className="space-y-12">
             {/* Personal Information */}
             <div>
-              {renderSectionHeader('Informação Pessoal', 'personal')}
+              {renderSectionHeader(t('profile.sections.personal'), 'personal')}
 
               {expanded.personal && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Nome Completo', formData.fullName, 'fullName', false, 'Nome indisponível', 'md:col-span-2')}
+                  {renderField(t('profile.fullName'), formData.fullName, 'fullName', false, t('profile.placeholders.nameUnavailable'), 'md:col-span-2')}
                   {renderField('NIF', formData.nif, 'nif', false)}
-                  {renderField('Data de Nascimento', formData.dateOfBirth, 'dateOfBirth', false)}
-                  {renderField('Email', formData.email, 'email', false, 'Email indisponível', 'md:col-span-2')}
-                  {renderField('Telemóvel', formData.phonePersonal, 'phonePersonal', true, 'Adicione contacto')}
+                  {renderField(t('profile.birthDate'), formData.dateOfBirth, 'dateOfBirth', false)}
+                  {renderField('Email', formData.email, 'email', false, t('profile.placeholders.emailUnavailable'), 'md:col-span-2')}
+                  {renderField(t('profile.phone'), formData.phonePersonal, 'phonePersonal', true, t('profile.placeholders.addContact'))}
                 </div>
               )}
             </div>
 
             {/* Address Information (New Subdivision) */}
             <div>
-              {renderSectionHeader('Morada', 'address')}
+              {renderSectionHeader(t('profile.sections.address'), 'address')}
 
               {expanded.address && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                  {renderField('Morada', formData.address, 'address', true, 'Adicione morada', 'md:col-span-2')}
-                  {renderField('Freguesia', formData.parish, 'parish', true, 'Adicione freguesia')}
-                  {renderField('Código Postal', formData.postalCode, 'postalCode', true, 'Adicione código postal')}
+                  {renderField(t('profile.address'), formData.address, 'address', true, t('profile.placeholders.addAddress'), 'md:col-span-2')}
+                  {renderField(t('profile.parish'), formData.parish, 'parish', true, t('profile.placeholders.addParish'))}
+                  {renderField(t('profile.postalCode'), formData.postalCode, 'postalCode', true, t('profile.placeholders.addPostalCode'))}
                 </div>
               )}
             </div>
@@ -305,16 +460,36 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             {/* Professional Information - Hidden for employees */}
             {!isEmployee && (
               <div>
-                {renderSectionHeader('Informação Profissional', 'professional')}
+                {renderSectionHeader(t('profile.sections.professional'), 'professional')}
 
                 {expanded.professional && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 pl-2">
-                    {renderField('Profissão', formData.profession, 'profession', true, 'Adicione profissão')}
-                    {renderField('Local de Emprego', formData.workLocation, 'workLocation', true, 'Adicione local de emprego')}
-                    {renderField('Morada do Emprego', formData.workAddress, 'workAddress', true, 'Adicione morada do emprego')}
-                    {renderField('Telefone do Emprego', formData.workPhone, 'workPhone', true, 'Adicione telefone do emprego')}
+                    {renderField(t('profile.profession'), formData.profession, 'profession', true, t('profile.placeholders.addProfession'))}
+                    {renderField(t('profile.workLocation'), formData.workLocation, 'workLocation', true, t('profile.placeholders.addWorkLocation'))}
+                    {renderField(t('profile.workAddress'), formData.workAddress, 'workAddress', true, t('profile.placeholders.addWorkAddress'))}
+                    {renderField(t('profile.workPhone'), formData.workPhone, 'workPhone', true, t('profile.placeholders.addWorkPhone'))}
                   </div>
                 )}
+              </div>
+            )}
+
+            {isEditing && (
+              <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+                <Button
+                  onClick={handleCancelEdit}
+                  variant="outline"
+                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
+                  disabled={loading}
+                >
+                  {t('appointmentDialog.actions.cancel')}
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  disabled={loading}
+                >
+                  {loading ? t('common.saving') : t('common.save')}
+                </Button>
               </div>
             )}
           </div>
@@ -325,6 +500,26 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         open={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={(open) => { if (!open) cancelDiscard(); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('profile.unsaved.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('profile.unsaved.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDiscard}>{t('profile.unsaved.stay')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscard}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {t('profile.unsaved.discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

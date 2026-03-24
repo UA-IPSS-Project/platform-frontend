@@ -1,7 +1,12 @@
 import { apiRequest, API_BASE_URL, getCookie } from '../core/client';
 import { DocumentoDTO, PesquisaDocumentosParams } from './types';
-
 export const documentosApi = {
+    // Preview inline de documento (abre em nova aba)
+    previewDocumento: (documentoId: number) => {
+        const url = `${API_BASE_URL}/api/documentos/${documentoId}/preview`;
+        // Abre em nova aba para visualização inline
+        window.open(url, '_blank', 'noopener');
+    },
     // Upload de documento(s) para uma marcação
     uploadDocumentos: async (marcacaoId: number, files: File[]): Promise<DocumentoDTO[]> => {
         const uploadedDocs: DocumentoDTO[] = [];
@@ -33,6 +38,26 @@ export const documentosApi = {
         }
 
         return uploadedDocs;
+    },
+
+        // Notificar utente sobre documentos inválidos
+    notificarDocumentoInvalido: async (marcacaoId: number, documentoId: number, observacoes: string) => {
+        const xsrfToken = getCookie('XSRF-TOKEN');
+        const headers: Record<string, string> = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        if (xsrfToken) {
+            headers['X-XSRF-TOKEN'] = xsrfToken;
+        }
+        const body = new URLSearchParams({ documentoId: documentoId.toString(), observacoes });
+        const response = await fetch(`${API_BASE_URL}/api/documentos/marcacao/${marcacaoId}/notificar-invalidos`, {
+            method: 'POST',
+            credentials: 'include',
+            headers,
+            body,
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erro ao notificar utente: ${errorText}`);
+        }
     },
 
     // Listar documentos de uma marcação
@@ -85,8 +110,8 @@ export const documentosApi = {
         if (params.tipo?.trim()) searchParams.append('tipo', params.tipo.trim());
         if (params.utenteNome?.trim()) searchParams.append('utenteNome', params.utenteNome.trim());
         if (params.utenteNif?.trim()) searchParams.append('utenteNif', params.utenteNif.trim());
-        if (params.desde?.trim()) searchParams.append('desde', params.desde.trim());
-        if (params.ate?.trim()) searchParams.append('ate', params.ate.trim());
+        if (params.marcacaoDesde?.trim()) searchParams.append('marcacaoDesde', params.marcacaoDesde.trim());
+        if (params.marcacaoAte?.trim()) searchParams.append('marcacaoAte', params.marcacaoAte.trim());
 
         const query = searchParams.toString();
         const endpoint = query ? `/api/documentos/pesquisar?${query}` : '/api/documentos/pesquisar';

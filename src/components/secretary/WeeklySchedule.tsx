@@ -7,10 +7,17 @@ import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, UserIcon, FileTextIcon } from '../shared/CustomIcons';
+import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CalendarIcon, ClockIcon, FileTextIcon } from '../shared/CustomIcons';
 import { Appointment } from '../../types';
 import { calendarioApi, BloqueioAgenda, bloqueiosApi } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
+// Helper: Plus icon for add button
+function PlusIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" fill="none" viewBox="0 0 16 16"><path stroke="currentColor" strokeWidth="2" d="M8 3v10M3 8h10" /></svg>
+  );
+}
+import { useTranslation } from 'react-i18next';
 
 interface WeeklyScheduleProps {
   appointments: Appointment[];
@@ -32,23 +39,130 @@ interface WeeklyScheduleProps {
   appointmentType?: 'SECRETARIA' | 'BALNEARIO';
 }
 
-const generateTimeSlots = () => {
+interface SlotNavigatorState {
+  date: Date;
+  time: string;
+  slots: Array<Appointment | null>;
+}
+
+
+
+// Custom slot generator for BALNEARIO
+const generateBalnearioTimeSlots = () => {
+  const slots: string[] = [];
+  // 9:00 to 10:00 (9:00, 9:30, 10:00)
+  for (let t = 9 * 60; t <= 10 * 60; t += 30) {
+    const hour = Math.floor(t / 60);
+    const minute = t % 60;
+    slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+  }
+  // 11:00 and 11:30
+  slots.push('11:00');
+  slots.push('11:30');
+  // 14:00 to 16:30 (14:00, 14:30, 15:00, 15:30, 16:00, 16:30)
+  for (let t = 14 * 60; t <= 16 * 60 + 30; t += 30) {
+    slots.push(`${Math.floor(t / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`);
+  }
+  return slots;
+};
+
+// Modular slot generator: intervalMinutes (default 15)
+const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: string) => {
+  if (appointmentType === 'BALNEARIO') {
+    return generateBalnearioTimeSlots();
+  }
   const slots = [];
   for (let hour = 9; hour < 17; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      if (hour === 16 && minute > 45) break;
+    for (let minute = 0; minute < 60; minute += intervalMinutes) {
+      // For 16:00, only allow up to 16:45 for 15min, or 16:30 for 30min
+      if (hour === 16 && ((intervalMinutes === 15 && minute > 45) || (intervalMinutes === 30 && minute > 30))) break;
       slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
     }
   }
   return slots;
 };
 
-const WEEKDAYS_SHORT = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-const WEEKDAYS_MEDIUM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
-const WEEKDAYS_MOBILE = ['S', 'T', 'Q', 'Q', 'S'];
-
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, isLoading, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+  // Expanded slots state for mobile/tap (must be at top level)
+  const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
   const isMobile = useIsMobile();
+
+  // Helper to expand/collapse slot on mobile
+  const handleExpandSlot = (id: string) => {
+    setExpandedSlots(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+  const { i18n } = useTranslation();
+
+  // Helper function to get status-based styles (must be outside JSX)
+  const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
+    const normalizedStatus = (status || '').toLowerCase();
+    const statusStyles: Record<string, string> = {
+      'completed': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'concluded': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'done': isInteractive
+        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
+        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
+      'cancelled': isInteractive
+        ? 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 hover:bg-red-200 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700 dark:hover:bg-red-900/50'
+        : 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700',
+      'in-progress': isInteractive
+        ? 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 hover:bg-violet-200 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700 dark:hover:bg-violet-900/50'
+        : 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700',
+      'scheduled': isInteractive
+        ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+        : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700',
+      'warning': isInteractive
+        ? 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/50'
+        : 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+      'no-show': 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 cursor-not-allowed dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+    };
+    const defaultStyle = isInteractive
+      ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
+      : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
+    return statusStyles[normalizedStatus] || defaultStyle;
+  };
+
+  // Helper for mini-cells: only background/text color, no border-l-4
+  const getMiniCellStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
+    const normalizedStatus = (status || '').toLowerCase();
+    const statusStyles: Record<string, string> = {
+      'completed': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'concluded': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'done': isInteractive
+        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
+        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
+      'cancelled': isInteractive
+        ? 'bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-100 dark:hover:bg-red-900/50'
+        : 'bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100',
+      'in-progress': isInteractive
+        ? 'bg-violet-100 text-violet-900 hover:bg-violet-200 dark:bg-violet-900/40 dark:text-violet-100 dark:hover:bg-violet-900/50'
+        : 'bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-100',
+      'scheduled': isInteractive
+        ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
+        : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100',
+      'warning': isInteractive
+        ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/50'
+        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100',
+      'no-show': 'bg-amber-100 text-amber-900 cursor-not-allowed dark:bg-amber-900/40 dark:text-amber-100',
+    };
+    const defaultStyle = isInteractive
+      ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
+      : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100';
+    return statusStyles[normalizedStatus] || defaultStyle;
+  };
+  const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
+  const currentLocale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
+  const weekdaysShort = i18n.language.startsWith('en') ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] : ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+  const weekdaysMedium = i18n.language.startsWith('en') ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
+  const weekdaysMobile = i18n.language.startsWith('en') ? ['M', 'T', 'W', 'T', 'F'] : ['S', 'T', 'Q', 'Q', 'S'];
   const [isTablet, setIsTablet] = useState(false);
   // const [currentDate, setCurrentDate] = useState(new Date()); // State lifted to parent
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -58,6 +172,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   today.setHours(0, 0, 0, 0);
 
   // Campo Ano como Select
+  // Estado global para hover de slot (expansão inline)
+  const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
   const [quickYear, setQuickYear] = useState(today.getFullYear());
   const [quickMonth, setQuickMonth] = useState(today.getMonth());
   const [quickDay, setQuickDay] = useState(today.getDate());
@@ -65,6 +181,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [quickTime, setQuickTime] = useState('');
   const [quickSlots, setQuickSlots] = useState<string[]>([]);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
+  const [slotCapacity, setSlotCapacity] = useState<number>(1);
+  const [slotNavigatorOpen, setSlotNavigatorOpen] = useState(false);
+  const [slotNavigator, setSlotNavigator] = useState<SlotNavigatorState | null>(null);
+  const [slotNavigatorIndex, setSlotNavigatorIndex] = useState(0);
 
   // ===== SLIDING WINDOW CACHE: Holidays & Blocks =====
   // Cache de feriados por ano (mantém todos os anos carregados)
@@ -106,7 +226,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   };
 
   const weekDays = getWeekDays(validCurrentDate);
-  const timeSlots = generateTimeSlots();
+  // Use custom slots for balneário, 15min otherwise
+  const slotInterval = appointmentType === 'BALNEARIO' ? 30 : 15;
+  const timeSlots = generateTimeSlots(slotInterval, appointmentType);
   // Sempre mostrar todas as marcações para verificar disponibilidade
   const bookingSource = allAppointments ?? appointments;
   const [activeHighlight, setActiveHighlight] = useState<string | null>(null);
@@ -160,8 +282,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
   }, [highlightedSlot]);
 
-  const isSlotBooked = (date: Date, time: string) => {
-    return bookingSource.some(apt => {
+  const getSlotAppointments = (date: Date, time: string) => {
+    const slotAppointments = bookingSource.filter(apt => {
       const aptDate = new Date(apt.date);
       aptDate.setHours(0, 0, 0, 0);
       const slotDate = new Date(date);
@@ -171,6 +293,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         apt.time === time &&
         apt.status !== 'cancelled';
     });
+
+    slotAppointments.sort((a, b) => {
+      if (a.status === 'reserved' && b.status !== 'reserved') return 1;
+      if (a.status !== 'reserved' && b.status === 'reserved') return -1;
+      return 0;
+    });
+
+    return slotAppointments;
   };
 
   const isSlotInPast = (date: Date, time: string) => {
@@ -183,6 +313,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // ===== LEGACY STATE: blockedSlots (unified view from cache) =====
   // Mantido para compatibilidade: agregado de todos os bloqueios das semanas em cache
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const loadSlotCapacity = async () => {
+      try {
+        const configs = await calendarioApi.listarConfiguracaoSlots();
+        const config = configs.find(item => item.tipo === appointmentType);
+        setSlotCapacity(Math.max(1, config?.capacidadePorSlot ?? 1));
+      } catch (error) {
+        console.error('Erro ao carregar capacidade por slot:', error);
+        setSlotCapacity(1);
+      }
+    };
+
+    loadSlotCapacity();
+  }, [appointmentType]);
 
   // ===== HELPER FUNCTIONS =====
   // Helper para minutos
@@ -234,21 +379,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // ===== SLIDING WINDOW CACHE: Carregar bloqueios por semana =====
   // Carrega bloqueios de uma semana específica e armazena no cache
-  const loadWeekBlocks = async (date: Date, force = false) => {
+  const loadWeekBlocks = async (date: Date, _force = false) => {
     const { startOfWeek, endOfWeek, key } = getWeekRange(date);
 
     // Se já está em cache ou em carregamento, skip
-    if (!force && (blocksByWeek[key] || loadingBlockWeeks.has(key))) {
-      console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
-      return;
-    }
+    // if (!force && (blocksByWeek[key] || loadingBlockWeeks.has(key))) {
+    //   console.log('[DEBUG] loadWeekBlocks skip (cached or loading):', { key });
+    //   return;
+    // }
 
-    console.log('[DEBUG] loadWeekBlocks start:', { key, start: startOfWeek, end: endOfWeek });
-    setLoadingBlockWeeks(prev => {
-      const next = new Set(prev);
-      next.add(key);
-      return next;
-    });
+    // console.log('[DEBUG] loadWeekBlocks start:', { key, start: startOfWeek, end: endOfWeek });
+    // setLoadingBlockWeeks(prev => {
+    //   const next = new Set(prev);
+    //   next.add(key);
+    //   return next;
+    // });
 
     try {
       // Buscar bloqueios da semana
@@ -281,21 +426,23 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         [key]: weekBlockedSlots,
       }));
 
-      console.log('[DEBUG] loadWeekBlocks done:', { key, count: weekBlockedSlots.size });
+      // console.log('[DEBUG] loadWeekBlocks done:', { key, count: weekBlockedSlots.size });
     } catch (error) {
       console.error('[ERROR] loadWeekBlocks:', error);
     } finally {
+      /*
       setLoadingBlockWeeks(prev => {
         const next = new Set(prev);
         next.delete(key);
         return next;
       });
+      */
     }
   };
 
   // ===== SLIDING WINDOW: Atualizar janela de bloqueios (2 semanas antes/depois) =====
   useEffect(() => {
-    console.log('[DEBUG] blocks sliding window update triggered:', { currentDate });
+    // console.log('[DEBUG] blocks sliding window update triggered:', { currentDate });
 
     // Calcular chaves das 5 semanas (2 antes, atual, 2 depois)
     const currentWeek = currentDate;
@@ -310,13 +457,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const { key: nextKey1 } = getWeekRange(nextWeek1);
     const { key: nextKey2 } = getWeekRange(nextWeek2);
 
-    console.log('[DEBUG] blocks window keys:', {
-      prevKey2,
-      prevKey1,
-      currentKey,
-      nextKey1,
-      nextKey2,
-    });
+    // console.log('[DEBUG] blocks window keys:', {
+    //   prevKey2,
+    //   prevKey1,
+    //   currentKey,
+    //   nextKey1,
+    //   nextKey2,
+    // });
 
     // Podar cache: manter apenas as 5 semanas da janela
     setBlocksByWeek(prev => {
@@ -341,7 +488,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   useEffect(() => {
     if (refreshTrigger === undefined) return;
 
-    console.log('[DEBUG] force reload blocks by refreshTrigger:', { refreshTrigger });
+    // console.log('[DEBUG] force reload blocks by refreshTrigger:', { refreshTrigger });
 
     const currentWeek = currentDate;
     const prevWeek1 = addDays(currentDate, -7);
@@ -364,7 +511,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       weekSet.forEach(slot => allBlocks.add(slot));
     });
     setBlockedSlots(allBlocks);
-    console.log('[DEBUG] blockedSlots aggregated:', { total: allBlocks.size });
+    // console.log('[DEBUG] blockedSlots aggregated:', { total: allBlocks.size });
   }, [blocksByWeek]);
 
   // Verificar se um slot está bloqueado (visualização + clique)
@@ -394,7 +541,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       // Verificar tanto os bloqueios da semana quanto do mês do quick dialog
       const isBlockedInWeek = blockedSlots.has(key);
       const isBlockedInQuick = quickMonthBlocks.has(key);
-      return !isSlotBooked(date, slot) && !isSlotInPast(date, slot) && !isBlockedInWeek && !isBlockedInQuick;
+      return getSlotAppointments(date, slot).length < slotCapacity && !isSlotInPast(date, slot) && !isBlockedInWeek && !isBlockedInQuick;
     });
 
   const navigateWeek = (direction: 'prev' | 'next') => {
@@ -410,79 +557,172 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
   };
 
-  const getAppointmentForSlot = (date: Date, time: string) => {
-    const slotAppointments = bookingSource.filter(apt => {
-      const aptDate = new Date(apt.date);
-      aptDate.setHours(0, 0, 0, 0);
-      const slotDate = new Date(date);
-      slotDate.setHours(0, 0, 0, 0);
+  const getAppointmentForSlot = (date: Date, time: string) => getSlotAppointments(date, time)[0];
 
-      return aptDate.getTime() === slotDate.getTime() &&
-        apt.time === time &&
-        apt.status !== 'cancelled';
-    });
-
-    // Se houver mais do que uma (ex: Reservado + Agendado), dar prioridade à Agendada
-    // Ordenar: real (não-reserved) primeiro
-    slotAppointments.sort((a, b) => {
-      if (a.status === 'reserved' && b.status !== 'reserved') return 1;
-      if (a.status !== 'reserved' && b.status === 'reserved') return -1;
-      return 0;
-    });
-
-    return slotAppointments[0];
+  const openSlotNavigator = (date: Date, time: string) => {
+    const slotAppointments = getSlotAppointments(date, time);
+    const slots = Array.from({ length: slotCapacity }, (_, index) => slotAppointments[index] ?? null);
+    setSlotNavigator({ date, time, slots });
+    setSlotNavigatorIndex(0);
+    setSlotNavigatorOpen(true);
   };
 
-  const handleSlotClick = async (date: Date, time: string) => {
-    const appointment = getAppointmentForSlot(date, time);
+  const handleSlotNavigatorAction = async () => {
+    if (!slotNavigator) return;
 
-    // Se já existe marcação, permitir visualizar (mesmo no passado)
-    if (appointment) {
-      // Verificar se é marcação própria
-      const isOwn = appointment && (
-        (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
-        appointments.some(a => a.id === appointment.id)
-      );
-
-      // Se for slot reservado ou bloqueado, recarregar marcações
-      if (appointment.status === 'reserved' || (isClient && !isOwn)) {
+    const selected = slotNavigator.slots[slotNavigatorIndex];
+    if (selected) {
+      if (selected.status === 'reserved') {
         if (onRefresh) {
-          toast.info('A atualizar marcações...');
+          toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
           await onRefresh();
-          toast.success('Marcações atualizadas!');
+          toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
         }
         return;
       }
-      onViewAppointment(appointment);
+
+      setSlotNavigatorOpen(false);
+      onViewAppointment(selected);
       return;
     }
 
-    // Validar se o horário não é no passado APENAS para criar nova marcação
-    if (isSlotInPast(date, time)) {
-      toast.error('Não é possível marcar para uma data/hora no passado');
+    if (isSlotInPast(slotNavigator.date, slotNavigator.time)) {
+      toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
       return;
     }
 
-    // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
-    // Se isSlotBlocked retornar true, significa que o backend detectou algo (bloqueio ou marcação existente)
-    // Nesse caso, devemos forçar um refresh visual para o utilizador ver o novo estado
-    const blocked = await isSlotBlocked(date, time);
+    const blocked = await isSlotBlocked(slotNavigator.date, slotNavigator.time);
     if (blocked) {
-      toast.error('Horário indisponível');
+      toast.error(tt('Horário indisponível', 'Time slot unavailable'));
       if (onRefresh) {
-        // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
         onRefresh();
       }
       return;
     }
 
-    onCreateAppointment(date, time);
+    setSlotNavigatorOpen(false);
+    onCreateAppointment(slotNavigator.date, slotNavigator.time);
+  };
+
+  const handleSlotClick = async (date: Date, time: string) => {
+    // toast.info(`[DEBUG] React recebeu o clique: ${time}`);
+    try {
+      // console.log('[DEBUG-SLOT] Clique detetado na data:', date, 'e hora:', time);
+
+      const slotAppointments = getSlotAppointments(date, time);
+      // console.log('[DEBUG-SLOT] Marcações neste slot:', slotAppointments.length);
+
+      // Com capacidade > 1, só abrir navegador quando já houver marcações ativas no slot.
+      // Se estiver vazio (inclui casos em que todas foram canceladas), criar diretamente.
+      if (!isClient && slotCapacity > 1 && slotAppointments.length > 0) {
+        // console.log('[DEBUG-SLOT] Capacidade múltipla e há marcações. A abrir SlotNavigator.');
+        openSlotNavigator(date, time);
+        return;
+      }
+
+      const appointment = getAppointmentForSlot(date, time);
+      const slotIsFull = slotAppointments.length >= slotCapacity;
+      // console.log('[DEBUG-SLOT] appointment (single):', appointment, '| slotIsFull:', slotIsFull);
+
+      // Se o slot ainda não estiver cheio, permitir criar nova marcação
+      // mesmo quando já existem marcações nesse horário.
+      if (!isClient && slotAppointments.length > 0 && !slotIsFull) {
+        if (isSlotInPast(date, time)) {
+          toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
+          return;
+        }
+
+        const blocked = await isSlotBlocked(date, time);
+        if (blocked) {
+          toast.error(tt('Horário indisponível', 'Time slot unavailable'));
+          if (onRefresh) {
+            onRefresh();
+          }
+          return;
+        }
+
+        // console.log('[DEBUG-SLOT] Slot em uso mas não cheio. A invocar onCreateAppointment.');
+        onCreateAppointment(date, time);
+        return;
+      }
+
+      // Se já existe marcação, permitir visualizar (mesmo no passado)
+      if (appointment) {
+        // console.log('[DEBUG-SLOT] Já existe marcação primária correspondente.');
+        // Verificar se é marcação própria
+        const isOwn = slotAppointments.some(item =>
+          (item.patientNIF && currentUserNif && String(item.patientNIF) === String(currentUserNif)) ||
+          appointments.some(a => a.id === item.id)
+        );
+
+        // Utente: se o slot ainda tem vagas (excluindo reservas), permitir criar marcação
+        if (isClient && !isOwn) {
+          const realBookings = slotAppointments.filter(a => a.status !== 'reserved').length;
+          if (realBookings < slotCapacity) {
+            if (isSlotInPast(date, time)) {
+              toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
+              return;
+            }
+            const blocked = await isSlotBlocked(date, time);
+            if (blocked) {
+              toast.error(tt('Horário indisponível', 'Time slot unavailable'));
+              return;
+            }
+            onCreateAppointment(date, time);
+            return;
+          }
+          // Slot cheio para o utente: só atualizar silenciosamente, sem toast de "a atualizar"
+          if (onRefresh) await onRefresh();
+          return;
+        }
+
+        // Se for reservado (staff), recarregar marcações
+        if (appointment.status === 'reserved') {
+          if (onRefresh) {
+            toast.info(tt('A atualizar marcações...', 'Updating appointments...'));
+            await onRefresh();
+            toast.success(tt('Marcações atualizadas!', 'Appointments updated!'));
+          }
+          return;
+        }
+        onViewAppointment(appointment);
+        return;
+      }
+
+      // Validar se o horário não é no passado APENAS para criar nova marcação
+      if (isSlotInPast(date, time)) {
+        // console.warn('[DEBUG-SLOT] Recusado: Data/Hora no passado.');
+        toast.error(tt('Não é possível marcar para uma data/hora no passado', 'It is not possible to book a past date/time'));
+        return;
+      }
+
+      // Verificar se o slot está bloqueado (fim de semana, feriado, etc)
+      const blocked = await isSlotBlocked(date, time);
+      if (blocked) {
+        // console.warn('[DEBUG-SLOT] Recusado: Bloqueado pelo Back-End ou Feriado.');
+        toast.error(tt('Horário indisponível', 'Time slot unavailable'));
+        if (onRefresh) {
+          // Forçar atualização imediata para mostrar o slot como Reservado/Bloqueado
+          onRefresh();
+        }
+        return;
+      }
+
+      // console.log('[DEBUG-SLOT] Vazio e válido. A invocar onCreateAppointment.');
+      onCreateAppointment(date, time);
+    } catch (error: any) {
+      // console.error('[DEBUG-SLOT] Crash em handleSlotClick:', error);
+      // toast.error(`[DEBUG-CRASH] ${error.message || 'Erro Desconhecido'}`);
+    }
   };
 
   const getWeekLabel = () => {
     const firstDay = weekDays[0];
-    const month = firstDay.toLocaleDateString('pt-PT', { month: 'long' });
-    return `${firstDay.getDate()} de ${month}`;
+    const month = firstDay.toLocaleDateString(currentLocale, { month: 'long' });
+    if (i18n.language.startsWith('en')) {
+      return `${month} ${firstDay.getDate()}`;
+    }
+    return `${firstDay.getDate()} ${tt('de', 'of')} ${month}`;
   };
 
   // Obter marcações da semana para exportação
@@ -507,21 +747,21 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     });
   };
 
-  // Mapear status para português
+  // Map status labels by language
   const statusLabels: Record<string, string> = {
-    'scheduled': 'Agendado',
-    'in-progress': 'Em Curso',
-    'warning': 'Aviso',
-    'completed': 'Concluído',
-    'cancelled': 'Cancelado',
-    'no-show': 'Faltou'
+    'scheduled': tt('Agendado', 'Scheduled'),
+    'in-progress': tt('Em Curso', 'In progress'),
+    'warning': tt('Aviso', 'Warning'),
+    'completed': tt('Concluído', 'Completed'),
+    'cancelled': tt('Cancelado', 'Cancelled'),
+    'no-show': tt('Faltou', 'No-show')
   };
 
   // Gerar nome do arquivo
   const getFileName = (extension: string) => {
     const firstDay = weekDays[0];
     const lastDay = weekDays[weekDays.length - 1];
-    return `agenda_${firstDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}_a_${lastDay.toLocaleDateString('pt-PT').replace(/\//g, '-')}.${extension}`;
+    return `agenda_${firstDay.toLocaleDateString(currentLocale).replace(/\//g, '-')}_${tt('a', 'to')}_${lastDay.toLocaleDateString(currentLocale).replace(/\//g, '-')}.${extension}`;
   };
 
   // Exportar como CSV
@@ -529,16 +769,18 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
     const csvContent = [
       headers.join(';'),
       ...sortedAppointments.map(apt => {
         const date = new Date(apt.date);
-        const formattedDate = date.toLocaleDateString('pt-PT');
+        const formattedDate = date.toLocaleDateString(currentLocale);
         const status = statusLabels[apt.status] || apt.status;
 
         const escapeField = (field: string) => {
@@ -574,7 +816,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Agenda exportada em CSV com sucesso');
+    toast.success(tt('Agenda exportada em CSV com sucesso', 'Schedule exported to CSV successfully'));
   };
 
   // Exportar como Excel (usando formato XML do Excel)
@@ -582,11 +824,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
 
     // Criar conteúdo HTML que o Excel pode abrir
     let tableContent = '<table border="1">';
@@ -606,7 +850,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     sortedAppointments.forEach(apt => {
       const date = new Date(apt.date);
-      const formattedDate = date.toLocaleDateString('pt-PT');
+      const formattedDate = date.toLocaleDateString(currentLocale);
       const status = statusLabels[apt.status] || apt.status;
       const statusColor = getStatusColor(apt.status);
 
@@ -642,7 +886,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     URL.revokeObjectURL(url);
 
     setExportDialogOpen(false);
-    toast.success('Agenda exportada em Excel com sucesso');
+    toast.success(tt('Agenda exportada em Excel com sucesso', 'Schedule exported to Excel successfully'));
   };
 
   // Exportar como PDF
@@ -650,14 +894,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const sortedAppointments = getWeekAppointments();
 
     if (sortedAppointments.length === 0) {
-      toast.warning('Não existem marcações para exportar nesta semana');
+      toast.warning(tt('Não existem marcações para exportar nesta semana', 'There are no appointments to export this week'));
       return;
     }
 
-    const headers = ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
+    const headers = i18n.language.startsWith('en')
+      ? ['Date', 'Time', 'Patient name', 'NIF', 'Contact', 'Email', 'Subject', 'Status']
+      : ['Data', 'Hora', 'Nome do Utente', 'NIF', 'Contacto', 'Email', 'Assunto', 'Estado'];
     const firstDay = weekDays[0];
     const lastDay = weekDays[weekDays.length - 1];
-    const periodLabel = `${firstDay.toLocaleDateString('pt-PT')} a ${lastDay.toLocaleDateString('pt-PT')}`;
+    const periodLabel = `${firstDay.toLocaleDateString(currentLocale)} ${tt('a', 'to')} ${lastDay.toLocaleDateString(currentLocale)}`;
 
     // Criar HTML para impressão como PDF
     let htmlContent = `
@@ -665,7 +911,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       <html>
       <head>
         <meta charset="UTF-8">
-        <title>Agenda Semanal - ${periodLabel}</title>
+        <title>${tt('Agenda Semanal', 'Weekly Schedule')} - ${periodLabel}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
@@ -685,7 +931,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       </head>
       <body>
         <br/><br/><br/>
-        <h1>Agenda Semanal</h1>
+        <h1>${tt('Agenda Semanal', 'Weekly Schedule')}</h1>
         <p class="period">${periodLabel}</p>
         <table>
           <thead>
@@ -696,7 +942,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     sortedAppointments.forEach(apt => {
       const date = new Date(apt.date);
-      const formattedDate = date.toLocaleDateString('pt-PT');
+      const formattedDate = date.toLocaleDateString(currentLocale);
       const status = statusLabels[apt.status] || apt.status;
       const statusClass = `status-${apt.status.toLowerCase().replace('-', '_')}`;
 
@@ -717,7 +963,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     htmlContent += `
           </tbody>
         </table>
-        <p class="footer">Gerado em ${new Date().toLocaleDateString('pt-PT')} às ${new Date().toLocaleTimeString('pt-PT')}</p>
+        <p class="footer">${tt('Gerado em', 'Generated on')} ${new Date().toLocaleDateString(currentLocale)} ${tt('às', 'at')} ${new Date().toLocaleTimeString(currentLocale)}</p>
       </body>
       </html>
     `;
@@ -738,7 +984,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     setExportDialogOpen(false);
-    toast.success('A preparar PDF para impressão...');
+    toast.success(tt('A preparar PDF para impressão...', 'Preparing PDF for printing...'));
   };
 
   // Exportar como ICS (iCalendar) - apenas marcações agendadas
@@ -748,7 +994,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const scheduledAppointments = allAppointments.filter(apt => apt.status === 'scheduled');
 
     if (scheduledAppointments.length === 0) {
-      toast.warning('Não existem marcações agendadas para exportar nesta semana');
+      toast.warning(tt('Não existem marcações agendadas para exportar nesta semana', 'There are no scheduled appointments to export this week'));
       return;
     }
 
@@ -779,7 +1025,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       'PRODID:-//Junta de Freguesia//Agenda//PT',
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
-      `X-WR-CALNAME:Agenda Semanal - ${getWeekLabel()}`,
+      `X-WR-CALNAME:${tt('Agenda Semanal', 'Weekly Schedule')} - ${getWeekLabel()}`,
     ];
 
     scheduledAppointments.forEach(apt => {
@@ -793,7 +1039,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         `DTSTART:${formatICSDate(aptDate, apt.time)}`,
         `DTEND:${formatICSEndDate(aptDate, apt.time)}`,
         `SUMMARY:${apt.subject} - ${apt.patientName}`,
-        `DESCRIPTION:Utente: ${apt.patientName}\\nNIF: ${apt.patientNIF || 'N/A'}\\nContacto: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\nEstado: ${status}`,
+        `DESCRIPTION:${tt('Utente', 'Patient')}: ${apt.patientName}\\nNIF: ${apt.patientNIF || 'N/A'}\\n${tt('Contacto', 'Contact')}: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\n${tt('Estado', 'Status')}: ${status}`,
         `STATUS:${apt.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,
         'END:VEVENT'
       );
@@ -848,7 +1094,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       for (const slot of timeSlots) {
         const blocked = await isSlotBlocked(testDate, slot);
-        const booked = isSlotBooked(testDate, slot);
+        const booked = getSlotAppointments(testDate, slot).length >= slotCapacity;
         const past = isSlotInPast(testDate, slot);
 
         if (!blocked && !booked && !past) {
@@ -866,7 +1112,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     }
 
     // Se não encontrou nenhuma data disponível, manter a data atual
-    toast.warning('Não foram encontrados horários disponíveis nos próximos 30 dias');
+    toast.warning(tt('Não foram encontrados horários disponíveis nos próximos 30 dias', 'No available slots were found in the next 30 days'));
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -931,20 +1177,20 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       }
       return slots[0];
     });
-  }, [quickDate, appointments, blockedSlots, quickMonthBlocks]);
+  }, [quickDate, appointments, blockedSlots, quickMonthBlocks, slotCapacity]);
 
   // ===== SLIDING WINDOW CACHE: Carregar feriados por ano =====
   // Carrega feriados de um ano se ainda não estiverem em cache
   const loadHolidays = async (year: number) => {
     if (holidaysByYear[year]) {
-      console.log('[DEBUG] loadHolidays skip (cached):', { year });
+      //   console.log('[DEBUG] loadHolidays skip (cached):', { year });
       return;
     }
-    console.log('[DEBUG] loadHolidays start:', { year });
+    // console.log('[DEBUG] loadHolidays start:', { year });
     try {
       const dates = await calendarioApi.listarFeriados(year);
       setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
-      console.log('[DEBUG] loadHolidays done:', { year, count: dates.length });
+      //   console.log('[DEBUG] loadHolidays done:', { year, count: dates.length });
     } catch (error) {
       console.error('[ERROR] loadHolidays:', error);
     }
@@ -960,7 +1206,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   // ===== SLIDING WINDOW: Carregar feriados dos anos das 5 semanas =====
   useEffect(() => {
-    console.log('[DEBUG] holidays sliding window update triggered:', { currentDate });
+    // console.log('[DEBUG] holidays sliding window update triggered:', { currentDate });
 
     // Calcular anos únicos nas 5 semanas (2 antes, atual, 2 depois)
     const currentWeek = currentDate;
@@ -977,7 +1223,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       nextWeek2.getFullYear(),
     ]);
 
-    console.log('[DEBUG] holidays window years:', Array.from(years));
+    // console.log('[DEBUG] holidays window years:', Array.from(years));
 
     // Carregar feriados de cada ano único
     years.forEach(year => loadHolidays(year));
@@ -997,7 +1243,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const handleConfirmQuickAppointment = () => {
     if (!quickTime) {
-      toast.error('Selecione um horário disponível');
+      toast.error(tt('Selecione um horário disponível', 'Select an available time slot'));
       return;
     }
     setQuickDialogOpen(false);
@@ -1009,10 +1255,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       {/* Header - Outside Card */}
       <div className="mb-4 flex flex-col gap-1">
         <div className="mb-1">
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">Agenda Semanal</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">{tt('Agenda Semanal', 'Weekly Schedule')}</h2>
         </div>
         <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-          Clique numa célula vazia para iniciar uma marcação
+          {tt('Clique numa célula vazia para iniciar uma marcação', 'Click an empty cell to start an appointment')}
         </p>
       </div>
 
@@ -1063,7 +1309,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={onBlockSchedule}
               className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
-              Bloquear
+              {tt('Bloquear', 'Block')}
             </Button>
             <Button
               variant="outline"
@@ -1071,7 +1317,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={() => handleQuickDialogToggle(true)}
               className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
             >
-              Nova marcação
+              {tt('Nova marcação', 'New appointment')}
             </Button>
           </div>
         )}
@@ -1087,11 +1333,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             className={`grid grid-cols-6 gap-2 mb-4 border-b border-gray-200 dark:border-gray-700 pr-4`}
             style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
           >
-            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Hora</div>
+            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{tt('Hora', 'Time')}</div>
             {weekDays.map((day, index) => (
               <div key={index} className="text-center">
                 <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {isMobile ? WEEKDAYS_MOBILE[index] : isTablet ? WEEKDAYS_MEDIUM[index] : WEEKDAYS_SHORT[index]}
+                  {isMobile ? weekdaysMobile[index] : isTablet ? weekdaysMedium[index] : weekdaysShort[index]}
                 </div>
                 <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
               </div>
@@ -1113,22 +1359,19 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     {time}
                   </div>
                   {weekDays.map((day, idx) => {
-                    const booked = isSlotBooked(day, time);
+                    const slotAppointments = getSlotAppointments(day, time);
+                    const booked = slotAppointments.length >= slotCapacity;
                     const inPast = isSlotInPast(day, time);
-                    const appointment = getAppointmentForSlot(day, time);
-                    // Verificar se é marcação própria: tem NIF preenchido E corresponde ao utente
-                    // OU está no array appointments (que contém apenas marcações do utente)
+                    const appointment = slotAppointments[0];
                     const isOwn = appointment && (
                       (appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) ||
                       appointments.some(a => a.id === appointment.id)
                     );
-
                     const isBlockedAdmin = isSlotBlockedSync(day, time);
                     const isHolidayDay = isHoliday(day);
-                    // Clientes só podem clicar nas suas próprias marcações
-                    // Admin bloqueado também conta como blocked
-                    const blocked = (booked && isClient && !isOwn) || isBlockedAdmin;
-
+                    const blocked = ((slotAppointments.length > 0) && isClient && !isOwn) || isBlockedAdmin;
+                    const slotId = getSlotId(day, time);
+                    const isActiveHighlight = activeHighlight === slotId;
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
                     const available = isDarkMode
                       ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600 cursor-pointer'
@@ -1140,130 +1383,507 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       ? 'border-gray-800 bg-gray-900/60 text-gray-500 cursor-not-allowed'
                       : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
 
-                    // Estilos: verde para marcações próprias, cinzento para marcações de outros (quando cliente)
-                    // Helper function to get status-based styles
-                    const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
-                      const statusStyles: Record<string, string> = {
-                        'completed': isInteractive
-                          ? 'bg-green-600 text-white border-green-700 hover:bg-green-700'
-                          : 'bg-green-600 text-white border-green-700',
-                        'cancelled': isInteractive
-                          ? 'bg-red-600 text-white border-red-700 hover:bg-red-700'
-                          : 'bg-red-600 text-white border-red-700',
-                        'in-progress': isInteractive
-                          ? 'bg-purple-600 text-white border-purple-700 hover:bg-purple-700'
-                          : 'bg-purple-600 text-white border-purple-700',
-                        'warning': isInteractive
-                          ? 'bg-yellow-600 text-white border-yellow-700 hover:bg-yellow-700'
-                          : 'bg-yellow-600 text-white border-yellow-700',
-                        'no-show': 'bg-[#f97316] text-white border-[#ea580c] cursor-not-allowed',
-                      };
-                      const defaultStyle = isInteractive
-                        ? 'bg-pink-600 text-white border-pink-700 hover:bg-pink-700'
-                        : 'bg-pink-600 text-white border-pink-700';
-                      return statusStyles[status || ''] || defaultStyle;
+                    // Use top-level expandedSlots and isMobile
+                    const isExpanded = expandedSlots[slotId];
+
+                    // Helper: render all mini-cells as clickable buttons and add button
+                    const renderExpandedSlot = () => {
+                      // Only expand to number of appointments + 1 (for '+'), not full slotCapacity
+                      const showAddButton = !booked && !inPast && !blocked && slotAppointments.length < slotCapacity;
+                      return (
+                        <div className="w-full h-full flex flex-col gap-1">
+                          {slotAppointments.map((splitAppointment, splitIndex) => {
+                            const splitIsOwn =
+                              (splitAppointment.patientNIF && currentUserNif && String(splitAppointment.patientNIF) === String(currentUserNif)) ||
+                              appointments.some(a => a.id === splitAppointment.id);
+                            const displayText = splitAppointment.status === 'no-show'
+                              ? 'Faltou'
+                              : (isClient && splitIsOwn ? tt('Sua marcação', 'Your appointment') : splitAppointment.patientName);
+                            // Get status style for each mini-cell
+                            const isInteractive = !!(isClient && splitIsOwn);
+                            const miniCellStatusClass = getMiniCellStatusStyle(splitAppointment.status, isInteractive);
+                            return (
+                              <button
+                                key={`${splitAppointment.id}-${splitIndex}`}
+                                className={`text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900/40 transition ${miniCellStatusClass}`}
+                                style={{ minHeight: '38px', height: '38px' }}
+                                aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  onViewAppointment(splitAppointment);
+                                }}
+                                type="button"
+                              >
+                                <span className="truncate block">{displayText}</span>
+                              </button>
+                            );
+                          })}
+                          {showAddButton && (
+                            <button
+                              key={`add-${slotAppointments.length}`}
+                              className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                              style={{ minHeight: '38px', height: '38px' }}
+                              onClick={e => {
+                                e.stopPropagation();
+                                onCreateAppointment(day, time);
+                              }}
+                              aria-label={tt('Criar nova marcação', 'Create new appointment')}
+                            >
+                              <PlusIcon className="w-5 h-5" />
+                            </button>
+                          )}
+                        </div>
+                      );
                     };
 
-                    // Determine appointment styles based on state
-                    let appointmentStyles: string;
-                    if (appointment?.status === 'reserved') {
-                      appointmentStyles = isDarkMode
-                        ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed';
-                    } else if (blocked) {
-                      appointmentStyles = isDarkMode
-                        ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                        : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
-                    } else {
-                      const isInteractive = !!(isClient && isOwn);
-                      appointmentStyles = getStatusStyle(appointment?.status, isInteractive);
+                    // === UNIFIED CLIENT UI ===
+                    if (isClient) {
+                      if (slotCapacity === 1) {
+                        if (appointment) {
+                          if (appointment.status === 'reserved') {
+                            return (
+                              <div key={idx} id={slotId} className={`${base} bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                                <span className="text-[10px] font-medium truncate leading-none px-0.5">{tt('Reservado', 'Reserved')}</span>
+                              </div>
+                            );
+                          }
+                          if (isOwn) {
+                            return (
+                              <button key={idx} id={slotId} onClick={() => onViewAppointment(appointment)} title={tt('Clique para ver detalhes', 'Click to view details')} className={`${base} ${getStatusStyle(appointment.status, true)} flex items-center justify-center cursor-pointer min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                                <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                                  {tt('Sua marcação', 'Your appointment')}
+                                </span>
+                              </button>
+                            );
+                          } else {
+                            return (
+                              <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              </div>
+                            );
+                          }
+                        }
+                        if (isBlockedAdmin) {
+                          if (inPast) return <div key={idx} className={`${base} ${pastSlot}`}></div>;
+                          return (
+                            <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                            </div>
+                          );
+                        }
+                        return (
+                          <button key={idx} id={slotId} disabled={inPast || isHolidayDay} onClick={() => handleSlotClick(day, time)} title={tt('Clique para marcar', 'Click to book')} className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}></button>
+                        );
+                      } else {
+                        // slotCapacity > 1
+                        const ignoreStates = ['reserved', 'cancelled', 'no-show'];
+                        const ownApt = slotAppointments.find(apt => (
+                          apt.patientNIF &&
+                          currentUserNif &&
+                          String(apt.patientNIF) === String(currentUserNif) &&
+                          !ignoreStates.includes((apt.status || '').toLowerCase())
+                        ) || (
+                            appointments.some(a => a.id === apt.id) && !ignoreStates.includes((apt.status || '').toLowerCase())
+                          ));
+                        if (ownApt) {
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => onViewAppointment(ownApt)}
+                              className={`${base} ${getStatusStyle(ownApt.status, true)} flex items-center justify-center min-h-[40px] cursor-pointer ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              title={tt('Clique para ver detalhes', 'Click to view details')}
+                            >
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                                {tt('Sua marcação', 'Your appointment')}
+                              </span>
+                            </button>
+                          );
+                        } else if (slotAppointments.length === slotCapacity || isBlockedAdmin) {
+                          return (
+                            <div
+                              key={idx}
+                              id={slotId}
+                              className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            >
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <button
+                              key={idx}
+                              id={slotId}
+                              onClick={() => handleSlotClick(day, time)}
+                              disabled={inPast || isHolidayDay}
+                              title={tt('Clique para marcar', 'Click to book')}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : available} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] flex items-center justify-center`}
+                            >
+                            </button>
+                          );
+                        }
+                      }
+                    }
+                    // === END UNIFIED CLIENT UI ===
+
+                    // Single-capacity slot: keep default button
+                    if (slotCapacity === 1) {
+                      // ...existing code for single slot...
+                      // BALNEARIO: tornar marcações sempre clicáveis para editar (staff), mas clientes só podem editar a sua
+                      let appointmentStyles: string;
+                      if (appointment?.status === 'reserved') {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed';
+                      } else if (blocked) {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      } else if (appointment && appointment.status) {
+                        // Colorir pelo estado da marcação
+                        const canEdit = !isClient || appointments.some(a => a.id === appointment.id);
+                        appointmentStyles = getStatusStyle(appointment.status, canEdit);
+                      } else {
+                        appointmentStyles = available;
+                      }
+                      const getSlotTooltip = (): string => {
+                        if (!appointment) {
+                          if (isHolidayDay) return tt('Feriado', 'Holiday');
+                          return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
+                        }
+                        if (appointment.status === 'reserved') {
+                          return tt('Slot reservado - clique para atualizar', 'Reserved slot - click to refresh');
+                        }
+                        if (blocked) {
+                          return tt('Horário ocupado - clique para atualizar', 'Occupied slot - click to refresh');
+                        }
+                        return tt('Clique para editar', 'Click to edit');
+                      };
+                      // BALNEARIO: staff pode editar qualquer marcação, cliente só a sua
+                      if (
+                        appointment &&
+                        appointment.status !== 'reserved' &&
+                        appointment.status !== 'cancelled' &&
+                        (
+                          appointmentType !== 'BALNEARIO' ||
+                          (!isClient || ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id)))
+                        )
+                      ) {
+                        return (
+                          <button
+                            key={idx}
+                            id={slotId}
+                            onClick={() => onViewAppointment(appointment)}
+                            title={getSlotTooltip()}
+                            className={`${base} ${appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                          >
+                            <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                              {isClient && appointmentType === 'BALNEARIO' && ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id))
+                                ? tt('Sua marcação', 'Your appointment')
+                                : appointment.patientName}
+                            </span>
+                          </button>
+                        );
+                      }
+                      // Caso contrário, mantém comportamento padrão
+                      return (
+                        <button
+                          key={idx}
+                          id={slotId}
+                          onClick={() => handleSlotClick(day, time)}
+                          title={getSlotTooltip()}
+                          className={`${base} ${inPast && !appointment
+                            ? pastSlot
+                            : isHolidayDay && !appointment
+                              ? holidaySlot
+                              : booked
+                                ? appointmentStyles
+                                : available
+                            } ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                        >
+                          {(() => {
+                            if (isBlockedAdmin) {
+                              if (inPast) return null;
+                              return (
+                                <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
+                                  <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
+                                  {!isMobile && tt('Indisponível', 'Unavailable')}
+                                </div>
+                              );
+                            }
+                            if (appointment?.status === 'reserved') {
+                              return (
+                                <div className="flex items-center justify-center w-full h-full">
+                                  <span className="text-[10px] font-medium truncate leading-none px-0.5">
+                                    {tt('Reservado', 'Reserved')}
+                                  </span>
+                                </div>
+                              );
+                            }
+                            if (slotAppointments.length > 0 && !blocked) {
+                              const apt = slotAppointments[0];
+                              const isOwn = (apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id);
+                              return (
+                                <div className="w-full h-full flex items-center">
+                                  <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                                    {isClient && isOwn ? tt('Sua marcação', 'Your appointment') : apt.patientName}
+                                  </span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </button>
+                      );
                     }
 
-                    // Compute tooltip title in a separate statement to avoid nested ternary
-                    const getSlotTooltip = (): string => {
-                      if (!appointment) {
-                        if (isHolidayDay) return 'Feriado';
-                        return inPast ? 'Horário no passado' : 'Clique para marcar';
-                      }
-                      if (appointment.status === 'reserved') {
-                        return 'Slot reservado - clique para atualizar';
-                      }
-                      if (blocked) {
-                        return 'Horário ocupado - clique para atualizar';
-                      }
-                      if (isClient && isOwn) {
-                        return 'Sua marcação - clique para ver detalhes';
-                      }
-                      if (inPast) {
-                        return 'Marcação histórica - clique para ver detalhes';
-                      }
-                      return 'Clique para ver detalhes';
-                    };
-
-                    // Gerar ID estável para este slot
-                    const slotId = getSlotId(day, time);
-                    const isActiveHighlight = activeHighlight === slotId;
-
-                    return (
-                      <button
-                        key={idx}
-                        id={slotId}
-                        onClick={() => handleSlotClick(day, time)}
-                        disabled={(inPast && !appointment) || (isHolidayDay && !appointment)}
-                        style={appointment?.status === 'no-show' ? { backgroundColor: '#f97316', borderColor: '#ea580c', color: 'white' } : {}}
-                        title={getSlotTooltip()}
-                        className={`${base} ${inPast && !appointment
-                          ? pastSlot
-                          : isHolidayDay && !appointment
-                            ? holidaySlot
-                            : booked
-                              ? appointmentStyles
-                              : available
-                          } ${isActiveHighlight ? 'slot-highlight' : ''}`}
-                      >
-                        {(() => {
-                          // Render blocked status (Administrative)
-                          if (isBlockedAdmin) {
-                            // Se estiver no passado, não mostrar "Indisponível", apenas estilo desativado (retornar null deixa cair no default)
-                            if (inPast) return null;
-
-                            return (
-                              <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
-                                <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
-                                {!isMobile && 'Indisponível'}
+                    // Multi-capacity slot: expand inline on hover (desktop), tap to expand (mobile)
+                    if (slotCapacity > 1 && slotAppointments.length > 0) {
+                      if (!isMobile) {
+                        // Desktop: expand inline on hover (usando estado global hoveredSlot)
+                        const expanded = hoveredSlot === slotId;
+                        // Height: number of appointments + 1 (if add button), each 38px + gap
+                        return (
+                          <div
+                            key={idx}
+                            id={slotId}
+                            className={`${base} cursor-pointer ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            onMouseEnter={() => setHoveredSlot(slotId)}
+                            onMouseLeave={() => setHoveredSlot(null)}
+                            onClick={() => handleSlotClick(day, time)}
+                            style={{ minHeight: expanded ? `${(slotAppointments.length + (!booked && !inPast && !blocked && slotAppointments.length < slotCapacity ? 1 : 0)) * 40 + 12}px` : undefined, zIndex: expanded ? 10 : undefined, position: 'relative' }}
+                          >
+                            {expanded ? (
+                              <div className="w-full h-full flex flex-col gap-1">
+                                {slotAppointments.map((apt) => {
+                                  const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                  if (apt.status === 'reserved') {
+                                    return (
+                                      <span
+                                        key={apt.id}
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                        style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`, background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (onRefresh) onRefresh();
+                                        }}
+                                      >
+                                        {tt('Reservado', 'Reserved')}
+                                      </span>
+                                    );
+                                  }
+                                  // ...restante lógica para outros estados...
+                                  const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                  return (
+                                    <span
+                                      key={apt.id}
+                                      className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
+                                      style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%` }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewAppointment(apt);
+                                      }}
+                                    >
+                                      {apt.patientName}
+                                    </span>
+                                  );
+                                })}
+                                {/* Botão de adicionar, se aplicável */}
+                                {!booked && !inPast && !blocked && slotAppointments.length < slotCapacity && (
+                                  <button
+                                    key={`add-${slotAppointments.length}`}
+                                    className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                                    style={{ minHeight: '38px', height: '38px' }}
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      onCreateAppointment(day, time);
+                                    }}
+                                    aria-label={tt('Criar nova marcação', 'Create new appointment')}
+                                  >
+                                    <PlusIcon className="w-5 h-5" />
+                                  </button>
+                                )}
                               </div>
-                            );
-                          }
-
-                          // Render reserved status
-                          if (appointment?.status === 'reserved') {
-                            return (
-                              <div className="flex items-center justify-center w-full h-full">
-                                <span className="text-[10px] font-medium truncate leading-none px-0.5">
-                                  Reservado
-                                </span>
+                            ) : (
+                              (() => {
+                                const total = slotAppointments.length;
+                                if (total === 1) {
+                                  const apt = slotAppointments[0];
+                                  const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                  if (apt.status === 'reserved') {
+                                    return (
+                                      <span
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                        style={{ height: '100%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (onRefresh) onRefresh();
+                                        }}
+                                      >
+                                        {tt('Reservado', 'Reserved')}
+                                      </span>
+                                    );
+                                  }
+                                  const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1">
+                                      <span
+                                        className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
+                                        style={{ height: '100%' }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onViewAppointment(apt);
+                                        }}>
+                                        {apt.patientName}
+                                      </span>
+                                    </div>
+                                  );
+                                } else if (total === 2) {
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{ height: '100%' }}>
+                                      {slotAppointments.slice(0, 2).map((apt) => {
+                                        const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        if (apt.status === 'reserved') {
+                                          return (
+                                            <span
+                                              key={apt.id}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                              style={{ height: '50%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onRefresh) onRefresh();
+                                              }}
+                                            >
+                                              {tt('Reservado', 'Reserved')}
+                                            </span>
+                                          );
+                                        }
+                                        const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                        return (
+                                          <span
+                                            key={apt.id}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
+                                            style={{ height: '50%' }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onViewAppointment(apt);
+                                            }}
+                                          >
+                                            {apt.patientName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                } else if (total > 2) {
+                                  return (
+                                    <div className="flex flex-col items-stretch w-full h-full gap-1" style={{ height: '100%' }}>
+                                      {slotAppointments.slice(0, 2).map((apt) => {
+                                        const isInteractive = !!(isClient && ((apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id)));
+                                        if (apt.status === 'reserved') {
+                                          return (
+                                            <span
+                                              key={apt.id}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
+                                              style={{ height: '33.33%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (onRefresh) onRefresh();
+                                              }}
+                                            >
+                                              {tt('Reservado', 'Reserved')}
+                                            </span>
+                                          );
+                                        }
+                                        const miniCellStatusClass = getMiniCellStatusStyle(apt.status, isInteractive);
+                                        return (
+                                          <span
+                                            key={apt.id}
+                                            className={`truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center cursor-pointer hover:opacity-90 transition-opacity ${miniCellStatusClass}`}
+                                            style={{ height: '33.33%' }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onViewAppointment(apt);
+                                            }}
+                                          >
+                                            {apt.patientName}
+                                          </span>
+                                        );
+                                      })}
+                                      <span
+                                        className="text-xs text-gray-400 flex items-center justify-center font-semibold bg-white/10 dark:bg-black/10 rounded flex-1 min-h-0"
+                                        style={{ height: '33.33%' }}
+                                      >
+                                        +{slotAppointments.length - 2} {tt('mais', 'more')}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()
+                            )}
+                          </div>
+                        );
+                      } else {
+                        // Mobile: tap to expand/collapse (mantém comportamento anterior)
+                        // Only disable if slot is empty and inPast/holiday, not if it has appointments
+                        const shouldDisable = (slotAppointments.length === 0) && (inPast || isHolidayDay) || blocked;
+                        return (
+                          <div key={idx} className="relative">
+                            <button
+                              id={slotId}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              disabled={shouldDisable}
+                              aria-label={tt('Expandir marcações', 'Expand appointments')}
+                              onClick={() => handleExpandSlot(slotId)}
+                            >
+                              <div className="flex flex-col gap-0.5 items-stretch w-full">
+                                {slotAppointments.slice(0, 2).map(apt => (
+                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
+                                ))}
+                                {slotAppointments.length > 2 && (
+                                  <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
+                                )}
                               </div>
-                            );
-                          }
-
-                          // Render appointment details if not blocked
-                          if (appointment && !blocked) {
-                            const displayText = appointment.status === 'no-show'
-                              ? 'Faltou'
-                              : (isClient && isOwn ? 'Sua marcação' : appointment.patientName);
-
-                            return (
-                              <div className="flex items-center gap-1 text-left truncate font-semibold text-sm leading-tight">
-                                <UserIcon className="w-3.5 h-3.5 text-white" />
-                                <span className="truncate">{displayText}</span>
+                            </button>
+                            {isExpanded && (
+                              <div
+                                className="absolute z-10 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg p-2 mt-1"
+                                style={{ minHeight: `${(slotAppointments.length + ((!booked && !inPast && !blocked && slotAppointments.length < slotCapacity) ? 1 : 0)) * 40 + 12}px` }}
+                              >
+                                {renderExpandedSlot()}
                               </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
-                      </button>
-                    );
+                            )}
+                          </div>
+                        );
+                      }
+                    }
+                    // Multi-capacity slot but empty: behave like single slot (no expansion, direct create)
+                    if (slotCapacity > 1 && slotAppointments.length === 0) {
+                      // Sempre mostrar célula grande única, nunca mini-células, mesmo para utente
+                      let appointmentStyles: string;
+                      if (isBlockedAdmin) {
+                        appointmentStyles = isDarkMode
+                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                      } else {
+                        appointmentStyles = available;
+                      }
+                      const getSlotTooltip = (): string => {
+                        if (isHolidayDay) return tt('Feriado', 'Holiday');
+                        return inPast ? tt('Horário no passado', 'Past time slot') : tt('Clique para marcar', 'Click to book');
+                      };
+                      return (
+                        <button
+                          key={idx}
+                          id={slotId}
+                          onClick={() => handleSlotClick(day, time)}
+                          title={getSlotTooltip()}
+                          className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''} min-h-[40px] w-full h-full cursor-pointer flex items-center justify-center`}
+                        >
+                          <span className="sr-only">Criar Marcação</span>
+                        </button>
+                      );
+                    }
+                    // fallback
+                    return null;
                   })}
                 </div>
               ))}
@@ -1274,17 +1894,88 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       <div className="flex justify-end mt-4">
         <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
           <DownloadIcon className="w-4 h-4" />
-          Exportar Agenda
+          {tt('Exportar Agenda', 'Export schedule')}
         </Button>
       </div>
+
+      <Dialog
+        open={slotNavigatorOpen}
+        onOpenChange={(open) => {
+          setSlotNavigatorOpen(open);
+          if (!open) {
+            setSlotNavigator(null);
+            setSlotNavigatorIndex(0);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>{tt('Navegar marcações do slot', 'Browse slot appointments')}</DialogTitle>
+          </DialogHeader>
+
+          {slotNavigator && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {slotNavigator.date.toLocaleDateString('pt-PT')} às {slotNavigator.time}
+              </p>
+
+              <div className="flex items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSlotNavigatorIndex((prev) => Math.max(0, prev - 1))}
+                  disabled={slotNavigatorIndex === 0}
+                  aria-label={tt('Ver sub-slot anterior', 'View previous sub-slot')}
+                >
+                  ←
+                </Button>
+
+                <div className="text-center flex-1">
+                  <p className="text-sm font-medium">
+                    {tt('Sub-slot', 'Sub-slot')} {slotNavigatorIndex + 1} {tt('de', 'of')} {slotNavigator.slots.length}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {slotNavigator.slots[slotNavigatorIndex]
+                      ? `${tt('Marcado para', 'Scheduled for')} ${slotNavigator.slots[slotNavigatorIndex]?.patientName}`
+                      : tt('Disponível para nova marcação', 'Available for a new appointment')}
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSlotNavigatorIndex((prev) => Math.min(slotNavigator.slots.length - 1, prev + 1))}
+                  disabled={slotNavigatorIndex === slotNavigator.slots.length - 1}
+                  aria-label={tt('Ver sub-slot seguinte', 'View next sub-slot')}
+                >
+                  →
+                </Button>
+              </div>
+
+              <Button
+                type="button"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={handleSlotNavigatorAction}
+                aria-label={slotNavigator.slots[slotNavigatorIndex]
+                  ? tt('Abrir marcação selecionada', 'Open selected appointment')
+                  : tt('Criar marcação no sub-slot selecionado', 'Create appointment in selected sub-slot')}
+              >
+                {slotNavigator.slots[slotNavigatorIndex]
+                  ? tt('Abrir marcação', 'Open appointment')
+                  : tt('Criar marcação neste sub-slot', 'Create appointment in this sub-slot')}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de seleção de formato de exportação */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
         <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl">Exportar Agenda</DialogTitle>
+            <DialogTitle className="text-xl">{tt('Exportar Agenda', 'Export schedule')}</DialogTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha o formato de exportação da agenda semanal
+              {tt('Escolha o formato de exportação da agenda semanal', 'Choose the weekly schedule export format')}
             </p>
           </DialogHeader>
           <div className="grid gap-3 mt-4">
@@ -1298,7 +1989,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">CSV</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Formato de texto compatível com Excel e outras aplicações</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Formato de texto compatível com Excel e outras aplicações', 'Text format compatible with Excel and other apps')}</div>
               </div>
             </Button>
 
@@ -1314,7 +2005,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">Excel</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Ficheiro formatado para Microsoft Excel</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Ficheiro formatado para Microsoft Excel', 'File formatted for Microsoft Excel')}</div>
               </div>
             </Button>
 
@@ -1330,7 +2021,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               </div>
               <div className="text-left">
                 <div className="font-medium">PDF</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Documento para impressão ou visualização</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Documento para impressão ou visualização', 'Document for printing or viewing')}</div>
               </div>
             </Button>
 
@@ -1345,8 +2036,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                 </svg>
               </div>
               <div className="text-left">
-                <div className="font-medium">iCalendar - Apenas marcações agendadas (.ics)</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Google Calendar, Outlook</div>
+                <div className="font-medium">{tt('iCalendar - Apenas marcações agendadas (.ics)', 'iCalendar - Scheduled appointments only (.ics)')}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Google Calendar, Outlook', 'Google Calendar, Outlook')}</div>
               </div>
             </Button>
           </div>
@@ -1357,9 +2048,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         {/* CORREÇÃO 3: DialogContent como card */}
         <DialogContent className="max-w-5xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Criar nova marcação</DialogTitle>
+            <DialogTitle className="text-2xl">{tt('Criar nova marcação', 'Create new appointment')}</DialogTitle>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha rapidamente um dia específico e um horário disponível
+              {tt('Escolha rapidamente um dia específico e um horário disponível', 'Quickly choose a specific day and an available time')}
             </p>
           </DialogHeader>
           <div className="space-y-4">
@@ -1369,7 +2060,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Ano (Select/Dropdown) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ano</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Ano', 'Year')}</Label>
                 <Select
                   value={String(quickYear)}
                   onValueChange={(value) => setQuickYear(Number(value))}
@@ -1389,7 +2080,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Mês */}
               <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Mês</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Mês', 'Month')}</Label>
                 <Select
                   value={String(quickMonth)}
                   onValueChange={(value) => setQuickMonth(Number(value))}
@@ -1402,7 +2093,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       const monthDate = new Date(quickYear, index, 1);
                       return (
                         <SelectItem key={index} value={String(index)}>
-                          {monthDate.toLocaleDateString('pt-PT', { month: 'long' })}
+                          {monthDate.toLocaleDateString(currentLocale, { month: 'long' })}
                         </SelectItem>
                       );
                     })}
@@ -1412,7 +2103,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Dia (Com Scrollbar) - Apenas dias de semana */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Dia', 'Day')}</Label>
                 <Select
                   value={String(quickDay)}
                   onValueChange={(value) => setQuickDay(Number(value))}
@@ -1446,14 +2137,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Horário (Com Scrollbar) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
+                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Horário', 'Time')}</Label>
                 <Select
                   value={quickTime}
                   onValueChange={setQuickTime}
                   disabled={!quickSlots.length}
                 >
                   <SelectTrigger className="min-w-[160px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
-                    <SelectValue placeholder="Sem horários disponíveis" />
+                    <SelectValue placeholder={tt('Sem horários disponíveis', 'No available time slots')} />
                   </SelectTrigger>
                   {/* CORREÇÃO 2: Scrollbar para os horários */}
                   <SelectContent className={selectMenuClassName} style={selectMenuStyle}>
@@ -1473,12 +2164,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               onClick={handleConfirmQuickAppointment}
               disabled={!quickTime}
             >
-              Escolher
+              {tt('Escolher', 'Choose')}
             </Button>
 
             {!quickSlots.length && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Não existem horários disponíveis para esta data.
+                {tt('Não existem horários disponíveis para esta data.', 'There are no available time slots for this date.')}
               </p>
             )}
           </div>

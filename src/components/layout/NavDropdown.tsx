@@ -6,10 +6,11 @@ interface NavDropdownProps {
   items: Array<{ id: string; label: string }>;
   isActive: boolean;
   onSelect: (id: string) => void;
+  onLabelClick?: () => void;
   className?: string;
 }
 
-export function NavDropdown({ label, items, isActive, onSelect, className = '' }: NavDropdownProps) {
+export function NavDropdown({ label, items, isActive, onSelect, onLabelClick, className = '' }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -60,9 +61,19 @@ export function NavDropdown({ label, items, isActive, onSelect, className = '' }
           ? 'bg-purple-600 hover:bg-purple-700 text-white'
           : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((prev) => !prev)}
       >
-        {label}
+        <span
+          className={onLabelClick ? 'cursor-pointer' : undefined}
+          onClick={(event) => {
+            if (!onLabelClick) return;
+            event.stopPropagation();
+            onLabelClick();
+            setIsOpen(false);
+          }}
+        >
+          {label}
+        </span>
         <ChevronDownIcon
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />

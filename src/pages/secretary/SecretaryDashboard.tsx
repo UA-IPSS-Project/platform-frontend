@@ -3,10 +3,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { NavDropdown } from '../../components/layout/NavDropdown';
 import { NotificationsPage } from '../NotificationsPage';
+import { SecretaryAdminArea } from './SecretaryAdminArea';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
 import { DocumentsSearchPage } from './DocumentsSearchPage';
+import { SecretaryRequisitionsPage } from './SecretaryRequisitionsPage';
 import SecretaryHome from '../../components/secretary/SecretaryHome';
 import { AppointmentDialog } from '../../components/secretary/AppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
@@ -14,8 +16,9 @@ import { DayScheduleDialog } from '../../components/secretary/DayScheduleDialog'
 import { Sidebar } from '../../components/layout/Sidebar';
 import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleDialog';
 import { UserManagement } from '../../components/secretary/UserManagement';
-import { ProfilePage } from '../ProfilePage';
+import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
+import { ReportsPage } from './ReportsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -23,7 +26,19 @@ import { Appointment, ViewType } from '../../types';
 import { mapApiToAppointment, getCurrentActivity } from '../../utils/appointmentUtils';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
+import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { useTranslation } from 'react-i18next';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 interface SecretaryDashboardProps {
   user: {
@@ -39,6 +54,7 @@ interface SecretaryDashboardProps {
 
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
 
   const {
     appointments,
@@ -91,10 +107,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     sessionStorage.setItem('secretary_currentDate', currentDate.toISOString());
   }, [currentDate]);
-  const [viewHistory, setViewHistory] = useState<ViewType[]>(() => {
-    const saved = localStorage.getItem('secretaryDashboardView');
-    return saved ? [saved as ViewType] : ['home'];
-  });
+  const [viewHistory, setViewHistory] = usePersistentState<ViewType[]>(
+    'secretaryDashboardViewHistory',
+    () => {
+      const legacySaved = localStorage.getItem('secretaryDashboardView');
+      return legacySaved ? [legacySaved as ViewType] : ['home'];
+    }
+  );
 
   const currentView = viewHistory[viewHistory.length - 1] || 'home';
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -103,8 +122,31 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [highlightedSlot, setHighlightedSlot] = useState<{ date: Date; time: string } | null>(null);
   const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
+  const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+
+  const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
+    setProfileIsDirty(isDirty);
+  }, []);
+
   const navigateTo = (view: ViewType) => {
-    setViewHistory(prev => [...prev, view]);
+    if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+      setPendingNavigation(view);
+      setShowLeaveConfirm(true);
+    } else {
+      setViewHistory(prev => [...prev, view]);
+    }
+  };
+
+  const confirmLeaveProfile = () => {
+    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+    setProfileIsDirty(false);
+    setShowLeaveConfirm(false);
+    if (pendingNavigation) {
+      setViewHistory(prev => [...prev, pendingNavigation]);
+      setPendingNavigation(null);
+    }
   };
 
   const navigateBack = () => {
@@ -154,10 +196,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   useEffect(() => {
     if (currentView === 'appointments') refreshCurrentWeek(currentDate);
   }, [currentView, refreshCurrentWeek, currentDate]);
-
-  useEffect(() => {
-    localStorage.setItem('secretaryDashboardView', currentView);
-  }, [currentView]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -237,22 +275,23 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const SecretaryNavigation = (
     <>
       <NavDropdown
-        label="Requisições"
+        label={t('sidebar.requisitions')}
         items={[
-          { id: 'material', label: 'Material' },
-          { id: 'manutencao', label: 'Manutenção' },
-          { id: 'transportes', label: 'Transporte' },
-          { id: 'urgente', label: 'Prioridade Alta' },
+          { id: 'material', label: t('sidebar.material') },
+          { id: 'manutencao', label: t('sidebar.maintenance') },
+          { id: 'transportes', label: t('sidebar.transport') },
+          { id: 'urgente', label: t('sidebar.highPriority') },
         ]}
         isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('requisitions')}
       />
 
       <NavDropdown
-        label="Valências"
+        label={t('sidebar.services')}
         items={[
-          { id: 'balneario', label: 'Balneário' },
-          { id: 'escola', label: 'Escola' },
+          { id: 'balneario', label: t('sidebar.balneario') },
+          { id: 'escola', label: t('sidebar.school') },
         ]}
         isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
@@ -264,13 +303,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('appointments')}
         className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Marcações
+        {t('sidebar.appointments')}
       </Button>
 
       <NavDropdown
-        label="Candidaturas"
+        label={t('sidebar.applications')}
         items={[
-          { id: 'creche', label: 'Creche' },
+          { id: 'creche', label: t('sidebar.creche') },
           { id: 'catl', label: 'CATL' },
           { id: 'erpi', label: 'ERPI' },
         ]}
@@ -284,16 +323,19 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onClick={() => navigateTo('reports')}
         className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
       >
-        Relatórios
+        {t('sidebar.reports')}
       </Button>
 
-      <Button
-        variant={currentView === 'management' ? 'default' : 'ghost'}
-        onClick={() => navigateTo('management')}
-        className={`text-sm ${currentView === 'management' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-      >
-        Gestão
-      </Button>
+      <NavDropdown
+        label={t('sidebar.management')}
+        items={[
+          { id: 'management', label: t('userManagement.title') },
+          { id: 'admin-area', label: t('userManagement.title2') },
+        ]}
+        isActive={['management', 'admin-area'].includes(currentView)}
+        onSelect={(id) => navigateTo(id as ViewType)}
+        onLabelClick={() => navigateTo('management')}
+      />
     </>
   );
 
@@ -304,8 +346,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onToggleDarkMode={onToggleDarkMode}
         onLogout={onLogout}
         onMenuToggle={() => setSidebarOpen(true)}
-        roleTitle="Secretaria"
+        roleTitle={t('dashboard.secretary')}
         navigationContent={SecretaryNavigation}
+        onNavigateToProfile={() => navigateTo('profile')}
+        onNavigateToSettings={() => navigateTo('settings')}
         notifications={notifications}
         unreadCount={unreadCount}
         showNotifications={showNotifications}
@@ -394,16 +438,36 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 isDarkMode={isDarkMode}
               />
+            ) : ['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
+              <SecretaryRequisitionsPage
+                isDarkMode={isDarkMode}
+                currentUserId={authUser?.id || 0}
+                initialTipo={
+                  currentView === 'material'
+                    ? 'MATERIAL'
+                    : currentView === 'manutencao'
+                      ? 'MANUTENCAO'
+                      : currentView === 'transportes'
+                        ? 'TRANSPORTE'
+                        : undefined
+                }
+                initialPrioridade={currentView === 'urgente' ? 'URGENTE' : undefined}
+              />
             ) : currentView === 'management' ? (
               <UserManagement
                 isDarkMode={isDarkMode}
               />
+            ) : currentView === 'admin-area' ? (
+              <div className="py-8">
+                <SecretaryAdminArea />
+              </div>
             ) : currentView === 'profile' ? (
               <ProfilePage
                 user={{ id: authUser?.id || 0, ...userData }}
                 onBack={navigateBack}
                 onUpdateUser={handleUpdateUser}
                 isDarkMode={isDarkMode}
+                onDirtyChange={handleProfileDirtyChange}
               />
             ) : currentView === 'notificacoes' ? (
               <NotificationsPage
@@ -456,6 +520,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   },
                 }}
               />
+            ) : currentView === 'reports' ? (
+              <ReportsPage />
             ) : (
               renderPlaceholder(currentView)
             )}
@@ -518,6 +584,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           appointments={appointments}
           onCreateAppointment={handleCreateAppointment}
           onViewAppointment={handleViewAppointment}
+          appointmentType="SECRETARIA"
         />
       )}
 
@@ -533,6 +600,23 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           }}
         />
       )}
+
+      <AlertDialog open={showLeaveConfirm} onOpenChange={(open) => { if (!open) setShowLeaveConfirm(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterações por guardar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem mudanças por guardar. Deseja descartá-las?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

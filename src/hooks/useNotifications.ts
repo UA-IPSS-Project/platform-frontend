@@ -22,10 +22,18 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         setNotifications(prev => [notificacao, ...prev]);
         setUnreadCount(prev => prev + 1);
 
-        toast.info(notificacao.titulo, {
-            description: notificacao.mensagem,
-            duration: 5000,
-        });
+        const isOneDayReminder = notificacao.tipo === 'LEMBRETE'
+            && notificacao.metadata?.notificationSubtype === 'REMINDER_1_DAY';
+
+        toast.info(
+            isOneDayReminder ? 'Lembrete de Marcação' : notificacao.titulo,
+            {
+                description: isOneDayReminder
+                    ? `Tem uma marcação em 1 dia. ${notificacao.mensagem}`
+                    : notificacao.mensagem,
+                duration: isOneDayReminder ? 7000 : 5000,
+            }
+        );
 
         // Refresh appointments after a small delay to allow backend transaction to commit
         if (onRefreshNeeded) {
@@ -36,7 +44,9 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     // In Spring, the client should always subscribe to /user/queue/... 
     // and Spring will automatically route it using the authenticated Principal.
     const topic = userEmail ? `/user/queue/notifications` : null;
-    useWebSocket('ws://localhost:8080/ws', topic, onNotificationReceived);
+    const wsUrl = import.meta.env.VITE_WS_URL
+        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+    useWebSocket(wsUrl, topic, onNotificationReceived);
 
     useEffect(() => {
         carregarNotificacoes();

@@ -15,6 +15,7 @@ import { Toaster } from 'sonner';
 import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { LanguageToggle } from './components/shared/LanguageToggle';
 
 function App() {
   const getInitialTheme = () => {
@@ -43,6 +44,27 @@ function App() {
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
 
+  // CSRF Token Preflight: Generate XSRF-TOKEN cookie on app load
+  // This ensures the token is available for subsequent POST requests (e.g., login)
+  // Runs once on component mount
+  useEffect(() => {
+    const generateCsrfToken = async () => {
+      try {
+        await fetch('/api/auth/me', {
+          credentials: 'include',
+          method: 'GET',
+        });
+        console.debug('[CSRF] Preflight GET successful - XSRF-TOKEN cookie generated');
+      } catch (error) {
+        // Silently ignore errors - token generation is a best-effort operation
+        // User may not be authenticated yet, which is fine
+        console.debug('[CSRF] Preflight GET failed (expected if not authenticated):', error);
+      }
+    };
+
+    generateCsrfToken();
+  }, []); // Empty dependency array: run once on mount
+
   // Protected Route Component
   const ProtectedRoute = ({ children }: { children: any }) => {
     if (isLoading) return null;
@@ -52,8 +74,13 @@ function App() {
     }
 
     if (user && !user.active) {
-      // If a Staff member is somehow logged in but inactive (e.g. waiting for approval),
-      // show a specific message instead of redirecting to set-password
+      // Two inactive scenarios:
+      // 1) First login with temporary password -> force password setup
+      // 2) Self-registered employee pending secretary approval -> show pending message
+      if (user.requiresPasswordSetup) {
+        return <Navigate to="/set-password" replace />;
+      }
+
       if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA', 'ADMIN'].includes(user.role)) {
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
@@ -78,7 +105,7 @@ function App() {
         );
       }
 
-      // For Utentes (or others), redirect to set-password/terms
+      // For non-staff users, inactive means first-login completion.
       return <Navigate to="/set-password" replace />;
     }
 
@@ -108,17 +135,25 @@ function App() {
           {/* Theme Toggle - Only show specific pages or always? Keeping logic: not on dashboard if dashboard handles it */}
           {/* Actually dashboards have their own toggles often, but global one is useful outside */}
           {(!isAuthenticated || location.pathname === '/set-password') && (
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="absolute top-6 right-6 z-50 bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <Moon className="w-5 h-5 text-purple-600" />
+            <div className="absolute top-6 right-6 z-50 flex items-center gap-2">
+              {(location.pathname === '/login' || location.pathname === '/register') && (
+                <LanguageToggle
+                     variant="full"
+                  className="bg-white dark:bg-gray-800 px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                />
               )}
-            </button>
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="bg-white dark:bg-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? (
+                  <Sun className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <Moon className="w-5 h-5 text-purple-600" />
+                )}
+              </button>
+            </div>
           )}
 
           <div className="relative z-10 min-h-screen w-full">

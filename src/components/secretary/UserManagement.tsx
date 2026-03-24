@@ -8,6 +8,7 @@ import { Checkbox } from '../ui/checkbox';
 import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
+import { DatePickerField } from '../ui/date-picker-field';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,12 +26,15 @@ import {
     validateBirthDate,
     validateEmail
 } from '../../lib/validations';
+import { useTranslation } from 'react-i18next';
 
 interface UserManagementProps {
     isDarkMode: boolean;
 }
 
 export function UserManagement({ isDarkMode }: UserManagementProps) {
+    const { t } = useTranslation();
+
     // State for Create Account Form
     const [formData, setFormData] = useState({
         nif: '',
@@ -131,10 +135,10 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
     const handleApprove = async (id: number) => {
         try {
             await utilizadoresApi.aprovarFuncionario(id);
-            toast.success("Funcionário aprovado com sucesso!");
+            toast.success(t('userManagement.messages.employeeApproved'));
             fetchUsers();
         } catch (error) {
-            toast.error("Erro ao aprovar funcionário");
+            toast.error(t('userManagement.errors.employeeApprove'));
         }
     };
 
@@ -176,54 +180,52 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
         // NIF
         if (!formData.nif) {
-            newErrors.nif = 'NIF é obrigatório';
+            newErrors.nif = t('auth.nifRequired');
         } else if (!validateNIF(formData.nif)) {
-            newErrors.nif = 'NIF deve ter 9 dígitos';
+            newErrors.nif = t('auth.nifMustHave9Digits');
         }
 
         // Name
         const nameVal = validateName(formData.name);
         if (!nameVal.valid) {
-            newErrors.name = nameVal.error || 'Nome inválido';
+            newErrors.name = nameVal.error || t('auth.invalidName');
         }
 
         // Contact
         if (!formData.contact) {
-            newErrors.contact = 'Contacto é obrigatório';
+            newErrors.contact = t('auth.contactRequired');
         } else if (!validateContact(formData.contact)) {
-            newErrors.contact = 'Contacto deve ter 9 dígitos';
+            newErrors.contact = t('auth.contactMustHave9Digits');
         }
 
         // Email
         if (!formData.email) {
-            newErrors.email = 'Email é obrigatório';
+            newErrors.email = t('auth.emailRequired');
         } else if (!validateEmail(formData.email)) {
-            newErrors.email = 'Email inválido';
+            newErrors.email = t('auth.emailInvalid');
         }
         // Institutional Check
         if (formData.role !== 'UTENTE' && !formData.email.endsWith('@florinhasdovouga.pt')) {
-            newErrors.email = 'Funcionários devem usar email institucional (@florinhasdovouga.pt)';
+            newErrors.email = t('auth.useInstitutionalEmail');
         }
 
         // BirthDate
         if (!formData.birthDate) {
-            newErrors.birthDate = 'Data de nascimento é obrigatória';
+            newErrors.birthDate = t('appointmentDialog.errors.birthDateRequired');
         } else {
-            const birthVal = validateBirthDate(formData.birthDate); // Expects dd/mm/yyyy usually, but input date is yyyy-mm-dd
-            // The input type="date" gives YYYY-MM-DD. functional validation expects dd/mm/yyyy
-            // Let's adapt or ensure we pass what it expects.
+            // O calendário guarda YYYY-MM-DD, mas a validação funcional espera dd/mm/yyyy.
             // validateBirthDate expects dd/mm/yyyy.
             const [y, m, d] = formData.birthDate.split('-');
             const formattedDate = `${d}/${m}/${y}`;
             const birthValCheck = validateBirthDate(formattedDate);
             if (!birthValCheck.valid) {
-                newErrors.birthDate = birthValCheck.error || 'Data inválida';
+                newErrors.birthDate = birthValCheck.error || t('appointmentDialog.errors.dateInvalid');
             }
         }
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
-            toast.error("Corrija os erros no formulário");
+            toast.error(t('auth.fixErrorsBeforeContinue'));
             return;
         }
 
@@ -252,11 +254,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 isEmployee: formData.role !== 'UTENTE',
                 role: formData.role
             });
-            toast.success(`Conta criada! Email de ativação enviado para ${formData.email}`);
+            toast.success(t('userManagement.messages.accountCreatedWithEmail', { email: formData.email }));
             handleClearCreate();
             fetchUsers();
         } catch (error: any) {
-            toast.error(error.message || "Erro ao criar conta");
+            toast.error(error.message || t('auth.errorCreatingAccount'));
         }
     };
 
@@ -282,7 +284,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         // 4. Clear existing user temp state
         setExistingUserForDialog(null);
 
-        toast.info("Redirecionado para recuperação de conta do utilizador existente.");
+        toast.info(t('userManagement.messages.redirectToRecovery'));
     };
 
     const handleConfirmCreateNew = () => {
@@ -302,7 +304,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         // 4. Reset temp state
         setSearchedNifForDialog('');
 
-        toast.info("Redirecionado para criação de conta com o NIF não encontrado.");
+        toast.info(t('userManagement.messages.redirectToCreate'));
     };
 
     const handleSearchForRecovery = async () => {
@@ -310,12 +312,12 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         setRecoverData(prev => ({ ...prev, foundUser: null }));
 
         if (!recoverData.nifSearch) {
-            toast.error("Insira um NIF para pesquisar");
+            toast.error(t('userManagement.errors.enterNifToSearch'));
             return;
         }
 
         if (!validateNIF(recoverData.nifSearch)) {
-            toast.error("NIF inválido (deve ter 9 dígitos)");
+            toast.error(t('userManagement.errors.invalidNif'));
             return;
         }
 
@@ -329,7 +331,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 contact: user.telefone,
                 email: user.email
             }));
-            toast.success("Utilizador encontrado!");
+            toast.success(t('userManagement.messages.userFound'));
         } catch (error) {
             // User Not Found!
             setSearchedNifForDialog(recoverData.nifSearch);
@@ -343,11 +345,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
         // Validation
         if (recoverData.contact && !validateContact(recoverData.contact)) {
-            toast.error("Contacto inválido (deve ter 9 dígitos)");
+            toast.error(t('userManagement.errors.invalidContact'));
             return;
         }
         if (recoverData.email && !validateEmail(recoverData.email)) {
-            toast.error("Email inválido");
+            toast.error(t('auth.emailInvalid'));
             return;
         }
 
@@ -358,7 +360,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 updatedContact: recoverData.contact !== recoverData.foundUser.telefone ? recoverData.contact : undefined
             });
 
-            toast.success(`Recuperação iniciada! Código enviado para ${recoverData.email}`);
+            toast.success(t('userManagement.messages.recoveryStarted', { email: recoverData.email }));
 
             // Reset recovery form
             setRecoverData({
@@ -370,7 +372,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 email: ''
             });
         } catch (error: any) {
-            toast.error(error.message || "Erro ao recuperar conta");
+            toast.error(error.message || t('userManagement.errors.recoveryFailed'));
         }
     };
 
@@ -391,8 +393,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         <div className="space-y-6 max-w-6xl mx-auto">
             {/* Page Header */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Gestão de Utilizadores</h1>
-                <p className="text-gray-500 dark:text-gray-400">Criação e recuperação de contas</p>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('userManagement.title')}</h1>
+                <p className="text-gray-500 dark:text-gray-400">{t('userManagement.subtitle')}</p>
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -412,8 +414,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     <UserPlus className="w-5 h-5" />
                                 </div>
                                 <div className="text-left">
-                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">Criação de Conta</h2>
-                                    {activeSection !== 'create' && <p className="text-xs text-gray-500">Clique para expandir</p>}
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">{t('userManagement.createAccount')}</h2>
+                                    {activeSection !== 'create' && <p className="text-xs text-gray-500">{t('userManagement.clickToExpand')}</p>}
                                 </div>
                             </div>
                             {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -439,7 +441,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             {errors.nif && <p className="text-red-500 text-xs">{errors.nif}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Contacto *</Label>
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.contact')}</Label>
                                             <Input
                                                 placeholder="912345678"
                                                 maxLength={9}
@@ -455,9 +457,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Nome Completo *</Label>
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('auth.fullName')} *</Label>
                                         <Input
-                                            placeholder="Nome e apelido"
+                                            placeholder={t('userManagement.namePlaceholder')}
                                             className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.name ? 'border-red-500' : ''}`}
                                             value={formData.name}
                                             onChange={e => {
@@ -469,32 +471,31 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Data de Nascimento *</Label>
-                                        <Input
-                                            type="date"
-                                            className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
+                                        <DatePickerField
                                             value={formData.birthDate}
-                                            onChange={e => {
-                                                setFormData({ ...formData, birthDate: e.target.value });
+                                            onChange={(value) => {
+                                                setFormData({ ...formData, birthDate: value });
                                                 if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
                                             }}
+                                            buttonClassName={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
                                         />
                                         {errors.birthDate && <p className="text-red-500 text-xs">{errors.birthDate}</p>}
                                     </div>
 
                                     {/* Role Selection */}
                                     <div className="space-y-2 pt-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Tipo de Utilizador *</Label>
+                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.userType')}</Label>
                                         <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
                                             <SelectTrigger className="bg-white dark:bg-gray-900 h-9 text-sm">
-                                                <SelectValue placeholder="Selecione o papel" />
+                                                <SelectValue placeholder={t('userManagement.selectRole')} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="UTENTE">Utente Comum</SelectItem>
-                                                <SelectItem value="SECRETARIA">Secretaria</SelectItem>
-                                                <SelectItem value="BALNEARIO">Balneário Social</SelectItem>
-                                                <SelectItem value="INTERNO">Serviços Internos</SelectItem>
-                                                <SelectItem value="ADMIN">Administrador</SelectItem>
+                                                <SelectItem value="UTENTE">{t('userManagement.roles.userCommon')}</SelectItem>
+                                                <SelectItem value="SECRETARIA">{t('userManagement.roles.secretary')}</SelectItem>
+                                                <SelectItem value="BALNEARIO">{t('userManagement.roles.balneario')}</SelectItem>
+                                                <SelectItem value="ESCOLA">{t('userManagement.roles.school')}</SelectItem>
+                                                <SelectItem value="INTERNO">{t('userManagement.roles.internals')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -502,7 +503,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     {formData.role !== 'UTENTE' ? (
                                         <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
                                             <div className="space-y-2">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email Institucional</Label>
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('auth.institutionalEmail')}</Label>
 
                                                 {/* Auto/Manual Toggle for Institutional Email */}
                                                 <div className="space-y-3">
@@ -522,7 +523,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                         </div>
                                                         <div className="flex flex-col">
                                                             <span className={`text-xs font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                                {formData.name ? generateInstitutionalEmail(formData.name) : '(Preencha o nome)'}
+                                                                {formData.name ? generateInstitutionalEmail(formData.name) : t('userManagement.fillNameFirst')}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -543,7 +544,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                                 {emailSelection === 'manual' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                                             </div>
                                                             <span className={`text-xs font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
-                                                                Outro
+                                                                {t('userManagement.other')}
                                                             </span>
                                                         </div>
 
@@ -551,7 +552,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                             <div className="flex items-center gap-2 pl-7 animate-in">
                                                                 <Input
                                                                     type="text"
-                                                                    placeholder="nome"
+                                                                    placeholder={t('userManagement.nameShortPlaceholder')}
                                                                     value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
                                                                     onChange={(e) => {
                                                                         const prefix = e.target.value.split('@')[0];
@@ -569,10 +570,10 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email *</Label>
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.email')}</Label>
                                             <Input
                                                 type="email"
-                                                placeholder="email@exemplo.pt"
+                                                placeholder={t('userManagement.emailPlaceholder')}
                                                 className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
                                                 value={formData.email}
                                                 onChange={e => {
@@ -591,14 +592,14 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             className="flex-1 h-9 text-xs"
                                             onClick={handleClearCreate}
                                         >
-                                            Limpar
+                                            {t('documents.actions.clear')}
                                         </Button>
                                         <Button
                                             type="submit"
                                             className="flex-1 h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium"
                                         >
                                             <UserPlus className="w-3 h-3 mr-2" />
-                                            Criar
+                                            {t('requisitions.ui.create')}
                                         </Button>
                                     </div>
                                 </form>
@@ -619,8 +620,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     <Lock className="w-5 h-5" />
                                 </div>
                                 <div className="text-left">
-                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">Recuperação de Conta</h2>
-                                    {activeSection !== 'recover' && <p className="text-xs text-gray-500">Clique para expandir</p>}
+                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">{t('userManagement.recoverAccount')}</h2>
+                                    {activeSection !== 'recover' && <p className="text-xs text-gray-500">{t('userManagement.clickToExpand')}</p>}
                                 </div>
                             </div>
                             {activeSection === 'recover' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -630,15 +631,15 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                             <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
                                 <form onSubmit={handleRecoverSubmit} className="space-y-4">
                                     <p className="text-sm text-gray-500">
-                                        Pesquise pelo NIF para identificar o utilizador e validar a sua identidade.
+                                        {t('userManagement.recoveryHint')}
                                     </p>
 
                                     {/* Step 1: Search by NIF */}
                                     <div className="flex gap-2 items-end">
                                         <div className="space-y-1 flex-1">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Pesquisar NIF</Label>
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.searchNif')}</Label>
                                             <Input
-                                                placeholder="NIF do utilizador"
+                                                placeholder={t('userManagement.userNifPlaceholder')}
                                                 maxLength={9}
                                                 className="bg-white dark:bg-gray-900 h-9 text-sm"
                                                 value={recoverData.nifSearch}
@@ -660,12 +661,12 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800/30 mb-2">
                                                 <p className="text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2">
                                                     <Check className="w-3 h-3" />
-                                                    Identidade Encontrada
+                                                    {t('userManagement.identityFound')}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Nome</Label>
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('requisitions.ui.name')}</Label>
                                                 <Input
                                                     readOnly
                                                     className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
@@ -674,7 +675,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Data de Nascimento</Label>
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
                                                 <Input
                                                     readOnly
                                                     className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
@@ -683,7 +684,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Contacto (Atualizável)</Label>
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.contactEditable')}</Label>
                                                 <Input
                                                     maxLength={9}
                                                     className="bg-white dark:bg-gray-900 h-9 text-sm"
@@ -693,7 +694,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">Email (Atualizável)</Label>
+                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.emailEditable')}</Label>
                                                 <Input
                                                     className="bg-white dark:bg-gray-900 h-9 text-sm"
                                                     value={recoverData.email}
@@ -706,7 +707,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 className="w-full h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium mt-2"
                                             >
                                                 <Send className="w-3 h-3 mr-2" />
-                                                Notificar Recuperação
+                                                {t('userManagement.notifyRecovery')}
                                             </Button>
                                         </div>
                                     )}
@@ -726,9 +727,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                 <Users className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-800 dark:text-white">Utilizadores Registados</h2>
+                                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('userManagement.registeredUsers')}</h2>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Pendentes</span>
+                                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
                                     <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] flex items-center justify-center font-bold">{pendingCount}</span>
                                 </div>
                             </div>
@@ -747,7 +748,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     <div className="relative mb-6">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
-                            placeholder="Pesquisar por nome ou NIF..."
+                            placeholder={t('userManagement.searchByNameOrNif')}
                             className="h-10 pl-9 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 text-sm"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
@@ -759,24 +760,24 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <table className="w-full">
                             <thead className="text-sm font-medium text-gray-500 border-b border-gray-100 dark:border-gray-700">
                                 <tr>
-                                    <th className="text-left pb-3 pl-2 font-medium">Nome</th>
+                                    <th className="text-left pb-3 pl-2 font-medium">{t('requisitions.ui.name')}</th>
                                     <th className="text-left pb-3 font-medium">NIF</th>
-                                    <th className="text-left pb-3 font-medium">Função</th>
-                                    <th className="text-left pb-3 font-medium">Estado</th>
-                                    <th className="text-left pb-3 font-medium">Ação</th>
+                                    <th className="text-left pb-3 font-medium">{t('userManagement.role')}</th>
+                                    <th className="text-left pb-3 font-medium">{t('requisitions.ui.status')}</th>
+                                    <th className="text-left pb-3 font-medium">{t('userManagement.action')}</th>
                                 </tr>
                             </thead>
                             <tbody className="text-sm">
                                 {isLoading ? (
                                     <tr>
                                         <td colSpan={5} className="py-20 text-center text-gray-400">
-                                            Carregando...
+                                            {t('documents.actions.searching')}
                                         </td>
                                     </tr>
                                 ) : filteredUsers.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="py-20 text-center text-gray-400">
-                                            Nenhum utilizador encontrado
+                                            {t('userManagement.noUsersFound')}
                                         </td>
                                     </tr>
                                 ) : (
@@ -787,11 +788,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <td className="py-3 text-gray-600 dark:text-gray-400">
                                                 {user.funcao ? (
                                                     ({
-                                                        'SECRETARIA': 'Secretaria',
-                                                        'BALNEARIO': 'Balneário Social',
-                                                        'ESCOLA': 'Escola',
-                                                        'INTERNOS': 'Serviços Internos',
-                                                        'OUTRO': 'Outro'
+                                                        'SECRETARIA': t('userManagement.roles.secretary'),
+                                                        'BALNEARIO': t('userManagement.roles.balneario'),
+                                                        'ESCOLA': t('userManagement.roles.school'),
+                                                        'INTERNO': t('userManagement.roles.internals'),
+                                                        'OUTRO': t('userManagement.roles.other')
                                                     } as Record<string, string>)[user.funcao] || user.funcao
                                                 ) : '-'}
                                             </td>
@@ -800,17 +801,17 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                     ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
                                                     : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                                                     }`}>
-                                                    {user.active ? 'Ativo' : 'Pendente'}
+                                                    {user.active ? t('userManagement.active') : t('userManagement.pending')}
                                                 </span>
                                             </td>
                                             <td className="py-3 text-left">
-                                                {!user.active && (
+                                                {!user.active && !user.createdBySecretaria && (
                                                     <Button
                                                         size="sm"
                                                         className="bg-purple-600 hover:bg-purple-700 text-white h-7 text-xs"
                                                         onClick={() => handleApprove(user.id)}
                                                     >
-                                                        Aprovar
+                                                        {t('userManagement.approve')}
                                                     </Button>
                                                 )}
                                             </td>
@@ -825,7 +826,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     {totalPages > 1 && (
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, filteredUsers.length)} de {filteredUsers.length}
+                                {t('userManagement.showingUsers', {
+                                    start: startIndex + 1,
+                                    end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
+                                    total: filteredUsers.length,
+                                })}
                             </p>
                             <div className="flex items-center gap-2">
                                 <Button
@@ -859,24 +864,24 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             <AlertDialog open={showUserExistsDialog} onOpenChange={setShowUserExistsDialog}>
                 <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Este utente já existe!</AlertDialogTitle>
+                        <AlertDialogTitle>{t('userManagement.userAlreadyExistsTitle')}</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                            Já existe um registo com o NIF <strong>{existingUserForDialog?.nif}</strong>.
+                            {t('userManagement.userAlreadyExistsDescription', { nif: existingUserForDialog?.nif })}
                             <br /><br />
-                            <strong>Nome:</strong> {existingUserForDialog?.nome}
+                            <strong>{t('requisitions.ui.name')}:</strong> {existingUserForDialog?.nome}
                             <br />
-                            <strong>Email:</strong> {existingUserForDialog?.email}
+                            <strong>{t('appointmentDialog.fields.email')}:</strong> {existingUserForDialog?.email}
                             <br /><br />
-                            Gostaria de modificar os dados de contacto do utente?
+                            {t('userManagement.askUpdateContactData')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setShowUserExistsDialog(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setShowUserExistsDialog(false)}>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmUpdateExisting}
                             className="bg-purple-600 hover:bg-purple-700 text-white"
                         >
-                            Sim, atualizar dados
+                            {t('userManagement.yesUpdateData')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -886,20 +891,20 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             <AlertDialog open={showUserNotFoundDialog} onOpenChange={setShowUserNotFoundDialog}>
                 <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Utente não encontrado</AlertDialogTitle>
+                        <AlertDialogTitle>{t('userManagement.userNotFoundTitle')}</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-                            Não existe nenhum registo com o NIF <strong>{searchedNifForDialog}</strong>.
+                            {t('userManagement.userNotFoundDescription', { nif: searchedNifForDialog })}
                             <br /><br />
-                            Gostaria de criar uma nova conta com este NIF?
+                            {t('userManagement.askCreateNewWithNif')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setShowUserNotFoundDialog(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setShowUserNotFoundDialog(false)}>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmCreateNew}
                             className="bg-purple-600 hover:bg-purple-700 text-white"
                         >
-                            Sim, criar nova conta
+                            {t('userManagement.yesCreateNewAccount')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

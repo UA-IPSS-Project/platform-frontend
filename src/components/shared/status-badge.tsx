@@ -1,36 +1,51 @@
-import React from 'react';
 import { Badge } from '../ui/badge';
 import { AlertTriangleIcon } from './CustomIcons';
 import { cn } from '../ui/utils';
 import { Appointment } from '../../types';
+import { useAppointmentStatus } from '../../hooks/useAppointmentStatus';
+import { VALID_APPOINTMENT_STATUSES } from '../../config/appointmentStatusConfig';
 
 interface StatusBadgeProps {
     status: Appointment['status'] | string;
     className?: string;
+    size?: 'sm' | 'md' | 'lg';
+    showIcon?: boolean;
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
-    switch (status) {
-        case 'in-progress':
-            return <Badge className={cn("bg-purple-600 hover:bg-purple-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Em Curso</Badge>;
-        case 'scheduled':
-            return <Badge className={cn("bg-pink-600 hover:bg-pink-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Agendado</Badge>;
-        case 'warning':
-            return (
-                <Badge className={cn("bg-yellow-500 hover:bg-yellow-600 text-gray-900 rounded-full px-2 py-0.5 text-xs flex items-center gap-1", className)}>
-                    <AlertTriangleIcon className="w-3 h-3" />
-                    Agendado
-                </Badge>
-            );
-        case 'completed':
-            return <Badge className={cn("bg-green-600 hover:bg-green-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Concluído</Badge>;
-        case 'cancelled':
-            return <Badge className={cn("bg-red-600 hover:bg-red-700 text-white rounded-full px-2 py-0.5 text-xs", className)}>Cancelado</Badge>;
-        case 'no-show':
-            return <Badge className={cn("bg-red-500 hover:bg-red-600 text-white rounded-full px-2 py-0.5 text-xs", className)}>Não Compareceu</Badge>;
-        case 'reserved':
-            return <Badge className={cn("bg-gray-400 hover:bg-gray-500 text-white rounded-full px-2 py-0.5 text-xs", className)}>Reservado</Badge>;
-        default:
-            return null;
-    }
+export function StatusBadge({ status, className, size = 'md', showIcon = true }: StatusBadgeProps) {
+    const { getStatusLabel, isOutlineVariant, getBorderClasses, shouldShowAlertIcon, getStatusClasses } = useAppointmentStatus();
+
+    // NOTE: Explicitly detect invalid status instead of silently coercing to 'scheduled'
+    // This helps surface upstream bugs rather than masking them.
+    // Invalid statuses are passed through to getStatusConfig, which will console.warn them.
+    const isValidStatus = VALID_APPOINTMENT_STATUSES.includes(status as any);
+    
+    // If status is invalid, use it anyway and let the hook handle the warning.
+    // This ensures the warning in getStatusConfig will be triggered.
+    const displayStatus = isValidStatus ? (status as Appointment['status']) : (status as any);
+
+    const sizeClasses = {
+        sm: 'px-1.5 py-0.25 text-xs',
+        md: 'px-2 py-0.5 text-xs',
+        lg: 'px-3 py-1 text-sm',
+    };
+
+    const baseClasses = cn(
+        'rounded-full flex items-center gap-1',
+        sizeClasses[size],
+        getStatusClasses(displayStatus)
+    );
+
+    const borderClasses = isOutlineVariant(displayStatus)
+        ? cn('border', getBorderClasses(displayStatus))
+        : '';
+
+    const shouldShowAlert = shouldShowAlertIcon(displayStatus) && showIcon;
+
+    return (
+        <Badge className={cn(baseClasses, borderClasses, className)}>
+            {shouldShowAlert && <AlertTriangleIcon className="w-3 h-3" />}
+            {getStatusLabel(displayStatus)}
+        </Badge>
+    );
 }

@@ -2,19 +2,42 @@ import { useState, useEffect } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/popover';
 import { Label } from '../ui/label';
+import { Calendar as CalendarComponent } from '../ui/calendar';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
-import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { toast } from 'sonner';
-import { XIcon, FileTextIcon, AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, PlayIcon, BellIcon } from '../shared/CustomIcons';
-import { Download, Trash2, Upload, File } from 'lucide-react';
+import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
+import { Download, Trash2, Upload } from 'lucide-react';
+
+// EyeIcon SVG inline (usado para preview)
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
 import { Appointment } from '../../types';
 import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { DocumentUploadDialog } from '../dialogs/DocumentUploadDialog';
+import { StatusBadge } from '../shared/status-badge';
+import { useTranslation } from 'react-i18next';
 
 interface AppointmentDetailsDialogProps {
   open: boolean;
@@ -26,7 +49,7 @@ interface AppointmentDetailsDialogProps {
   existingAppointments?: Appointment[];
 }
 
-const WEEKDAYS_LONG = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
 
 export function AppointmentDetailsDialog({
   open,
@@ -38,6 +61,7 @@ export function AppointmentDetailsDialog({
   existingAppointments = []
 }: AppointmentDetailsDialogProps) {
   const { user: authUser } = useAuth();
+  const { t, i18n } = useTranslation();
   const [selectedDocs, setSelectedDocs] = useState<number[]>([]);
   const [invalidReasons, setInvalidReasons] = useState<{ [key: number]: string }>({});
   const [cancelReason, setCancelReason] = useState('');
@@ -55,11 +79,8 @@ export function AppointmentDetailsDialog({
 
   // Estados para reagendamento
   const today = new Date();
-  const [rescheduleYear, setRescheduleYear] = useState(today.getFullYear());
-  const [rescheduleMonth, setRescheduleMonth] = useState(today.getMonth());
-  const [rescheduleDay, setRescheduleDay] = useState(today.getDate());
+  const [rescheduleDate, setRescheduleDate] = useState<Date>(today);
   const [rescheduleTime, setRescheduleTime] = useState('');
-  const rescheduleYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
 
   useEffect(() => {
     if (!open) {
@@ -88,35 +109,57 @@ export function AppointmentDetailsDialog({
   const handleDownloadDocumento = async (doc: DocumentoDTO) => {
     try {
       await documentosApi.downloadDocumento(doc.id, doc.nomeOriginal);
-      toast.success('Download iniciado');
+      toast.success(t('documents.messages.downloadStarted', { name: doc.nomeOriginal }));
     } catch (error) {
       console.error('Erro ao fazer download:', error);
-      toast.error('Erro ao fazer download do documento');
+      toast.error(t('documents.errors.download'));
     }
   };
 
   const handleRemoverDocumento = async (doc: DocumentoDTO) => {
-    if (!confirm(`Tem a certeza que deseja remover "${doc.nomeOriginal}"?`)) {
+    if (!confirm(t('appointmentDetails.confirmRemoveDocument', { name: doc.nomeOriginal }))) {
       return;
     }
 
     try {
       await documentosApi.removerDocumento(doc.id);
       setDocumentos(prev => prev.filter(d => d.id !== doc.id));
-      toast.success('Documento removido');
+      toast.success(t('appointmentDetails.documentRemoved'));
     } catch (error) {
       console.error('Erro ao remover documento:', error);
-      toast.error('Erro ao remover documento');
+      toast.error(t('appointmentDetails.documentRemoveError'));
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
+  function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+}
+
+function cleanFilename(name: string) {
+  if (!name) return "";
+  const dotIndex = name.lastIndexOf(".");
+  const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+  const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
+
+  const parts = baseName.split("_");
+  if (parts.length >= 4) {
+    // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
+    const nif = parts[0];
+    const assuntoParts = parts.slice(1, parts.length - 2);
+    const assunto = assuntoParts.join("_");
+    
+    // Na vista de marcação, apenas NIF_ASSUNTO (sem data, pois já está no título)
+    return `${nif}_${assunto}${extension}`;
+  } else if (parts.length === 3) {
+    // Formato legado: NIF_TIPO_UUID
+    return `${parts[0]}_${parts[1]}${extension}`;
+  }
+  return name;
+}
 
   const handleDocToggle = (index: number) => {
     setSelectedDocs(prev => {
@@ -144,33 +187,39 @@ export function AppointmentDetailsDialog({
     }));
   };
 
-  const handleNotifyInvalid = () => {
+  const handleNotifyInvalid = async () => {
     if (selectedDocs.length === 0) {
-      toast.error('Selecione pelo menos um documento');
+      toast.error(t('appointmentDetails.selectAtLeastOneDocument'));
       return;
     }
 
     // Verifica se todos os documentos selecionados têm justificativa
     const missingReasons = selectedDocs.some(index => !invalidReasons[index]?.trim());
     if (missingReasons) {
-      toast.error('Adicione uma justificativa para cada documento selecionado');
+      toast.error(t('appointmentDetails.addReasonForEachDocument'));
       return;
     }
 
-    const updatedDocuments = appointment.documents?.map((doc, index) => ({
-      ...doc,
-      invalid: selectedDocs.includes(index) ? true : doc.invalid,
-      reason: selectedDocs.includes(index) ? invalidReasons[index] : doc.reason,
-    }));
-
-    onUpdate(appointment.id, {
-      documents: updatedDocuments,
-      status: 'warning',
-    });
-
-    toast.success('Utente notificado sobre documentos inválidos');
-    setSelectedDocs([]);
-    setInvalidReasons({});
+    try {
+      const marcacaoId = parseInt(appointment.id);
+      let notifiedCount = 0;
+      await Promise.all(selectedDocs.map(async (index) => {
+        const doc = appointment.documents?.[index];
+        if (doc && 'id' in doc && typeof doc.id === 'number') {
+          await documentosApi.notificarDocumentoInvalido(marcacaoId, doc.id, invalidReasons[index]);
+          notifiedCount++;
+        }
+      }));
+      if (notifiedCount > 0) {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments'));
+      } else {
+        toast.error('Nenhum documento válido selecionado para notificação.');
+      }
+      setSelectedDocs([]);
+      setInvalidReasons({});
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao notificar utente.');
+    }
   };
 
   const handleCancelAppointment = async () => {
@@ -178,16 +227,16 @@ export function AppointmentDetailsDialog({
 
     // Se for cliente e não tiver motivo, define motivo padrão
     if (isClient && !trimmedReason) {
-      trimmedReason = 'Cancelado pelo utente';
+      trimmedReason = t('appointmentDetails.cancelledByUser');
     }
 
     if (!trimmedReason) {
-      toast.error('Descreva o motivo do cancelamento');
+      toast.error(t('appointmentDetails.describeCancelReason'));
       return;
     }
 
     if (!authUser?.id) {
-      toast.error('Erro de autenticação: Utilizador não identificado');
+      toast.error(t('appointmentDetails.authUserNotIdentified'));
       return;
     }
 
@@ -211,21 +260,21 @@ export function AppointmentDetailsDialog({
       onCancel(appointment.id, trimmedReason);
       onUpdate(appointment.id, { status: 'cancelled', cancellationReason: trimmedReason });
 
-      toast.success('Marcação cancelada e utente notificado');
+      toast.success(t('appointmentDetails.appointmentCancelledAndUserNotified'));
       setCancelReason('');
       setShowCancelDialog(false);
       onClose();
 
     } catch (error: any) {
       console.error('Erro ao cancelar marcação:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível cancelar a marcação';
+      const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.cancelFailed');
       toast.error(mensagemErro);
     }
   };
 
   const handleCompleteAppointment = async () => {
     if (!authUser?.id) {
-      toast.error('Erro de autenticação: Utilizador não identificado');
+      toast.error(t('appointmentDetails.authUserNotIdentified'));
       return;
     }
 
@@ -244,19 +293,19 @@ export function AppointmentDetailsDialog({
       );
 
       onUpdate(appointment.id, { status: 'completed' });
-      toast.success('Atendimento concluído com sucesso!');
+      toast.success(t('appointmentDetails.appointmentCompleted'));
       onClose();
 
     } catch (error: any) {
       console.error('Erro ao concluir atendimento:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível concluir o atendimento';
+      const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.completeFailed');
       toast.error(mensagemErro);
     }
   };
 
   const handleNoShowAppointment = async () => {
     if (!authUser?.id) {
-      toast.error('Erro de autenticação: Utilizador não identificado');
+      toast.error(t('appointmentDetails.authUserNotIdentified'));
       return;
     }
 
@@ -275,19 +324,19 @@ export function AppointmentDetailsDialog({
       );
 
       onUpdate(appointment.id, { status: 'no-show' });
-      toast.success('Marcação atualizada para não comparência.');
+      toast.success(t('appointmentDetails.markedNoShow'));
       onClose();
 
     } catch (error: any) {
       console.error('Erro ao marcar não comparência:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível atualizar estado';
+      const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.statusUpdateFailed');
       toast.error(mensagemErro);
     }
   };
 
   const handleStartAppointment = async () => {
     if (!authUser?.id) {
-      toast.error('Erro de autenticação: Utilizador não identificado');
+      toast.error(t('appointmentDetails.authUserNotIdentified'));
       return;
     }
 
@@ -311,21 +360,21 @@ export function AppointmentDetailsDialog({
       // Atualizar estado local do React para UI mudar instantaneamente
       onUpdate(appointment.id, { status: 'in-progress' });
 
-      toast.success('Atendimento iniciado com sucesso!');
+      toast.success(t('appointmentDetails.appointmentStarted'));
 
       // Fechar o diálogo após atualizar o estado
       onClose();
 
     } catch (error: any) {
       console.error('Erro ao iniciar atendimento:', error);
-      const mensagemErro = error.response?.data?.message || error.message || 'Não foi possível iniciar o atendimento';
+      const mensagemErro = error.response?.data?.message || error.message || t('appointmentDetails.startFailed');
       toast.error(mensagemErro);
     }
   };
 
   const handleAddDocument = () => {
     if (!newDocName.trim()) {
-      toast.error('Digite o nome do documento');
+      toast.error(t('appointmentDetails.enterDocumentName'));
       return;
     }
 
@@ -335,7 +384,7 @@ export function AppointmentDetailsDialog({
     ];
 
     onUpdate(appointment.id, { documents: updatedDocuments });
-    toast.success('Documento adicionado com sucesso');
+    toast.success(t('appointmentDetails.documentAdded'));
     setNewDocName('');
     setShowAddDocDialog(false);
   };
@@ -343,7 +392,7 @@ export function AppointmentDetailsDialog({
   const handleUpdateDocument = () => {
     if (updateDocIndex === null) return;
     if (!newDocName.trim()) {
-      toast.error('Digite o novo nome do documento');
+      toast.error(t('appointmentDetails.enterNewDocumentName'));
       return;
     }
 
@@ -352,7 +401,7 @@ export function AppointmentDetailsDialog({
     );
 
     onUpdate(appointment.id, { documents: updatedDocuments });
-    toast.success('Documento atualizado com sucesso');
+    toast.success(t('appointmentDetails.documentUpdated'));
     setNewDocName('');
     setUpdateDocIndex(null);
     setShowUpdateDocDialog(false);
@@ -361,6 +410,7 @@ export function AppointmentDetailsDialog({
 
   // Availability Logic for Rescheduling
   const [availableRescheduleSlots, setAvailableRescheduleSlots] = useState<string[]>([]);
+  const [slotCapacity, setSlotCapacity] = useState<number>(1);
   const [quickMonthBlocks, setQuickMonthBlocks] = useState<Set<string>>(new Set());
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, Set<string>>>({});
 
@@ -375,71 +425,22 @@ export function AppointmentDetailsDialog({
     return slots;
   };
 
-  const isSlotBooked = (date: Date, time: string) => {
-    return existingAppointments.some(apt => {
-      const aptDate = new Date(apt.date);
-      aptDate.setHours(0, 0, 0, 0);
-      const slotDate = new Date(date);
-      slotDate.setHours(0, 0, 0, 0);
-
-      // Don't block the CURRENT appointment (we are rescheduling it)
-      if (apt.id === appointment.id) return false;
-
-      return aptDate.getTime() === slotDate.getTime() &&
-        apt.time === time &&
-        apt.status !== 'cancelled';
-    });
-  };
-
-  // Load blocks when Year/Month changes in Reschedule Dialog
-  useEffect(() => {
-    if (!showRescheduleDialog) return;
-
-    const loadBlocks = async () => {
-      try {
-        const bloqueios = await calendarioApi.listarBloqueios(rescheduleYear, rescheduleMonth + 1);
-        const newBlocks = new Set<string>();
-        const timeSlots = generateTimeSlots();
-
-        bloqueios.forEach((bloqueio: BloqueioAgenda) => {
-          const date = new Date(bloqueio.data);
-          const dateStr = date.toISOString().split('T')[0];
-
-          if (bloqueio.horaInicio && bloqueio.horaFim) {
-            const startTime = bloqueio.horaInicio;
-            const endTime = bloqueio.horaFim;
-
-            timeSlots.forEach(slot => {
-              if (slot >= startTime && slot < endTime) {
-                newBlocks.add(`${dateStr}_${slot}`);
-              }
-            });
-          }
-        });
-        setQuickMonthBlocks(newBlocks);
-      } catch (error) {
-        console.error('Erro ao carregar bloqueios para reagendamento:', error);
-      }
-    };
-
-    loadBlocks();
-  }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
-
   useEffect(() => {
     if (!showRescheduleDialog) return;
 
     const loadHolidays = async () => {
-      if (holidaysByYear[rescheduleYear]) return;
+      const year = rescheduleDate.getFullYear();
+      if (holidaysByYear[year]) return;
       try {
-        const dates = await calendarioApi.listarFeriados(rescheduleYear);
-        setHolidaysByYear(prev => ({ ...prev, [rescheduleYear]: new Set(dates) }));
+        const dates = await calendarioApi.listarFeriados(year);
+        setHolidaysByYear(prev => ({ ...prev, [year]: new Set(dates) }));
       } catch (error) {
         console.error('Erro ao carregar feriados para reagendamento:', error);
       }
     };
 
     loadHolidays();
-  }, [rescheduleYear, showRescheduleDialog, holidaysByYear]);
+  }, [rescheduleDate, showRescheduleDialog, holidaysByYear]);
 
   const isHoliday = (date: Date) => {
     const set = holidaysByYear[date.getFullYear()];
@@ -448,146 +449,169 @@ export function AppointmentDetailsDialog({
     return set.has(key);
   };
 
-  // Update available slots when blocks, booked slots or date changes
+  // Fetch slot capacity once when dialog opens
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+    calendarioApi.listarConfiguracaoSlots()
+      .then((cfgs: any[]) => {
+        const cfg = cfgs.find(c => c.tipo === 'SECRETARIA');
+        setSlotCapacity(Math.max(1, cfg?.capacidadePorSlot ?? 1));
+      })
+      .catch(() => setSlotCapacity(1));
+  }, [showRescheduleDialog]);
+
+  const rescheduleYear = rescheduleDate.getFullYear();
+  const rescheduleMonth = rescheduleDate.getMonth() + 1;
+
+  // Load admin blocks for the current month
+  useEffect(() => {
+    if (!showRescheduleDialog) return;
+    const loadBlocks = async () => {
+      try {
+        const bloqueios = await calendarioApi.listarBloqueios(rescheduleYear, rescheduleMonth);
+        const newBlocks = new Set<string>();
+        const timeSlots = generateTimeSlots();
+        bloqueios.forEach((b: any) => {
+          const dateStr = new Date(b.data).toISOString().split('T')[0];
+          if (b.horaInicio && b.horaFim) {
+            timeSlots.forEach(slot => {
+              if (slot >= b.horaInicio && slot < b.horaFim) newBlocks.add(`${dateStr}_${slot}`);
+            });
+          }
+        });
+        setQuickMonthBlocks(newBlocks);
+      } catch { /* ignore */ }
+    };
+    loadBlocks();
+  }, [rescheduleYear, rescheduleMonth, showRescheduleDialog]);
+
+  // Filter available slots: exclude past, blocked, and full slots
   useEffect(() => {
     if (!showRescheduleDialog) return;
 
-    const selectedDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    const selectedDate = new Date(rescheduleDate);
+    selectedDate.setHours(0, 0, 0, 0);
     const dateStr = selectedDate.toISOString().split('T')[0];
-    const timeSlots = generateTimeSlots();
-    const dayOfWeek = selectedDate.getDay();
-    const isHolidayDate = isHoliday(selectedDate);
+    const now = new Date();
 
-    // Block weekends immediately
-    if (dayOfWeek === 0 || dayOfWeek === 6 || isHolidayDate) {
-      setAvailableRescheduleSlots([]);
-      setRescheduleTime('');
-      return;
-    }
+    const available = generateTimeSlots().filter(slot => {
+      // Past
+      const [h, m] = slot.split(':').map(Number);
+      const slotDt = new Date(selectedDate);
+      slotDt.setHours(h, m);
+      if (slotDt <= now) return false;
 
-    const available = timeSlots.filter(slot => {
-      const key = `${dateStr}_${slot}`;
+      // Admin block
+      if (quickMonthBlocks.has(`${dateStr}_${slot}`)) return false;
 
-      // Check Past
-      const [h, m] = slot.split(':');
-      const slotDateTime = new Date(selectedDate);
-      slotDateTime.setHours(parseInt(h), parseInt(m));
-      const isPast = slotDateTime <= new Date();
+      // Capacity: count non-cancelled appointments at this slot, excluding the one being rescheduled
+      const occupied = existingAppointments.filter(apt => {
+        if (apt.id === appointment.id) return false;
+        if (apt.status === 'cancelled') return false;
+        const aptDate = new Date(apt.date);
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate.getTime() === selectedDate.getTime() && apt.time === slot;
+      }).length;
+      if (occupied >= slotCapacity) return false;
 
-      // Check Blocks from API
-      const isBlocked = quickMonthBlocks.has(key);
-
-      // Check Existing Appointments
-      const isBooked = isSlotBooked(selectedDate, slot);
-
-      return !isPast && !isBlocked && !isBooked;
+      return true;
     });
 
     setAvailableRescheduleSlots(available);
+    setRescheduleTime(prev => (available.includes(prev) ? prev : ''));
+  }, [rescheduleDate, quickMonthBlocks, slotCapacity, existingAppointments, showRescheduleDialog]);
 
-    // Clear selection if not available, or keep if valid
-    setRescheduleTime(prev => {
-      if (available.includes(prev)) return prev;
-      return '';
-    });
-
-  }, [rescheduleYear, rescheduleMonth, rescheduleDay, quickMonthBlocks, existingAppointments, showRescheduleDialog]);
 
   const handleReschedule = async () => {
     if (!rescheduleTime) return;
 
     // Combinar data e hora
     const [hours, minutes] = rescheduleTime.split(':');
-    const newDate = new Date(rescheduleYear, rescheduleMonth, rescheduleDay);
+    const newDate = new Date(rescheduleDate);
     newDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     try {
-      // API call to backend
+      // API call to backend - backend handles all validation
       await marcacoesApi.reagendar(Number(appointment.id), newDate.toISOString());
 
       onUpdate(appointment.id, {
         date: newDate,
         time: rescheduleTime,
-        status: 'scheduled' // Optionally reset status if backend does it
+        status: 'scheduled'
       });
 
-      toast.success('Marcação reagendada com sucesso');
+      toast.success(t('appointmentDetails.rescheduledSuccess'));
       setShowRescheduleDialog(false);
-    } catch (error) {
+      onClose();
+    } catch (error: any) {
       console.error("Erro ao reagendar:", error);
-      toast.error("Falha ao guardar o reagendamento.");
+      const msg = error?.response?.data?.message || error?.message || t('appointmentDetails.rescheduledFailed');
+      toast.error(msg);
     }
   };
 
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'in-progress':
-        return <Badge className="bg-purple-600 text-white rounded-full px-3">Em Curso</Badge>;
-      case 'scheduled':
-        return <Badge className="bg-purple-500 text-white rounded-full px-3">Agendado</Badge>;
-      case 'warning':
-        return (
-          <Badge className="bg-yellow-500 text-gray-900 rounded-full px-3 flex items-center gap-1">
-            <AlertTriangleIcon className="w-3 h-3" />
-            Agendado
-          </Badge>
-        );
-      case 'completed':
-        return <Badge className="bg-green-600 text-white rounded-full px-3 flex items-center gap-1">
-          <CheckCircleIcon className="w-3 h-3" />
-          Concluído
-        </Badge>;
-      case 'no-show':
-
-        return (
-          <Badge style={{ backgroundColor: '#f97316', color: 'white' }} className="rounded-full px-3 flex items-center gap-1">
-            <UserIcon className="w-3 h-3 text-white" />
-            Não compareceu
-          </Badge>
-        );
-      case 'cancelled':
-        return <Badge variant="destructive" className="rounded-full px-3">Cancelado</Badge>;
-
-      default:
-        return null;
-    }
-  };
 
   const invalidDocuments = appointment.documents?.filter(doc => doc.invalid) || [];
 
   const dateObj = new Date(appointment.date);
-  const dayName = WEEKDAYS_LONG[dateObj.getDay()];
+  const locale = i18n.language === 'en' ? 'en-GB' : 'pt-PT';
+  const dayName = dateObj.toLocaleDateString(locale, { weekday: 'long' });
   const day = dateObj.getDate();
-  const month = dateObj.toLocaleDateString('pt-PT', { month: 'long' });
+  const month = dateObj.toLocaleDateString(locale, { month: 'long' });
   const year = dateObj.getFullYear();
-  const dateString = `${dayName}, ${day} de ${month} de ${year} às ${appointment.time}`;
+  const dateString = t('appointmentDetails.dateString', { dayName, day, month, year, time: appointment.time });
+
+  // Só permite editar documentos se o estado for scheduled ou warning
+  const isEditable = appointment.status === 'scheduled' || appointment.status === 'warning';
+
+
+  // Função utilitária para saber se o documento tem preview
+  function hasPreview(nomeOriginal: string): boolean {
+    if (!nomeOriginal) return false;
+    const ext = nomeOriginal.split('.').pop()?.toLowerCase();
+    return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
+  }
+
+
+  function handleNotificarDocumentoInvalido(doc: DocumentoDTO) {
+    const motivo = window.prompt(t('appointmentDetails.invalidReasonPrompt', 'Indique o motivo do documento ser inválido:'));
+    if (!motivo || !motivo.trim()) {
+      toast.error(t('appointmentDetails.addReasonForEachDocument', 'Indique o motivo.'));
+      return;
+    }
+    documentosApi
+      .notificarDocumentoInvalido(parseInt(appointment.id), doc.id, motivo)
+      .then(() => {
+        toast.success(t('appointmentDetails.userNotifiedInvalidDocuments', 'Utente notificado.'));
+      })
+      .catch((error: any) => {
+        toast.error(error.message || 'Erro ao notificar utente.');
+      });
+  }
 
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
-          <DialogTitle className="sr-only">Consultar Agendamento</DialogTitle>
+          <DialogTitle className="sr-only">{t('appointmentDetails.viewAppointment')}</DialogTitle>
           <DialogPrimitive.Description className="sr-only">
-            Visualize e gerencie os detalhes da marcação
+            {t('appointmentDetails.viewAndManage')}
           </DialogPrimitive.Description>
 
           {/* Header - Fixed */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-lg text-gray-900 dark:text-gray-100">Consultar Agendamento</h2>
-                {getStatusBadge(appointment.status)}
+                <h2 className="text-lg text-gray-900 dark:text-gray-100">{t('appointmentDetails.viewAppointment')}</h2>
+                <StatusBadge status={appointment.status} size="md" />
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
             </div>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              aria-label="Fechar detalhes do agendamento"
+              aria-label={t('appointmentDetails.closeDetails')}
             >
               <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -601,7 +625,7 @@ export function AppointmentDetailsDialog({
                 <div className="flex items-start gap-3">
                   <AlertTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-yellow-900 dark:text-yellow-100 mb-2">Documentos Inválidos</p>
+                    <p className="text-sm text-yellow-900 dark:text-yellow-100 mb-2">{t('appointmentDetails.invalidDocuments')}</p>
                     {invalidDocuments.map((doc, index) => (
                       <p key={index} className="text-xs text-yellow-800 dark:text-yellow-200">
                         • {doc.name}: <em>{doc.reason}</em>
@@ -614,32 +638,32 @@ export function AppointmentDetailsDialog({
 
             {/* Appointment Info Grid: NIF and Contact side-by-side (Horário removed) */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2"># NIF</Label>
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm mb-2"># NIF</Label>
                 <p className="text-gray-900 dark:text-gray-100">{appointment.patientNIF}</p>
               </div>
 
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm flex items-center gap-2 mb-2">
                   <PhoneIcon className="w-4 h-4" />
-                  Contacto
+                  {t('appointmentDialog.fields.contact')}
                 </Label>
                 <p className="text-gray-900 dark:text-gray-100">{appointment.patientContact}</p>
               </div>
             </div>
 
             {/* Patient Name */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm flex items-center gap-2 mb-2">
                 <UserIcon className="w-4 h-4" />
-                Nome
+                {t('requisitions.ui.name')}
               </Label>
               <p className="text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
             </div>
 
             {/* Email (separate block, similar style to Nome) */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-2">
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm flex items-center gap-2 mb-2">
                 <MailIcon className="w-4 h-4" />
                 Email
               </Label>
@@ -650,24 +674,24 @@ export function AppointmentDetailsDialog({
             {appointment.status === 'cancelled' && appointment.cancellationReason && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
-                  Marcação cancelada
+                  {t('appointmentDetails.cancelledAppointment')}
                 </p>
                 <p className="text-sm text-red-600 dark:text-red-200">
-                  Motivo: {appointment.cancellationReason}
+                  {t('appointmentDetails.reason')}: {appointment.cancellationReason}
                 </p>
               </div>
             )}
 
             {/* Subject */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-              <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2">Assunto</Label>
+            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <Label className="text-sm mb-2">{t('requisitions.ui.subjectOptional')}</Label>
               <p className="text-gray-900 dark:text-gray-100">{appointment.subject}</p>
             </div>
 
             {/* Description */}
             {appointment.description && (
-              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-100 dark:border-purple-800">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 mb-2">Descrição</Label>
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <Label className="text-sm mb-2">{t('requisitions.ui.description')}</Label>
                 <p className="text-gray-900 dark:text-gray-100">{appointment.description}</p>
               </div>
             )}
@@ -675,11 +699,11 @@ export function AppointmentDetailsDialog({
             {/* Documentos com API real */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                <Label className="text-sm flex items-center gap-2">
                   <FileTextIcon className="w-4 h-4" />
-                  Documentos Anexados
+                  {t('appointmentDetails.attachedDocuments')}
                 </Label>
-                {!isClient && (
+                {!isClient && isEditable && (
                   <Button
                     type="button"
                     size="sm"
@@ -687,15 +711,15 @@ export function AppointmentDetailsDialog({
                     className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white"
                   >
                     <Upload className="w-3 h-3 mr-1" />
-                    Adicionar
+                    {t('appointmentDetails.add')}
                   </Button>
                 )}
               </div>
 
               {loadingDocs ? (
-                <p className="text-sm text-gray-500">A carregar documentos...</p>
+                <p className="text-sm text-gray-500">{t('appointmentDetails.loadingDocuments')}</p>
               ) : documentos.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhum documento anexado</p>
+                <p className="text-sm text-gray-500">{t('appointmentDetails.noDocumentsAttached')}</p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {documentos.map((doc) => (
@@ -704,10 +728,13 @@ export function AppointmentDetailsDialog({
                       className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <File className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <FileTextIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                            {doc.nomeOriginal}
+                          <p
+                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[300px] md:max-w-[450px] lg:max-w-[550px]"
+                            title={doc.nomeOriginal}
+                          >
+                            {cleanFilename(doc.nomeOriginal)}
                           </p>
                           <p className="text-xs text-gray-500">
                             {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}
@@ -715,22 +742,108 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadDocumento(doc)}
-                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-                          title="Download"
-                        >
-                          <Download className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoverDocumento(doc)}
-                          className="p-2 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
-                          title="Remover"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
+                        {hasPreview(doc.nomeOriginal) ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => documentosApi.previewDocumento(doc.id)}
+                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                              title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                              aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            >
+                              <EyeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </button>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4 text-white" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  {/* Só mostra o botão de documento inválido se NÃO for utente */}
+                                  {!isClient && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm"
+                                      style={{ color: '#EFBC21' }}
+                                    >
+                                      <BellIcon className="w-4 h-4" />
+                                      {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                    </button>
+                                  )}
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {isEditable && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                  >
+                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownloadDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    {t('appointmentDetails.download', 'Transferir')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoverDocumento(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    {t('appointmentDetails.removeDocument', 'Apagar')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                  >
+                                    <BellIcon className="w-4 h-4" />
+                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                  </button>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                          </>
+                        )}
+
+
                       </div>
                     </div>
                   ))}
@@ -741,9 +854,9 @@ export function AppointmentDetailsDialog({
             {/* Documents antigos (manter para compatibilidade se houver) */}
             {appointment.documents && appointment.documents.length > 0 && (
               <div>
-                <Label className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-2 mb-3">
+                <Label className="text-sm flex items-center gap-2 mb-3">
                   <FileTextIcon className="w-4 h-4" />
-                  Documentos Extra (Legacy)
+                  {t('appointmentDetails.legacyDocuments')}
                 </Label>
                 <div className="space-y-3">
                   {appointment.documents.map((doc, index) => (
@@ -755,10 +868,10 @@ export function AppointmentDetailsDialog({
                           <Checkbox
                             checked={selectedDocs.includes(index)}
                             onCheckedChange={() => handleDocToggle(index)}
-                            className="border-purple-300 data-[state=checked]:bg-purple-600"
+                            className="border-slate-300 data-[state=checked]:bg-primary"
                           />
                         )}
-                        <FileTextIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <FileTextIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                         <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{doc.name}</span>
                         {isClient && (
                           <Button
@@ -771,7 +884,7 @@ export function AppointmentDetailsDialog({
                               setShowUpdateDocDialog(true);
                             }}
                           >
-                            Atualizar
+                            {t('appointmentDetails.updateLegacyDoc')}
                           </Button>
                         )}
                       </div>
@@ -780,7 +893,7 @@ export function AppointmentDetailsDialog({
                       {!isClient && selectedDocs.includes(index) && (
                         <div className="mt-2 ml-9">
                           <Textarea
-                            placeholder="Razão pela qual este documento é inválido..."
+                            placeholder={t('appointmentDetails.invalidReasonPlaceholder')}
                             value={invalidReasons[index] || ''}
                             onChange={(e) => handleReasonChange(index, e.target.value)}
                             rows={2}
@@ -801,28 +914,35 @@ export function AppointmentDetailsDialog({
                 <>
                   <Button
                     onClick={handleStartAppointment}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                   >
-                    <PlayIcon className="w-4 h-4" />
-                    Iniciar atendimento
+                    {t('appointmentDetails.startAppointment')}
                   </Button>
-                  <Button
-                    onClick={handleNoShowAppointment}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
-                  >
-                    <AlertCircleIcon className="w-4 h-4" />
-                    Não compareceu
-                  </Button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="destructive"
+                      onClick={() => setShowCancelDialog(true)}
+                      className="w-full"
+                    >
+                      {t('appointmentDialog.actions.cancel')}
+                    </Button>
+                    <Button
+                      onClick={handleNoShowAppointment}
+                      variant="warning"
+                      className="w-full"
+                    >
+                      {t('appointmentDetails.noShow')}
+                    </Button>
+                  </div>
                 </>
               )}
 
               {!isClient && appointment.status === 'in-progress' && (
                 <Button
                   onClick={handleCompleteAppointment}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white gap-2"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                 >
-                  <CheckCircleIcon className="w-4 h-4" />
-                  Concluir
+                  {t('appointmentDetails.complete')}
                 </Button>
               )}
 
@@ -833,7 +953,7 @@ export function AppointmentDetailsDialog({
                   className="w-full border-yellow-300 dark:border-yellow-600 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 gap-2"
                 >
                   <BellIcon className="w-4 h-4" />
-                  Notificar Documento Inválido
+                  {t('appointmentDetails.notifyInvalidDocument')}
                 </Button>
               )}
 
@@ -845,33 +965,32 @@ export function AppointmentDetailsDialog({
                     onClick={() => setShowDocUpload(true)}
                   >
                     <FileTextIcon className="w-4 h-4" />
-                    Adicionar Documentos
+                    {t('appointmentDetails.addDocuments')}
                   </Button>
                   <Button
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-white gap-2"
+                    variant="warning"
+                    className="w-full gap-2"
                     onClick={() => {
                       const aptDate = new Date(appointment.date);
-                      setRescheduleYear(aptDate.getFullYear());
-                      setRescheduleMonth(aptDate.getMonth());
-                      setRescheduleDay(aptDate.getDate());
+                      setRescheduleDate(aptDate);
                       setRescheduleTime(appointment.time);
                       setShowRescheduleDialog(true);
                     }}
                   >
                     <ClockIcon className="w-4 h-4" />
-                    Reagendar
+                    {t('appointmentDetails.reschedule')}
                   </Button>
                 </>
               )}
 
               {/* Botão Cancelar (comum mas condicionado) */}
-              {!isClient && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'no-show' && (
+              {!isClient && appointment.status !== 'scheduled' && appointment.status !== 'warning' && appointment.status !== 'in-progress' && appointment.status !== 'cancelled' && appointment.status !== 'completed' && appointment.status !== 'no-show' && (
                 <Button
                   variant="destructive"
                   onClick={() => setShowCancelDialog(true)}
                   className="w-full"
                 >
-                  Cancelar
+                  {t('appointmentDialog.actions.cancel')}
                 </Button>
               )}
 
@@ -881,7 +1000,7 @@ export function AppointmentDetailsDialog({
                   onClick={() => setShowCancelDialog(true)}
                   className="w-full"
                 >
-                  Cancelar
+                  {t('appointmentDialog.actions.cancel')}
                 </Button>
               )}
             </div>
@@ -895,25 +1014,25 @@ export function AppointmentDetailsDialog({
       }}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Cancelar marcação
+            {t('appointmentDetails.cancelDialogTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
             {isClient
-              ? 'Tem certeza que deseja cancelar a marcação?'
-              : 'Explique brevemente ao utente porque esta marcação será cancelada.'}
+              ? t('appointmentDetails.cancelDialogDescClient')
+              : t('appointmentDetails.cancelDialogDescSecretary')}
           </DialogPrimitive.Description>
 
           {!isClient && (
             <>
               <Textarea
-                placeholder="Ex.: Utente não enviou os documentos necessários..."
+                placeholder={t('appointmentDetails.cancelReasonPlaceholder')}
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={4}
                 className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                O motivo será enviado ao utente juntamente com a notificação de cancelamento.
+                {t('appointmentDetails.cancelReasonHint')}
               </p>
             </>
           )}
@@ -923,14 +1042,14 @@ export function AppointmentDetailsDialog({
               setCancelReason('');
               setShowCancelDialog(false);
             }}>
-              {isClient ? 'Não' : 'Esquecer'}
+              {isClient ? t('appointmentDetails.cancelDialogNo') : t('appointmentDetails.cancelDialogForget')}
             </Button>
             <Button
               variant="destructive"
               onClick={handleCancelAppointment}
               disabled={!isClient && !cancelReason.trim()}
             >
-              {isClient ? 'Sim, cancelar' : 'Confirmar'}
+              {isClient ? t('appointmentDetails.cancelDialogConfirmClient') : t('appointmentDetails.cancelDialogConfirmSecretary')}
             </Button>
           </div>
         </DialogContent>
@@ -940,14 +1059,14 @@ export function AppointmentDetailsDialog({
       <Dialog open={showAddDocDialog} onOpenChange={setShowAddDocDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Adicionar Documento
+            {t('appointmentDetails.addDocTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-            Digite o nome do documento que deseja adicionar.
+            {t('appointmentDetails.addDocDesc')}
           </DialogPrimitive.Description>
 
           <Input
-            placeholder="Ex.: Comprovativo de morada..."
+            placeholder={t('appointmentDetails.addDocPlaceholder')}
             value={newDocName}
             onChange={(e) => setNewDocName(e.target.value)}
             className="mt-4"
@@ -958,14 +1077,14 @@ export function AppointmentDetailsDialog({
               setNewDocName('');
               setShowAddDocDialog(false);
             }}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-purple-600 hover:bg-purple-700"
               onClick={handleAddDocument}
               disabled={!newDocName.trim()}
             >
-              Adicionar
+              {t('appointmentDetails.add')}
             </Button>
           </div>
         </DialogContent>
@@ -975,14 +1094,14 @@ export function AppointmentDetailsDialog({
       <Dialog open={showUpdateDocDialog} onOpenChange={setShowUpdateDocDialog}>
         <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Atualizar Documento
+            {t('appointmentDetails.updateDocTitle')}
           </DialogTitle>
           <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-            Digite o novo nome para o documento.
+            {t('appointmentDetails.updateDocDesc')}
           </DialogPrimitive.Description>
 
           <Input
-            placeholder="Novo nome do documento..."
+            placeholder={t('appointmentDetails.updateDocPlaceholder')}
             value={newDocName}
             onChange={(e) => setNewDocName(e.target.value)}
             className="mt-4"
@@ -994,14 +1113,14 @@ export function AppointmentDetailsDialog({
               setUpdateDocIndex(null);
               setShowUpdateDocDialog(false);
             }}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-purple-600 hover:bg-purple-700"
               onClick={handleUpdateDocument}
               disabled={!newDocName.trim()}
             >
-              Atualizar
+              {t('appointmentDetails.updateLegacyDoc')}
             </Button>
           </div>
         </DialogContent>
@@ -1012,94 +1131,76 @@ export function AppointmentDetailsDialog({
         <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Reagendar Marcação
+              {t('appointmentDetails.rescheduleDialogTitle')}
             </DialogTitle>
             <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
-              Escolha a nova data e horário para a sua marcação.
+              {t('appointmentDetails.rescheduleDialogDesc')}
             </DialogPrimitive.Description>
           </DialogHeader>
 
-          <div className="space-y-4 mt-4">
-            <div className="flex items-end gap-4 flex-wrap">
-              {/* Ano */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ano</Label>
-                <Select value={String(rescheduleYear)} onValueChange={(value) => setRescheduleYear(Number(value))}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {rescheduleYearOptions.map((year) => (
-                      <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex flex-col sm:flex-row gap-6 mt-4 items-start">
+            {/* Calendário */}
+            <div className="flex flex-col items-center">
+              <CalendarComponent
+                mode="single"
+                selected={rescheduleDate}
+                onSelect={(d) => {
+                  if (d) {
+                    setRescheduleDate(d);
+                    setRescheduleTime('');
+                  }
+                }}
+                disabled={(d) => {
+                  const dow = d.getDay();
+                  if (dow === 0 || dow === 6) return true;
+                  if (isHoliday(d)) return true;
+                  const todayStart = new Date();
+                  todayStart.setHours(0, 0, 0, 0);
+                  if (d < todayStart) return true;
+                  return false;
+                }}
+                initialFocus
+              />
+            </div>
 
-              {/* Mês */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Mês</Label>
-                <Select value={String(rescheduleMonth)} onValueChange={(value) => setRescheduleMonth(Number(value))}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((month, idx) => (
-                      <SelectItem key={idx} value={String(idx)}>{month}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Dia */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[100px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Dia</Label>
-                <Select
-                  value={String(rescheduleDay)}
-                  onValueChange={(value) => setRescheduleDay(Math.min(Number(value), getDaysInMonth(rescheduleYear, rescheduleMonth)))}
-                >
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {Array.from({ length: getDaysInMonth(rescheduleYear, rescheduleMonth) }, (_, i) => i + 1).map((day) => {
-                      const testDate = new Date(rescheduleYear, rescheduleMonth, day);
-                      const dayOfWeek = testDate.getDay();
-                      if (dayOfWeek === 0 || dayOfWeek === 6 || isHoliday(testDate)) return null;
-
-                      return <SelectItem key={day} value={String(day)}>{day}</SelectItem>;
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Horário */}
-              <div className="flex flex-col gap-1 flex-1 min-w-[120px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">Horário</Label>
-                <Select value={rescheduleTime} onValueChange={setRescheduleTime} disabled={!availableRescheduleSlots.length}>
-                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800">
-                    <SelectValue placeholder={availableRescheduleSlots.length ? "Selecione" : "Indisponível"} />
-                  </SelectTrigger>
-                  <SelectContent style={{ maxHeight: '15rem' }} className="overflow-y-auto">
-                    {availableRescheduleSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Horário */}
+            <div className="flex flex-col gap-2 flex-1 min-w-[150px]">
+              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
+              {availableRescheduleSlots.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                  {t('appointmentDetails.rescheduleUnavailable')}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
+                  {availableRescheduleSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setRescheduleTime(slot)}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                        rescheduleTime === slot
+                          ? 'bg-yellow-500 text-white border-yellow-500'
+                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                      }`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
             <Button variant="outline" onClick={() => setShowRescheduleDialog(false)}>
-              Cancelar
+              {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
               className="bg-yellow-500 hover:bg-yellow-600"
               onClick={handleReschedule}
               disabled={!rescheduleTime}
             >
-              Confirmar Reagendamento
+              {t('appointmentDetails.rescheduleConfirm')}
             </Button>
           </div>
         </DialogContent>
@@ -1110,6 +1211,7 @@ export function AppointmentDetailsDialog({
         open={showDocUpload}
         onClose={() => setShowDocUpload(false)}
         marcacaoId={parseInt(appointment.id)}
+        isClient={isClient}
         onSuccess={(docs) => {
           setDocumentos(prev => [...prev, ...docs]);
           setShowDocUpload(false);

@@ -7,6 +7,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
+import { useTranslation } from 'react-i18next';
+import { validateEmployeeLoginEmail } from '../../lib/validations';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -14,26 +16,38 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) {
+  const { t } = useTranslation();
   const [identifier, setIdentifier] = useState('');
+  const [employeeEmailPrefix, setEmployeeEmailPrefix] = useState('');
+  const [employeeEmailDomain, setEmployeeEmailDomain] = useState('@florinhasdovouga.pt');
+  const [isEditingDomain, setIsEditingDomain] = useState(false);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
   const { login } = useAuth();
 
+  const employeeIdentifier = `${employeeEmailPrefix}${employeeEmailDomain}`;
+  const normalizedEmployeeIdentifier = employeeIdentifier.trim();
+
   const validateForm = () => {
     const newErrors: { identifier?: string; password?: string } = {};
 
-    if (!identifier.trim()) {
-      newErrors.identifier = 'Campo obrigatório';
-    } else if (loginType === 'user' && !/^\d{9}$/.test(identifier.trim())) {
-      newErrors.identifier = 'Apenas é permitido números';
-    } else if (loginType === 'employee' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(identifier.trim())) {
-      newErrors.identifier = 'Email institucional inválido';
+    const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
+
+    if (!currentIdentifier) {
+      newErrors.identifier = t('auth.requiredField');
+    } else if (loginType === 'user' && !/^\d{9}$/.test(currentIdentifier)) {
+      newErrors.identifier = t('auth.onlyNumbersAllowed');
+    } else if (loginType === 'employee') {
+      const employeeEmailValidation = validateEmployeeLoginEmail(currentIdentifier, employeeEmailDomain);
+      if (!employeeEmailValidation.valid) {
+        newErrors.identifier = t(`auth.${employeeEmailValidation.errorKey}`);
+      }
     }
 
     if (!password) {
-      newErrors.password = 'Campo obrigatório';
+      newErrors.password = t('auth.requiredField');
     }
 
     setErrors(newErrors);
@@ -44,23 +58,27 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Por favor, preencha todos os campos');
+      toast.error(t('auth.fillAllFields'));
       return;
     }
 
     try {
       const tipoLogin = loginType === 'user' ? 'utente' : 'funcionario';
-      await login(identifier, password, tipoLogin);
-      toast.success('Login realizado com sucesso!');
+      const submitIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier;
+      await login(submitIdentifier, password, tipoLogin);
+      toast.success(t('auth.loginSuccess'));
     } catch (error: any) {
-      toast.error(error.message || 'Credenciais inválidas');
-      setErrors({ identifier: 'Credenciais inválidas', password: 'Credenciais inválidas' });
+      toast.error(error.message || t('auth.invalidCredentials'));
+      setErrors({ identifier: t('auth.invalidCredentials'), password: t('auth.invalidCredentials') });
     }
   };
 
   const handleToggle = (value: 'user' | 'employee') => {
     setLoginType(value);
     setIdentifier('');
+    setEmployeeEmailPrefix('');
+    setEmployeeEmailDomain('@florinhasdovouga.pt');
+    setIsEditingDomain(false);
     setPassword('');
     setErrors({});
   };
@@ -75,8 +93,8 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
             className="h-16 w-auto object-contain"
           />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Bem-vindo</h1>
-        <p className="text-gray-600 dark:text-gray-400">Plataforma Institucional das Florinhas do Vouga</p>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{t('auth.welcome')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('auth.platformSubtitle')}</p>
 
         <div className="mt-6 flex items-center justify-center">
           <LightSwitch
@@ -90,22 +108,68 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="identifier" className="text-gray-700 dark:text-gray-300">
-            {loginType === 'user' ? 'NIF' : 'Email institucional'}
+            {loginType === 'user' ? t('auth.nif') : t('auth.institutionalEmail')}
           </Label>
-          <Input
-            id="identifier"
-            type="text"
-            placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
-            value={identifier}
-            maxLength={loginType === 'user' ? 9 : undefined}
-            onChange={(e) => {
-              const value = loginType === 'user' ? e.target.value.replace(/\D/g, '') : e.target.value;
-              setIdentifier(value);
-              if (errors.identifier) setErrors({ ...errors, identifier: undefined });
-            }}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
-              }`}
-          />
+          {loginType === 'employee' ? (
+            <div className={`flex items-center gap-2 rounded-md border bg-gray-50 dark:bg-gray-700 px-3 h-10 transition-all focus-within:ring-2 focus-within:ring-purple-500 ${errors.identifier ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}>
+              <input
+                id="identifier"
+                type="text"
+                placeholder={t('email')}
+                value={employeeEmailPrefix}
+                onChange={(e) => {
+                  const prefix = e.target.value.replace(/@.*/, '');
+                  setEmployeeEmailPrefix(prefix);
+                  if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+                }}
+                className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 h-full min-w-0"
+              />
+              {isEditingDomain ? (
+                <input
+                  type="text"
+                  placeholder={t('auth.employeeEmailDomainPlaceholder')}
+                  value={employeeEmailDomain}
+                  onChange={(e) => {
+                    const rawDomain = e.target.value.trim();
+                    setEmployeeEmailDomain(rawDomain.startsWith('@') || rawDomain.length === 0 ? rawDomain : `@${rawDomain}`);
+                    if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+                  }}
+                  onBlur={() => {
+                    if (!employeeEmailDomain || employeeEmailDomain === '@') {
+                      setEmployeeEmailDomain('@florinhasdovouga.pt');
+                    }
+                    setIsEditingDomain(false);
+                  }}
+                  className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm text-gray-500 dark:text-gray-400 font-medium w-44 shrink-0"
+                  autoFocus
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDomain(true)}
+                  className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 whitespace-nowrap hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  aria-label={t('auth.institutionalEmail')}
+                >
+                  {employeeEmailDomain}
+                </button>
+              )}
+            </div>
+          ) : (
+            <Input
+              id="identifier"
+              type="text"
+              placeholder={loginType === 'user' ? '123456789' : 'email@florinhasdovouga.pt'}
+              value={identifier}
+              maxLength={loginType === 'user' ? 9 : undefined}
+              onChange={(e) => {
+                const value = loginType === 'user' ? e.target.value.replace(/\D/g, '') : e.target.value;
+                setIdentifier(value);
+                if (errors.identifier) setErrors({ ...errors, identifier: undefined });
+              }}
+              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
+                }`}
+            />
+          )}
           {errors.identifier && (
             <p className="text-red-500 text-sm">{errors.identifier}</p>
           )}
@@ -113,7 +177,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
 
         <div className="space-y-2">
           <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
-            Palavra-passe
+            {t('auth.password')}
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
             ? 'border-red-500 focus-within:ring-red-500/50'
@@ -147,18 +211,18 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
           type="submit"
           className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200"
         >
-          Entrar
+          {t('auth.login')}
         </Button>
       </form>
 
       <div className="mt-6 text-center">
         <p className="text-gray-600 dark:text-gray-400">
-          Não tem conta?{' '}
+          {t('auth.noAccount')}{' '}
           <button
             onClick={() => onNavigateToRegister(loginType)}
             className="text-purple-600 dark:text-purple-400 hover:underline"
           >
-            Criar Conta
+            {t('auth.createAccount')}
           </button>
         </p>
       </div>
