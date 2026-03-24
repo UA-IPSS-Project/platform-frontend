@@ -1209,8 +1209,8 @@
     "categories": {
       "detergentes": "Detergentes",
       "higiene": "Higiene",
-      "calcado": "Calçado",
-      "vestuario": "Vestuário"
+      "vestuario": "Vestuário",
+      "calcado": "Calçado"
     },
     "products": {
       "Detergente Roupa": "Detergente Roupa",
@@ -1219,12 +1219,12 @@
       "Detergente Chão": "Detergente Chão",
       "Sabonete Líquido": "Sabonete Líquido",
       "Champô": "Champô",
-      "Toalhetes": "Toalhetes",
-      "Fraldas Adulto": "Fraldas Adulto",
-      "Papel Higiénico": "Papel Higiénico",
       "Gel de Banho": "Gel de Banho",
       "Toalha": "Toalha",
       "Sabonete/Creme": "Sabonete/Creme",
+      "Toalhetes": "Toalhetes",
+      "Fraldas Adulto": "Fraldas Adulto",
+      "Papel Higiénico": "Papel Higiénico",
       "T-shirt/Camisola": "T-shirt/Camisola",
       "Calças": "Calças",
       "Roupa Interior": "Roupa Interior",

@@ -206,6 +206,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         switch (cat) {
             case 'DETERGENTES': return t('consumos.categories.detergentes', 'Detergentes');
             case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
+            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
             case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             default: return cat;
@@ -465,6 +466,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         const catLabels: Record<string, string> = {
             'HIGIENE': getCategoryLabel('HIGIENE'),
             'DETERGENTES': getCategoryLabel('DETERGENTES'),
+            'VESTUARIO': getCategoryLabel('VESTUARIO'),
             'CALCADO': getCategoryLabel('CALCADO'),
         };
 
@@ -473,8 +475,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         const catTotals = {
             'HIGIENE': stats.totaisPorCategoria['HIGIENE'] || 0,
             'DETERGENTES': stats.totaisPorCategoria['DETERGENTES'] || 0,
-            'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0,
             'VESTUARIO': stats.totaisPorCategoria['VESTUARIO'] || 0,
+            'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0,
             ...Object.entries(stats.totaisPorCategoria)
                 .filter(([cat]) => !['HIGIENE', 'DETERGENTES', 'CALCADO', 'VESTUARIO'].includes(cat))
                 .reduce((acc, [cat, val]) => ({ ...acc, [cat]: val }), {})
@@ -484,6 +486,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             switch (cat) {
                 case 'HIGIENE': return '#EC4899';
                 case 'DETERGENTES': return '#22C55E';
+                case 'VESTUARIO': return '#3B82F6';
                 case 'CALCADO': return '#A855F7';
                 case 'VESTUARIO': return '#3B82F6';
                 default: return '#6B7280';
@@ -498,8 +501,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         }, {
             'HIGIENE': [],
             'DETERGENTES': [],
-            'CALCADO': [],
-            'VESTUARIO': []
         } as Record<string, { nome: string; quantidade: number }[]>);
 
         if (stats && stats.itens) {
