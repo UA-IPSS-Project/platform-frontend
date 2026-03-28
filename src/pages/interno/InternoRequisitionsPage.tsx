@@ -1,19 +1,16 @@
-import { SharedRequisitionsPage } from '../requisitions/SharedRequisitionsPage';
+import { SharedRequisitionsPage, SharedRequisitionsPageProps } from '../requisitions/SharedRequisitionsPage';
 
-interface InternoRequisitionsPageProps {
-  isDarkMode: boolean;
-  currentUserId: number;
+interface InternoRequisitionsPageProps extends Omit<SharedRequisitionsPageProps, 'scopeRole' | 'canManageRequests'> {
   initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export function InternoRequisitionsPage({ isDarkMode, currentUserId, initialSection }: Readonly<InternoRequisitionsPageProps>) {
+export function InternoRequisitionsPage(props: Readonly<InternoRequisitionsPageProps>) {
   return (
     <SharedRequisitionsPage
-      isDarkMode={isDarkMode}
-      currentUserId={currentUserId}
+      {...props}
       scopeRole="INTERNO"
       canManageRequests={false}
-      initialSection={initialSection}
     />
   );
 }

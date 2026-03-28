@@ -2,6 +2,7 @@ import { SharedRequisitionsPage, SharedRequisitionsPageProps } from '../requisit
 
 export interface SecretaryRequisitionsPageProps extends Omit<SharedRequisitionsPageProps, 'scopeRole' | 'canManageRequests'> {
   initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function SecretaryRequisitionsPage(props: Readonly<SecretaryRequisitionsPageProps>) {

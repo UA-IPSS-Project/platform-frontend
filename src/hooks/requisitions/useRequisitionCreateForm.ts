@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
 import { MaterialCategoria } from '../../services/api/requisicoes/types';
@@ -101,6 +101,38 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     });
   }, []);
 
+  const isDirty = useMemo(() => {
+    return (
+      descricao !== '' ||
+      tempoLimite !== undefined ||
+      materialLinhas.length > 0 ||
+      destinoTransporte !== '' ||
+      dataSaida !== '' ||
+      horaSaida !== '' ||
+      dataRegresso !== '' ||
+      horaRegresso !== '' ||
+      numeroPassageiros !== '' ||
+      condutorTransporte !== '' ||
+      selectedTransportIds.length > 0 ||
+      selectedManutencaoItemIds.length > 0 ||
+      Object.keys(manutencaoObservacoesPorCategoria).length > 0
+    );
+  }, [
+    descricao,
+    tempoLimite,
+    materialLinhas,
+    destinoTransporte,
+    dataSaida,
+    horaSaida,
+    dataRegresso,
+    horaRegresso,
+    numeroPassageiros,
+    condutorTransporte,
+    selectedTransportIds,
+    selectedManutencaoItemIds,
+    manutencaoObservacoesPorCategoria,
+  ]);
+
   return {
     // General form state
     tipo,
@@ -113,6 +145,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTempoLimite,
     tempoLimiteManuallyEdited,
     setTempoLimiteManuallyEdited,
+    isDirty,
     // Validation
     createErrors,
     setCreateErrors,

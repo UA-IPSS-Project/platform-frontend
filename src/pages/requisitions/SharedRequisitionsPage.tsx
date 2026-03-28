@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
@@ -63,6 +64,7 @@ export interface SharedRequisitionsPageProps {
   scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
   canManageRequests?: boolean;
   initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function SharedRequisitionsPage({
@@ -73,8 +75,17 @@ export function SharedRequisitionsPage({
   scopeRole = 'ALL',
   canManageRequests = true,
   initialSection = 'list',
+  onDirtyChange,
 }: Readonly<SharedRequisitionsPageProps>) {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialParams = useMemo(() => ({
+    mode: searchParams.get('mode') as 'list' | 'create' | null,
+    tab: searchParams.get('tab') as string | null,
+    type: searchParams.get('type') as RequisicaoTipo | null,
+    priority: searchParams.get('priority') as RequisicaoPrioridade | null,
+  }), []); // Capture once on mount
+
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const formatDateTimeOrDash = (value?: string | null) => {
     if (!value) return '—';
@@ -82,8 +93,8 @@ export function SharedRequisitionsPage({
   };
 
   // Use custom hooks for state management
-  const filters = useRequisitionFilters(initialTipo, initialPrioridade);
-  const createForm = useRequisitionCreateForm(initialTipo, initialPrioridade);
+  const filters = useRequisitionFilters(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
+  const createForm = useRequisitionCreateForm(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
   const catalog = useRequisitionCatalog(t);
 
   // List and dialog state
@@ -92,7 +103,10 @@ export function SharedRequisitionsPage({
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'list' | 'create'>(initialSection);
+  const [activeSection, setActiveSection] = useState<'list' | 'create'>(() => {
+    if (initialParams.mode === 'list' || initialParams.mode === 'create') return initialParams.mode;
+    return initialSection;
+  });
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
@@ -116,19 +130,45 @@ export function SharedRequisitionsPage({
 
   const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
 
+  // Sync URL from state with comparison to avoid loops
   useEffect(() => {
-    filters.setFilterTipo(initialTipo ?? '');
-    filters.setFilterPrioridade(initialPrioridade ?? '');
-    if (initialPrioridade === 'URGENTE') {
-      filters.setActiveTab('URGENTE');
-    } else if (initialTipo) {
-      filters.setActiveTab(initialTipo);
-    } else {
-      filters.setActiveTab('GERAL');
+    if (initialParams.tab) {
+      filters.setActiveTab(initialParams.tab as any);
     }
-    if (initialTipo) createForm.setTipo(initialTipo);
-    if (initialPrioridade) createForm.setPrioridade(initialPrioridade);
-  }, [initialTipo, initialPrioridade]);
+  }, [initialParams.tab]);
+
+  /* 
+  useEffect(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('mode', activeSection);
+      next.set('tab', filters.activeTab);
+      if (filters.filterTipo) next.set('type', filters.filterTipo);
+      else next.delete('type');
+      if (filters.filterPrioridade) next.set('priority', filters.filterPrioridade);
+      else next.delete('priority');
+      
+      if (next.toString() === prev.toString()) return prev;
+      return next;
+    }, { replace: true });
+  }, [activeSection, filters.activeTab, filters.filterTipo, filters.filterPrioridade, setSearchParams]);
+  */
+
+  // Dirty state and navigation guards
+  useEffect(() => {
+    onDirtyChange?.(createForm.isDirty);
+  }, [createForm.isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (activeSection === 'create' && createForm.isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeSection, createForm.isDirty]);
 
   const fetchRequisicoes = useCallback(async (overrides?: {
     estado?: RequisicaoEstado | '';

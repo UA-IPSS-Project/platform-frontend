@@ -1,19 +1,16 @@
-import { SharedRequisitionsPage } from '../requisitions/SharedRequisitionsPage';
+import { SharedRequisitionsPage, SharedRequisitionsPageProps } from '../requisitions/SharedRequisitionsPage';
 
-interface EscolaRequisitionsPageProps {
-  isDarkMode: boolean;
-  currentUserId: number;
+interface EscolaRequisitionsPageProps extends Omit<SharedRequisitionsPageProps, 'scopeRole' | 'canManageRequests'> {
   initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export function EscolaRequisitionsPage({ isDarkMode, currentUserId, initialSection }: Readonly<EscolaRequisitionsPageProps>) {
+export function EscolaRequisitionsPage(props: Readonly<EscolaRequisitionsPageProps>) {
   return (
     <SharedRequisitionsPage
-      isDarkMode={isDarkMode}
-      currentUserId={currentUserId}
+      {...props}
       scopeRole="ESCOLA"
       canManageRequests={false}
-      initialSection={initialSection}
     />
   );
 }

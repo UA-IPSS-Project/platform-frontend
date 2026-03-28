@@ -122,13 +122,21 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
         setProfileIsDirty(isDirty);
     }, []);
+
+    const [requisitionsIsDirty, setRequisitionsIsDirty] = useState(false);
+    const handleRequisitionsDirtyChange = useCallback((isDirty: boolean) => {
+        setRequisitionsIsDirty(isDirty);
+    }, []);
     const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
     const currentWeekKey = getWeekKeyByDate(currentDate);
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
 
     const navigateTo = (view: ViewType) => {
-        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+        const isProfileDirty = currentView === 'profile' && profileIsDirty;
+        const isRequisitionsDirty = (currentView === 'requisitions' || currentView === 'requisitions-create') && requisitionsIsDirty;
+
+        if ((isProfileDirty || isRequisitionsDirty) && view !== currentView) {
             setPendingNavigation(view);
             setShowLeaveConfirm(true);
         } else {
@@ -136,9 +144,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         }
     };
 
-    const confirmLeaveProfile = () => {
-        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
-        setProfileIsDirty(false);
+    const confirmLeave = () => {
+        if (currentView === 'profile') {
+            sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+            setProfileIsDirty(false);
+        } else {
+            setRequisitionsIsDirty(false);
+        }
+
         setShowLeaveConfirm(false);
         if (pendingNavigation) {
             setViewHistory(prev => [...prev, pendingNavigation]);
@@ -446,6 +459,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 isDarkMode={isDarkMode}
                                 currentUserId={authUser?.id || 0}
                                 initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
+                                onDirtyChange={handleRequisitionsDirtyChange}
                             />
                         ) : currentView === 'consumos' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} />
@@ -536,7 +550,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={confirmLeave} className="bg-red-600 hover:bg-red-700 text-white">
                             Descartar
                         </AlertDialogAction>
                     </AlertDialogFooter>

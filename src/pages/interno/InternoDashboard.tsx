@@ -37,6 +37,11 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
     const handleProfileDirtyChange = (isDirty: boolean) => {
         setProfileIsDirty(isDirty);
     };
+
+    const [requisitionsIsDirty, setRequisitionsIsDirty] = useState(false);
+    const handleRequisitionsDirtyChange = (isDirty: boolean) => {
+        setRequisitionsIsDirty(isDirty);
+    };
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
         nif: authUser?.nif || '',
@@ -58,7 +63,10 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
     };
 
     const safeSetView = (view: InternoView) => {
-        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+        const isProfileDirty = currentView === 'profile' && profileIsDirty;
+        const isRequisitionsDirty = (currentView === 'requisitions' || currentView === 'requisitions-create') && requisitionsIsDirty;
+
+        if ((isProfileDirty || isRequisitionsDirty) && view !== currentView) {
             setPendingNavigation(view);
             setShowLeaveConfirm(true);
         } else {
@@ -66,9 +74,14 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
         }
     };
 
-    const confirmLeaveProfile = () => {
-        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
-        setProfileIsDirty(false);
+    const confirmLeave = () => {
+        if (currentView === 'profile') {
+            sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+            setProfileIsDirty(false);
+        } else {
+            setRequisitionsIsDirty(false);
+        }
+
         setShowLeaveConfirm(false);
         if (pendingNavigation) {
             setCurrentView(pendingNavigation);
@@ -108,6 +121,7 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
                     isDarkMode={isDarkMode}
                     currentUserId={authUser?.id || 0}
                     initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
+                    onDirtyChange={handleRequisitionsDirtyChange}
                 />
             );
         }
@@ -169,7 +183,7 @@ export function InternoDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Int
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                    <AlertDialogAction onClick={confirmLeave} className="bg-red-600 hover:bg-red-700 text-white">
                         Descartar
                     </AlertDialogAction>
                 </AlertDialogFooter>
