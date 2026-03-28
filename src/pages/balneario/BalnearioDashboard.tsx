@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
+import { NavDropdown } from '../../components/layout/NavDropdown';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { NotificationsPage } from '../NotificationsPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
@@ -275,13 +276,16 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 {t('sidebar.consumption')}
             </Button>
 
-            <Button
-                variant={currentView === 'requisitions' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('requisitions')}
-                className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-            >
-                {t('sidebar.requisitions')}
-            </Button>
+            <NavDropdown
+                label={t('sidebar.requisitions')}
+                items={[
+                    { id: 'requisitions', label: t('sidebar.requisitions') },
+                    { id: 'requisitions-create', label: t('sidebar.createRequisition') },
+                ]}
+                isActive={['requisitions', 'requisitions-create'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('requisitions')}
+            />
 
             <Button
                 variant={currentView === 'reports' ? 'default' : 'ghost'}
@@ -437,10 +441,11 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                     setHistoryEndDate(end);
                                 }}
                             />
-                        ) : currentView === 'requisitions' ? (
+                        ) : currentView === 'requisitions' || currentView === 'requisitions-create' ? (
                             <BalnearioRequisitionsPage
                                 isDarkMode={isDarkMode}
                                 currentUserId={authUser?.id || 0}
+                                initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
                             />
                         ) : currentView === 'consumos' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} />

@@ -278,12 +278,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       <NavDropdown
         label={t('sidebar.requisitions')}
         items={[
-          { id: 'material', label: t('sidebar.material') },
-          { id: 'manutencao', label: t('sidebar.maintenance') },
-          { id: 'transportes', label: t('sidebar.transport') },
-          { id: 'urgente', label: t('sidebar.highPriority') },
+          { id: 'requisitions', label: t('sidebar.requisitions') },
+          { id: 'requisitions-create', label: t('sidebar.createRequisition') },
         ]}
-        isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
+        isActive={['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         onLabelClick={() => navigateTo('requisitions')}
       />
@@ -439,10 +437,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 isDarkMode={isDarkMode}
               />
-            ) : ['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
+            ) : ['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
               <SecretaryRequisitionsPage
                 isDarkMode={isDarkMode}
                 currentUserId={authUser?.id || 0}
+                initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
                 initialTipo={
                   currentView === 'material'
                     ? 'MATERIAL'

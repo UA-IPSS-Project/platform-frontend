@@ -63,6 +63,7 @@ export interface SharedRequisitionsPageProps {
   initialPrioridade?: RequisicaoPrioridade;
   scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
   canManageRequests?: boolean;
+  initialSection?: 'create' | 'list';
 }
 
 export function SharedRequisitionsPage({
@@ -72,6 +73,7 @@ export function SharedRequisitionsPage({
   initialPrioridade,
   scopeRole = 'ALL',
   canManageRequests = true,
+  initialSection = 'list',
 }: Readonly<SharedRequisitionsPageProps>) {
   const { t } = useTranslation();
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
@@ -91,7 +93,7 @@ export function SharedRequisitionsPage({
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
+  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>(initialSection);
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
@@ -203,6 +205,12 @@ export function SharedRequisitionsPage({
 
     fetchAcceptedTransports();
   }, [createForm.tipo]);
+
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   useEffect(() => {
     return () => {
