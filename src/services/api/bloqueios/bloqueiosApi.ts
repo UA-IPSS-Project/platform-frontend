@@ -1,5 +1,6 @@
 import { apiRequest } from '../core/client';
 import { Bloqueio } from '../calendario/types';
+import { format } from 'date-fns';
 
 export const bloqueiosApi = {
     criar: async (data: { dataInicio: string; dataFim: string; horaInicio: string; horaFim: string; motivo?: string }, funcionarioId: number, tipo: string = 'SECRETARIA') => {
@@ -11,7 +12,7 @@ export const bloqueiosApi = {
         // Loop through days from start to end (inclusive)
         const current = new Date(start);
         while (current <= end) {
-            const dateStr = current.toISOString().split('T')[0];
+            const dateStr = format(current, 'yyyy-MM-dd');
 
             const payload = {
                 data: dateStr,
