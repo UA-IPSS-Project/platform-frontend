@@ -964,7 +964,7 @@ export function SharedRequisitionsPage({
       return null;
     }
 
-    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'EM_PROGRESSO');
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'FECHADO');
     const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
     const nomesTransportesConflito = Array.from(new Set(
       transportesSelecionados
@@ -1065,7 +1065,7 @@ export function SharedRequisitionsPage({
         
         // Update local state immediately for snappy UI
         setRequisicoes(prev => prev.map(r => r.id === req.id ? updatedReq : r));
-        setEstadoEdicao('EM_PROGRESSO');
+        setEstadoEdicao('FECHADO');
         
         // Background refresh to keep everything in sync
         fetchRequisicoes();
@@ -1101,7 +1101,7 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'EM_PROGRESSO') {
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && (estadoEdicao === 'EM_PROGRESSO' || estadoEdicao === 'FECHADO')) {
       try {
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
@@ -1241,8 +1241,8 @@ export function SharedRequisitionsPage({
     try {
       setUpdatingEstadoId(openedRequisicaoId);
 
-      // First, move to EM_PROGRESSO
-      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'EM_PROGRESSO' });
+      // First, move to the intended state (EM_PROGRESSO or FECHADO)
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
 
       // Then, automatically close ALL conflicting transport requests
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {

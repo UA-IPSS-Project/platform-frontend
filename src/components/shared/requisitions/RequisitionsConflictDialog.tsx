@@ -43,13 +43,13 @@ export function RequisitionsConflictDialog({
         <div className="space-y-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">
             {conflitoDialogMode === 'blocked'
-              ? `Já existe uma requisição aceite que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
+              ? `Já existe uma requisição fechada que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
               : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
           </p>
 
           {conflitoDialogMode === 'blocked' && (
             <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
-              Impossível aceitar esta marcação porque já existe uma marcação aceite com este(s) veículo(s).
+              Impossível finalizar esta marcação porque já existe uma marcação fechada com este(s) veículo(s).
             </p>
           )}
 
@@ -102,7 +102,7 @@ export function RequisitionsConflictDialog({
                   disabled={updatingEstadoId === openedRequisicaoId}
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
-                  {updatingEstadoId === openedRequisicaoId ? savingLabel : 'Continuar com o Aceitar Requisição'}
+                  {updatingEstadoId === openedRequisicaoId ? savingLabel : 'Continuar com a alteração de estado'}
                 </Button>
               </>
             )}
