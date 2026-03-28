@@ -254,7 +254,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     } else if (!validateEmail(formData.email)) {
       newErrors.email = t('appointmentDialog.errors.emailInvalid');
     }
-    if (!validateContact(formData.contact)) {
+    if (formData.contact && !validateContact(formData.contact)) {
       newErrors.contact = t('appointmentDialog.errors.contactInvalid');
     }
 
@@ -504,7 +504,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.contact')}</Label>
+              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">
+                {t('appointmentDialog.fields.contact')} <span className="text-xs font-normal text-gray-500">{t('common.optional')}</span>
+              </Label>
               <Input
                 id="contact"
                 type="text"
