@@ -383,7 +383,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <Route path="/notifications" element={
                 <NotificationsPage
                   notifications={notifications.map(n => ({
-                    id: n.id.toString(),
+                    id: n.id?.toString() || Math.random().toString(),
                     title: n.titulo,
                     message: n.mensagem,
                     timestamp: n.dataCriacao,
