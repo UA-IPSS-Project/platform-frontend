@@ -86,7 +86,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         setIsLoading(true);
         try {
             const data = await utilizadoresApi.listarFuncionarios();
-            setUsers(data);
+            const sorted = [...data].sort((a, b) => {
+                if (a.active !== b.active) return a.active ? 1 : -1;
+                return (b.id || 0) - (a.id || 0);
+            });
+            setUsers(sorted);
         } catch (error) {
             console.error("Failed to fetch users", error);
         } finally {
@@ -246,7 +250,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             await utilizadoresApi.createBySecretary({
                 name: formData.name,
                 nif: formData.nif,
-                contact: formData.contact,
+                contact: formData.contact || undefined,
                 email: formData.email,
                 birthDate: formData.birthDate,
                 isEmployee: formData.role !== 'UTENTE',
