@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -115,8 +116,8 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
     setPaginaAtual((prev) => Math.min(prev, totalPaginas));
   }, [totalPaginas]);
 
-  const normalizarInicioDia = (valor: string) => new Date(`${valor}T00:00:00`).toISOString();
-  const normalizarFimDia = (valor: string) => new Date(`${valor}T23:59:59.999`).toISOString();
+  const normalizarInicioDia = (valor: string) => format(new Date(`${valor}T00:00:00`), "yyyy-MM-dd'T'HH:mm:ss");
+  const normalizarFimDia = (valor: string) => format(new Date(`${valor}T23:59:59.999`), "yyyy-MM-dd'T'HH:mm:ss");
 
   const pesquisarDocumentos = async (showToast = true) => {
     try {

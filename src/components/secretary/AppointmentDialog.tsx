@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { format } from 'date-fns';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -123,7 +124,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       }
 
       // Verificar se o slot está bloqueado
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = format(date, 'yyyy-MM-dd');
       const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
       if (isBlocked) {
         toast.error(t('appointmentDialog.errors.slotUnavailable'));
@@ -131,7 +132,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         return;
       }
 
-      const localDateTime = dateTime.toISOString().slice(0, 19);
+      const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
 
       // Use apiRequest for automatic CSRF token inclusion and cookie-based auth
       const data = await apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
@@ -315,7 +316,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const payload = {
         funcionarioId,
         criadoPorId: funcionarioId, // Added for consistency
-        data: dataHora.toISOString().slice(0, 19),
+        data: format(dataHora, "yyyy-MM-dd'T'HH:mm:ss"),
         assunto: formData.subject,
         descricao: formData.description,
         utenteNif: formData.nif,

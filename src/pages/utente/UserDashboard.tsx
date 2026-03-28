@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { Button } from '../../components/ui/button';
 import { NavDropdown } from '../../components/layout/NavDropdown';
 import { NotificationsPage } from '../NotificationsPage';
@@ -125,9 +126,9 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       if (historyStartDate) {
         const s = new Date(historyStartDate);
         s.setHours(0, 0, 0, 0);
-        startIsoString = s.toISOString();
+        startIsoString = format(s, "yyyy-MM-dd'T'HH:mm:ss");
       }
-      const data = await marcacoesApi.obterPassadas(startIsoString, endOfDay.toISOString(), authUser.id);
+      const data = await marcacoesApi.obterPassadas(startIsoString, format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss"), authUser.id);
       setHistoryAppointments(data.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
@@ -383,7 +384,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <Route path="/notifications" element={
                 <NotificationsPage
                   notifications={notifications.map(n => ({
-                    id: n.id.toString(),
+                    id: n.id?.toString() || Math.random().toString(),
                     title: n.titulo,
                     message: n.mensagem,
                     timestamp: n.dataCriacao,

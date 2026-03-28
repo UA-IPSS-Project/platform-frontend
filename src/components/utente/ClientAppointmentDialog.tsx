@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { format } from 'date-fns';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -70,7 +71,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       }
 
       // Verificar se o slot está bloqueado
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = format(date, 'yyyy-MM-dd');
       const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
       if (isBlocked) {
         toast.error(t('appointmentDialog.errors.slotUnavailable'));
@@ -78,7 +79,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
         return;
       }
 
-      const localDateTime = dateTime.toISOString().slice(0, 19);
+      const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
 
       const data = await marcacoesApi.reservarSlot({
         data: localDateTime,
@@ -150,7 +151,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       const dateTime = new Date(date);
       dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const localDateTime = dateTime.toISOString().slice(0, 19);
+      const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
 
       // Use apiRequest directly to match exact original body format but with CSRF protection
       // We avoid marcacoesApi.criarRemota here because strict typing would force us to send 

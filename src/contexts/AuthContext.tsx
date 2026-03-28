@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useState, useContext, useEffect, useRef, ReactNode } from 'react';
 import { API_BASE_URL, authApi, AuthResponse } from '../services/api';
 
 interface User {
@@ -48,13 +48,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  // Token state removed (managed by HTTP-Only Cookie)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+  const isCheckingAuth = useRef(false);
 
   const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
   const checkAuth = async (retryCount = 0) => {
+    if (isCheckingAuth.current && retryCount === 0) return;
+    isCheckingAuth.current = true;
+    
     console.log('[Auth] checkAuth called - retryCount:', retryCount, 'current user:', user?.role);
     try {
       // Verify session with backend (sends cookie automatically)
@@ -104,6 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       handleLogoutState();
       setIsLoading(false);
+    } finally {
+      isCheckingAuth.current = false;
     }
   };
 

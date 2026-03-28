@@ -1,7 +1,5 @@
-
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
-import { getCookie } from '../services/api/core/client';
 import { getWebSocketProtocol } from '../utils/wsProtocol';
 
 export function useWebSocket(
@@ -23,12 +21,9 @@ export function useWebSocket(
             wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
         }
 
-        // Read JWT from cookie so the STOMP CONNECT frame is authenticated
-        const jwt = getCookie('jwt');
+        // Authentication is handled via HTTP-Only cookies at the handshake level
+        // and via the JwtWebSocketInterceptor (Principal) in the backend.
         const connectHeaders: Record<string, string> = {};
-        if (jwt) {
-            connectHeaders['Authorization'] = `Bearer ${jwt}`;
-        }
 
         stompClient.current = new Client({
             brokerURL: wsUrl,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { GlassCard } from '../ui/glass-card';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -408,7 +409,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         // Apenas bloqueios dentro da janela da semana
         if (date < startOfWeek || date > endOfWeek) return;
 
-        const dateStr = date.toISOString().split('T')[0];
+        const dateStr = format(date, 'yyyy-MM-dd');
         const startMins = timeToMinutes(block.horaInicio);
         const endMins = timeToMinutes(block.horaFim);
 
@@ -517,7 +518,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Verificar se um slot está bloqueado (visualização + clique)
   const isSlotBlockedSync = (date: Date, time: string): boolean => {
     if (!date || isNaN(date.getTime())) return false;
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     const key = `${dateStr}_${time}`;
     return blockedSlots.has(key);
   };
@@ -528,7 +529,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     if (isSlotBlockedSync(date, time)) return true;
 
     // Fallback api check
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     try {
       return await calendarioApi.verificarSlot(dateStr, time, appointmentType);
     } catch (e) { return false; }
@@ -536,7 +537,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
   const getAvailableSlotsForDate = (date: Date) =>
     timeSlots.filter((slot) => {
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = format(date, 'yyyy-MM-dd');
       const key = `${dateStr}_${slot}`;
       // Verificar tanto os bloqueios da semana quanto do mês do quick dialog
       const isBlockedInWeek = blockedSlots.has(key);
@@ -1141,7 +1142,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
         bloqueios.forEach((bloqueio: BloqueioAgenda) => {
           const date = new Date(bloqueio.data);
-          const dateStr = date.toISOString().split('T')[0];
+          const dateStr = format(date, 'yyyy-MM-dd');
 
           const startMins = timeToMinutes(bloqueio.horaInicio);
           const endMins = timeToMinutes(bloqueio.horaFim);
@@ -1200,7 +1201,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const isHoliday = (date: Date): boolean => {
     const set = holidaysByYear[date.getFullYear()];
     if (!set) return false;
-    const key = date.toISOString().split('T')[0];
+    const key = format(date, 'yyyy-MM-dd');
     return set.has(key);
   };
 
