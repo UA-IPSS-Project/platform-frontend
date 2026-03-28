@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { NavDropdown } from '../../components/layout/NavDropdown';
@@ -166,8 +167,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       startOfDay.setHours(0, 0, 0, 0);
 
       const data = await marcacoesApi.obterPassadas(
-        startOfDay.toISOString(),
-        endOfDay.toISOString()
+        format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
+        format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
       );
       setHistoryAppointments((Array.isArray(data) ? data : []).map(mapApiToAppointment));
     } catch (error) {

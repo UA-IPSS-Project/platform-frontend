@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
@@ -157,8 +158,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             startOfDay.setHours(0, 0, 0, 0);
 
             const data = await marcacoesApi.obterPassadas(
-                startOfDay.toISOString(),
-                endOfDay.toISOString()
+                format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
+                format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
             );
             const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
             setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
