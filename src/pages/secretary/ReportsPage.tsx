@@ -39,12 +39,9 @@ const ESTADO_LABELS: Record<string, string> = {
   NAO_COMPARECIDO: 'Não Compareceu',
   INVALIDO: 'Inválido',
   EM_PREENCHIMENTO: 'Em Preenchimento',
-  ENVIADA: 'Enviada',
-  EM_ANALISE: 'Em Análise',
-  ACEITE: 'Aceite',
-  RECUSADA: 'Recusada',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
+  // Requisitions
+  ABERTO: 'Aberto',
+  FECHADO: 'Fechado',
 };
 
 const PRIORIDADE_LABELS: Record<string, string> = {

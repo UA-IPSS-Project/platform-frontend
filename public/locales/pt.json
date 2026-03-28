@@ -679,6 +679,9 @@
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
     "labels": {
       "allStatuses": "Todos os estados",
+      "open": "Aberto",
+      "inProgress": "Em progresso",
+      "closed": "Fechado",
       "inAnalysis": "Em análise",
       "accepted": "Aceite",
       "rejected": "Recusada",
@@ -739,7 +742,7 @@
       "driver": "Condutor",
       "toBeDefined": "A definir",
       "newStatus": "Novo estado",
-      "finalStateRuleHint": "Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas."
+      "finalStateRuleHint": "Esta requisição já foi finalizada. Apenas transições para Em progresso ou Fechado são permitidas a partir de Aberto."
     },
     "ui": {
       "mainData": "Dados principais",

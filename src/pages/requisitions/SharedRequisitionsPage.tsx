@@ -94,7 +94,7 @@ export function SharedRequisitionsPage({
   const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
   const sectionSwitchTimeoutRef = useRef<number | null>(null);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
-  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
+  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
@@ -193,7 +193,7 @@ export function SharedRequisitionsPage({
       try {
         const todasRequisicoes = await requisicoesApi.procurar({
           tipo: 'TRANSPORTE',
-          estado: 'ACEITE'
+          estado: 'EM_PROGRESSO'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -279,7 +279,7 @@ export function SharedRequisitionsPage({
       : monthlyRequisicoes;
 
     todasRequisicoes.forEach((requisicao) => {
-      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
+      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'EM_PROGRESSO') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
         dataHoraRegressoSelecionada,
@@ -934,7 +934,7 @@ export function SharedRequisitionsPage({
 
     const conflitos = outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+      .filter((outra) => outra.estado !== 'FECHADO')
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -964,7 +964,7 @@ export function SharedRequisitionsPage({
       return null;
     }
 
-    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'EM_PROGRESSO');
     const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
     const nomesTransportesConflito = Array.from(new Set(
       transportesSelecionados
@@ -984,7 +984,7 @@ export function SharedRequisitionsPage({
     outrasRequisicoes: RequisicaoResponse[],
   ): RequisicaoResponse[] => {
     // Similar to calcularConflitosTransporte, but includes ALL conflicting requisitions
-    // regardless of their state (except CANCELADA), for automatic rejection
+    // regardless of their state (except FECHADO), for automatic closure
     const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
     const idsSelecionados = new Set(
       transportesSelecionados
@@ -998,7 +998,7 @@ export function SharedRequisitionsPage({
 
     return outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'CANCELADA') // Don't reject cancelled requests
+      .filter((outra) => outra.estado !== 'FECHADO') // Don't reject closed requests
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -1058,16 +1058,16 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
-    if (req.estado === 'ENVIADA') {
+    // Ao visualizar uma requisição ABERTO na secretaria, a requisição entra automaticamente em progresso.
+    if (req.estado === 'ABERTO') {
       try {
         setUpdatingEstadoId(req.id);
-        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
+        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_PROGRESSO' });
         await fetchRequisicoes();
-        setEstadoEdicao('EM_ANALISE');
+        setEstadoEdicao('EM_PROGRESSO');
       } catch (error: any) {
         toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
-        setEstadoEdicao('EM_ANALISE');
+        setEstadoEdicao('ABERTO');
       } finally {
         setUpdatingEstadoId(null);
       }
@@ -1097,7 +1097,7 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'EM_PROGRESSO') {
       try {
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
@@ -1237,41 +1237,34 @@ export function SharedRequisitionsPage({
     try {
       setUpdatingEstadoId(openedRequisicaoId);
 
-      // First, accept the current request
-      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      // First, move to EM_PROGRESSO
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'EM_PROGRESSO' });
 
-      // Then, automatically reject ALL conflicting transport requests regardless of their state
+      // Then, automatically close ALL conflicting transport requests
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
           const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
 
-          // Get ALL conflicting requests (including ENVIADA, EM_ANALISE, etc)
+          // Get ALL conflicting requests
           const todosOsConflitos = calcularTodosOsConflitosTransporte(
             selectedRequisicao,
             requisicoesList,
           );
 
           if (todosOsConflitos.length > 0) {
-            // Backend only allows ENVIADA -> EM_ANALISE -> RECUSADA.
-            // For other pending states, RECUSADA can be applied directly.
-            const rejeitarConflito = async (conflito: RequisicaoResponse) => {
-              if (conflito.estado === 'RECUSADA') {
+            const fecharConflito = async (conflito: RequisicaoResponse) => {
+              if (conflito.estado === 'FECHADO') {
                 return;
               }
 
-              if (conflito.estado === 'ENVIADA') {
-                await requisicoesApi.atualizarEstado(conflito.id, { estado: 'EM_ANALISE' });
-              }
-
-              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' });
+              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'FECHADO' });
             };
 
-            await Promise.all(todosOsConflitos.map((conflito) => rejeitarConflito(conflito)));
+            await Promise.all(todosOsConflitos.map((conflito) => fecharConflito(conflito)));
           }
         } catch (error: any) {
-          // Log rejection errors but don't block the main acceptance
-          console.error('Failed to reject conflicting requisitions:', error);
+          console.error('Failed to close conflicting requisitions:', error);
         }
       }
 
