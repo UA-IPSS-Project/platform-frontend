@@ -21,6 +21,7 @@
   "appointmentDialog": {
     "durationLabel": "Appointment duration",
     "durationBalneario": "30 minutes",
+    "durationSecretary": "15 minutes",
     "title": "New Appointment",
     "description": "Fill in the user's details to create a new appointment",
     "at": "at",
@@ -321,8 +322,8 @@
         "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
         "secretaryScheduleTitle": "Secretary schedule",
         "balnearioScheduleTitle": "Bathhouse schedule",
-        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot.",
-        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots.",
+        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot. Each appointment lasts 15 min.",
+        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots. Each appointment lasts 30 min.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"

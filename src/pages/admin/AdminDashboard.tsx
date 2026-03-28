@@ -35,12 +35,12 @@ interface AdminDashboardProps {
 const slotTypes = [
     {
         tipo: 'SECRETARIA' as const,
-        titulo: 'Agenda da Secretaria',
+        titulo: 'Agenda da Secretaria (15 min)',
         descricao: 'Define quantas marcações da secretaria podem coexistir no mesmo horário.',
     },
     {
         tipo: 'BALNEARIO' as const,
-        titulo: 'Agenda do Balneário',
+        titulo: 'Agenda do Balneário (30 min)',
         descricao: 'Controla a lotação operacional dos slots de marcação do balneário.',
     },
 ];
