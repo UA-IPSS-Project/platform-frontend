@@ -192,9 +192,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         }
 
         // Contact
-        if (!formData.contact) {
-            newErrors.contact = t('auth.contactRequired');
-        } else if (!validateContact(formData.contact)) {
+        if (formData.contact && !validateContact(formData.contact)) {
             newErrors.contact = t('auth.contactMustHave9Digits');
         }
 
@@ -441,7 +439,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             {errors.nif && <p className="text-red-500 text-xs">{errors.nif}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.contact')}</Label>
+                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">
+                                                {t('appointmentDialog.fields.contact')} <span className="font-normal opacity-70">{t('common.optional')}</span>
+                                            </Label>
                                             <Input
                                                 placeholder="912345678"
                                                 maxLength={9}

@@ -82,9 +82,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       newErrors.nif = t('auth.nifMustHave9Digits');
     }
 
-    if (!formData.contact) {
-      newErrors.contact = t('auth.contactRequired');
-    } else if (!validateContact(formData.contact)) {
+    if (formData.contact && !validateContact(formData.contact)) {
       newErrors.contact = t('auth.contactMustHave9Digits');
     }
 
@@ -324,7 +322,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
           <div className="space-y-2">
             <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-              {t('auth.contact')} *
+              {t('auth.contact')} <span className="text-xs font-normal text-gray-500">{t('common.optional')}</span>
             </Label>
             <Input
               id="contact"

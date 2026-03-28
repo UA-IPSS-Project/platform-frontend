@@ -442,7 +442,8 @@
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
-    "ok": "OK"
+    "ok": "OK",
+    "optional": "(optional)"
   },
   "notifications": {
     "title": "Notifications",
