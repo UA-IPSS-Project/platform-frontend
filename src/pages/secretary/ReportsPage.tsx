@@ -81,11 +81,12 @@ export function ReportsPage() {
   // Color palette for PDF (Fixed to Light Mode)
   const colors: Record<string, [number, number, number]> = {
     primary: [241, 149, 217], // #f195d9
-    background: [255, 255, 255],
+    background: [247, 242, 244], // #f7f2f4
     foreground: [30, 41, 59],
-    muted: [253, 242, 248], // pink-50
-    accent: [253, 242, 248], // pink-50
-    border: [251, 207, 232], // pink-200
+    muted: [252, 231, 243], // pink-100 (softer than before)
+    accent: [252, 231, 243], // pink-100 (softer than before)
+    border: [251, 207, 232], // pink-200 (softer border)
+    tableBorder: [227, 45, 145], // #e32d91
   };
 
   const getStatusColor = (status?: string): [number, number, number] => {
@@ -149,7 +150,8 @@ export function ReportsPage() {
     const pageH = doc.internal.pageSize.getHeight();
     let y = 0;
 
-    doc.setFillColor(255, 255, 255);
+    // Set background color
+    doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]);
     doc.rect(0, 0, pageW, pageH, 'F');
 
     doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
@@ -168,7 +170,7 @@ export function ReportsPage() {
     const addSectionTitle = (title: string, count: number) => {
       if (y > pageH - 50) {
         doc.addPage();
-        doc.setFillColor(255, 255, 255);
+        doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]);
         doc.rect(0, 0, pageW, pageH, 'F');
         y = 20;
       }
@@ -195,14 +197,14 @@ export function ReportsPage() {
       doc.text(`Pág. ${pageNum}`, pageW - 14 - doc.getTextWidth(`Pág. ${pageNum}`), pageH - 7);
     };
 
-    const tableStyles = { fontSize: 8, cellPadding: 2, textColor: colors.foreground, lineColor: colors.border };
+    const tableStyles = { fontSize: 8, cellPadding: 2, textColor: colors.foreground, lineColor: colors.border, fillColor: colors.background };
     const tableHeadStyles = { fillColor: colors.primary, textColor: 255, fontStyle: 'bold' as const };
     const tableAlternateRowStyles = { fillColor: colors.accent };
 
     let sectionCount = 0;
 
     if (selected.has('secretaria')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Marcações — Secretaria', marcacoesSecretaria.length);
       if (marcacoesSecretaria.length === 0) {
@@ -212,6 +214,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Hora', 'Utente', 'Assunto', 'Tipo', 'Estado']],
           body: marcacoesSecretaria.map(m => [formatDateStr(m.data), formatTimeStr(m.data), m.marcacaoSecretaria?.utente?.nome ?? '—', m.marcacaoSecretaria?.assunto ?? '—', m.marcacaoSecretaria?.tipoAtendimento === 'PRESENCIAL' ? 'Presencial' : 'Remota', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -219,7 +222,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('balneario')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Marcações — Balneário', marcacoesBalneario.length);
       if (marcacoesBalneario.length === 0) {
@@ -229,6 +232,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Hora', 'Utente', 'Higiene', 'Lavagem', 'Estado']],
           body: marcacoesBalneario.map(m => [formatDateStr(m.data), formatTimeStr(m.data), (m as any).marcacaoBalneario?.nomeUtente ?? '—', (m as any).marcacaoBalneario?.produtosHigiene ? 'Sim' : 'Não', (m as any).marcacaoBalneario?.lavagemRoupa ? 'Sim' : 'Não', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -236,7 +240,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('material')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Material', reqMaterial.length);
       if (reqMaterial.length === 0) {
@@ -244,8 +248,28 @@ export function ReportsPage() {
       } else {
         autoTable(doc, {
           startY: y, head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
-          body: reqMaterial.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', (r.itens ?? []).map(i => `${i.material?.nome ?? '?'} ×${i.quantidade ?? 1}`).join(', ') || '—', PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade, { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
+          body: reqMaterial.map(r => {
+            const days = getDiffDays(r.criadoEm);
+            const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
+              const cat = i.material?.categoria || 'Geral';
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(`• ${i.material?.nome ?? '?'} x${i.quantidade ?? 1}`);
+              return acc;
+            }, {});
+            const itensStr = Object.entries(grouped)
+              .map(([cat, items]) => `${cat}:\n${items.join('\n')}`)
+              .join('\n\n') || '—';
+            return [
+              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+              itensStr,
+              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+              { content: `${days} d`, styles: getDeadlineStyles(days) },
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+            ];
+          }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 }, columnStyles: { 2: { cellWidth: 50 } },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -253,7 +277,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('transporte')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Transporte', reqTransporte.length);
       if (reqTransporte.length === 0) {
@@ -263,6 +287,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
           body: reqTransporte.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.destino ?? '—', r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—', { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -270,7 +295,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('manutencao')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Manutenção', reqManutencao.length);
       if (reqManutencao.length === 0) {
@@ -280,6 +305,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
           body: reqManutencao.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.assunto ?? r.descricao ?? '—', PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade, { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
