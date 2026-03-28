@@ -72,6 +72,26 @@ export function ReportsPage() {
   );
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Color palette for PDF (Fixed to Light Mode)
+  const colors: Record<string, [number, number, number]> = {
+    primary: [241, 149, 217], // #f195d9
+    background: [255, 255, 255],
+    foreground: [30, 41, 59],
+    muted: [253, 242, 248], // pink-50
+    accent: [253, 242, 248], // pink-50
+    border: [251, 207, 232], // pink-200
+  };
+
+  const getStatusColor = (status?: string): [number, number, number] => {
+    if (!status) return [107, 114, 128];
+    const s = status.toUpperCase();
+    if (['CONCLUIDO', 'ACEITE', 'CONCLUIDA'].includes(s)) return [16, 185, 129]; // Emerald 600
+    if (['CANCELADO', 'RECUSADA', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
+    if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
+    if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // #f195d9
+    return [107, 114, 128]; // Gray
+  };
+
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
       const next = new Set(prev);
@@ -121,8 +141,12 @@ export function ReportsPage() {
       const pageH = doc.internal.pageSize.getHeight();
       let y = 0;
 
+      // White background
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageW, pageH, 'F');
+
       // --- Header ---
-      doc.setFillColor(109, 40, 217); // purple-700
+      doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
       doc.rect(0, 0, pageW, 28, 'F');
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
@@ -144,34 +168,60 @@ export function ReportsPage() {
 
       const addSectionTitle = (title: string, count: number) => {
         // Check space
-        if (y > pageH - 50) { doc.addPage(); y = 20; }
-        doc.setFillColor(245, 243, 255);
+        if (y > pageH - 50) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        
+        doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
         doc.roundedRect(10, y - 5, pageW - 20, 10, 2, 2, 'F');
-        doc.setTextColor(109, 40, 217);
+        
+        doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         doc.text(title, 14, y + 2);
+        
         doc.setTextColor(120, 120, 120);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.text(`${count} registro(s)`, pageW - 14 - doc.getTextWidth(`${count} registro(s)`), y + 2);
+        doc.text(`${count} registo(s)`, pageW - 14 - doc.getTextWidth(`${count} registo(s)`), y + 2);
         y += 12;
       };
 
       // Footer hook
-      const totalPagesRef = { value: 0 };
       const addFooter = (pageNum: number) => {
         doc.setFontSize(8);
         doc.setTextColor(160, 160, 160);
         doc.setFont('helvetica', 'normal');
+        doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
         doc.line(10, pageH - 12, pageW - 10, pageH - 12);
         doc.text('Documento gerado automaticamente — Florinhas do Vouga', 14, pageH - 7);
         doc.text(`Pág. ${pageNum}`, pageW - 14 - doc.getTextWidth(`Pág. ${pageNum}`), pageH - 7);
       };
 
+      // Table settings
+      const tableStyles = {
+        fontSize: 8,
+        cellPadding: 2,
+        textColor: colors.foreground,
+        lineColor: colors.border,
+      };
+      
+      const tableHeadStyles = {
+        fillColor: colors.primary,
+        textColor: 255,
+        fontStyle: 'bold' as const,
+      };
+      
+      const tableAlternateRowStyles = {
+        fillColor: colors.accent,
+      };
+
       // ── Marcações Secretaria ─────────────────────────────────────
       if (selected.has('secretaria')) {
-        addSectionTitle('Marcacoes — Secretaria', marcacoesSecretaria.length);
+        addSectionTitle('Marcações — Secretaria', marcacoesSecretaria.length);
         if (marcacoesSecretaria.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
           doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
@@ -185,11 +235,11 @@ export function ReportsPage() {
               m.marcacaoSecretaria?.utente?.nome ?? '—',
               m.marcacaoSecretaria?.assunto ?? '—',
               m.marcacaoSecretaria?.tipoAtendimento === 'PRESENCIAL' ? 'Presencial' : 'Remota',
-              ESTADO_LABELS[m.estado] ?? m.estado,
+              { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } },
             ]),
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [109, 40, 217], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [248, 245, 255] },
+            styles: tableStyles,
+            headStyles: tableHeadStyles,
+            alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
           });
@@ -199,7 +249,7 @@ export function ReportsPage() {
 
       // ── Marcações Balneário ─────────────────────────────────────
       if (selected.has('balneario')) {
-        addSectionTitle('Marcacoes — Balneario', marcacoesBalneario.length);
+        addSectionTitle('Marcações — Balneário', marcacoesBalneario.length);
         if (marcacoesBalneario.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
           doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
@@ -213,11 +263,11 @@ export function ReportsPage() {
               (m as any).marcacaoBalneario?.nomeUtente ?? '—',
               (m as any).marcacaoBalneario?.produtosHigiene ? 'Sim' : 'Não',
               (m as any).marcacaoBalneario?.lavagemRoupa ? 'Sim' : 'Não',
-              ESTADO_LABELS[m.estado] ?? m.estado,
+              { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } },
             ]),
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [8, 145, 178], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [240, 249, 255] },
+            styles: tableStyles,
+            headStyles: tableHeadStyles,
+            alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
           });
@@ -227,7 +277,7 @@ export function ReportsPage() {
 
       // ── Requisições Material ─────────────────────────────────────
       if (selected.has('material')) {
-        addSectionTitle('Requisicoes de Material', reqMaterial.length);
+        addSectionTitle('Requisições de Material', reqMaterial.length);
         if (reqMaterial.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
           doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
@@ -240,11 +290,11 @@ export function ReportsPage() {
               r.criadoPor?.nome ?? '—',
               (r.itens ?? []).map(i => `${i.material?.nome ?? '?'} ×${i.quantidade ?? 1}`).join(', ') || '—',
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              ESTADO_LABELS[r.estado] ?? r.estado,
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
             ]),
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [234, 88, 12], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [255, 247, 237] },
+            styles: tableStyles,
+            headStyles: tableHeadStyles,
+            alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
             columnStyles: { 2: { cellWidth: 60 } },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
@@ -255,7 +305,7 @@ export function ReportsPage() {
 
       // ── Requisições Transporte ───────────────────────────────────
       if (selected.has('transporte')) {
-        addSectionTitle('Requisicoes de Transporte', reqTransporte.length);
+        addSectionTitle('Requisições de Transporte', reqTransporte.length);
         if (reqTransporte.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
           doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
@@ -269,11 +319,11 @@ export function ReportsPage() {
               r.destino ?? '—',
               r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
               r.numeroPassageiros?.toString() ?? '—',
-              ESTADO_LABELS[r.estado] ?? r.estado,
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
             ]),
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [22, 163, 74], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [240, 253, 244] },
+            styles: tableStyles,
+            headStyles: tableHeadStyles,
+            alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
           });
@@ -283,7 +333,7 @@ export function ReportsPage() {
 
       // ── Requisições Manutenção ───────────────────────────────────
       if (selected.has('manutencao')) {
-        addSectionTitle('Requisicoes de Manutencao', reqManutencao.length);
+        addSectionTitle('Requisições de Manutenção', reqManutencao.length);
         if (reqManutencao.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
           doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
@@ -296,11 +346,11 @@ export function ReportsPage() {
               r.criadoPor?.nome ?? '—',
               r.assunto ?? r.descricao ?? '—',
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              ESTADO_LABELS[r.estado] ?? r.estado,
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
             ]),
-            styles: { fontSize: 8, cellPadding: 2 },
-            headStyles: { fillColor: [100, 116, 139], textColor: 255, fontStyle: 'bold' },
-            alternateRowStyles: { fillColor: [248, 250, 252] },
+            styles: tableStyles,
+            headStyles: tableHeadStyles,
+            alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
           });
@@ -308,13 +358,12 @@ export function ReportsPage() {
         }
       }
 
-      // Add footer to last page
+      // Final pass to ensure all pages have footer and proper background
       const totalPages = (doc as any).internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
         addFooter(i);
       }
-      totalPagesRef.value = totalPages;
 
       // Save
       const filename = `relatorio_${startDate}_${endDate}.pdf`;
