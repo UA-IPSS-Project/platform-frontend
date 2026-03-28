@@ -1,5 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { ChevronRight } from 'lucide-react';
@@ -170,7 +171,7 @@ export function DayScheduleDialog({
                                   return;
                                 }
 
-                                const dateStr = date.toISOString().split('T')[0];
+                                const dateStr = format(date, 'yyyy-MM-dd');
                                 const isBlocked = await calendarioApi.verificarSlot(dateStr, time, appointmentType);
                                 if (isBlocked) {
                                   toast.error('Horário indisponível');

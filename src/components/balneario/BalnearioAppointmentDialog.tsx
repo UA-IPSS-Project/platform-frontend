@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { format } from 'date-fns';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -100,7 +101,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 return;
             }
 
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = format(date, 'yyyy-MM-dd');
             const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'BALNEARIO');
             if (isBlocked) {
                 toast.error(t('balnearioAppointment.errors.slotUnavailable'));
@@ -108,7 +109,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 return;
             }
 
-            const localDateTime = dateTime.toISOString().slice(0, 19);
+            const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
             const data = await apiRequest<{ tempId: number }>('/api/marcacoes/reservar-slot', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -255,7 +256,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             });
 
             const payload = {
-                data: dataHora.toISOString().slice(0, 19),
+                data: format(dataHora, "yyyy-MM-dd'T'HH:mm:ss"),
                 nomeUtente: name.trim() || t('balnearioAppointment.anonymousName'),
                 produtosHigiene: hasHygiene,
                 lavagemRoupa: hasLaundry,

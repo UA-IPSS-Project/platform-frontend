@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -445,7 +446,7 @@ function cleanFilename(name: string) {
   const isHoliday = (date: Date) => {
     const set = holidaysByYear[date.getFullYear()];
     if (!set) return false;
-    const key = date.toISOString().split('T')[0];
+    const key = format(date, 'yyyy-MM-dd');
     return set.has(key);
   };
 
@@ -472,7 +473,7 @@ function cleanFilename(name: string) {
         const newBlocks = new Set<string>();
         const timeSlots = generateTimeSlots();
         bloqueios.forEach((b: any) => {
-          const dateStr = new Date(b.data).toISOString().split('T')[0];
+          const dateStr = format(new Date(b.data), 'yyyy-MM-dd');
           if (b.horaInicio && b.horaFim) {
             timeSlots.forEach(slot => {
               if (slot >= b.horaInicio && slot < b.horaFim) newBlocks.add(`${dateStr}_${slot}`);
@@ -491,7 +492,7 @@ function cleanFilename(name: string) {
 
     const selectedDate = new Date(rescheduleDate);
     selectedDate.setHours(0, 0, 0, 0);
-    const dateStr = selectedDate.toISOString().split('T')[0];
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     const now = new Date();
 
     const available = generateTimeSlots().filter(slot => {
@@ -532,7 +533,7 @@ function cleanFilename(name: string) {
 
     try {
       // API call to backend - backend handles all validation
-      await marcacoesApi.reagendar(Number(appointment.id), newDate.toISOString());
+      await marcacoesApi.reagendar(Number(appointment.id), format(newDate, "yyyy-MM-dd'T'HH:mm:ss"));
 
       onUpdate(appointment.id, {
         date: newDate,
