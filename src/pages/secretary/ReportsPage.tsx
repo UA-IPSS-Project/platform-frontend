@@ -6,6 +6,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
+import { reportsApi } from '../../services/api/reports/reportsApi';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
 const formatDate = (date: Date) => {
@@ -71,6 +72,7 @@ export function ReportsPage() {
     new Set(['secretaria', 'balneario'])
   );
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   // Color palette for PDF (Fixed to Light Mode)
   const colors: Record<string, [number, number, number]> = {
@@ -90,6 +92,21 @@ export function ReportsPage() {
     if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
     if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // #f195d9
     return [107, 114, 128]; // Gray
+  };
+
+  const getDiffDays = (isoDate?: string) => {
+    if (!isoDate) return 0;
+    const now = new Date();
+    const d = new Date(isoDate);
+    const diff = now.getTime() - d.getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const getDeadlineStyles = (days: number): { textColor?: [number, number, number], fontStyle?: 'bold', fillColor?: [number, number, number] } => {
+    if (days >= 180) return { textColor: [255, 255, 255], fillColor: [0, 0, 0], fontStyle: 'bold' };
+    if (days >= 90) return { textColor: [220, 38, 38], fontStyle: 'bold' };
+    if (days >= 30) return { textColor: [180, 83, 9], fontStyle: 'bold' }; // Darker amber for yellow
+    return { fontStyle: 'bold' };
   };
 
   const toggle = (id: ReportSection) =>
@@ -219,8 +236,17 @@ export function ReportsPage() {
         fillColor: colors.accent,
       };
 
+      let sectionCount = 0;
+
       // ── Marcações Secretaria ─────────────────────────────────────
       if (selected.has('secretaria')) {
+        if (sectionCount > 0) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        sectionCount++;
         addSectionTitle('Marcações — Secretaria', marcacoesSecretaria.length);
         if (marcacoesSecretaria.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -249,6 +275,13 @@ export function ReportsPage() {
 
       // ── Marcações Balneário ─────────────────────────────────────
       if (selected.has('balneario')) {
+        if (sectionCount > 0) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        sectionCount++;
         addSectionTitle('Marcações — Balneário', marcacoesBalneario.length);
         if (marcacoesBalneario.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -277,6 +310,13 @@ export function ReportsPage() {
 
       // ── Requisições Material ─────────────────────────────────────
       if (selected.has('material')) {
+        if (sectionCount > 0) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        sectionCount++;
         addSectionTitle('Requisições de Material', reqMaterial.length);
         if (reqMaterial.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -284,19 +324,23 @@ export function ReportsPage() {
         } else {
           autoTable(doc, {
             startY: y,
-            head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Estado']],
-            body: reqMaterial.map(r => [
-              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.criadoPor?.nome ?? '—',
-              (r.itens ?? []).map(i => `${i.material?.nome ?? '?'} ×${i.quantidade ?? 1}`).join(', ') || '—',
-              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
-            ]),
+            head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
+            body: reqMaterial.map(r => {
+              const days = getDiffDays(r.criadoEm);
+              return [
+                r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+                r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+                (r.itens ?? []).map(i => `${i.material?.nome ?? '?'} ×${i.quantidade ?? 1}`).join(', ') || '—',
+                PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+                { content: `${days} d`, styles: getDeadlineStyles(days) },
+                { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
+              ];
+            }),
             styles: tableStyles,
             headStyles: tableHeadStyles,
             alternateRowStyles: tableAlternateRowStyles,
             margin: { left: 10, right: 10 },
-            columnStyles: { 2: { cellWidth: 60 } },
+            columnStyles: { 2: { cellWidth: 50 } },
             didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
           });
           y = (doc as any).lastAutoTable.finalY + 10;
@@ -305,6 +349,13 @@ export function ReportsPage() {
 
       // ── Requisições Transporte ───────────────────────────────────
       if (selected.has('transporte')) {
+        if (sectionCount > 0) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        sectionCount++;
         addSectionTitle('Requisições de Transporte', reqTransporte.length);
         if (reqTransporte.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -312,15 +363,18 @@ export function ReportsPage() {
         } else {
           autoTable(doc, {
             startY: y,
-            head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Passageiros', 'Estado']],
-            body: reqTransporte.map(r => [
-              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.criadoPor?.nome ?? '—',
-              r.destino ?? '—',
-              r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
-              r.numeroPassageiros?.toString() ?? '—',
-              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
-            ]),
+            head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
+            body: reqTransporte.map(r => {
+              const days = getDiffDays(r.criadoEm);
+              return [
+                r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+                r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+                r.destino ?? '—',
+                r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
+                { content: `${days} d`, styles: getDeadlineStyles(days) },
+                { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
+              ];
+            }),
             styles: tableStyles,
             headStyles: tableHeadStyles,
             alternateRowStyles: tableAlternateRowStyles,
@@ -333,6 +387,13 @@ export function ReportsPage() {
 
       // ── Requisições Manutenção ───────────────────────────────────
       if (selected.has('manutencao')) {
+        if (sectionCount > 0) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pageW, pageH, 'F');
+          y = 20;
+        }
+        sectionCount++;
         addSectionTitle('Requisições de Manutenção', reqManutencao.length);
         if (reqManutencao.length === 0) {
           doc.setFontSize(9); doc.setTextColor(140, 140, 140);
@@ -340,14 +401,18 @@ export function ReportsPage() {
         } else {
           autoTable(doc, {
             startY: y,
-            head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Estado']],
-            body: reqManutencao.map(r => [
-              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.criadoPor?.nome ?? '—',
-              r.assunto ?? r.descricao ?? '—',
-              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
-            ]),
+            head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
+            body: reqManutencao.map(r => {
+              const days = getDiffDays(r.criadoEm);
+              return [
+                r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+                r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+                r.assunto ?? r.descricao ?? '—',
+                PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+                { content: `${days} d`, styles: getDeadlineStyles(days) },
+                { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } },
+              ];
+            }),
             styles: tableStyles,
             headStyles: tableHeadStyles,
             alternateRowStyles: tableAlternateRowStyles,
@@ -497,12 +562,59 @@ export function ReportsPage() {
         </div>
       </GlassCard>
 
-      {/* Generate Button */}
-      <div className="flex justify-end">
+      {/* Actions */}
+      <div className="flex justify-end gap-3">
+        <Button
+          onClick={async () => {
+            const email = window.prompt('Introduza o e-mail de destino:');
+            if (!email) return;
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              toast.error('E-mail inválido');
+              return;
+            }
+
+            setIsSendingEmail(true);
+            try {
+              const subject = `Relatório Institucional - Florinhas do Vouga (${startDate} a ${endDate})`;
+              const body = `Relatório institucional referente ao período de ${startDate} até ${endDate}.\n\n` +
+                `Seções selecionadas: ${Array.from(selected).map(s => SECTIONS.find(sec => sec.id === s)?.label).join(', ')}.\n\n` +
+                `Este e-mail foi gerado automaticamente pelo portal de gestão.`;
+
+              await reportsApi.sendByEmail({ to: email, subject, body });
+              toast.success('E-mail enviado com sucesso!');
+            } catch (error) {
+              toast.error('Erro ao enviar e-mail. Verifique o servidor.');
+            } finally {
+              setIsSendingEmail(false);
+            }
+          }}
+          disabled={isSendingEmail || selected.size === 0}
+          variant="outline"
+          className="border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 px-6 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2"
+        >
+          {isSendingEmail ? (
+            <>
+              <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              A enviar...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Enviar por Email
+            </>
+          )}
+        </Button>
+
         <Button
           onClick={generatePDF}
           disabled={isGenerating || selected.size === 0}
-          className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-purple-900/30 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl shadow-lg shadow-pink-200 dark:shadow-pink-900/30 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isGenerating ? (
             <>
