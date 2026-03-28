@@ -1258,11 +1258,11 @@ export function SharedRequisitionsPage({
 
           if (todosOsConflitos.length > 0) {
             const fecharConflito = async (conflito: RequisicaoResponse) => {
-              if (conflito.estado === 'FECHADO') {
+              if (conflito.estado === 'FECHADO' || conflito.estado === 'RECUSADO') {
                 return;
               }
 
-              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'FECHADO' });
+              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADO' });
             };
 
             await Promise.all(todosOsConflitos.map((conflito) => fecharConflito(conflito)));

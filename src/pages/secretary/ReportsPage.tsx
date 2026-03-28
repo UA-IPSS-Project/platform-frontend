@@ -42,6 +42,7 @@ const ESTADO_LABELS: Record<string, string> = {
   // Requisitions
   ABERTO: 'Aberto',
   FECHADO: 'Fechado',
+  RECUSADO: 'Recusado',
 };
 
 const PRIORIDADE_LABELS: Record<string, string> = {

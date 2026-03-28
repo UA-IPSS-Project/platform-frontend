@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ABERTO' | 'EM_PROGRESSO' | 'FECHADO';
+export type RequisicaoEstado = 'ABERTO' | 'EM_PROGRESSO' | 'FECHADO' | 'RECUSADO';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 
