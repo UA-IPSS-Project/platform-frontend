@@ -4,6 +4,8 @@ export interface SendReportRequest {
   to: String;
   subject: String;
   body: String;
+  pdfBase64?: String;
+  fileName?: String;
 }
 
 export const reportsApi = {
