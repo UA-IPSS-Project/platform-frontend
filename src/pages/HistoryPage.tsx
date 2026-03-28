@@ -278,18 +278,26 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         <meta charset="UTF-8">
         <title>${t('history.title')}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
-          .subtitle { text-align: center; color: #4a5568; margin-bottom: 20px; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: ${isDarkMode ? '#0f172a' : '#ffffff'};
+            color: ${isDarkMode ? '#e2e8f0' : '#1e293b'};
+          }
+          h1 { color: ${isDarkMode ? '#8b5cf6' : '#7c3aed'}; text-align: center; margin-bottom: 5px; }
+          .subtitle { text-align: center; color: ${isDarkMode ? '#94a3b8' : '#4a5568'}; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th { background-color: #4a5568; color: white; padding: 10px; text-align: left; font-size: 12px; }
-          td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
-          tr:nth-child(even) { background-color: #f7fafc; }
+          th { background-color: ${isDarkMode ? '#8b5cf6' : '#7c3aed'}; color: white; padding: 10px; text-align: left; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid ${isDarkMode ? '#334155' : '#e2e8f0'}; font-size: 11px; }
+          tr:nth-child(even) { background-color: ${isDarkMode ? '#2e1065' : '#f5f3ff'}; }
           .status-completed { color: #38a169; font-weight: bold; }
           .status-cancelled { color: #e53e3e; }
           .status-no_show { color: #f97316; font-weight: bold; }
           .status-warning { color: #d69e2e; font-weight: bold; }
-          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #718096; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: ${isDarkMode ? '#64748b' : '#718096'}; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
         </style>
       </head>
       <body>
