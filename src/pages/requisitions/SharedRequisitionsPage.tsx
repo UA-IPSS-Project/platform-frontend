@@ -1058,13 +1058,17 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    // Ao visualizar uma requisição ABERTO na secretaria, a requisição entra automaticamente em progresso.
     if (req.estado === 'ABERTO') {
       try {
         setUpdatingEstadoId(req.id);
-        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_PROGRESSO' });
-        await fetchRequisicoes();
+        const updatedReq = await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_PROGRESSO' });
+        
+        // Update local state immediately for snappy UI
+        setRequisicoes(prev => prev.map(r => r.id === req.id ? updatedReq : r));
         setEstadoEdicao('EM_PROGRESSO');
+        
+        // Background refresh to keep everything in sync
+        fetchRequisicoes();
       } catch (error: any) {
         toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
         setEstadoEdicao('ABERTO');

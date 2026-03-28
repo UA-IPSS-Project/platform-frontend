@@ -41,7 +41,7 @@ export const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): Req
     return ['ABERTO', 'EM_PROGRESSO', 'FECHADO'];
   }
   if (estadoAtual === 'EM_PROGRESSO') {
-    return ['EM_PROGRESSO', 'FECHADO'];
+    return ['FECHADO'];
   }
   if (estadoAtual) {
     return [estadoAtual];
