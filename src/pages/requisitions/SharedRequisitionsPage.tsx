@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
@@ -93,8 +92,7 @@ export function SharedRequisitionsPage({
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>(initialSection);
-  const sectionSwitchTimeoutRef = useRef<number | null>(null);
+  const [activeSection, setActiveSection] = useState<'list' | 'create'>(initialSection);
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
   const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
@@ -105,16 +103,16 @@ export function SharedRequisitionsPage({
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
-  const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
+  const isRequestVisibleForScope = useCallback((requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
     if (scopeRole === 'ALL') return true;
     return requisicao.criadoPor?.tipo === scopeRole;
-  };
+  }, [scopeRole]);
 
-  const applyScopeFilter = (lista: RequisicaoResponse[]): RequisicaoResponse[] => {
+  const applyScopeFilter = useCallback((lista: RequisicaoResponse[]): RequisicaoResponse[] => {
     if (scopeRole === 'ALL') return lista;
     return lista.filter((item) => isRequestVisibleForScope(item));
-  };
+  }, [scopeRole, isRequestVisibleForScope]);
 
   const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
 
@@ -161,18 +159,27 @@ export function SharedRequisitionsPage({
         ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
         : listaScope;
       setRequisicoes(lista);
-      // Reutiliza o resultado já carregado para alimentar o overview mensal,
-      // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
-      setMonthlyRequisicoes(lista);
     } catch (error: any) {
       toast.error(error?.message || t('requisitions.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [filters, t]);
-  // chamada adicional não filtrada a requisicoesApi.procurar({}).
+  }, [filters, t, isSecretaryView, applyScopeFilter, activeSection]);
+
+  const fetchMonthlyRequisicoes = useCallback(async () => {
+    if (activeSection !== 'list') return;
+    try {
+      const data = await requisicoesApi.procurar({});
+      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
+      setMonthlyRequisicoes(lista);
+    } catch (error: any) {
+      console.error('Failed to fetch monthly requisitions:', error);
+    }
+  }, [applyScopeFilter, activeSection]);
 
   useEffect(() => {
+    if (activeSection !== 'list') return;
+    fetchMonthlyRequisicoes();
     fetchRequisicoes({
       estado: '',
       tipo: initialTipo ?? '',
@@ -180,7 +187,7 @@ export function SharedRequisitionsPage({
       criadoPorNome: '',
       geridoPorNome: '',
     });
-  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes]);
+  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes, fetchMonthlyRequisicoes, activeSection]);
 
   useEffect(() => {
     createForm.setCreateErrors({});
@@ -211,14 +218,6 @@ export function SharedRequisitionsPage({
       setActiveSection(initialSection);
     }
   }, [initialSection]);
-
-  useEffect(() => {
-    return () => {
-      if (sectionSwitchTimeoutRef.current) {
-        globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const materiaisPorCategoria = useMemo(() => {
     const map = new Map<string, MaterialItemGroup[]>();
@@ -1302,25 +1301,6 @@ export function SharedRequisitionsPage({
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
 
-  const toggleSection = (targetSection: 'create' | 'list') => {
-    if (sectionSwitchTimeoutRef.current) {
-      globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      sectionSwitchTimeoutRef.current = null;
-    }
-
-    if (activeSection === targetSection) {
-      const oppositeSection = targetSection === 'create' ? 'list' : 'create';
-      setActiveSection(null);
-      sectionSwitchTimeoutRef.current = globalThis.setTimeout(() => {
-        setActiveSection(oppositeSection);
-        sectionSwitchTimeoutRef.current = null;
-      }, 140);
-      return;
-    }
-
-    setActiveSection(targetSection);
-  };
-
   const createFormContent = (
     <div className="space-y-5">
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
@@ -1504,53 +1484,24 @@ export function SharedRequisitionsPage({
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
-      <RequisitionsStatsCards
-        stats={stats}
-        onCardShortcut={handleCardShortcut}
-        t={t}
-      />
+    <div className="max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      {activeSection === 'list' ? (
+        <div className="space-y-6">
+          <RequisitionsStatsCards
+            stats={stats}
+            onCardShortcut={handleCardShortcut}
+            t={t}
+          />
 
-      <div className="lg:hidden space-y-6">
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.clickToOpenForm')}</p>}
-            </div>
-            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
-
-          {activeSection === 'create' && (
-            <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
-              {createFormContent}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('list')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleRequestsSection')}
-          >
-            <div className="text-left">
+          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
               <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
             </div>
-            {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
 
-          {activeSection === 'list' && (
-            <div className="px-5 pb-5 space-y-4">
+            <div className="px-5 pb-5 pt-4 space-y-4">
               <RequisitionsListFiltersContent
-                desktop={false}
+                desktop={true}
                 activeTab={filters.activeTab}
                 onSelectTab={handleSelectTab}
                 filterEstado={filters.filterEstado}
@@ -1567,7 +1518,11 @@ export function SharedRequisitionsPage({
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
-                requisicoes={requisicoes}
+                requisicoes={requisicoes.filter(req => {
+                  if (filters.activeTab === 'GERAL') return true;
+                  if (filters.activeTab === 'URGENTE') return req.prioridade === 'URGENTE';
+                  return req.tipo === filters.activeTab;
+                })}
                 onOpenRequisicao={handleOpenRequisicao}
                 selectFieldClassName={selectFieldClassName}
                 inputFieldClassName={inputFieldClassName}
@@ -1575,94 +1530,21 @@ export function SharedRequisitionsPage({
                 t={t}
               />
             </div>
-          )}
-        </GlassCard>
-      </div>
-
-      <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/5 min-w-[180px]' : 'w-full'}`}>
-          {activeSection === 'create' ? (
-            <button
-              type="button"
-              onClick={() => toggleSection('list')}
-              className="h-full w-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
-              aria-label={t('requisitions.ui.toggleRequestsSection')}
-            >
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.requests')}</span>
-              <ChevronLeft className="w-5 h-5 text-gray-500 rotate-180" />
-            </button>
-          ) : (
-            <>
-              <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
-              </div>
-
-              <div className="px-5 pb-5 pt-4 space-y-4">
-                <RequisitionsListFiltersContent
-                  desktop
-                  activeTab={filters.activeTab}
-                  onSelectTab={handleSelectTab}
-                  filterEstado={filters.filterEstado}
-                  setFilterEstado={filters.setFilterEstado}
-                  filterPrioridade={filters.filterPrioridade}
-                  setFilterPrioridade={filters.setFilterPrioridade}
-                  filterCriadoPorNome={filters.filterCriadoPorNome}
-                  setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                  filterGeridoPorNome={filters.filterGeridoPorNome}
-                  setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
-                  showCreatedByRoleFilter={isSecretaryView}
-                  filterCriadoPorTipo={filters.filterCriadoPorTipo}
-                  setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
-                  onSearch={() => fetchRequisicoes()}
-                  onClearFilters={handleClearFilters}
-                  loading={loading}
-                  requisicoes={requisicoes}
-                  onOpenRequisicao={handleOpenRequisicao}
-                  selectFieldClassName={selectFieldClassName}
-                  inputFieldClassName={inputFieldClassName}
-                  formatDateTimeOrDash={formatDateTimeOrDash}
-                  t={t}
-                />
-
-              </div>
-            </>
-          )}
-        </GlassCard>
-
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-4/5 opacity-100' : 'w-[160px] opacity-100'}`}>
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className={`w-full transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${activeSection === 'create'
-              ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
-              : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
-              }`}
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            {activeSection === 'create' ? (
-              <>
-                <div className="text-left">
-                  <h2 className={`text-lg font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.creationPanel')}</p>
-                </div>
-                <ChevronUp className="w-5 h-5 text-gray-500" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.create')}</span>
-                <ChevronLeft className="w-5 h-5 text-gray-500" />
-              </>
-            )}
-          </button>
-
-          {activeSection === 'create' && (
-            <div className="px-4 pb-4 pt-3">
+          </GlassCard>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
+              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('requisitions.ui.fillToCreate')}</p>
+            </div>
+            <div className="p-5">
               {createFormContent}
             </div>
-          )}
-        </GlassCard>
-      </div>
+          </GlassCard>
+        </div>
+      )}
 
       <RequisitionDetailsDialog
         open={openedRequisicaoId !== null}
