@@ -248,7 +248,8 @@ export function ReportsPage() {
         autoTable(doc, {
           startY: y, head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
           body: reqMaterial.map(r => {
-            const days = getDiffDays(r.criadoEm);
+            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
+            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
             const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
               const cat = i.material?.categoria || 'Geral';
               if (!acc[cat]) acc[cat] = [];
@@ -263,7 +264,7 @@ export function ReportsPage() {
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               itensStr,
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              { content: `${days} d`, styles: getDeadlineStyles(days) },
+              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
               { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
             ];
           }),
@@ -284,7 +285,18 @@ export function ReportsPage() {
       } else {
         autoTable(doc, {
           startY: y, head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
-          body: reqTransporte.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.destino ?? '—', r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—', { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
+          body: reqTransporte.map(r => {
+            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
+            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
+            return [
+              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+              r.destino ?? '—',
+              r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
+              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+            ];
+          }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
           tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
@@ -302,7 +314,18 @@ export function ReportsPage() {
       } else {
         autoTable(doc, {
           startY: y, head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
-          body: reqManutencao.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.assunto ?? r.descricao ?? '—', PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade, { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
+          body: reqManutencao.map(r => {
+            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
+            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
+            return [
+              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+              r.assunto ?? r.descricao ?? '—',
+              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+            ];
+          }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
           tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
