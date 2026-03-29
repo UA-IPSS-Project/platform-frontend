@@ -11,7 +11,7 @@ import {
   formatTipo 
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { RequisicaoEstado, RequisicaoPrioridade, RequisicaoResponse } from '../../../services/api';
-import { Info, User, Clock, Calendar, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 interface RequisitionsListFiltersContentProps {
   desktop: boolean;
@@ -153,16 +153,15 @@ export function RequisitionsListFiltersContent({
       <div className="space-y-4">
         {/* Row 1: Basic Status Filters */}
         <div className={`grid grid-cols-1 ${showCreatedByRoleFilter ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
-          <div className="space-y-1.5">
-            <label htmlFor={estadoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-              <Info className="w-3.5 h-3.5" />
+          <div className="space-y-1">
+            <label htmlFor={estadoId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.status')}
             </label>
             <select
               id={estadoId}
               value={filterEstado}
               onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
+              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20 text-sm`}
             >
               {ESTADO_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
@@ -170,16 +169,15 @@ export function RequisitionsListFiltersContent({
             </select>
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor={prioridadeId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-              <Info className="w-3.5 h-3.5 rotate-180" />
+          <div className="space-y-1">
+            <label htmlFor={prioridadeId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.priority')}
             </label>
             <select
               id={prioridadeId}
               value={filterPrioridade}
               onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
+              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20 text-sm`}
             >
               <option value="">{t('requisitions.ui.allPriorities')}</option>
               {PRIORIDADE_OPTIONS.map((option) => (
@@ -189,16 +187,15 @@ export function RequisitionsListFiltersContent({
           </div>
 
           {showCreatedByRoleFilter && (
-            <div className="space-y-1.5">
-              <label htmlFor={criadoTipoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-                <User className="w-3.5 h-3.5" />
+            <div className="space-y-1">
+              <label htmlFor={criadoTipoId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
                 {t('requisitions.ui.createdByRole')}
               </label>
               <select
                 id={criadoTipoId}
                 value={filterCriadoPorTipo}
                 onChange={(e) => setFilterCriadoPorTipo?.(e.target.value as '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO')}
-                className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
+                className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20 text-sm`}
               >
                 <option value="">{t('requisitions.ui.allRoles')}</option>
                 <option value="SECRETARIA">{t('requisitions.ui.roleSecretary')}</option>
@@ -212,14 +209,13 @@ export function RequisitionsListFiltersContent({
 
         {/* Row 2: Search and Dates */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-1.5">
-            <label htmlFor={criadoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-              <User className="w-3.5 h-3.5" />
+          <div className="space-y-1">
+            <label htmlFor={criadoId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.createdByName')}
             </label>
             <Input 
               id={criadoId} 
-              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm`} 
               type="text" 
               value={filterCriadoPorNome} 
               onChange={(e) => setFilterCriadoPorNome(e.target.value)} 
@@ -227,28 +223,26 @@ export function RequisitionsListFiltersContent({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor={dataInicioId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-              <Calendar className="w-3.5 h-3.5" />
+          <div className="space-y-0.5 md:space-y-1">
+            <label htmlFor={dataInicioId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.startDate')}
             </label>
             <Input 
               id={dataInicioId} 
-              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm h-9 md:h-10`} 
               type="date" 
               value={filterDataInicio} 
               onChange={(e) => setFilterDataInicio(e.target.value)} 
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor={dataFimId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
-              <Calendar className="w-3.5 h-3.5" />
+          <div className="space-y-0.5 md:space-y-1">
+            <label htmlFor={dataFimId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.endDate')}
             </label>
             <Input 
               id={dataFimId} 
-              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm h-9 md:h-10`} 
               type="date" 
               value={filterDataFim} 
               onChange={(e) => setFilterDataFim(e.target.value)} 
@@ -300,21 +294,20 @@ export function RequisitionsListFiltersContent({
           {requisicoes.map((req) => (
             <div 
               key={req.id} 
-              className="group relative rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1"
+              onClick={() => onOpenRequisicao(req)}
+              className="group relative rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-4 transition-all duration-300 hover:border-purple-300 hover:shadow-xl hover:shadow-purple-500/5 hover:-translate-y-0.5 cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-4 mb-5">
-                <div className="flex flex-col gap-1.5">
-                  <p className="font-extrabold text-xl text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors tracking-tight">
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex flex-col gap-0.5">
+                  <p className="font-extrabold text-base text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors tracking-tight">
                     # {formatTipo(req.tipo)}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                      ID: {req.id}
-                    </span>
-                  </div>
+                  <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    ID: {req.id}
+                  </span>
                 </div>
-                <div className="flex flex-col items-end gap-3">
-                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-sm ${
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
                     req.prioridade === 'URGENTE' 
                       ? 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' 
                       : req.prioridade === 'ALTA'
@@ -324,44 +317,43 @@ export function RequisitionsListFiltersContent({
                     {formatPrioridade(req.prioridade)}
                   </span>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="h-9 px-5 rounded-xl border-purple-200 dark:border-purple-900/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs ring-offset-2 focus:ring-2 focus:ring-purple-500"
-                    onClick={() => onOpenRequisicao(req)}
+                    className="h-7 px-3 rounded-lg text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-all font-bold text-[10px]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenRequisicao(req);
+                    }}
                   >
-                    {t('requisitions.ui.details', 'Ver Detalhes')}
+                    Detalhes
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-5 gap-x-6 border-t border-gray-100 dark:border-gray-800 pt-5">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5">
-                    <Info className="w-3 h-3" />
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-gray-100 dark:border-gray-800 pt-3">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     {t('requisitions.labels.status')}
                   </p>
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{formatEstado(req.estado)}</p>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{formatEstado(req.estado)}</p>
                 </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5 justify-end">
-                    <User className="w-3 h-3" />
+                <div className="space-y-0.5 text-right">
+                  <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     {t('requisitions.labels.createdBy')}
                   </p>
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[140px] ml-auto">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[120px] ml-auto">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5">
-                    <Clock className="w-3 h-3" />
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     Criado a
                   </p>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.criadoEm)}</p>
+                  <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.criadoEm)}</p>
                 </div>
-                <div className="space-y-1 text-right">
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5 justify-end">
-                    <Calendar className="w-3 h-3" />
+                <div className="space-y-0.5 text-right">
+                  <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     {t('requisitions.labels.deadline')}
                   </p>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.tempoLimite)}</p>
+                  <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.tempoLimite)}</p>
                 </div>
               </div>
             </div>
