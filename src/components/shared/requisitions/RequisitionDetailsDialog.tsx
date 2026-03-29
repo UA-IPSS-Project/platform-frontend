@@ -268,6 +268,7 @@ export function RequisitionDetailsDialog({
                                    transporte={transporte}
                                    showCheckbox={false}
                                    showCategory={false}
+                                   variant="minimal"
                                    t={t}
                                  />
                                ))}

@@ -791,7 +791,7 @@
       "passengerCapacity": "Capacidade para passageiros",
       "seatsCount": "{{count}} lugares",
       "coverage": "Cobertura",
-      "capacityHint": "A lotação contabiliza o condutor (1 condutor, mais condutores serão contados como passageiros).",
+      "capacityHint": "Lotação inclui condutor; extras contam como passageiros.",
       "capacityHintDetail": "A lotação útil considera 1 lugar para o condutor em cada viatura.",
       "unavailableVehiclesCount": "{{count}} viatura(s) indisponível(is) por já terem uma requisição aceite neste horário.",
       "currentSelection": "Seleção atual",

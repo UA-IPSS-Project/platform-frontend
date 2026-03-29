@@ -791,7 +791,7 @@
       "passengerCapacity": "Passenger capacity",
       "seatsCount": "{{count}} seats",
       "coverage": "Coverage",
-      "capacityHint": "Capacity includes the driver (1 driver, additional drivers count as passengers).",
+      "capacityHint": "Capacity includes driver; extras count as passengers.",
       "capacityHintDetail": "Usable capacity reserves 1 seat for the driver in each vehicle.",
       "unavailableVehiclesCount": "{{count}} vehicle(s) unavailable because they already have an accepted request in this time slot.",
       "currentSelection": "Current selection",
