@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, Search, ShoppingBag, Box, X, Plus } from 'lucide-react';
+import { ChevronDown, Search, ShoppingBag, Box, X } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
@@ -157,60 +157,41 @@ export function RequisitionsCreateMaterialForm({
                     <div 
                       className="p-4 flex-1 space-y-3 cursor-pointer"
                       onClick={() => {
-                        if (item.variantes.length === 1) {
+                        const isSingleVariant = item.variantes.length === 1;
+                        if (isSingleVariant) {
                           const variante = item.variantes[0];
                           const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
                           
-                          // Se já está selecionado, apenas toggle na visibilidade (não retira seleção por acidente)
                           if (!isCurrentlySelected) {
                             onToggleVariante(variante.id, true);
                           }
-                          
-                          // Sempre abre se tiver variante única e clicarmos no card
-                          if (!isExpanded) {
-                            onToggleItemVisibility(item.itemKey);
-                          } else if (isCurrentlySelected) {
-                            // Se já está aberto e selecionado, clicando no card fecha-o
-                            onToggleItemVisibility(item.itemKey);
-                          }
-                        } else {
-                          onToggleItemVisibility(item.itemKey);
                         }
+                        onToggleItemVisibility(item.itemKey);
                       }}
                     >
                       <div className="flex items-start justify-between">
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {item.nome}
                         </h4>
-                        {item.variantes.length === 1 && !isSelected ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/30 transition-all duration-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const isSingleVariant = item.variantes.length === 1;
+                            if (isSingleVariant) {
                               const variante = item.variantes[0];
-                              onToggleVariante(variante.id, true);
-                              if (!isExpanded) {
-                                onToggleItemVisibility(item.itemKey);
+                              const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
+                              if (!isCurrentlySelected) {
+                                onToggleVariante(variante.id, true);
                               }
-                            }}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onToggleItemVisibility(item.itemKey);
-                            }}
-                          >
-                            <ChevronDown className="w-4 h-4" />
-                          </Button>
-                        )}
+                            }
+                            onToggleItemVisibility(item.itemKey);
+                          }}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
                       </div>
 
                       {/* Variants and Selection */}
@@ -233,7 +214,7 @@ export function RequisitionsCreateMaterialForm({
                                     <div key={variante.id} className="space-y-2">
                                       <div className="flex items-center justify-between gap-2">
                                         <div 
-                                          className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors group/variant"
+                                          className="flex-1 flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors group/variant cursor-pointer"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onToggleVariante(variante.id, !checked);
@@ -242,10 +223,15 @@ export function RequisitionsCreateMaterialForm({
                                           <Checkbox
                                             id={`var-${variante.id}`}
                                             checked={checked}
+                                            onClick={(e) => e.stopPropagation()}
                                             onCheckedChange={(c) => onToggleVariante(variante.id, !!c)}
                                             className="h-4 w-4 rounded-md border-gray-300 dark:border-gray-700 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                                           />
-                                          <label htmlFor={`var-${variante.id}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none truncate">
+                                          <label 
+                                            htmlFor={`var-${variante.id}`} 
+                                            className="flex-1 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none truncate"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
                                             {label}
                                           </label>
                                         </div>
