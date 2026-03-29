@@ -5,6 +5,7 @@ import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
 import { MaterialItemGroup } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { motion, AnimatePresence } from 'framer-motion';
+import { validateMaterialQuantity, finalizeMaterialQuantity } from '../../../utils/validations/requisition.validation';
 
 interface RequisitionsCreateMaterialFormProps {
   materialLinhas: Array<{ rowId: string; materialId: string; quantidade: string }>;
@@ -80,10 +81,10 @@ export function RequisitionsCreateMaterialForm({
         {/* Search and Navigation */}
         <div className="space-y-4">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10 pointer-events-none" />
             <Input
               placeholder={t('requisitions.ui.searchPlaceholder', { defaultValue: 'Pesquisar materiais...' })}
-              className="pl-10 pr-10 h-11 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md border-gray-200 dark:border-gray-800 rounded-xl shadow-sm focus:ring-purple-500/20"
+              className="pl-10 pr-10 h-11 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 rounded-xl shadow-sm focus:ring-purple-500/20"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -91,7 +92,7 @@ export function RequisitionsCreateMaterialForm({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10"
                 onClick={() => setSearchTerm('')}
               >
                 <X className="w-4 h-4" />
@@ -158,8 +159,20 @@ export function RequisitionsCreateMaterialForm({
                       onClick={() => {
                         if (item.variantes.length === 1) {
                           const variante = item.variantes[0];
-                          const isSelected = materialLinhas.some(l => l.materialId === String(variante.id));
-                          onToggleVariante(variante.id, !isSelected);
+                          const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
+                          
+                          // Se já está selecionado, apenas toggle na visibilidade (não retira seleção por acidente)
+                          if (!isCurrentlySelected) {
+                            onToggleVariante(variante.id, true);
+                          }
+                          
+                          // Sempre abre se tiver variante única e clicarmos no card
+                          if (!isExpanded) {
+                            onToggleItemVisibility(item.itemKey);
+                          } else if (isCurrentlySelected) {
+                            // Se já está aberto e selecionado, clicando no card fecha-o
+                            onToggleItemVisibility(item.itemKey);
+                          }
                         } else {
                           onToggleItemVisibility(item.itemKey);
                         }
@@ -201,7 +214,13 @@ export function RequisitionsCreateMaterialForm({
                                   return (
                                     <div key={variante.id} className="space-y-2">
                                       <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2 min-w-0">
+                                        <div 
+                                          className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors group/variant"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onToggleVariante(variante.id, !checked);
+                                          }}
+                                        >
                                           <Checkbox
                                             id={`var-${variante.id}`}
                                             checked={checked}
@@ -216,11 +235,19 @@ export function RequisitionsCreateMaterialForm({
                                           <div className="flex items-center gap-2 flex-shrink-0 bg-white dark:bg-gray-900 rounded-lg px-2 border border-gray-100 dark:border-gray-800">
                                             <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('requisitions.ui.quantityShort')}</span>
                                             <Input
-                                              type="number"
-                                              min="1"
-                                              className={`h-7 w-12 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 ${quantityFieldClassName}`}
+                                              type="text"
+                                              inputMode="numeric"
+                                              className={`h-7 w-14 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 ${quantityFieldClassName}`}
                                               value={linha?.quantidade ?? '1'}
-                                              onChange={(e) => onUpdateVarianteQuantidade(variante.id, e.target.value)}
+                                              onClick={(e) => e.stopPropagation()}
+                                              onChange={(e) => {
+                                                const validated = validateMaterialQuantity(e.target.value);
+                                                onUpdateVarianteQuantidade(variante.id, validated);
+                                              }}
+                                              onBlur={(e) => {
+                                                const finalized = finalizeMaterialQuantity(e.target.value);
+                                                onUpdateVarianteQuantidade(variante.id, finalized);
+                                              }}
                                             />
                                           </div>
                                         )}
@@ -328,11 +355,19 @@ export function RequisitionsCreateMaterialForm({
                                   <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-purple-500 rounded-lg pr-1">
                                     <span className="text-[10px] text-gray-500 font-medium">{t('requisitions.ui.quantityShort')}:</span>
                                     <Input
-                                      type="number"
-                                      min="1"
-                                      className="h-6 w-12 text-xs border-none bg-transparent p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus-visible:ring-0 font-bold text-purple-600 dark:text-purple-400"
+                                      type="text"
+                                      inputMode="numeric"
+                                      className="h-7 w-16 text-xs bg-white/80 dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800 rounded-lg px-2 focus-visible:ring-1 focus-visible:ring-purple-500 font-bold text-purple-600 dark:text-purple-400 shadow-sm"
                                       value={item.quantidade}
-                                      onChange={(e) => onUpdateVarianteQuantidade(item.materialId, e.target.value)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onChange={(e) => {
+                                        const validated = validateMaterialQuantity(e.target.value);
+                                        onUpdateVarianteQuantidade(item.materialId, validated);
+                                      }}
+                                      onBlur={(e) => {
+                                        const finalized = finalizeMaterialQuantity(e.target.value);
+                                        onUpdateVarianteQuantidade(item.materialId, finalized);
+                                      }}
                                     />
                                   </div>
                                 </div>
