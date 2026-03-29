@@ -6,6 +6,17 @@ import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+
 import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
@@ -118,6 +129,8 @@ export function SharedRequisitionsPage({
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
 
   const isRequestVisibleForScope = useCallback((requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
@@ -750,6 +763,21 @@ export function SharedRequisitionsPage({
   const handleResetCreateForm = useCallback(() => {
     createForm.resetForm();
   }, [createForm]);
+
+  const handleBackWithCheck = useCallback(() => {
+    if (createForm.isDirty) {
+      setShowUnsavedDialog(true);
+    } else {
+      handleResetCreateForm();
+      setActiveSection('list');
+    }
+  }, [createForm.isDirty, handleResetCreateForm]);
+
+  const confirmDiscardChanges = useCallback(() => {
+    handleResetCreateForm();
+    setShowUnsavedDialog(false);
+    setActiveSection('list');
+  }, [handleResetCreateForm]);
 
   const toggleSelectedTransport = useCallback((transporteId: number, checked: boolean) => {
     if (checked && transportesIndisponiveis.has(transporteId)) {
@@ -1510,10 +1538,7 @@ export function SharedRequisitionsPage({
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
-          onClick={() => {
-            handleResetCreateForm();
-            setActiveSection('list');
-          }}
+          onClick={handleBackWithCheck}
           disabled={submitting}
         >
           {t('requisitions.ui.close')}
@@ -1593,7 +1618,7 @@ export function SharedRequisitionsPage({
               </div>
               <Button
                 variant="outline"
-                onClick={() => setActiveSection('list')}
+                onClick={handleBackWithCheck}
                 className="border-gray-300 dark:border-gray-600"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -1627,6 +1652,29 @@ export function SharedRequisitionsPage({
         locale={locale}
         t={t}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('profile.unsaved.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('profile.unsaved.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              {t('profile.unsaved.stay')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscardChanges}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {t('profile.unsaved.discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {canManageRequests && (
         <RequisitionsConflictDialog
