@@ -538,8 +538,10 @@ export function SharedRequisitionsPage({
     }
 
     if (field === 'numeroPassageiros') {
-      if (!createForm.numeroPassageiros && createForm.numeroPassageiros !== '0') return t('requisitions.errors.requiredField');
-      if (Number(createForm.numeroPassageiros) < 0) return t('requisitions.errors.invalidPassengers');
+      const val = String(createForm.numeroPassageiros).trim();
+      if (!val && val !== '0') return t('requisitions.errors.requiredField');
+      const num = Number(val);
+      if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
@@ -768,6 +770,7 @@ export function SharedRequisitionsPage({
         'horaRegresso',
         'numeroPassageiros',
         'transporteIds',
+        'condutor'
       );
     }
     if (createForm.tipo === 'MANUTENCAO') {
@@ -1412,7 +1415,10 @@ export function SharedRequisitionsPage({
                   if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
                 }}
                 condutorTransporte={createForm.condutorTransporte}
-                onChangeCondutor={createForm.setCondutorTransporte}
+                onChangeCondutor={(value) => {
+                  createForm.setCondutorTransporte(value);
+                  if (createForm.createTouched.condutor) validateAndSetField('condutor');
+                }}
                 selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
                   toggleSelectedTransport(transporteId, checked);
@@ -1646,7 +1652,7 @@ export function SharedRequisitionsPage({
       />
 
       {/* Confirmation Modal */}
-      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+      <Dialog open={isConfirmModalOpen} onOpenChange={(open) => setIsConfirmModalOpen(open)}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>{t('requisitions.ui.confirmTitle')}</DialogTitle>

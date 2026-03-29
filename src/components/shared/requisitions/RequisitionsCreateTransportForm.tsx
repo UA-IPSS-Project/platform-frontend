@@ -141,6 +141,23 @@ export function RequisitionsCreateTransportForm({
               placeholder={t('requisitions.ui.driverPlaceholder')}
             />
             {createErrors?.condutor && <p className="text-red-500 text-xs mt-1">{createErrors.condutor}</p>}
+            
+            {createErrors?.condutor && (
+              <div className="mt-2 space-y-1">
+                <p className="text-[10px] text-red-600 dark:text-red-400 font-bold italic">
+                  {t('requisitions.ui.driverHint', { defaultValue: 'OBRIGATÓRIO: Indicar a pessoa (pode ser "Motorista externo" ou "A definir").' })}
+                </p>
+                
+                {selectedTransportes.some(t => (t.lotacao ?? 0) > 9) && (
+                  <div className="flex items-center gap-1.5 text-red-500 dark:text-red-400">
+                    <AlertCircle className="w-3 h-3" />
+                    <p className="text-[10px] font-bold italic uppercase tracking-tight">
+                      {t('requisitions.ui.licenseWarning', { defaultValue: 'OBRIGATÓRIO: Veículo com mais de 9 lugares requer condutor com carta D1 ou D.' })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>
