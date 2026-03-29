@@ -13,10 +13,6 @@ import {
   HomeIcon,
   ClipboardListIcon,
   BuildingIcon,
-  PackageIcon,
-  WrenchIcon,
-  TruckIcon,
-  AlertCircleIcon,
   SchoolIcon,
   BabyIcon,
   UsersIcon,
@@ -47,32 +43,6 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     );
   };
 
-  const clientSections = [
-    {
-      heading: 'Secretaria', items: [
-        { id: 'appointments', label: t('sidebar.appointments') },
-        { id: 'history', label: t('sidebar.history') },
-      ]
-    },
-    {
-      heading: t('sidebar.balneario'), items: [
-        { id: 'balneario', label: t('sidebar.appointments') },
-        { id: 'balneario-sobre', label: t('sidebar.about') },
-      ]
-    },
-    {
-      heading: t('sidebar.volunteering'), items: [
-        { id: 'voluntariado', label: t('sidebar.signup') },
-        { id: 'voluntariado-sobre', label: t('sidebar.about') },
-      ]
-    },
-  ];
-
-  const clientBottom = [
-    { id: 'notificacoes', label: t('sidebar.notifications'), icon: BellIcon },
-    { id: 'profile', label: t('sidebar.profile'), icon: UserIcon },
-    { id: 'settings', label: t('sidebar.settings'), icon: SlidersIcon },
-  ];
 
   // Main menu structure with subitems for Secretary
   const secretaryMenuItems = [
@@ -100,11 +70,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: t('sidebar.requisitions'),
       icon: ClipboardListIcon,
       subitems: [
-        { id: 'requisitions', label: t('sidebar.general'), icon: HomeIcon },
-        { id: 'material', label: t('sidebar.material'), icon: PackageIcon },
-        { id: 'manutencao', label: t('sidebar.maintenance'), icon: WrenchIcon },
-        { id: 'transportes', label: t('sidebar.transport'), icon: TruckIcon },
-        { id: 'urgente', label: t('sidebar.highPriority'), icon: AlertCircleIcon },
+        { id: 'requisitions', label: t('sidebar.requisitions'), icon: HomeIcon },
+        { id: 'requisitions-create', label: t('sidebar.createRequisition'), icon: ClipboardListIcon },
       ]
     },
     {

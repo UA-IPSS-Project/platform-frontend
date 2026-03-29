@@ -227,6 +227,7 @@
     "balneario": "Balneário",
     "school": "Escola",
     "requisitions": "Requisições",
+    "createRequisition": "Criar Requisição",
     "material": "Material",
     "maintenance": "Manutenção",
     "transport": "Transporte",
@@ -245,6 +246,7 @@
     "balneario": "Balneário",
     "appointments": "Marcações",
     "requisitions": "Requisições",
+    "createRequisition": "Criar Requisição",
     "material": "Material",
     "maintenance": "Manutenção",
     "transport": "Transporte",
@@ -680,6 +682,9 @@
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
     "labels": {
       "allStatuses": "Todos os estados",
+      "open": "Aberto",
+      "inProgress": "Em progresso",
+      "closed": "Fechado",
       "inAnalysis": "Em análise",
       "accepted": "Aceite",
       "rejected": "Recusada",
@@ -740,7 +745,7 @@
       "driver": "Condutor",
       "toBeDefined": "A definir",
       "newStatus": "Novo estado",
-      "finalStateRuleHint": "Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas."
+      "finalStateRuleHint": "Esta requisição já foi finalizada. Apenas transições para Em progresso ou Fechado são permitidas a partir de Aberto."
     },
     "ui": {
       "mainData": "Dados principais",
@@ -832,6 +837,8 @@
       "allPriorities": "Todas as prioridades",
       "createdByName": "Criado por nome",
       "createdByPlaceholder": "Ex: Maria",
+      "startDate": "Data início",
+      "endDate": "Data fim",
       "managedByName": "Gerido por nome",
       "managedByPlaceholder": "Ex: João",
       "createdByRole": "Role de quem criou",

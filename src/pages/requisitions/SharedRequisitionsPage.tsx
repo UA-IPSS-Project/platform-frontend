@@ -1,9 +1,22 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
+
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+
 import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
@@ -63,6 +76,8 @@ export interface SharedRequisitionsPageProps {
   initialPrioridade?: RequisicaoPrioridade;
   scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
   canManageRequests?: boolean;
+  initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function SharedRequisitionsPage({
@@ -72,8 +87,18 @@ export function SharedRequisitionsPage({
   initialPrioridade,
   scopeRole = 'ALL',
   canManageRequests = true,
+  initialSection = 'list',
+  onDirtyChange,
 }: Readonly<SharedRequisitionsPageProps>) {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const initialParams = useMemo(() => ({
+    mode: searchParams.get('mode') as 'list' | 'create' | null,
+    tab: searchParams.get('tab') as string | null,
+    type: searchParams.get('type') as RequisicaoTipo | null,
+    priority: searchParams.get('priority') as RequisicaoPrioridade | null,
+  }), [searchParams]);
+
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const formatDateTimeOrDash = (value?: string | null) => {
     if (!value) return '—';
@@ -81,8 +106,8 @@ export function SharedRequisitionsPage({
   };
 
   // Use custom hooks for state management
-  const filters = useRequisitionFilters(initialTipo, initialPrioridade);
-  const createForm = useRequisitionCreateForm(initialTipo, initialPrioridade);
+  const filters = useRequisitionFilters(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
+  const createForm = useRequisitionCreateForm(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
   const catalog = useRequisitionCatalog(t);
 
   // List and dialog state
@@ -91,10 +116,12 @@ export function SharedRequisitionsPage({
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
-  const sectionSwitchTimeoutRef = useRef<number | null>(null);
+  const [activeSection, setActiveSection] = useState<'list' | 'create'>(() => {
+    if (initialParams.mode === 'list' || initialParams.mode === 'create') return initialParams.mode;
+    return initialSection;
+  });
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
-  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
+  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
@@ -102,47 +129,77 @@ export function SharedRequisitionsPage({
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
-  const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
+
+  const isRequestVisibleForScope = useCallback((requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
     if (scopeRole === 'ALL') return true;
     return requisicao.criadoPor?.tipo === scopeRole;
-  };
+  }, [scopeRole]);
 
-  const applyScopeFilter = (lista: RequisicaoResponse[]): RequisicaoResponse[] => {
+  const applyScopeFilter = useCallback((lista: RequisicaoResponse[]): RequisicaoResponse[] => {
     if (scopeRole === 'ALL') return lista;
     return lista.filter((item) => isRequestVisibleForScope(item));
-  };
+  }, [scopeRole, isRequestVisibleForScope]);
 
   const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
 
+  // Sync URL from state with comparison to avoid loops
   useEffect(() => {
-    filters.setFilterTipo(initialTipo ?? '');
-    filters.setFilterPrioridade(initialPrioridade ?? '');
-    if (initialPrioridade === 'URGENTE') {
-      filters.setActiveTab('URGENTE');
-    } else if (initialTipo) {
-      filters.setActiveTab(initialTipo);
-    } else {
-      filters.setActiveTab('GERAL');
+    if (initialParams.tab) {
+      filters.setActiveTab(initialParams.tab as any);
     }
-    if (initialTipo) createForm.setTipo(initialTipo);
-    if (initialPrioridade) createForm.setPrioridade(initialPrioridade);
-  }, [initialTipo, initialPrioridade]);
+  }, [initialParams.tab]);
+
+  /* 
+  useEffect(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('mode', activeSection);
+      next.set('tab', filters.activeTab);
+      if (filters.filterTipo) next.set('type', filters.filterTipo);
+      else next.delete('type');
+      if (filters.filterPrioridade) next.set('priority', filters.filterPrioridade);
+      else next.delete('priority');
+      
+      if (next.toString() === prev.toString()) return prev;
+      return next;
+    }, { replace: true });
+  }, [activeSection, filters.activeTab, filters.filterTipo, filters.filterPrioridade, setSearchParams]);
+  */
+
+  // Dirty state and navigation guards
+  useEffect(() => {
+    onDirtyChange?.(createForm.isDirty);
+  }, [createForm.isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (activeSection === 'create' && createForm.isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeSection, createForm.isDirty]);
 
   const fetchRequisicoes = useCallback(async (overrides?: {
     estado?: RequisicaoEstado | '';
     tipo?: RequisicaoTipo | '';
     prioridade?: RequisicaoPrioridade | '';
     criadoPorNome?: string;
-    geridoPorNome?: string;
+    dataInicio?: string;
+    dataFim?: string;
     criadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
   }) => {
     const estado = overrides?.estado ?? filters.filterEstado;
     const tipoFiltro = overrides?.tipo ?? filters.filterTipo;
     const prioridadeFiltro = overrides?.prioridade ?? filters.filterPrioridade;
     const criadoPor = overrides?.criadoPorNome ?? filters.filterCriadoPorNome;
-    const geridoPor = overrides?.geridoPorNome ?? filters.filterGeridoPorNome;
+    const dataInicio = overrides?.dataInicio ?? filters.filterDataInicio;
+    const dataFim = overrides?.dataFim ?? filters.filterDataFim;
     const criadoPorTipo = overrides?.criadoPorTipo ?? filters.filterCriadoPorTipo;
 
     try {
@@ -152,33 +209,44 @@ export function SharedRequisitionsPage({
         tipo: tipoFiltro || undefined,
         prioridade: prioridadeFiltro || undefined,
         criadoPorNome: criadoPor || undefined,
-        geridoPorNome: geridoPor || undefined,
+        dataInicio: dataInicio || undefined,
+        dataFim: dataFim || undefined,
       });
       const listaScope = applyScopeFilter(Array.isArray(data) ? data : []);
       const lista = isSecretaryView && criadoPorTipo
         ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
         : listaScope;
       setRequisicoes(lista);
-      // Reutiliza o resultado já carregado para alimentar o overview mensal,
-      // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
-      setMonthlyRequisicoes(lista);
     } catch (error: any) {
       toast.error(error?.message || t('requisitions.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [filters, t]);
-  // chamada adicional não filtrada a requisicoesApi.procurar({}).
+  }, [filters, t, isSecretaryView, applyScopeFilter, activeSection]);
+
+  const fetchMonthlyRequisicoes = useCallback(async () => {
+    if (activeSection !== 'list') return;
+    try {
+      const data = await requisicoesApi.procurar({});
+      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
+      setMonthlyRequisicoes(lista);
+    } catch (error: any) {
+      console.error('Failed to fetch monthly requisitions:', error);
+    }
+  }, [applyScopeFilter, activeSection]);
 
   useEffect(() => {
+    if (activeSection !== 'list') return;
+    fetchMonthlyRequisicoes();
     fetchRequisicoes({
       estado: '',
       tipo: initialTipo ?? '',
       prioridade: initialPrioridade ?? '',
       criadoPorNome: '',
-      geridoPorNome: '',
+      dataInicio: '',
+      dataFim: '',
     });
-  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes]);
+  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes, fetchMonthlyRequisicoes, activeSection]);
 
   useEffect(() => {
     createForm.setCreateErrors({});
@@ -193,7 +261,7 @@ export function SharedRequisitionsPage({
       try {
         const todasRequisicoes = await requisicoesApi.procurar({
           tipo: 'TRANSPORTE',
-          estado: 'ACEITE'
+          estado: 'EM_PROGRESSO'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -205,12 +273,10 @@ export function SharedRequisitionsPage({
   }, [createForm.tipo]);
 
   useEffect(() => {
-    return () => {
-      if (sectionSwitchTimeoutRef.current) {
-        globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   const materiaisPorCategoria = useMemo(() => {
     const map = new Map<string, MaterialItemGroup[]>();
@@ -279,7 +345,7 @@ export function SharedRequisitionsPage({
       : monthlyRequisicoes;
 
     todasRequisicoes.forEach((requisicao) => {
-      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
+      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'EM_PROGRESSO') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
         dataHoraRegressoSelecionada,
@@ -702,6 +768,21 @@ export function SharedRequisitionsPage({
     createForm.resetForm();
   }, [createForm]);
 
+  const handleBackWithCheck = useCallback(() => {
+    if (createForm.isDirty) {
+      setShowUnsavedDialog(true);
+    } else {
+      handleResetCreateForm();
+      setActiveSection('list');
+    }
+  }, [createForm.isDirty, handleResetCreateForm]);
+
+  const confirmDiscardChanges = useCallback(() => {
+    handleResetCreateForm();
+    setShowUnsavedDialog(false);
+    setActiveSection('list');
+  }, [handleResetCreateForm]);
+
   const toggleSelectedTransport = useCallback((transporteId: number, checked: boolean) => {
     if (checked && transportesIndisponiveis.has(transporteId)) {
       return;
@@ -865,7 +946,8 @@ export function SharedRequisitionsPage({
       filters.setFilterPrioridade('');
     }
     filters.setFilterCriadoPorNome('');
-    filters.setFilterGeridoPorNome('');
+    filters.setFilterDataInicio('');
+    filters.setFilterDataFim('');
     filters.setFilterCriadoPorTipo('');
   };
 
@@ -888,7 +970,8 @@ export function SharedRequisitionsPage({
           tipo: nextTipo,
           prioridade: nextPrioridade,
           criadoPorNome: filters.filterCriadoPorNome,
-          geridoPorNome: filters.filterGeridoPorNome,
+          dataInicio: filters.filterDataInicio,
+          dataFim: filters.filterDataFim,
         }),
       );
   };
@@ -934,7 +1017,7 @@ export function SharedRequisitionsPage({
 
     const conflitos = outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+      .filter((outra) => outra.estado !== 'FECHADO')
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -964,7 +1047,7 @@ export function SharedRequisitionsPage({
       return null;
     }
 
-    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'FECHADO');
     const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
     const nomesTransportesConflito = Array.from(new Set(
       transportesSelecionados
@@ -984,7 +1067,7 @@ export function SharedRequisitionsPage({
     outrasRequisicoes: RequisicaoResponse[],
   ): RequisicaoResponse[] => {
     // Similar to calcularConflitosTransporte, but includes ALL conflicting requisitions
-    // regardless of their state (except CANCELADA), for automatic rejection
+    // regardless of their state (except FECHADO), for automatic closure
     const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
     const idsSelecionados = new Set(
       transportesSelecionados
@@ -998,7 +1081,7 @@ export function SharedRequisitionsPage({
 
     return outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'CANCELADA') // Don't reject cancelled requests
+      .filter((outra) => outra.estado !== 'FECHADO') // Don't reject closed requests
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -1058,16 +1141,20 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
-    if (req.estado === 'ENVIADA') {
+    if (req.estado === 'ABERTO') {
       try {
         setUpdatingEstadoId(req.id);
-        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
-        await fetchRequisicoes();
-        setEstadoEdicao('EM_ANALISE');
+        const updatedReq = await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_PROGRESSO' });
+        
+        // Update local state immediately for snappy UI
+        setRequisicoes(prev => prev.map(r => r.id === req.id ? updatedReq : r));
+        setEstadoEdicao('FECHADO');
+        
+        // Background refresh to keep everything in sync
+        fetchRequisicoes();
       } catch (error: any) {
         toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
-        setEstadoEdicao('EM_ANALISE');
+        setEstadoEdicao('ABERTO');
       } finally {
         setUpdatingEstadoId(null);
       }
@@ -1097,7 +1184,7 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && (estadoEdicao === 'EM_PROGRESSO' || estadoEdicao === 'FECHADO')) {
       try {
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
@@ -1237,41 +1324,34 @@ export function SharedRequisitionsPage({
     try {
       setUpdatingEstadoId(openedRequisicaoId);
 
-      // First, accept the current request
-      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      // First, move to the intended state (EM_PROGRESSO or FECHADO)
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
 
-      // Then, automatically reject ALL conflicting transport requests regardless of their state
+      // Then, automatically close ALL conflicting transport requests
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
           const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
 
-          // Get ALL conflicting requests (including ENVIADA, EM_ANALISE, etc)
+          // Get ALL conflicting requests
           const todosOsConflitos = calcularTodosOsConflitosTransporte(
             selectedRequisicao,
             requisicoesList,
           );
 
           if (todosOsConflitos.length > 0) {
-            // Backend only allows ENVIADA -> EM_ANALISE -> RECUSADA.
-            // For other pending states, RECUSADA can be applied directly.
-            const rejeitarConflito = async (conflito: RequisicaoResponse) => {
-              if (conflito.estado === 'RECUSADA') {
+            const fecharConflito = async (conflito: RequisicaoResponse) => {
+              if (conflito.estado === 'FECHADO' || conflito.estado === 'RECUSADO') {
                 return;
               }
 
-              if (conflito.estado === 'ENVIADA') {
-                await requisicoesApi.atualizarEstado(conflito.id, { estado: 'EM_ANALISE' });
-              }
-
-              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' });
+              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADO' });
             };
 
-            await Promise.all(todosOsConflitos.map((conflito) => rejeitarConflito(conflito)));
+            await Promise.all(todosOsConflitos.map((conflito) => fecharConflito(conflito)));
           }
         } catch (error: any) {
-          // Log rejection errors but don't block the main acceptance
-          console.error('Failed to reject conflicting requisitions:', error);
+          console.error('Failed to close conflicting requisitions:', error);
         }
       }
 
@@ -1296,25 +1376,6 @@ export function SharedRequisitionsPage({
   const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30 cursor-text';
   const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
   const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-
-  const toggleSection = (targetSection: 'create' | 'list') => {
-    if (sectionSwitchTimeoutRef.current) {
-      globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      sectionSwitchTimeoutRef.current = null;
-    }
-
-    if (activeSection === targetSection) {
-      const oppositeSection = targetSection === 'create' ? 'list' : 'create';
-      setActiveSection(null);
-      sectionSwitchTimeoutRef.current = globalThis.setTimeout(() => {
-        setActiveSection(oppositeSection);
-        sectionSwitchTimeoutRef.current = null;
-      }, 140);
-      return;
-    }
-
-    setActiveSection(targetSection);
-  };
 
   const createFormContent = (
     <div className="space-y-5">
@@ -1483,10 +1544,7 @@ export function SharedRequisitionsPage({
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
-          onClick={() => {
-            handleResetCreateForm();
-            setActiveSection('list');
-          }}
+          onClick={handleBackWithCheck}
           disabled={submitting}
         >
           {t('requisitions.ui.close')}
@@ -1499,53 +1557,33 @@ export function SharedRequisitionsPage({
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
-      <RequisitionsStatsCards
-        stats={stats}
-        onCardShortcut={handleCardShortcut}
-        t={t}
-      />
+    <div className="max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      {activeSection === 'list' ? (
+        <div className="space-y-6">
+          <RequisitionsStatsCards
+            stats={stats}
+            onCardShortcut={handleCardShortcut}
+            t={t}
+          />
 
-      <div className="lg:hidden space-y-6">
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.clickToOpenForm')}</p>}
+          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+              </div>
+              <Button
+                onClick={() => setActiveSection('create')}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 shadow-lg shadow-purple-500/20 transition-all hover:-translate-y-0.5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('requisitions.ui.createRequest')}
+              </Button>
             </div>
-            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
 
-          {activeSection === 'create' && (
-            <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
-              {createFormContent}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('list')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleRequestsSection')}
-          >
-            <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
-            </div>
-            {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
-
-          {activeSection === 'list' && (
-            <div className="px-5 pb-5 space-y-4">
+            <div className="px-5 pb-5 pt-4 space-y-4">
               <RequisitionsListFiltersContent
-                desktop={false}
+                desktop={true}
                 activeTab={filters.activeTab}
                 onSelectTab={handleSelectTab}
                 filterEstado={filters.filterEstado}
@@ -1554,15 +1592,21 @@ export function SharedRequisitionsPage({
                 setFilterPrioridade={filters.setFilterPrioridade}
                 filterCriadoPorNome={filters.filterCriadoPorNome}
                 setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                filterGeridoPorNome={filters.filterGeridoPorNome}
-                setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
+                filterDataInicio={filters.filterDataInicio}
+                setFilterDataInicio={filters.setFilterDataInicio}
+                filterDataFim={filters.filterDataFim}
+                setFilterDataFim={filters.setFilterDataFim}
                 showCreatedByRoleFilter={isSecretaryView}
                 filterCriadoPorTipo={filters.filterCriadoPorTipo}
                 setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
-                requisicoes={requisicoes}
+                requisicoes={requisicoes.filter(req => {
+                  if (filters.activeTab === 'GERAL') return true;
+                  if (filters.activeTab === 'URGENTE') return req.prioridade === 'URGENTE';
+                  return req.tipo === filters.activeTab;
+                })}
                 onOpenRequisicao={handleOpenRequisicao}
                 selectFieldClassName={selectFieldClassName}
                 inputFieldClassName={inputFieldClassName}
@@ -1570,94 +1614,31 @@ export function SharedRequisitionsPage({
                 t={t}
               />
             </div>
-          )}
-        </GlassCard>
-      </div>
-
-      <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/5 min-w-[180px]' : 'w-full'}`}>
-          {activeSection === 'create' ? (
-            <button
-              type="button"
-              onClick={() => toggleSection('list')}
-              className="h-full w-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
-              aria-label={t('requisitions.ui.toggleRequestsSection')}
-            >
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.requests')}</span>
-              <ChevronLeft className="w-5 h-5 text-gray-500 rotate-180" />
-            </button>
-          ) : (
-            <>
-              <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+          </GlassCard>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('requisitions.ui.fillToCreate')}</p>
               </div>
-
-              <div className="px-5 pb-5 pt-4 space-y-4">
-                <RequisitionsListFiltersContent
-                  desktop
-                  activeTab={filters.activeTab}
-                  onSelectTab={handleSelectTab}
-                  filterEstado={filters.filterEstado}
-                  setFilterEstado={filters.setFilterEstado}
-                  filterPrioridade={filters.filterPrioridade}
-                  setFilterPrioridade={filters.setFilterPrioridade}
-                  filterCriadoPorNome={filters.filterCriadoPorNome}
-                  setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                  filterGeridoPorNome={filters.filterGeridoPorNome}
-                  setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
-                  showCreatedByRoleFilter={isSecretaryView}
-                  filterCriadoPorTipo={filters.filterCriadoPorTipo}
-                  setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
-                  onSearch={() => fetchRequisicoes()}
-                  onClearFilters={handleClearFilters}
-                  loading={loading}
-                  requisicoes={requisicoes}
-                  onOpenRequisicao={handleOpenRequisicao}
-                  selectFieldClassName={selectFieldClassName}
-                  inputFieldClassName={inputFieldClassName}
-                  formatDateTimeOrDash={formatDateTimeOrDash}
-                  t={t}
-                />
-
-              </div>
-            </>
-          )}
-        </GlassCard>
-
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-4/5 opacity-100' : 'w-[160px] opacity-100'}`}>
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className={`w-full transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${activeSection === 'create'
-              ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
-              : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
-              }`}
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            {activeSection === 'create' ? (
-              <>
-                <div className="text-left">
-                  <h2 className={`text-lg font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.creationPanel')}</p>
-                </div>
-                <ChevronUp className="w-5 h-5 text-gray-500" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.create')}</span>
-                <ChevronLeft className="w-5 h-5 text-gray-500" />
-              </>
-            )}
-          </button>
-
-          {activeSection === 'create' && (
-            <div className="px-4 pb-4 pt-3">
+              <Button
+                variant="outline"
+                onClick={handleBackWithCheck}
+                className="rounded-xl px-6 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all hover:-translate-x-1"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('common.back')}
+              </Button>
+            </div>
+            <div className="p-5">
               {createFormContent}
             </div>
-          )}
-        </GlassCard>
-      </div>
+          </GlassCard>
+        </div>
+      )}
 
       <RequisitionDetailsDialog
         open={openedRequisicaoId !== null}
@@ -1679,6 +1660,29 @@ export function SharedRequisitionsPage({
         locale={locale}
         t={t}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('profile.unsaved.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('profile.unsaved.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              {t('profile.unsaved.stay')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscardChanges}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {t('profile.unsaved.discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {canManageRequests && (
         <RequisitionsConflictDialog
