@@ -245,8 +245,7 @@ export function SharedRequisitionsPage({
     const fetchAcceptedTransports = async () => {
       try {
         const todasRequisicoes = await requisicoesApi.procurar({
-          tipo: 'TRANSPORTE',
-          estado: 'EM_PROGRESSO'
+          tipo: 'TRANSPORTE'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -330,7 +329,8 @@ export function SharedRequisitionsPage({
       : monthlyRequisicoes;
 
     todasRequisicoes.forEach((requisicao) => {
-      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'EM_PROGRESSO') return;
+      if (requisicao.tipo !== 'TRANSPORTE') return;
+      if (requisicao.estado !== 'FECHADO') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
         dataHoraRegressoSelecionada,
@@ -502,10 +502,13 @@ export function SharedRequisitionsPage({
 
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  const validateCreateField = useCallback((field: CreateField): string | undefined => {
-    if (field === 'descricao') {
-      return validateDescricao(createForm.descricao);
-    }
+  const validateCreateField = useCallback((field: CreateField, manualValue?: string | number): string | undefined => {
+    if (!createForm.tipo) return undefined;
+    
+    // Descricao can be manual or from state
+    const currentDescricao = field === 'descricao' && manualValue !== undefined ? String(manualValue) : createForm.descricao;
+
+    if (field === 'descricao') return validateDescricao(currentDescricao);
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
@@ -519,8 +522,11 @@ export function SharedRequisitionsPage({
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino') return validateTransporteDestino(createForm.destinoTransporte);
-    if (field === 'condutor' && !createForm.condutorTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'destino') return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
+    if (field === 'condutor') {
+      const val = manualValue !== undefined ? String(manualValue).trim() : createForm.condutorTransporte.trim();
+      if (!val) return t('requisitions.errors.requiredField');
+    }
     
     // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
@@ -538,7 +544,7 @@ export function SharedRequisitionsPage({
     }
 
     if (field === 'numeroPassageiros') {
-      const val = String(createForm.numeroPassageiros).trim();
+      const val = String(manualValue !== undefined ? manualValue : createForm.numeroPassageiros).trim();
       if (!val && val !== '0') return t('requisitions.errors.requiredField');
       const num = Number(val);
       if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
@@ -560,8 +566,8 @@ export function SharedRequisitionsPage({
     return undefined;
   }, [createForm, t]);
 
-  const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
-    const error = validateCreateField(field);
+  const validateAndSetField = useCallback((field: CreateField, markTouched = false, manualValue?: string | number): string | undefined => {
+    const error = validateCreateField(field, manualValue);
     if (markTouched) {
       createForm.setFieldTouched(field);
     }
@@ -1410,14 +1416,14 @@ export function SharedRequisitionsPage({
                   validateAndSetField('horaSaida');
                 }}
                 numeroPassageiros={createForm.numeroPassageiros}
-                onChangeNumeroPassageiros={(value) => {
-                  createForm.setNumeroPassageiros(value);
-                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                onChangeNumeroPassageiros={(val) => {
+                  createForm.setNumeroPassageiros(val);
+                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros', false, val);
                 }}
                 condutorTransporte={createForm.condutorTransporte}
                 onChangeCondutor={(value) => {
                   createForm.setCondutorTransporte(value);
-                  if (createForm.createTouched.condutor) validateAndSetField('condutor');
+                  if (createForm.createTouched.condutor) validateAndSetField('condutor', false, value);
                 }}
                 selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
