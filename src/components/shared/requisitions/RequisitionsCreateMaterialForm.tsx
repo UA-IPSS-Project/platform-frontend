@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, Search, ShoppingBag, Box, X } from 'lucide-react';
+import { ChevronDown, Search, ShoppingBag, Box, X, Plus } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
@@ -182,17 +182,35 @@ export function RequisitionsCreateMaterialForm({
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {item.nome}
                         </h4>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleItemVisibility(item.itemKey);
-                          }}
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </Button>
+                        {item.variantes.length === 1 && !isSelected ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/30 transition-all duration-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const variante = item.variantes[0];
+                              onToggleVariante(variante.id, true);
+                              if (!isExpanded) {
+                                onToggleItemVisibility(item.itemKey);
+                              }
+                            }}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onToggleItemVisibility(item.itemKey);
+                            }}
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
 
                       {/* Variants and Selection */}
@@ -232,12 +250,25 @@ export function RequisitionsCreateMaterialForm({
                                           </label>
                                         </div>
                                         {checked && (
-                                          <div className="flex items-center gap-2 flex-shrink-0 bg-white dark:bg-gray-900 rounded-lg px-2 border border-gray-100 dark:border-gray-800">
-                                            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('requisitions.ui.quantityShort')}</span>
+                                          <div className="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-lg p-0.5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const current = parseInt(linha?.quantidade || '1', 10);
+                                                if (current > 1) {
+                                                  onUpdateVarianteQuantidade(variante.id, String(current - 1));
+                                                }
+                                              }}
+                                            >
+                                              <span className="text-lg font-medium">−</span>
+                                            </Button>
                                             <Input
                                               type="text"
                                               inputMode="numeric"
-                                              className={`h-7 w-14 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 ${quantityFieldClassName}`}
+                                              className={`h-6 w-10 text-center text-xs border-none bg-transparent shadow-none focus-visible:ring-0 p-0 font-bold ${quantityFieldClassName}`}
                                               value={linha?.quantidade ?? '1'}
                                               onClick={(e) => e.stopPropagation()}
                                               onChange={(e) => {
@@ -249,6 +280,20 @@ export function RequisitionsCreateMaterialForm({
                                                 onUpdateVarianteQuantidade(variante.id, finalized);
                                               }}
                                             />
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const current = parseInt(linha?.quantidade || '1', 10);
+                                                if (current < 200) {
+                                                  onUpdateVarianteQuantidade(variante.id, String(current + 1));
+                                                }
+                                              }}
+                                            >
+                                              <span className="text-lg font-medium">+</span>
+                                            </Button>
                                           </div>
                                         )}
                                       </div>
@@ -352,23 +397,53 @@ export function RequisitionsCreateMaterialForm({
                                   {item.descricao}
                                 </p>
                                 <div className="flex items-center gap-3">
-                                  <div className="flex items-center gap-1.5 focus-within:ring-1 focus-within:ring-purple-500 rounded-lg pr-1">
+                                  <div className="flex items-center gap-1.5 pr-1">
                                     <span className="text-[10px] text-gray-500 font-medium">{t('requisitions.ui.quantityShort')}:</span>
-                                    <Input
-                                      type="text"
-                                      inputMode="numeric"
-                                      className="h-7 w-16 text-xs bg-white/80 dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800 rounded-lg px-2 focus-visible:ring-1 focus-visible:ring-purple-500 font-bold text-purple-600 dark:text-purple-400 shadow-sm"
-                                      value={item.quantidade}
-                                      onClick={(e) => e.stopPropagation()}
-                                      onChange={(e) => {
-                                        const validated = validateMaterialQuantity(e.target.value);
-                                        onUpdateVarianteQuantidade(item.materialId, validated);
-                                      }}
-                                      onBlur={(e) => {
-                                        const finalized = finalizeMaterialQuantity(e.target.value);
-                                        onUpdateVarianteQuantidade(item.materialId, finalized);
-                                      }}
-                                    />
+                                    <div className="flex items-center gap-1 bg-white/80 dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800 rounded-lg p-0.5 shadow-sm transition-shadow focus-within:shadow-md">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const current = parseInt(item.quantidade || '1', 10);
+                                          if (current > 1) {
+                                            onUpdateVarianteQuantidade(item.materialId, String(current - 1));
+                                          }
+                                        }}
+                                      >
+                                        <span className="text-lg font-medium">−</span>
+                                      </Button>
+                                      <Input
+                                        type="text"
+                                        inputMode="numeric"
+                                        className="h-6 w-10 text-center text-xs border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-purple-500 rounded font-bold text-purple-600 dark:text-purple-400 p-0"
+                                        value={item.quantidade}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onChange={(e) => {
+                                          const validated = validateMaterialQuantity(e.target.value);
+                                          onUpdateVarianteQuantidade(item.materialId, validated);
+                                        }}
+                                        onBlur={(e) => {
+                                          const finalized = finalizeMaterialQuantity(e.target.value);
+                                          onUpdateVarianteQuantidade(item.materialId, finalized);
+                                        }}
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const current = parseInt(item.quantidade || '1', 10);
+                                          if (current < 200) {
+                                            onUpdateVarianteQuantidade(item.materialId, String(current + 1));
+                                          }
+                                        }}
+                                      >
+                                        <span className="text-lg font-medium">+</span>
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
