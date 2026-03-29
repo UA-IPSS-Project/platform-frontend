@@ -106,7 +106,7 @@ export function RequisitionsCreateTransportForm({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">
-              {t('requisitions.ui.destination')} *
+              {t('requisitions.ui.destination')} {t('common.optional', { defaultValue: '(opcional)' })}
             </label>
             <div className="relative group">
               <Input

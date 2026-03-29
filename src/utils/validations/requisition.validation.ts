@@ -39,9 +39,8 @@ export const validateMaterialLinhas = (linhas: Array<{ materialId: string; quant
   return undefined;
 };
 
-export const validateTransporteDestino = (valor: string): string | undefined => {
-  if (!valor.trim()) return 'O destino é obrigatório.';
-  return undefined;
+export const validateTransporteDestino = (_valor: string): string | undefined => {
+  return undefined; // Destination is now optional
 };
 
 /**
