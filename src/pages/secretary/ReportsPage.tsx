@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { DatePickerField } from '../../components/ui/date-picker-field';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
+import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
@@ -65,6 +66,59 @@ function formatTimeStr(iso: string) {
   return d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
 
+// Color palette for PDF (Fixed to Light Mode)
+const colors: Record<string, [number, number, number]> = {
+  primary: [241, 149, 217], // #f195d9
+  background: [247, 242, 244], // #f7f2f4
+  foreground: [30, 41, 59],
+  muted: [252, 231, 243], // pink-100 (softer than before)
+  accent: [252, 231, 243], // pink-100 (softer than before)
+  border: [251, 207, 232], // pink-200 (softer border)
+  tableBorder: [227, 45, 145], // #e32d91
+};
+
+const getStatusColor = (status?: string): [number, number, number] => {
+  if (!status) return [107, 114, 128];
+  const s = status.toUpperCase();
+  if (['CONCLUIDO', 'ACEITE', 'CONCLUIDA'].includes(s)) return [16, 185, 129]; // Emerald 600
+  if (['CANCELADO', 'RECUSADA', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
+  if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
+  if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // #f195d9
+  return [107, 114, 128]; // Gray
+};
+
+const getDiffDays = (isoDate?: string) => {
+  if (!isoDate) return 0;
+  const now = new Date();
+  const d = new Date(isoDate);
+  const diff = now.getTime() - d.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+};
+
+const getDeadlineStyles = (days: number): { textColor?: [number, number, number], fontStyle?: 'bold', fillColor?: [number, number, number] } => {
+  if (days >= 180) return { textColor: [255, 255, 255], fillColor: [0, 0, 0], fontStyle: 'bold' };
+  if (days >= 90) return { textColor: [220, 38, 38], fontStyle: 'bold' };
+  if (days >= 30) return { textColor: [180, 83, 9], fontStyle: 'bold' };
+  return { fontStyle: 'bold' };
+};
+
+const isRequisitionFinished = (estado?: string): boolean => {
+  if (!estado) return false;
+  const s = estado.toUpperCase();
+  return s === 'FECHADO' || s === 'RECUSADO';
+};
+
+const getDurationCell = (r: RequisicaoResponse) => {
+  const isFinished = isRequisitionFinished(r.estado);
+  const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
+  const days = isFinished ? null : getDiffDays(effectiveDate);
+
+  return {
+    content: days !== null ? `${days} d` : '—',
+    styles: days !== null ? getDeadlineStyles(days) : undefined
+  };
+};
+
 export function ReportsPage() {
   const today = new Date();
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -76,42 +130,6 @@ export function ReportsPage() {
   const isNoneSelected = selected.size === 0;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-
-  // Color palette for PDF (Fixed to Light Mode)
-  const colors: Record<string, [number, number, number]> = {
-    primary: [241, 149, 217], // #f195d9
-    background: [247, 242, 244], // #f7f2f4
-    foreground: [30, 41, 59],
-    muted: [252, 231, 243], // pink-100 (softer than before)
-    accent: [252, 231, 243], // pink-100 (softer than before)
-    border: [251, 207, 232], // pink-200 (softer border)
-    tableBorder: [227, 45, 145], // #e32d91
-  };
-
-  const getStatusColor = (status?: string): [number, number, number] => {
-    if (!status) return [107, 114, 128];
-    const s = status.toUpperCase();
-    if (['CONCLUIDO', 'ACEITE', 'CONCLUIDA'].includes(s)) return [16, 185, 129]; // Emerald 600
-    if (['CANCELADO', 'RECUSADA', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
-    if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
-    if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // #f195d9
-    return [107, 114, 128]; // Gray
-  };
-
-  const getDiffDays = (isoDate?: string) => {
-    if (!isoDate) return 0;
-    const now = new Date();
-    const d = new Date(isoDate);
-    const diff = now.getTime() - d.getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24));
-  };
-
-  const getDeadlineStyles = (days: number): { textColor?: [number, number, number], fontStyle?: 'bold', fillColor?: [number, number, number] } => {
-    if (days >= 180) return { textColor: [255, 255, 255], fillColor: [0, 0, 0], fontStyle: 'bold' };
-    if (days >= 90) return { textColor: [220, 38, 38], fontStyle: 'bold' };
-    if (days >= 30) return { textColor: [180, 83, 9], fontStyle: 'bold' }; // Darker amber for yellow
-    return { fontStyle: 'bold' };
-  };
 
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
@@ -248,9 +266,6 @@ export function ReportsPage() {
         autoTable(doc, {
           startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
           body: reqMaterial.map(r => {
-            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
-            const days = isFinished ? null : getDiffDays(effectiveDate);
             const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
               const cat = i.material?.categoria || 'Geral';
               if (!acc[cat]) acc[cat] = [];
@@ -266,7 +281,7 @@ export function ReportsPage() {
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               itensStr,
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
+              getDurationCell(r),
               { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
             ];
           }),
@@ -288,16 +303,13 @@ export function ReportsPage() {
         autoTable(doc, {
           startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
           body: reqTransporte.map(r => {
-            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
-            const days = isFinished ? null : getDiffDays(effectiveDate);
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
               r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               r.destino ?? '—',
               r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
-              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
+              getDurationCell(r),
               { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
             ];
           }),
@@ -319,16 +331,13 @@ export function ReportsPage() {
         autoTable(doc, {
           startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
           body: reqManutencao.map(r => {
-            const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
-            const days = isFinished ? null : getDiffDays(effectiveDate);
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
               r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               r.assunto ?? r.descricao ?? '—',
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              { content: days !== null ? `${days} d` : '—', styles: days !== null ? getDeadlineStyles(days) : {} },
+              getDurationCell(r),
               { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
             ];
           }),
