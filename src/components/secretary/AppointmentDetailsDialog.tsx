@@ -150,11 +150,12 @@ function cleanFilename(name: string) {
   if (parts.length >= 4) {
     // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
     const nif = parts[0];
+    const contador = parts[parts.length - 2];
     const assuntoParts = parts.slice(1, parts.length - 2);
     const assunto = assuntoParts.join("_");
     
-    // Na vista de marcação, apenas NIF_ASSUNTO_DOCX (sem data, pois já está no título)
-    return `${nif}_${assunto}_${parts[parts.length - 1]}${extension}`;
+    // Na vista de marcação, apenas NIF_ASSUNTO_1 (sem data, pois já está no título)
+    return `${nif}_${assunto}_${contador}${extension}`;
   } else if (parts.length === 3) {
     // Formato legado: NIF_TIPO_UUID
     return `${parts[0]}_${parts[1]}${extension}`;
