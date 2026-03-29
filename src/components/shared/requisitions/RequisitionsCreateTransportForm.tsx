@@ -166,7 +166,8 @@ export function RequisitionsCreateTransportForm({
               value={dataSaida}
               onChange={(value) => {
                 onChangeDataSaida(value);
-                if (!dataRegresso) {
+                // Rigid sync: if return date is missing OR earlier than new departure date, update it
+                if (!dataRegresso || dataRegresso < value) {
                   onChangeDataRegresso(value);
                 }
               }}
@@ -180,9 +181,18 @@ export function RequisitionsCreateTransportForm({
             <Input
               id="req-create-transporte-hora-saida"
               type="time"
+              lang="pt-PT"
+              step="60"
               className={`${inputFieldClassName} mt-1 ${createErrors?.horaSaida ? '!border-red-500 !ring-red-500' : ''}`}
               value={horaSaida}
-              onChange={(e) => onChangeHoraSaida(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                onChangeHoraSaida(value);
+                // Rigid sync: if same day and return time is earlier/equal, update it
+                if (dataSaida === dataRegresso && horaRegresso && value >= horaRegresso) {
+                  onChangeHoraRegresso(value);
+                }
+              }}
             />
             {createErrors?.horaSaida && <p className="text-red-500 text-xs mt-1">{createErrors.horaSaida}</p>}
           </div>
@@ -203,6 +213,8 @@ export function RequisitionsCreateTransportForm({
             <Input
               id="req-create-transporte-hora-regresso"
               type="time"
+              lang="pt-PT"
+              step="60"
               className={`${inputFieldClassName} mt-1 ${createErrors?.horaRegresso ? '!border-red-500 !ring-red-500' : ''}`}
               value={horaRegresso}
               onChange={(e) => onChangeHoraRegresso(e.target.value)}
