@@ -370,39 +370,39 @@ export function SharedRequisitionsPage({
   // Keep this in one place because selection quality depends on this exact knapsack scoring strategy.
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const recommendedTransportIds = useMemo(() => {
-    if (passageirosSolicitados <= 0) return [] as number[];
+    if (passageirosSolicitados < 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenadosDisponiveis
-      .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
+    const viaturasPotenciais = transportesOrdenadosDisponiveis
+      .filter((transporte) => transporte.id && (transporte.lotacao || 0) >= 1)
       .map((transporte) => ({
         id: transporte.id,
-        capacidade: getPassengerCapacity(transporte.lotacao),
+        capacidadePassageiros: getPassengerCapacity(transporte.lotacao),
+        lotacaoTotal: transporte.lotacao || 0,
       }));
-    if (viaturasComLotacao.length === 0) return [] as number[];
 
-    const capacidadeMaxima = viaturasComLotacao.reduce((sum, item) => sum + item.capacidade, 0);
+    if (viaturasPotenciais.length === 0) return [] as number[];
+
+    if (passageirosSolicitados === 0) {
+      // Pick the smallest available vehicle for the driver
+      const smallest = [...viaturasPotenciais].sort((a, b) => a.lotacaoTotal - b.lotacaoTotal)[0];
+      return smallest ? [smallest.id] : [] as number[];
+    }
+
+    const capacidadeMaxima = viaturasPotenciais.reduce((sum, item) => sum + item.capacidadePassageiros, 0);
     if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
 
-    // Custo combinado: nº_viaturas × K + lugares_vazios
-    // K (Peso/Penalização de usar 1 viatura extra)
-    // Para 17 passageiros, usar 3 carrinhas (3 lugares vazios totais) vs 1 autocarro (12 lugares vazios):
-    // Se K for pequeno, o DP escolhe as 3 carrinhas para evitar levar 12 lugares vazios às costas.
-    // Usando K = ceil(passageiros / 2.5) e min de 3:
-    // Ex 1: 5 pass (K=3) -> 2 carros (custo=2×3+3vazios=9) vs 1 bus (custo=1×3+24vazios=27). Traz 2 carros.
-    // Ex 2: 17 pass (K=7) -> 3 carrinhas (custo=3×7+3vazios=24) vs 1 bus (custo=1×7+12vazios=19). Traz o minibus!
     const penalizacaoViatura = Math.max(3, Math.ceil(passageirosSolicitados / 2.5));
 
-    // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
     const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
       new Array(capacidadeMaxima + 1).fill(undefined);
     dp[0] = { ids: [], custoViaturas: 0 };
 
-    for (const viatura of viaturasComLotacao) {
-      for (let cap = capacidadeMaxima - viatura.capacidade; cap >= 0; cap -= 1) {
+    for (const viatura of viaturasPotenciais) {
+      for (let cap = capacidadeMaxima - viatura.capacidadePassageiros; cap >= 0; cap -= 1) {
         const base = dp[cap];
         if (!base) continue;
 
-        const novaCap = cap + viatura.capacidade;
+        const novaCap = cap + viatura.capacidadePassageiros;
         const novoCusto = base.custoViaturas + penalizacaoViatura;
         const existente = dp[novaCap];
 
@@ -412,7 +412,6 @@ export function SharedRequisitionsPage({
       }
     }
 
-    // Escolhe a capacidade cujo custo total (viaturas + lugares vazios) é mínimo
     let melhor: { ids: number[]; custoTotal: number } | undefined;
 
     for (let cap = passageirosSolicitados; cap <= capacidadeMaxima; cap += 1) {
