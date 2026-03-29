@@ -383,14 +383,30 @@ export function ReportsPage() {
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           {[
+            { label: 'Hoje', start: today, end: today },
+            { label: 'Ontem', start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1), end: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1) },
             { label: 'Este mês', start: new Date(today.getFullYear(), today.getMonth(), 1), end: new Date(today.getFullYear(), today.getMonth() + 1, 0) },
-            { label: 'Últimos 30 dias', start: new Date(Date.now() - 29 * 86400000), end: today },
+            { label: 'Mês passado', start: new Date(today.getFullYear(), today.getMonth() - 1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) },
             { label: 'Este ano', start: new Date(today.getFullYear(), 0, 1), end: today },
-          ].map(({ label, start, end }) => (
-            <button key={label} onClick={() => { setStartDate(formatDate(start)); setEndDate(formatDate(end)); }} className="text-xs px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium">
-              {label}
-            </button>
-          ))}
+          ].map(({ label, start, end }) => {
+            const sStr = formatDate(start);
+            const eStr = formatDate(end);
+            const isActive = startDate === sStr && endDate === eStr;
+            
+            return (
+              <button
+                key={label}
+                onClick={() => { setStartDate(sStr); setEndDate(eStr); }}
+                className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${
+                  isActive
+                    ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                    : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </GlassCard>
 
