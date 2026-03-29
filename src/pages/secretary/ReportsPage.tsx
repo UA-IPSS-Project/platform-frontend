@@ -316,42 +316,78 @@ export function ReportsPage() {
     return doc;
   };
 
+  const getReportFilename = () => {
+    const moduleNames = SECTIONS
+      .filter(s => selected.has(s.id))
+      .map(s => s.id.charAt(0).toUpperCase() + s.id.slice(1))
+      .join('_');
+
+    const formatDateForFileName = (dStr: string) => {
+      const [y, m, d] = dStr.split('-');
+      return `${d}_${m}_${y}`;
+    };
+
+    const start = formatDateForFileName(startDate);
+    const end = formatDateForFileName(endDate);
+
+    const datePart = start === end ? start : `${start}_a_${end}`;
+
+    return `relatorio_${moduleNames}_${datePart}.pdf`;
+  };
+
   const generatePDF = async () => {
-    if (selected.size === 0) { toast.error('Selecione pelo menos um tipo de dados.'); return; }
-    if (!startDate || !endDate) { toast.error('Intervalo de datas inválido.'); return; }
+    if (selected.size === 0) {
+      toast.error('Selecione pelo menos um tipo de dados.');
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error('Intervalo de datas inválido.');
+      return;
+    }
     setIsGenerating(true);
     try {
       const doc = await preparePDF();
-      doc.save(`relatorio_${startDate}_${endDate}.pdf`);
+      doc.save(getReportFilename());
       toast.success('Relatório gerado com sucesso!');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao gerar relatório.');
-    } finally { setIsGenerating(false); }
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSendEmail = async () => {
-    if (selected.size === 0) { toast.error('Selecione pelo menos um tipo de dados.'); return; }
+    if (selected.size === 0) {
+      toast.error('Selecione pelo menos um tipo de dados.');
+      return;
+    }
     const email = window.prompt('Introduza o e-mail de destino:');
     if (!email) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('E-mail inválido'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('E-mail inválido');
+      return;
+    }
 
     setIsSendingEmail(true);
     try {
       const doc = await preparePDF();
       const pdfBase64 = doc.output('datauristring');
+      const filename = getReportFilename();
       const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
       const body = `Olá,\n\nSegue em anexo o relatório institucional referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.\n\n` +
         `Conteúdo do relatório:\n` +
         Array.from(selected).map(s => `- ${SECTIONS.find(sec => sec.id === s)?.label}`).join('\n') +
         `\n\nEste e-mail foi gerado automaticamente pelo portal de gestão.`;
 
-      await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: `relatorio_${startDate}_${endDate}.pdf` });
+      await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: filename });
       toast.success('Relatório enviado com sucesso!');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao enviar e-mail.');
-    } finally { setIsSendingEmail(false); }
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   return (
