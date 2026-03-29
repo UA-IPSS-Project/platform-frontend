@@ -125,7 +125,8 @@ export interface RequisicaoFilters {
   tipo?: RequisicaoTipo;
   prioridade?: RequisicaoPrioridade;
   criadoPorNome?: string;
-  geridoPorNome?: string;
+  dataInicio?: string;
+  dataFim?: string;
 }
 
 export interface CriarRequisicaoBaseRequest {

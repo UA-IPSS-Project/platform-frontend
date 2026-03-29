@@ -836,6 +836,8 @@
       "allPriorities": "Todas as prioridades",
       "createdByName": "Criado por nome",
       "createdByPlaceholder": "Ex: Maria",
+      "startDate": "Data início",
+      "endDate": "Data fim",
       "managedByName": "Gerido por nome",
       "managedByPlaceholder": "Ex: João",
       "createdByRole": "Role de quem criou",

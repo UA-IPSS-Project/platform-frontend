@@ -91,7 +91,7 @@ export function SharedRequisitionsPage({
   onDirtyChange,
 }: Readonly<SharedRequisitionsPageProps>) {
   const { t } = useTranslation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialParams = useMemo(() => ({
     mode: searchParams.get('mode') as 'list' | 'create' | null,
     tab: searchParams.get('tab') as string | null,
@@ -190,14 +190,16 @@ export function SharedRequisitionsPage({
     tipo?: RequisicaoTipo | '';
     prioridade?: RequisicaoPrioridade | '';
     criadoPorNome?: string;
-    geridoPorNome?: string;
+    dataInicio?: string;
+    dataFim?: string;
     criadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
   }) => {
     const estado = overrides?.estado ?? filters.filterEstado;
     const tipoFiltro = overrides?.tipo ?? filters.filterTipo;
     const prioridadeFiltro = overrides?.prioridade ?? filters.filterPrioridade;
     const criadoPor = overrides?.criadoPorNome ?? filters.filterCriadoPorNome;
-    const geridoPor = overrides?.geridoPorNome ?? filters.filterGeridoPorNome;
+    const dataInicio = overrides?.dataInicio ?? filters.filterDataInicio;
+    const dataFim = overrides?.dataFim ?? filters.filterDataFim;
     const criadoPorTipo = overrides?.criadoPorTipo ?? filters.filterCriadoPorTipo;
 
     try {
@@ -207,7 +209,8 @@ export function SharedRequisitionsPage({
         tipo: tipoFiltro || undefined,
         prioridade: prioridadeFiltro || undefined,
         criadoPorNome: criadoPor || undefined,
-        geridoPorNome: geridoPor || undefined,
+        dataInicio: dataInicio || undefined,
+        dataFim: dataFim || undefined,
       });
       const listaScope = applyScopeFilter(Array.isArray(data) ? data : []);
       const lista = isSecretaryView && criadoPorTipo
@@ -240,7 +243,8 @@ export function SharedRequisitionsPage({
       tipo: initialTipo ?? '',
       prioridade: initialPrioridade ?? '',
       criadoPorNome: '',
-      geridoPorNome: '',
+      dataInicio: '',
+      dataFim: '',
     });
   }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes, fetchMonthlyRequisicoes, activeSection]);
 
@@ -942,7 +946,8 @@ export function SharedRequisitionsPage({
       filters.setFilterPrioridade('');
     }
     filters.setFilterCriadoPorNome('');
-    filters.setFilterGeridoPorNome('');
+    filters.setFilterDataInicio('');
+    filters.setFilterDataFim('');
     filters.setFilterCriadoPorTipo('');
   };
 
@@ -965,7 +970,8 @@ export function SharedRequisitionsPage({
           tipo: nextTipo,
           prioridade: nextPrioridade,
           criadoPorNome: filters.filterCriadoPorNome,
-          geridoPorNome: filters.filterGeridoPorNome,
+          dataInicio: filters.filterDataInicio,
+          dataFim: filters.filterDataFim,
         }),
       );
   };
@@ -1586,8 +1592,10 @@ export function SharedRequisitionsPage({
                 setFilterPrioridade={filters.setFilterPrioridade}
                 filterCriadoPorNome={filters.filterCriadoPorNome}
                 setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                filterGeridoPorNome={filters.filterGeridoPorNome}
-                setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
+                filterDataInicio={filters.filterDataInicio}
+                setFilterDataInicio={filters.setFilterDataInicio}
+                filterDataFim={filters.filterDataFim}
+                setFilterDataFim={filters.setFilterDataFim}
                 showCreatedByRoleFilter={isSecretaryView}
                 filterCriadoPorTipo={filters.filterCriadoPorTipo}
                 setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
