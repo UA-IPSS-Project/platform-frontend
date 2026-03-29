@@ -74,6 +74,18 @@ export function RequisitionsCreateMaterialForm({
 
   const currentCategoryData = filteredMateriaisPorCategoria.find(v => v.categoria === activeCategory) 
     ?? filteredMateriaisPorCategoria[0];
+  
+  const handleItemSelection = (item: MaterialItemGroup) => {
+    const isSingleVariant = item.variantes.length === 1;
+    if (isSingleVariant) {
+      const variante = item.variantes[0];
+      const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
+      if (!isCurrentlySelected) {
+        onToggleVariante(variante.id, true);
+      }
+    }
+    onToggleItemVisibility(item.itemKey);
+  };
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-6">
@@ -156,18 +168,7 @@ export function RequisitionsCreateMaterialForm({
                   >
                     <div 
                       className="p-4 flex-1 space-y-3 cursor-pointer"
-                      onClick={() => {
-                        const isSingleVariant = item.variantes.length === 1;
-                        if (isSingleVariant) {
-                          const variante = item.variantes[0];
-                          const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
-                          
-                          if (!isCurrentlySelected) {
-                            onToggleVariante(variante.id, true);
-                          }
-                        }
-                        onToggleItemVisibility(item.itemKey);
-                      }}
+                      onClick={() => handleItemSelection(item)}
                     >
                       <div className="flex items-start justify-between">
                         <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
@@ -179,15 +180,7 @@ export function RequisitionsCreateMaterialForm({
                           className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            const isSingleVariant = item.variantes.length === 1;
-                            if (isSingleVariant) {
-                              const variante = item.variantes[0];
-                              const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
-                              if (!isCurrentlySelected) {
-                                onToggleVariante(variante.id, true);
-                              }
-                            }
-                            onToggleItemVisibility(item.itemKey);
+                            handleItemSelection(item);
                           }}
                         >
                           <ChevronDown className="w-4 h-4" />
@@ -297,15 +290,7 @@ export function RequisitionsCreateMaterialForm({
                         <Button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const isSingleVariant = item.variantes.length === 1;
-                            if (isSingleVariant) {
-                              const variante = item.variantes[0];
-                              const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
-                              if (!isCurrentlySelected) {
-                                onToggleVariante(variante.id, true);
-                              }
-                            }
-                            onToggleItemVisibility(item.itemKey);
+                            handleItemSelection(item);
                           }}
                           className={`w-full h-9 rounded-xl transition-all duration-300 ${
                             isSelected

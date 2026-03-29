@@ -1,10 +1,22 @@
 import { Checkbox } from '../../ui/checkbox';
 import { Info } from 'lucide-react';
 import { formatLotacao, formatVehicleTitle, formatTransporteCategoria } from '../../../pages/requisitions/sharedRequisitions.helpers';
-import { TransporteCatalogo } from '../../../services/api';
+
+export type TransporteLike = {
+  id: number;
+  codigo?: string;
+  tipo?: string;
+  categoria?: string;
+  matricula?: string;
+  marca?: string;
+  modelo?: string;
+  lotacao?: number;
+  dataMatricula?: string;
+  nome?: string;
+};
 
 interface VehicleSelectionCardProps {
-  transporte: TransporteCatalogo;
+  transporte: TransporteLike;
   isSelected?: boolean;
   isUnavailable?: boolean;
   isRecommended?: boolean;

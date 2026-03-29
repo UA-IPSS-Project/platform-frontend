@@ -22,6 +22,13 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { useRequisitionFilters } from '../../hooks/requisitions/useRequisitionFilters';
 import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitionCreateForm';
+import {
+  validateDescricao,
+  validateMaterialLinhas,
+  validateTransporteDestino,
+  isDateInPast,
+  composeDateTimeStr,
+} from '../../utils/validations/requisition.validation';
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
@@ -48,7 +55,6 @@ import {
   getEstadosVisiveisNoSeletor,
   getPassengerCapacity,
   getRequisicaoTransportes,
-  isDateInputInPast,
   normalizarTexto,
   periodsOverlap,
 } from './sharedRequisitions.helpers';
@@ -498,13 +504,12 @@ export function SharedRequisitionsPage({
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = useCallback((field: CreateField): string | undefined => {
     if (field === 'descricao') {
-      return undefined;
+      return validateDescricao(createForm.descricao);
     }
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-      if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
-      return undefined;
+      return validateMaterialLinhas(linhasValidas);
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
@@ -514,18 +519,21 @@ export function SharedRequisitionsPage({
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino') return undefined;
+    if (field === 'destino') return validateTransporteDestino(createForm.destinoTransporte);
     if (field === 'condutor' && !createForm.condutorTransporte.trim()) return t('requisitions.errors.requiredField');
+    
+    // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInputInPast(createForm.dataSaida)) {
+    // Logic validations using helpers
+    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInPast(createForm.dataSaida)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInputInPast(createForm.dataRegresso)) {
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInPast(createForm.dataRegresso)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
@@ -539,18 +547,16 @@ export function SharedRequisitionsPage({
       return t('requisitions.errors.selectOneVehicle');
     }
 
-    const saida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
-    const regresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
-    if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
-      const saidaDate = new Date(saida);
-      const regressoDate = new Date(regresso);
-      if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
+    const saidaStr = composeDateTimeStr(createForm.dataSaida, createForm.horaSaida);
+    const regressoStr = composeDateTimeStr(createForm.dataRegresso, createForm.horaRegresso);
+    
+    if ((field === 'horaRegresso' || field === 'dataRegresso') && saidaStr && regressoStr) {
+      if (new Date(regressoStr) <= new Date(saidaStr)) {
         return t('requisitions.errors.returnAfterDeparture');
       }
     }
-
     return undefined;
-  }, [createForm, passageirosSolicitados, t]);
+  }, [createForm, t]);
 
   const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
     const error = validateCreateField(field);
