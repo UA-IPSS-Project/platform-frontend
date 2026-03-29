@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { DatePickerField } from '../../components/ui/date-picker-field';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import { reportsApi } from '../../services/api/reports/reportsApi';
@@ -29,8 +30,8 @@ type ReportSection =
   | 'manutencao';
 
 const SECTIONS: { id: ReportSection; label: string; description: string }[] = [
-  { id: 'secretaria', label: 'Marcações — Secretaria', description: 'Presenças, remotas e estado das consultas' },
-  { id: 'balneario', label: 'Marcações — Balneário', description: 'Sessões de higiene, lavagem de roupa e estado' },
+  { id: 'secretaria', label: 'Marcações da Secretaria', description: 'Presenças, remotas e estado das consultas' },
+  { id: 'balneario', label: 'Marcações do Balneário', description: 'Sessões de higiene, lavagem de roupa e estado' },
   { id: 'material', label: 'Requisições de Material', description: 'Pedidos de material de escritório e consumíveis' },
   { id: 'transporte', label: 'Requisições de Transporte', description: 'Reservas de viaturas e viagens agendadas' },
   { id: 'manutencao', label: 'Requisições de Manutenção', description: 'Pedidos de obras e reparações' },
@@ -206,7 +207,7 @@ export function ReportsPage() {
     if (selected.has('secretaria')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Marcações — Secretaria', marcacoesSecretaria.length);
+      addSectionTitle('Marcações da Secretaria', marcacoesSecretaria.length);
       if (marcacoesSecretaria.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
       } else {
@@ -224,7 +225,7 @@ export function ReportsPage() {
     if (selected.has('balneario')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Marcações — Balneário', marcacoesBalneario.length);
+      addSectionTitle('Marcações do Balneário', marcacoesBalneario.length);
       if (marcacoesBalneario.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
       } else {
@@ -374,11 +375,11 @@ export function ReportsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Início</label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+            <DatePickerField value={startDate} onChange={setStartDate} />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fim</label>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+            <DatePickerField value={endDate} onChange={setEndDate} />
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
@@ -392,16 +393,15 @@ export function ReportsPage() {
             const sStr = formatDate(start);
             const eStr = formatDate(end);
             const isActive = startDate === sStr && endDate === eStr;
-            
+
             return (
               <button
                 key={label}
                 onClick={() => { setStartDate(sStr); setEndDate(eStr); }}
-                className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${
-                  isActive
-                    ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
-                    : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
-                }`}
+                className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${isActive
+                  ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                  : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                  }`}
               >
                 {label}
               </button>
