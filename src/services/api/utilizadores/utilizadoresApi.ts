@@ -66,7 +66,7 @@ export const utilizadoresApi = {
     createBySecretary: (data: {
         name: string;
         nif: string;
-        contact: string;
+        contact?: string;
         email: string;
         birthDate: string; // YYYY-MM-DD
         isEmployee: boolean;

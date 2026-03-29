@@ -21,6 +21,7 @@
   "appointmentDialog": {
     "durationLabel": "Duração da marcação",
     "durationBalneario": "30 minutos",
+    "durationSecretary": "15 minutos",
     "title": "Novo Agendamento",
     "description": "Preencha os dados do utente para criar uma nova marcação",
     "at": "às",
@@ -321,8 +322,8 @@
         "operationalConfiguration": "Configuração operacional",
         "title": "Capacidade de marcações por slot",
         "description": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
-        "secretaryScheduleTitle": "Agenda da Secretaria",
-        "balnearioScheduleTitle": "Agenda do Balneário",
+        "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
+        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
         "secretaryScheduleDescription": "Define quantas marcações da secretaria podem coexistir no mesmo horário.",
         "balnearioScheduleDescription": "Controla a lotação operacional dos slots de marcação do balneário.",
         "maxPerSlot": "Máximo por slot",

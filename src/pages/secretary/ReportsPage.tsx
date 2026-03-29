@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { DatePickerField } from '../../components/ui/date-picker-field';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import { reportsApi } from '../../services/api/reports/reportsApi';
@@ -29,8 +30,8 @@ type ReportSection =
   | 'manutencao';
 
 const SECTIONS: { id: ReportSection; label: string; description: string }[] = [
-  { id: 'secretaria', label: 'Marcações — Secretaria', description: 'Presenças, remotas e estado das consultas' },
-  { id: 'balneario', label: 'Marcações — Balneário', description: 'Sessões de higiene, lavagem de roupa e estado' },
+  { id: 'secretaria', label: 'Marcações da Secretaria', description: 'Presenças, remotas e estado das consultas' },
+  { id: 'balneario', label: 'Marcações do Balneário', description: 'Sessões de higiene, lavagem de roupa e estado' },
   { id: 'material', label: 'Requisições de Material', description: 'Pedidos de material de escritório e consumíveis' },
   { id: 'transporte', label: 'Requisições de Transporte', description: 'Reservas de viaturas e viagens agendadas' },
   { id: 'manutencao', label: 'Requisições de Manutenção', description: 'Pedidos de obras e reparações' },
@@ -70,20 +71,21 @@ export function ReportsPage() {
   const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const [startDate, setStartDate] = useState(formatDate(firstOfMonth));
   const [endDate, setEndDate] = useState(formatDate(lastOfMonth));
-  const [selected, setSelected] = useState<Set<ReportSection>>(
-    new Set(['secretaria', 'balneario'])
-  );
+  const [selected, setSelected] = useState<Set<ReportSection>>(new Set(['secretaria', 'balneario']));
+  const isAllSelected = selected.size === SECTIONS.length;
+  const isNoneSelected = selected.size === 0;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   // Color palette for PDF (Fixed to Light Mode)
   const colors: Record<string, [number, number, number]> = {
     primary: [241, 149, 217], // #f195d9
-    background: [255, 255, 255],
+    background: [247, 242, 244], // #f7f2f4
     foreground: [30, 41, 59],
-    muted: [253, 242, 248], // pink-50
-    accent: [253, 242, 248], // pink-50
-    border: [251, 207, 232], // pink-200
+    muted: [252, 231, 243], // pink-100 (softer than before)
+    accent: [252, 231, 243], // pink-100 (softer than before)
+    border: [251, 207, 232], // pink-200 (softer border)
+    tableBorder: [227, 45, 145], // #e32d91
   };
 
   const getStatusColor = (status?: string): [number, number, number] => {
@@ -147,7 +149,8 @@ export function ReportsPage() {
     const pageH = doc.internal.pageSize.getHeight();
     let y = 0;
 
-    doc.setFillColor(255, 255, 255);
+    // Set background color
+    doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]);
     doc.rect(0, 0, pageW, pageH, 'F');
 
     doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
@@ -166,7 +169,7 @@ export function ReportsPage() {
     const addSectionTitle = (title: string, count: number) => {
       if (y > pageH - 50) {
         doc.addPage();
-        doc.setFillColor(255, 255, 255);
+        doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]);
         doc.rect(0, 0, pageW, pageH, 'F');
         y = 20;
       }
@@ -193,16 +196,16 @@ export function ReportsPage() {
       doc.text(`Pág. ${pageNum}`, pageW - 14 - doc.getTextWidth(`Pág. ${pageNum}`), pageH - 7);
     };
 
-    const tableStyles = { fontSize: 8, cellPadding: 2, textColor: colors.foreground, lineColor: colors.border };
+    const tableStyles = { fontSize: 8, cellPadding: 2, textColor: colors.foreground, lineColor: colors.border, fillColor: colors.background };
     const tableHeadStyles = { fillColor: colors.primary, textColor: 255, fontStyle: 'bold' as const };
     const tableAlternateRowStyles = { fillColor: colors.accent };
 
     let sectionCount = 0;
 
     if (selected.has('secretaria')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Marcações — Secretaria', marcacoesSecretaria.length);
+      addSectionTitle('Marcações da Secretaria', marcacoesSecretaria.length);
       if (marcacoesSecretaria.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
       } else {
@@ -210,6 +213,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Hora', 'Utente', 'Assunto', 'Tipo', 'Estado']],
           body: marcacoesSecretaria.map(m => [formatDateStr(m.data), formatTimeStr(m.data), m.marcacaoSecretaria?.utente?.nome ?? '—', m.marcacaoSecretaria?.assunto ?? '—', m.marcacaoSecretaria?.tipoAtendimento === 'PRESENCIAL' ? 'Presencial' : 'Remota', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -217,9 +221,9 @@ export function ReportsPage() {
     }
 
     if (selected.has('balneario')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Marcações — Balneário', marcacoesBalneario.length);
+      addSectionTitle('Marcações do Balneário', marcacoesBalneario.length);
       if (marcacoesBalneario.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
       } else {
@@ -227,6 +231,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Hora', 'Utente', 'Higiene', 'Lavagem', 'Estado']],
           body: marcacoesBalneario.map(m => [formatDateStr(m.data), formatTimeStr(m.data), (m as any).marcacaoBalneario?.nomeUtente ?? '—', (m as any).marcacaoBalneario?.produtosHigiene ? 'Sim' : 'Não', (m as any).marcacaoBalneario?.lavagemRoupa ? 'Sim' : 'Não', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -234,7 +239,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('material')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Material', reqMaterial.length);
       if (reqMaterial.length === 0) {
@@ -242,8 +247,28 @@ export function ReportsPage() {
       } else {
         autoTable(doc, {
           startY: y, head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
-          body: reqMaterial.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', (r.itens ?? []).map(i => `${i.material?.nome ?? '?'} ×${i.quantidade ?? 1}`).join(', ') || '—', PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade, { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
+          body: reqMaterial.map(r => {
+            const days = getDiffDays(r.criadoEm);
+            const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
+              const cat = i.material?.categoria || 'Geral';
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(`• ${i.material?.nome ?? '?'} x${i.quantidade ?? 1}`);
+              return acc;
+            }, {});
+            const itensStr = Object.entries(grouped)
+              .map(([cat, items]) => `${cat}:\n${items.join('\n')}`)
+              .join('\n\n') || '—';
+            return [
+              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+              itensStr,
+              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+              { content: `${days} d`, styles: getDeadlineStyles(days) },
+              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+            ];
+          }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 }, columnStyles: { 2: { cellWidth: 50 } },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -251,7 +276,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('transporte')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Transporte', reqTransporte.length);
       if (reqTransporte.length === 0) {
@@ -261,6 +286,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
           body: reqTransporte.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.destino ?? '—', r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—', { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -268,7 +294,7 @@ export function ReportsPage() {
     }
 
     if (selected.has('manutencao')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(255, 255, 255); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
+      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
       addSectionTitle('Requisições de Manutenção', reqManutencao.length);
       if (reqManutencao.length === 0) {
@@ -278,6 +304,7 @@ export function ReportsPage() {
           startY: y, head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
           body: reqManutencao.map(r => { const days = getDiffDays(r.criadoEm); return [r.criadoEm ? formatDateStr(r.criadoEm) : '—', r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—', r.assunto ?? r.descricao ?? '—', PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade, { content: `${days} d`, styles: getDeadlineStyles(days) }, { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }]; }),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
+          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
         });
         y = (doc as any).lastAutoTable.finalY + 10;
@@ -289,42 +316,78 @@ export function ReportsPage() {
     return doc;
   };
 
+  const getReportFilename = () => {
+    const moduleNames = SECTIONS
+      .filter(s => selected.has(s.id))
+      .map(s => s.id.charAt(0).toUpperCase() + s.id.slice(1))
+      .join('_');
+
+    const formatDateForFileName = (dStr: string) => {
+      const [y, m, d] = dStr.split('-');
+      return `${d}_${m}_${y}`;
+    };
+
+    const start = formatDateForFileName(startDate);
+    const end = formatDateForFileName(endDate);
+
+    const datePart = start === end ? start : `${start}_a_${end}`;
+
+    return `relatorio_${moduleNames}_${datePart}.pdf`;
+  };
+
   const generatePDF = async () => {
-    if (selected.size === 0) { toast.error('Selecione pelo menos um tipo de dados.'); return; }
-    if (!startDate || !endDate) { toast.error('Intervalo de datas inválido.'); return; }
+    if (selected.size === 0) {
+      toast.error('Selecione pelo menos um tipo de dados.');
+      return;
+    }
+    if (!startDate || !endDate) {
+      toast.error('Intervalo de datas inválido.');
+      return;
+    }
     setIsGenerating(true);
     try {
       const doc = await preparePDF();
-      doc.save(`relatorio_${startDate}_${endDate}.pdf`);
+      doc.save(getReportFilename());
       toast.success('Relatório gerado com sucesso!');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao gerar relatório.');
-    } finally { setIsGenerating(false); }
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSendEmail = async () => {
-    if (selected.size === 0) { toast.error('Selecione pelo menos um tipo de dados.'); return; }
+    if (selected.size === 0) {
+      toast.error('Selecione pelo menos um tipo de dados.');
+      return;
+    }
     const email = window.prompt('Introduza o e-mail de destino:');
     if (!email) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('E-mail inválido'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error('E-mail inválido');
+      return;
+    }
 
     setIsSendingEmail(true);
     try {
       const doc = await preparePDF();
       const pdfBase64 = doc.output('datauristring');
+      const filename = getReportFilename();
       const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
       const body = `Olá,\n\nSegue em anexo o relatório institucional referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.\n\n` +
         `Conteúdo do relatório:\n` +
         Array.from(selected).map(s => `- ${SECTIONS.find(sec => sec.id === s)?.label}`).join('\n') +
         `\n\nEste e-mail foi gerado automaticamente pelo portal de gestão.`;
 
-      await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: `relatorio_${startDate}_${endDate}.pdf` });
+      await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: filename });
       toast.success('Relatório enviado com sucesso!');
     } catch (err) {
       console.error(err);
       toast.error('Erro ao enviar e-mail.');
-    } finally { setIsSendingEmail(false); }
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   return (
@@ -346,23 +409,38 @@ export function ReportsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Início</label>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+            <DatePickerField value={startDate} onChange={setStartDate} />
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fim</label>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none" />
+            <DatePickerField value={endDate} onChange={setEndDate} />
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           {[
+            { label: 'Hoje', start: today, end: today },
+            { label: 'Ontem', start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1), end: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1) },
             { label: 'Este mês', start: new Date(today.getFullYear(), today.getMonth(), 1), end: new Date(today.getFullYear(), today.getMonth() + 1, 0) },
-            { label: 'Últimos 30 dias', start: new Date(Date.now() - 29 * 86400000), end: today },
+            { label: 'Mês passado', start: new Date(today.getFullYear(), today.getMonth() - 1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) },
             { label: 'Este ano', start: new Date(today.getFullYear(), 0, 1), end: today },
-          ].map(({ label, start, end }) => (
-            <button key={label} onClick={() => { setStartDate(formatDate(start)); setEndDate(formatDate(end)); }} className="text-xs px-3 py-1.5 rounded-full border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 font-medium">
-              {label}
-            </button>
-          ))}
+          ].map(({ label, start, end }) => {
+            const sStr = formatDate(start);
+            const eStr = formatDate(end);
+            const isActive = startDate === sStr && endDate === eStr;
+
+            return (
+              <button
+                key={label}
+                onClick={() => { setStartDate(sStr); setEndDate(eStr); }}
+                className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${isActive
+                  ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                  : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                  }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       </GlassCard>
 
@@ -381,10 +459,32 @@ export function ReportsPage() {
             );
           })}
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <button onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))} className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Selecionar tudo</button>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
-          <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 dark:text-gray-400 hover:underline">Limpar seleção</button>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected
+                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+              }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Selecionar tudo
+          </button>
+
+          <button
+            onClick={() => setSelected(new Set())}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected
+                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+              }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Limpar seleção
+          </button>
         </div>
       </GlassCard>
 

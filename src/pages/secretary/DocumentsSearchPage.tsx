@@ -69,7 +69,8 @@ function cleanFilename(name: string) {
   if (parts.length >= 4) {
     // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
     const nif = parts[0];
-    const rawDate = parts[parts.length - 2];
+    const rawDate = parts[parts.length - 1];
+    const contador = parts[parts.length - 2];
     const assuntoParts = parts.slice(1, parts.length - 2);
     const assunto = assuntoParts.join("_");
     
@@ -77,7 +78,7 @@ function cleanFilename(name: string) {
     if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
       formattedDate = `${rawDate.substring(6, 8)}-${rawDate.substring(4, 6)}-${rawDate.substring(0, 4)}`;
     }
-    return `${nif}_${assunto}_${formattedDate}${extension}`;
+    return `${nif}_${assunto}_${contador}_${formattedDate}${extension}`;
   } else if (parts.length === 3) {
     // Formato legado: NIF_TIPO_UUID
     return `${parts[0]}_${parts[1]}${extension}`;

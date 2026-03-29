@@ -188,7 +188,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerUtente({
           nome: formData.name,
           nif: formData.nif,
-          telefone: formData.contact,
+          telefone: formData.contact || undefined,
           email: formData.email,
           dataNasc: isoDate,
           password: formData.password,
@@ -200,7 +200,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerFuncionario({
           nome: formData.name,
           nif: formData.nif,
-          contacto: formData.contact,
+          contacto: formData.contact || undefined,
           email: formData.email,
           dataNasc: isoDate,
           funcao: employeeRole,
