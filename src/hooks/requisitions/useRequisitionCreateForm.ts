@@ -103,6 +103,8 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   const isDirty = useMemo(() => {
     return (
+      tipo !== (initialTipo ?? 'MATERIAL') ||
+      prioridade !== (initialPrioridade ?? 'MEDIA') ||
       descricao !== '' ||
       tempoLimite !== undefined ||
       materialLinhas.length > 0 ||
@@ -118,6 +120,10 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       Object.keys(manutencaoObservacoesPorCategoria).length > 0
     );
   }, [
+    tipo,
+    initialTipo,
+    prioridade,
+    initialPrioridade,
     descricao,
     tempoLimite,
     materialLinhas,

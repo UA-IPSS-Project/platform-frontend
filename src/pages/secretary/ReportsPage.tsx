@@ -38,14 +38,14 @@ const SECTIONS: { id: ReportSection; label: string; description: string }[] = [
 
 const ESTADO_LABELS: Record<string, string> = {
   AGENDADO: 'Agendado',
-  EM_PROGRESSO: 'Em Progresso',
   CONCLUIDO: 'Concluído',
   CANCELADO: 'Cancelado',
   NAO_COMPARECIDO: 'Não Compareceu',
   INVALIDO: 'Inválido',
   EM_PREENCHIMENTO: 'Em Preenchimento',
-  // Requisitions
+  // Requisitions (includes EM_PROGRESSO)
   ABERTO: 'Aberto',
+  EM_PROGRESSO: 'Em Progresso',
   FECHADO: 'Fechado',
   RECUSADO: 'Recusado',
 };

@@ -97,7 +97,7 @@ export function SharedRequisitionsPage({
     tab: searchParams.get('tab') as string | null,
     type: searchParams.get('type') as RequisicaoTipo | null,
     priority: searchParams.get('priority') as RequisicaoPrioridade | null,
-  }), []); // Capture once on mount
+  }), [searchParams]);
 
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const formatDateTimeOrDash = (value?: string | null) => {
