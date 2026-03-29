@@ -173,11 +173,15 @@ export function RequisitionDetailsDialog({
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</p>
                 </div>
                 {selectedRequisicao.geridoPor && (
-                  <div className="space-y-1 md:col-span-2">
+                  <div className="space-y-1">
                     <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.labels.managedBy')}</p>
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{selectedRequisicao.geridoPor.nome}</p>
                   </div>
                 )}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.labels.lastUpdate')}</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 tabular-nums">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
+                </div>
               </div>
             </div>
 
@@ -196,10 +200,6 @@ export function RequisitionDetailsDialog({
                   </p>
                 </div>
 
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.labels.lastUpdate')}</p>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 tabular-nums">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
-                </div>
 
                 {selectedRequisicao.tipo === 'MATERIAL' && (
                   <>
