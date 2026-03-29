@@ -1,16 +1,17 @@
 import type { KeyboardEvent } from 'react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
-import {
-  ESTADO_OPTIONS,
-  PRIORIDADE_OPTIONS,
-  REQUISICOES_TABS,
-  RequisicoesTab,
-  formatEstado,
-  formatPrioridade,
-  formatTipo,
+import { 
+  ESTADO_OPTIONS, 
+  PRIORIDADE_OPTIONS, 
+  REQUISICOES_TABS, 
+  RequisicoesTab, 
+  formatEstado, 
+  formatPrioridade, 
+  formatTipo 
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { RequisicaoEstado, RequisicaoPrioridade, RequisicaoResponse } from '../../../services/api';
+import { Info, User, Clock, Calendar, Search, X } from 'lucide-react';
 
 interface RequisitionsListFiltersContentProps {
   desktop: boolean;
@@ -149,75 +150,140 @@ export function RequisitionsListFiltersContent({
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 ${showCreatedByRoleFilter ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
-        <div>
-          <label htmlFor={estadoId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.status')}</label>
-          <select
-            id={estadoId}
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
-            className={selectFieldClassName}
-          >
-            {ESTADO_OPTIONS.map((option) => (
-              <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor={prioridadeId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
-          <select
-            id={prioridadeId}
-            value={filterPrioridade}
-            onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
-            className={selectFieldClassName}
-          >
-            <option value="">{t('requisitions.ui.allPriorities')}</option>
-            {PRIORIDADE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{t(option.label)}</option>
-            ))}
-          </select>
-        </div>
-
-        {showCreatedByRoleFilter && (
-          <div>
-            <label htmlFor={criadoTipoId} className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.createdByRole')}</label>
+      <div className="space-y-4">
+        {/* Row 1: Basic Status Filters */}
+        <div className={`grid grid-cols-1 ${showCreatedByRoleFilter ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+          <div className="space-y-1.5">
+            <label htmlFor={estadoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+              <Info className="w-3.5 h-3.5" />
+              {t('requisitions.ui.status')}
+            </label>
             <select
-              id={criadoTipoId}
-              value={filterCriadoPorTipo}
-              onChange={(e) => setFilterCriadoPorTipo?.(e.target.value as '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO')}
-              className={selectFieldClassName}
+              id={estadoId}
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as RequisicaoEstado | '')}
+              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
             >
-              <option value="">{t('requisitions.ui.allRoles')}</option>
-              <option value="SECRETARIA">{t('requisitions.ui.roleSecretary')}</option>
-              <option value="ESCOLA">{t('requisitions.ui.roleSchool')}</option>
-              <option value="BALNEARIO">{t('requisitions.ui.roleBalneario')}</option>
-              <option value="INTERNO">{t('requisitions.ui.roleInterno')}</option>
+              {ESTADO_OPTIONS.map((option) => (
+                <option key={option.value || 'all'} value={option.value}>{t(option.label)}</option>
+              ))}
             </select>
           </div>
-        )}
 
-        <div>
-          <label htmlFor={criadoId} className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-1.5 block">{t('requisitions.ui.createdByName')}</label>
-          <Input id={criadoId} className={`${inputFieldClassName} focus:ring-purple-500/20`} type="text" value={filterCriadoPorNome} onChange={(e) => setFilterCriadoPorNome(e.target.value)} placeholder={t('requisitions.ui.createdByPlaceholder')} />
+          <div className="space-y-1.5">
+            <label htmlFor={prioridadeId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+              <Info className="w-3.5 h-3.5 rotate-180" />
+              {t('requisitions.ui.priority')}
+            </label>
+            <select
+              id={prioridadeId}
+              value={filterPrioridade}
+              onChange={(e) => setFilterPrioridade(e.target.value as RequisicaoPrioridade | '')}
+              className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
+            >
+              <option value="">{t('requisitions.ui.allPriorities')}</option>
+              {PRIORIDADE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{t(option.label)}</option>
+              ))}
+            </select>
+          </div>
+
+          {showCreatedByRoleFilter && (
+            <div className="space-y-1.5">
+              <label htmlFor={criadoTipoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                <User className="w-3.5 h-3.5" />
+                {t('requisitions.ui.createdByRole')}
+              </label>
+              <select
+                id={criadoTipoId}
+                value={filterCriadoPorTipo}
+                onChange={(e) => setFilterCriadoPorTipo?.(e.target.value as '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO')}
+                className={`${selectFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm transition-all focus:ring-purple-500/20`}
+              >
+                <option value="">{t('requisitions.ui.allRoles')}</option>
+                <option value="SECRETARIA">{t('requisitions.ui.roleSecretary')}</option>
+                <option value="ESCOLA">{t('requisitions.ui.roleSchool')}</option>
+                <option value="BALNEARIO">{t('requisitions.ui.roleBalneario')}</option>
+                <option value="INTERNO">{t('requisitions.ui.roleInterno')}</option>
+              </select>
+            </div>
+          )}
         </div>
 
-        <div>
-          <label htmlFor={dataInicioId} className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-1.5 block">{t('requisitions.ui.startDate')}</label>
-          <Input id={dataInicioId} className={inputFieldClassName} type="date" value={filterDataInicio} onChange={(e) => setFilterDataInicio(e.target.value)} />
-        </div>
+        {/* Row 2: Search and Dates */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <label htmlFor={criadoId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+              <User className="w-3.5 h-3.5" />
+              {t('requisitions.ui.createdByName')}
+            </label>
+            <Input 
+              id={criadoId} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              type="text" 
+              value={filterCriadoPorNome} 
+              onChange={(e) => setFilterCriadoPorNome(e.target.value)} 
+              placeholder={t('requisitions.ui.createdByPlaceholder')} 
+            />
+          </div>
 
-        <div>
-          <label htmlFor={dataFimId} className="text-sm text-gray-600 dark:text-gray-300 font-medium mb-1.5 block">{t('requisitions.ui.endDate')}</label>
-          <Input id={dataFimId} className={inputFieldClassName} type="date" value={filterDataFim} onChange={(e) => setFilterDataFim(e.target.value)} />
+          <div className="space-y-1.5">
+            <label htmlFor={dataInicioId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+              <Calendar className="w-3.5 h-3.5" />
+              {t('requisitions.ui.startDate')}
+            </label>
+            <Input 
+              id={dataInicioId} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              type="date" 
+              value={filterDataInicio} 
+              onChange={(e) => setFilterDataInicio(e.target.value)} 
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor={dataFimId} className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5 ml-1">
+              <Calendar className="w-3.5 h-3.5" />
+              {t('requisitions.ui.endDate')}
+            </label>
+            <Input 
+              id={dataFimId} 
+              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20`} 
+              type="date" 
+              value={filterDataFim} 
+              onChange={(e) => setFilterDataFim(e.target.value)} 
+            />
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button onClick={onSearch} disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
-          {loading ? t('requisitions.ui.searching') : t('requisitions.ui.search')}
+      <div className="flex items-center gap-3 mt-2">
+        <Button 
+          onClick={onSearch} 
+          disabled={loading} 
+          className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 shadow-lg shadow-purple-500/20 transition-all hover:-translate-y-0.5"
+        >
+          {loading ? (
+            <span className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              {t('requisitions.ui.searching')}
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              {t('requisitions.ui.search')}
+            </span>
+          )}
         </Button>
-        <Button variant="outline" onClick={onClearFilters} disabled={loading}>{t('requisitions.ui.clearFilters')}</Button>
+        <Button 
+          variant="outline" 
+          onClick={onClearFilters} 
+          disabled={loading}
+          className="rounded-xl px-6 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+        >
+          <X className="w-4 h-4 mr-2" />
+          {t('requisitions.ui.clearFilters')}
+        </Button>
       </div>
 
       {requisicoes.length === 0 ? (
@@ -234,54 +300,68 @@ export function RequisitionsListFiltersContent({
           {requisicoes.map((req) => (
             <div 
               key={req.id} 
-              className="group relative rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md p-5 transition-all duration-300 hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10"
+              className="group relative rounded-2xl border-2 border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1"
             >
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div className="flex flex-col gap-1">
-                  <p className="font-bold text-lg text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="flex flex-col gap-1.5">
+                  <p className="font-extrabold text-xl text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors tracking-tight">
                     # {formatTipo(req.tipo)}
                   </p>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    ID: {req.id}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                      ID: {req.id}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                <div className="flex flex-col items-end gap-3">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] shadow-sm ${
                     req.prioridade === 'URGENTE' 
-                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                      ? 'bg-red-50 text-red-700 border border-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50' 
                       : req.prioridade === 'ALTA'
-                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      ? 'bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/50'
+                      : 'bg-blue-50 text-blue-700 border border-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/50'
                   }`}>
                     {formatPrioridade(req.prioridade)}
                   </span>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-8 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold"
+                    className="h-9 px-5 rounded-xl border-purple-200 dark:border-purple-900/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white dark:hover:bg-purple-600 transition-all font-bold text-xs ring-offset-2 focus:ring-2 focus:ring-purple-500"
                     onClick={() => onOpenRequisicao(req)}
                   >
-                    {t('requisitions.ui.details', 'Detalhes')}
+                    {t('requisitions.ui.details', 'Ver Detalhes')}
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-gray-100 dark:border-gray-800 pt-4">
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight">{t('requisitions.labels.status')}</p>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{formatEstado(req.estado)}</p>
+              <div className="grid grid-cols-2 gap-y-5 gap-x-6 border-t border-gray-100 dark:border-gray-800 pt-5">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5">
+                    <Info className="w-3 h-3" />
+                    {t('requisitions.labels.status')}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{formatEstado(req.estado)}</p>
                 </div>
-                <div className="space-y-0.5 text-right">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight">{t('requisitions.labels.createdBy')}</p>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[150px]">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
+                <div className="space-y-1 text-right">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5 justify-end">
+                    <User className="w-3 h-3" />
+                    {t('requisitions.labels.createdBy')}
+                  </p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[140px] ml-auto">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
                 </div>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight">Criado a</p>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 italic">{formatDateTimeOrDash(req.criadoEm)}</p>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5">
+                    <Clock className="w-3 h-3" />
+                    Criado a
+                  </p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.criadoEm)}</p>
                 </div>
-                <div className="space-y-0.5 text-right">
-                  <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight">{t('requisitions.labels.deadline')}</p>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 italic">{formatDateTimeOrDash(req.tempoLimite)}</p>
+                <div className="space-y-1 text-right">
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em] flex items-center gap-1.5 justify-end">
+                    <Calendar className="w-3 h-3" />
+                    {t('requisitions.labels.deadline')}
+                  </p>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.tempoLimite)}</p>
                 </div>
               </div>
             </div>

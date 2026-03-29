@@ -1574,7 +1574,7 @@ export function SharedRequisitionsPage({
               </div>
               <Button
                 onClick={() => setActiveSection('create')}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 shadow-lg shadow-purple-500/20 transition-all hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {t('requisitions.ui.createRequest')}
@@ -1627,7 +1627,7 @@ export function SharedRequisitionsPage({
               <Button
                 variant="outline"
                 onClick={handleBackWithCheck}
-                className="border-gray-300 dark:border-gray-600"
+                className="rounded-xl px-6 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all hover:-translate-x-1"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t('common.back')}
