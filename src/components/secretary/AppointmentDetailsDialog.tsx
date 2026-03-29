@@ -767,19 +767,19 @@ function cleanFilename(name: string) {
                                     <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                                   </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
+                                <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl rounded-xl z-50" align="end">
                                   <button
                                     type="button"
                                     onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                                   >
-                                    <Download className="w-4 h-4 text-white" />
+                                    <Download className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                     {t('appointmentDetails.download', 'Transferir')}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     {t('appointmentDetails.removeDocument', 'Apagar')}
@@ -789,8 +789,7 @@ function cleanFilename(name: string) {
                                     <button
                                       type="button"
                                       onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm"
-                                      style={{ color: '#EFBC21' }}
+                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
                                     >
                                       <BellIcon className="w-4 h-4" />
                                       {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
