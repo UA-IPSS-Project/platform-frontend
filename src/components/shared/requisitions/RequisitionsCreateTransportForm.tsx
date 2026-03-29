@@ -1,14 +1,13 @@
 import { Button } from '../../ui/button';
-import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
 import { DatePickerField } from '../../ui/date-picker-field';
-import { AlertCircle, Info } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import {
-  formatTransporteCategoria,
   formatLotacao,
   formatVehicleTitle,
   getCoberturaMensagem,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { TransporteCatalogo, TransporteCategoria } from '../../../services/api';
 
 interface RequisitionsCreateTransportFormProps {
@@ -29,8 +28,6 @@ interface RequisitionsCreateTransportFormProps {
   selectedTransportIds: string[];
   onToggleTransport: (transporteId: number, checked: boolean) => void;
   onRemoveTransport: (transporteId: number) => void;
-  expandedTransporteDetalhes: Record<number, boolean>;
-  onToggleTransporteDetalhes: (transporteId: number) => void;
   transportesPorCategoria: Array<{
     categoria: TransporteCategoria;
     label: string;
@@ -76,8 +73,6 @@ export function RequisitionsCreateTransportForm({
   selectedTransportIds,
   onToggleTransport,
   onRemoveTransport,
-  expandedTransporteDetalhes,
-  onToggleTransporteDetalhes,
   transportesPorCategoria,
   selectedTransportes,
   transportesIndisponiveis,
@@ -147,6 +142,12 @@ export function RequisitionsCreateTransportForm({
               placeholder={t('requisitions.ui.passengersPlaceholder')}
             />
             {createErrors?.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
+            <div className="flex items-start gap-2 p-3 mt-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+              <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+                {t('requisitions.ui.capacityHint')}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -236,12 +237,6 @@ export function RequisitionsCreateTransportForm({
             </p>
           </div>
         </div>
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
-          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-          <p className="text-xs font-semibold text-red-700 dark:text-red-300">
-            {t('requisitions.ui.capacityHint')}
-          </p>
-        </div>
 
         {createErrors?.transporteIds && (
           <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
@@ -291,114 +286,17 @@ export function RequisitionsCreateTransportForm({
 
         {!loadingCatalogo && transportesPorCategoria.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {transportesPorCategoria.flatMap(grupo => grupo.items).map((transporte) => {
-              const isSelected = selectedTransportIds.includes(String(transporte.id));
-              const isRecommended = recommendedTransportIds.includes(transporte.id);
-              const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
-              const isUnavailable = transportesIndisponiveis.has(transporte.id);
-              
-              let cardStyles = "cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 transition-all";
-              if (isSelected) {
-                cardStyles = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm ring-1 ring-emerald-500/50";
-              } else if (isUnavailable) {
-                cardStyles = "opacity-60 grayscale-[0.5] border-amber-200 bg-amber-50/50 dark:bg-amber-950/10 cursor-not-allowed";
-              } else {
-                cardStyles = "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950";
-              }
-
-              const handleToggle = () => {
-                if (!isUnavailable) {
-                  onToggleTransport(transporte.id, !isSelected);
-                }
-              };
-
-              return (
-                <div
-                  key={transporte.id}
-                  onClick={handleToggle}
-                  className={`group rounded-2xl border p-4 flex flex-col justify-between gap-4 ${cardStyles}`}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex gap-1.5 flex-wrap">
-                          {isRecommended && (
-                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-tighter">
-                              {t('requisitions.ui.suggested')}
-                            </span>
-                          )}
-                          {isUnavailable && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-tighter">
-                              {t('requisitions.ui.unavailable')}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="text-sm font-black text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                          {formatVehicleTitle(transporte)}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-md">
-                              {transporte.codigo ?? `#${transporte.id}`}
-                           </span>
-                           <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                              {formatTransporteCategoria(transporte.categoria)}
-                           </span>
-                        </div>
-                      </div>
-                      <Checkbox
-                        checked={isSelected}
-                        disabled={isUnavailable}
-                        onCheckedChange={() => handleToggle()}
-                        className="mt-1"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <div className="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.ui.capacityLabel')}</p>
-                        <p className="text-[11px] font-black text-gray-800 dark:text-gray-200">{formatLotacao(transporte.lotacao)}</p>
-                      </div>
-                      <div className="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
-                        <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.ui.licensePlate')}</p>
-                        <p className="text-[11px] font-black text-gray-800 dark:text-gray-200">{transporte.matricula || '—'}</p>
-                      </div>
-                    </div>
-
-                    {isUnavailable && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                        <Info className="w-3 h-3" />
-                        <span>{t('requisitions.ui.overlapWarning')}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                     <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full h-8 text-xs font-bold text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onToggleTransporteDetalhes(transporte.id);
-                        }}
-                      >
-                        {detailsOpen ? t('requisitions.ui.hideDetails') : t('requisitions.ui.details')}
-                      </Button>
-                      
-                      {detailsOpen && (
-                        <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 space-y-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 animate-in fade-in slide-in-from-top-1 duration-200">
-                           {[transporte.marca, transporte.modelo].filter(Boolean).length > 0 && (
-                             <p><span className="font-bold text-gray-400 uppercase tracking-tighter mr-1">{t('requisitions.ui.brandModel')}:</span> {[transporte.marca, transporte.modelo].filter(Boolean).join(' ')}</p>
-                           )}
-                           {transporte.dataMatricula && (
-                             <p><span className="font-bold text-gray-400 uppercase tracking-tighter mr-1">{t('requisitions.ui.licenseDate')}:</span> {new Date(transporte.dataMatricula).toLocaleDateString('pt-PT')}</p>
-                           )}
-                        </div>
-                      )}
-                  </div>
-                </div>
-              );
-            })}
+            {transportesPorCategoria.flatMap(grupo => grupo.items).map((transporte) => (
+              <VehicleSelectionCard
+                key={transporte.id}
+                transporte={transporte}
+                isSelected={selectedTransportIds.includes(String(transporte.id))}
+                isRecommended={recommendedTransportIds.includes(transporte.id)}
+                isUnavailable={transportesIndisponiveis.has(transporte.id)}
+                onToggle={onToggleTransport}
+                t={t}
+              />
+            ))}
           </div>
         )}
       </div>
