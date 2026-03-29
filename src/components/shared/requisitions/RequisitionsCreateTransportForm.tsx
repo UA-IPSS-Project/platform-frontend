@@ -106,7 +106,7 @@ export function RequisitionsCreateTransportForm({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">
-              {t('requisitions.ui.destination')} {t('common.optional')}
+              {t('requisitions.ui.destination')} *
             </label>
             <div className="relative group">
               <Input
@@ -144,7 +144,7 @@ export function RequisitionsCreateTransportForm({
           </div>
 
           <div>
-            <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')}</label>
+            <label htmlFor="req-create-transporte-passageiros" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.passengersCount')} *</label>
             <Input
               id="req-create-transporte-passageiros"
               type="number"
@@ -160,7 +160,7 @@ export function RequisitionsCreateTransportForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
-            <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')}</label>
+            <label htmlFor="req-create-transporte-data-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureDate')} *</label>
             <DatePickerField
               id="req-create-transporte-data-saida"
               value={dataSaida}
@@ -177,7 +177,7 @@ export function RequisitionsCreateTransportForm({
           </div>
 
           <div>
-            <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')}</label>
+            <label htmlFor="req-create-transporte-hora-saida" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.departureTime')} *</label>
             <Input
               id="req-create-transporte-hora-saida"
               type="time"
@@ -198,7 +198,7 @@ export function RequisitionsCreateTransportForm({
           </div>
 
           <div>
-            <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')}</label>
+            <label htmlFor="req-create-transporte-data-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnDate')} *</label>
             <DatePickerField
               id="req-create-transporte-data-regresso"
               value={dataRegresso}
@@ -209,7 +209,7 @@ export function RequisitionsCreateTransportForm({
           </div>
 
           <div>
-            <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')}</label>
+            <label htmlFor="req-create-transporte-hora-regresso" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.returnTime')} *</label>
             <Input
               id="req-create-transporte-hora-regresso"
               type="time"
