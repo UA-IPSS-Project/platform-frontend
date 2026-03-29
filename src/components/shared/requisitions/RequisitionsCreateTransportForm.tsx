@@ -28,6 +28,8 @@ interface RequisitionsCreateTransportFormProps {
   selectedTransportIds: string[];
   onToggleTransport: (transporteId: number, checked: boolean) => void;
   onRemoveTransport: (transporteId: number) => void;
+  expandedTransporteDetalhes: Record<number, boolean>;
+  onToggleTransporteDetalhes: (transporteId: number) => void;
   transportesPorCategoria: Array<{
     categoria: TransporteCategoria;
     label: string;
@@ -73,6 +75,8 @@ export function RequisitionsCreateTransportForm({
   selectedTransportIds,
   onToggleTransport,
   onRemoveTransport,
+  expandedTransporteDetalhes,
+  onToggleTransporteDetalhes,
   transportesPorCategoria,
   selectedTransportes,
   transportesIndisponiveis,
@@ -102,14 +106,21 @@ export function RequisitionsCreateTransportForm({
             <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">
               {t('requisitions.ui.destination')} {t('common.optional')}
             </label>
-            <Input
-              id="req-create-transporte-destino"
-              className={inputFieldClassName}
-              value={destinoTransporte}
-              onChange={(e) => onChangeDestino(e.target.value)}
-              placeholder={t('requisitions.ui.destinationPlaceholder')}
-              list="destinations-list"
-            />
+            <div className="relative group">
+              <Input
+                id="req-create-transporte-destino"
+                className={`${inputFieldClassName} pr-10`}
+                value={destinoTransporte}
+                onChange={(e) => onChangeDestino(e.target.value)}
+                placeholder={t('requisitions.ui.destinationPlaceholder')}
+                list="destinations-list"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
             <datalist id="destinations-list">
               <option value={t('requisitions.ui.destinations.school')} />
               <option value={t('requisitions.ui.destinations.user')} />

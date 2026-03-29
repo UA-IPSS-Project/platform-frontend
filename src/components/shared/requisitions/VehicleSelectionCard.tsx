@@ -44,7 +44,7 @@ export function VehicleSelectionCard({
   }
 
   const content = (
-    <div className={`space-y-3 w-full ${isMinimal ? 'py-1' : ''}`}>
+    <div className={`space-y-2 w-full ${isMinimal ? 'py-1' : ''}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1.5 flex-wrap">
           {showCategory && (
@@ -74,7 +74,7 @@ export function VehicleSelectionCard({
         )}
       </div>
       
-      <div className="border-l-2 border-purple-100 dark:border-purple-900/50 pl-3 py-0.5 space-y-1">
+      <div className="pl-1 py-0.5 space-y-1">
         <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">
           {formatVehicleTitle(transporte)}
         </h4>

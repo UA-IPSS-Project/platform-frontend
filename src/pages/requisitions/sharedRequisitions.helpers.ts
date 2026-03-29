@@ -254,7 +254,6 @@ export type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo
 export type TransporteSelectionMode = 'auto' | 'manual';
 export type CreateField =
   | 'descricao'
-  | 'tempoLimite'
   | 'materialItens'
   | 'destino'
   | 'dataSaida'
@@ -365,7 +364,6 @@ export const formatTransporteDisplay = (transporte?: TransporteLike): string => 
   const parts = [
     transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
     formatVehicleTitle(transporte),
-    transporte.matricula,
   ].filter(Boolean);
 
   return parts.join(' · ');

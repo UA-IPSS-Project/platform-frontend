@@ -17,7 +17,6 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 
-import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
@@ -52,8 +51,6 @@ import {
   isDateInputInPast,
   normalizarTexto,
   periodsOverlap,
-  previousDateInput,
-  toIsoFromDateOnly,
 } from './sharedRequisitions.helpers';
 import { RequisitionsStatsCards } from '../../components/shared/requisitions/RequisitionsStatsCards';
 import { RequisitionsConflictDialog } from '../../components/shared/requisitions/RequisitionsConflictDialog';
@@ -150,23 +147,6 @@ export function SharedRequisitionsPage({
       filters.setActiveTab(initialParams.tab as any);
     }
   }, [initialParams.tab]);
-
-  /* 
-  useEffect(() => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('mode', activeSection);
-      next.set('tab', filters.activeTab);
-      if (filters.filterTipo) next.set('type', filters.filterTipo);
-      else next.delete('type');
-      if (filters.filterPrioridade) next.set('priority', filters.filterPrioridade);
-      else next.delete('priority');
-      
-      if (next.toString() === prev.toString()) return prev;
-      return next;
-    }, { replace: true });
-  }, [activeSection, filters.activeTab, filters.filterTipo, filters.filterPrioridade, setSearchParams]);
-  */
 
   // Dirty state and navigation guards
   useEffect(() => {
@@ -492,12 +472,7 @@ export function SharedRequisitionsPage({
     if (!createForm.dataRegresso) {
       createForm.setDataRegresso(createForm.dataSaida);
     }
-
-    if (!createForm.tempoLimiteManuallyEdited) {
-      const previousDate = previousDateInput(createForm.dataSaida);
-      createForm.setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
-    }
-  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso, createForm.tempoLimiteManuallyEdited]);
+  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso]);
 
   useEffect(() => {
     if (createForm.createTouched.materialItens) {
@@ -524,24 +499,6 @@ export function SharedRequisitionsPage({
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const validateCreateField = useCallback((field: CreateField): string | undefined => {
     if (field === 'descricao') {
-      return undefined;
-    }
-
-    if (field === 'tempoLimite') {
-      if (!createForm.tempoLimite) return undefined;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const limite = new Date(createForm.tempoLimite);
-      limite.setHours(0, 0, 0, 0);
-
-      if (limite < today) return t('requisitions.errors.deadlineCannotBePast');
-
-      if (createForm.tipo === 'TRANSPORTE' && createForm.dataSaida) {
-        const saidaMatch = parseDateInput(createForm.dataSaida);
-        if (saidaMatch && limite >= saidaMatch) return t('requisitions.errors.deadlineBeforeDeparture');
-      }
-
       return undefined;
     }
 
@@ -604,12 +561,6 @@ export function SharedRequisitionsPage({
     createForm.setFieldError(field, error);
     return error;
   }, [validateCreateField, createForm]);
-
-  useEffect(() => {
-    if (createForm.createTouched.tempoLimite) {
-      validateAndSetField('tempoLimite');
-    }
-  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite, validateAndSetField]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -813,7 +764,6 @@ export function SharedRequisitionsPage({
     }
 
     const fieldsToValidate: CreateField[] = [];
-    fieldsToValidate.push('tempoLimite');
 
     if (createForm.tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
@@ -854,7 +804,6 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        tempoLimite: toIsoFromDateOnly(createForm.tempoLimite),
         criadoPorId: currentUserId,
       };
 
@@ -1386,23 +1335,12 @@ export function SharedRequisitionsPage({
           onChangeTipo={createForm.setTipo}
           prioridade={createForm.prioridade}
           onChangePrioridade={createForm.setPrioridade}
-          tempoLimite={createForm.tempoLimite}
-          onChangeTempoLimite={(value) => {
-            createForm.setTempoLimite(value);
-            createForm.setTempoLimiteManuallyEdited(true);
-            createForm.setFieldTouched('tempoLimite');
-          }}
           descricaoError={createForm.createErrors.descricao}
-          tempoLimiteError={createForm.createErrors.tempoLimite}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
           selectFieldClassName={selectFieldClassName}
           t={t}
         />
-
-        {createForm.tipo === 'TRANSPORTE' && !createForm.tempoLimiteManuallyEdited && createForm.dataSaida && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
-        )}
       </div>
 
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
@@ -1743,12 +1681,6 @@ export function SharedRequisitionsPage({
                 {t(`requisitions.labels.${{ BAIXA: 'low', MEDIA: 'medium', ALTA: 'high', URGENTE: 'urgent' }[createForm.prioridade]}`)}
               </span>
             </div>
-            {createForm.tempoLimite && (
-              <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-                <span className="text-gray-500 font-medium">{t('requisitions.ui.deadlineDate')}:</span>
-                <span className="text-gray-900 dark:text-gray-100">{new Date(createForm.tempoLimite).toLocaleDateString('pt-PT')}</span>
-              </div>
-            )}
             
             {createForm.tipo === 'MATERIAL' && (
               <div>
