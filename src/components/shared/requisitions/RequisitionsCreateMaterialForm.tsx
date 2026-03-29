@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, Search, ShoppingBag, Box, X, Package } from 'lucide-react';
+import { ChevronDown, Search, ShoppingBag, Box, X } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
@@ -83,10 +83,20 @@ export function RequisitionsCreateMaterialForm({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
             <Input
               placeholder={t('requisitions.ui.searchPlaceholder', { defaultValue: 'Pesquisar materiais...' })}
-              className="pl-10 h-11 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md border-gray-200 dark:border-gray-800 rounded-xl shadow-sm focus:ring-purple-500/20"
+              className="pl-10 pr-10 h-11 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md border-gray-200 dark:border-gray-800 rounded-xl shadow-sm focus:ring-purple-500/20"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                onClick={() => setSearchTerm('')}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
@@ -143,28 +153,33 @@ export function RequisitionsCreateMaterialForm({
                         : 'border-gray-200 dark:border-gray-800 bg-white/40 dark:bg-gray-900/40 hover:border-purple-300 dark:hover:border-purple-800'
                     }`}
                   >
-                    <div className="p-4 flex-1 space-y-3">
+                    <div 
+                      className="p-4 flex-1 space-y-3 cursor-pointer"
+                      onClick={() => {
+                        if (item.variantes.length === 1) {
+                          const variante = item.variantes[0];
+                          const isSelected = materialLinhas.some(l => l.materialId === String(variante.id));
+                          onToggleVariante(variante.id, !isSelected);
+                        } else {
+                          onToggleItemVisibility(item.itemKey);
+                        }
+                      }}
+                    >
                       <div className="flex items-start justify-between">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-                          <Package className="w-5 h-5" />
-                        </div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                          {item.nome}
+                        </h4>
                         <Button
                           variant="ghost"
                           size="icon"
                           className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
-                          onClick={() => onToggleItemVisibility(item.itemKey)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleItemVisibility(item.itemKey);
+                          }}
                         >
                           <ChevronDown className="w-4 h-4" />
                         </Button>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                          {item.nome}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                          {t(currentCategoryData.label)}
-                        </p>
                       </div>
 
                       {/* Variants and Selection */}
@@ -183,34 +198,35 @@ export function RequisitionsCreateMaterialForm({
                                 const label = variante.atributo && variante.valorAtributo
                                   ? `${variante.atributo}: ${variante.valorAtributo}`
                                   : t('requisitions.ui.defaultVariant', { defaultValue: 'Padrão' });
-
-                                return (
-                                  <div key={variante.id} className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <Checkbox
-                                        id={`var-${variante.id}`}
-                                        checked={checked}
-                                        onCheckedChange={(c) => onToggleVariante(variante.id, !!c)}
-                                        className="h-4 w-4 rounded-md border-gray-300 dark:border-gray-700 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
-                                      />
-                                      <label htmlFor={`var-${variante.id}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none truncate">
-                                        {label}
-                                      </label>
-                                    </div>
-                                    {checked && (
-                                      <div className="pl-6 flex items-center gap-2">
-                                        <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('requisitions.ui.quantityShort')}</label>
-                                        <Input
-                                          type="number"
-                                          min="1"
-                                          className={`h-7 w-16 text-xs bg-white dark:bg-gray-900 ${quantityFieldClassName}`}
-                                          value={linha?.quantidade ?? '1'}
-                                          onChange={(e) => onUpdateVarianteQuantidade(variante.id, e.target.value)}
-                                        />
+                                  return (
+                                    <div key={variante.id} className="space-y-2">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <Checkbox
+                                            id={`var-${variante.id}`}
+                                            checked={checked}
+                                            onCheckedChange={(c) => onToggleVariante(variante.id, !!c)}
+                                            className="h-4 w-4 rounded-md border-gray-300 dark:border-gray-700 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                                          />
+                                          <label htmlFor={`var-${variante.id}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none truncate">
+                                            {label}
+                                          </label>
+                                        </div>
+                                        {checked && (
+                                          <div className="flex items-center gap-2 flex-shrink-0 bg-white dark:bg-gray-900 rounded-lg px-2 border border-gray-100 dark:border-gray-800">
+                                            <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{t('requisitions.ui.quantityShort')}</span>
+                                            <Input
+                                              type="number"
+                                              min="1"
+                                              className={`h-7 w-12 text-xs border-none bg-transparent shadow-none focus-visible:ring-0 ${quantityFieldClassName}`}
+                                              value={linha?.quantidade ?? '1'}
+                                              onChange={(e) => onUpdateVarianteQuantidade(variante.id, e.target.value)}
+                                            />
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                );
+                                    </div>
+                                  );
                               })}
                             </div>
                           </motion.div>
@@ -231,7 +247,7 @@ export function RequisitionsCreateMaterialForm({
                         >
                           {isSelected 
                             ? t('requisitions.ui.editSelection', { defaultValue: 'Editar Seleção' }) 
-                            : t('requisitions.ui.selectVariants', { defaultValue: 'Selecionar' })}
+                            : (item.variantes.length === 1 ? t('requisitions.ui.add', { defaultValue: 'Adicionar' }) : t('requisitions.ui.selectVariants', { defaultValue: 'Selecionar Opções' }))}
                         </Button>
                       </div>
                     )}

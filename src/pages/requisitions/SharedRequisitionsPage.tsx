@@ -623,11 +623,20 @@ export function SharedRequisitionsPage({
   }, [createForm]);
 
   const toggleItemAttributesVisibility = useCallback((itemKey: string) => {
-    createForm.setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+    createForm.setExpandedMaterialItems((prev) => {
+      const isCurrentlyOpen = prev[itemKey] === true;
+      if (isCurrentlyOpen) {
+        return { ...prev, [itemKey]: false };
+      }
+      // Se não está aberto, fecha todos os outros e abre este
+      return { [itemKey]: true };
+    });
   }, [createForm]);
 
   const toggleCategoriaExpansion = useCallback((categoria: MaterialCategoria) => {
-    createForm.setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+    createForm.setExpandedMaterialCategorias(() => ({ [categoria]: true }));
+    // Ao trocar de categoria, fechamos todos os itens expandidos
+    createForm.setExpandedMaterialItems({});
   }, [createForm]);
 
 
