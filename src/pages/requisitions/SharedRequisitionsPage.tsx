@@ -665,26 +665,6 @@ export function SharedRequisitionsPage({
     });
   }, [createForm]);
 
-  const handleItemToggle = useCallback((item: MaterialItemGroup, checked: boolean) => {
-    if (checked) {
-      createForm.setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
-      if (item.variantes.length === 1) {
-        toggleVariante(item.variantes[0].id, true);
-      }
-      return;
-    }
-
-    createForm.setExpandedMaterialItems((prev) => {
-      const next = { ...prev };
-      delete next[item.itemKey];
-      return next;
-    });
-
-    createForm.setMaterialLinhas((prev) => {
-      const ids = new Set(item.variantes.map((variante) => String(variante.id)));
-      return prev.filter((linha) => !ids.has(linha.materialId));
-    });
-  }, [createForm, toggleVariante]);
 
   const updateVarianteQuantidade = useCallback((materialId: number, quantidade: string) => {
     let finalValue = quantidade;
@@ -1357,12 +1337,10 @@ export function SharedRequisitionsPage({
                     itens,
                   };
                 })}
-                materiaisAdicionados={[]}
                 materiaisAdicionadosTotal={materiaisAdicionadosTotal}
                 materiaisAdicionadosAgrupados={materiaisAdicionadosAgrupados}
                 onToggleCategoriaExpansion={(categoria) => toggleCategoriaExpansion(categoria as MaterialCategoria)}
                 onToggleItemVisibility={toggleItemAttributesVisibility}
-                onToggleItem={handleItemToggle}
                 onToggleVariante={toggleVariante}
                 onUpdateVarianteQuantidade={updateVarianteQuantidade}
                 onRemoveMaterialLinha={handleRemoveMaterialLinha}
