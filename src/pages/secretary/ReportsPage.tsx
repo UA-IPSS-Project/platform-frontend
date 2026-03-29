@@ -73,9 +73,9 @@ export function ReportsPage() {
   const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const [startDate, setStartDate] = useState(formatDate(firstOfMonth));
   const [endDate, setEndDate] = useState(formatDate(lastOfMonth));
-  const [selected, setSelected] = useState<Set<ReportSection>>(
-    new Set(['secretaria', 'balneario'])
-  );
+  const [selected, setSelected] = useState<Set<ReportSection>>(new Set(['secretaria', 'balneario']));
+  const isAllSelected = selected.size === SECTIONS.length;
+  const isNoneSelected = selected.size === 0;
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
@@ -425,10 +425,32 @@ export function ReportsPage() {
             );
           })}
         </div>
-        <div className="mt-4 flex items-center gap-3">
-          <button onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))} className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Selecionar tudo</button>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
-          <button onClick={() => setSelected(new Set())} className="text-xs text-gray-500 dark:text-gray-400 hover:underline">Limpar seleção</button>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected
+                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+              }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Selecionar tudo
+          </button>
+
+          <button
+            onClick={() => setSelected(new Set())}
+            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected
+                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
+                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+              }`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Limpar seleção
+          </button>
         </div>
       </GlassCard>
 
