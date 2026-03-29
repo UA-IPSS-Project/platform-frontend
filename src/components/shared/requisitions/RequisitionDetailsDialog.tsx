@@ -72,7 +72,7 @@ export function RequisitionDetailsDialog({
   };
 
   const groupTransportesPorCategoria = (requisicao: RequisicaoResponse) => {
-    const grupos = new Map<string, Array<{ id: string; label: string; meta: string }>>();
+    const grupos = new Map<string, Array<{ id: string; label: string; matricula: string; meta: string }>>();
     getRequisicaoTransportes(requisicao).forEach((transporte) => {
       const categoria = formatTransporteCategoria(transporte.categoria);
       const key = categoria || t('requisitions.labels.noCategory');
@@ -80,6 +80,7 @@ export function RequisitionDetailsDialog({
       grupoAtual.push({
         id: `${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`,
         label: formatVehicleTitle(transporte),
+        matricula: transporte.matricula ?? '—',
         meta: `${formatTransporteDisplay(transporte)}${transporte.lotacao ? ` - ${formatLotacao(transporte.lotacao)}` : ''}`,
       });
       grupos.set(key, grupoAtual);
@@ -268,10 +269,11 @@ export function RequisitionDetailsDialog({
                           <div key={grupo.categoria} className="rounded-xl border border-gray-100 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 shadow-sm">
                             <p className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-tighter mb-2">{grupo.categoria}</p>
                             <div className="space-y-2">
-                              {grupo.itens.map((transporte) => (
+                              {grupo.itens.map((transporte: any) => (
                                 <div key={transporte.id} className="border-l-2 border-purple-100 dark:border-purple-900/50 pl-3 py-0.5">
-                                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">{transporte.label}</p>
-                                  <p className="text-[10px] text-gray-500 dark:text-gray-500 uppercase font-medium">{transporte.meta}</p>
+                                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                                    {transporte.label} · {transporte.matricula}
+                                  </p>
                                 </div>
                               ))}
                             </div>

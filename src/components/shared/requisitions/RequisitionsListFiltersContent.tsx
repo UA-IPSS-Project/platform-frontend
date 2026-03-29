@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
+import { DatePickerField } from '../../ui/date-picker-field';
 import { 
   ESTADO_OPTIONS, 
   PRIORIDADE_OPTIONS, 
@@ -227,12 +228,12 @@ export function RequisitionsListFiltersContent({
             <label htmlFor={dataInicioId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.startDate')}
             </label>
-            <Input 
-              id={dataInicioId} 
-              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm h-9 md:h-10`} 
-              type="date" 
-              value={filterDataInicio} 
-              onChange={(e) => setFilterDataInicio(e.target.value)} 
+            <DatePickerField
+              id={dataInicioId}
+              value={filterDataInicio}
+              onChange={setFilterDataInicio}
+              placeholder="dd/mm/yyyy"
+              buttonClassName="h-9 md:h-10 rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm"
             />
           </div>
 
@@ -240,12 +241,12 @@ export function RequisitionsListFiltersContent({
             <label htmlFor={dataFimId} className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider ml-1">
               {t('requisitions.ui.endDate')}
             </label>
-            <Input 
-              id={dataFimId} 
-              className={`${inputFieldClassName} rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm h-9 md:h-10`} 
-              type="date" 
-              value={filterDataFim} 
-              onChange={(e) => setFilterDataFim(e.target.value)} 
+            <DatePickerField
+              id={dataFimId}
+              value={filterDataFim}
+              onChange={setFilterDataFim}
+              placeholder="dd/mm/yyyy"
+              buttonClassName="h-9 md:h-10 rounded-xl border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm focus:ring-purple-500/20 text-sm"
             />
           </div>
         </div>
