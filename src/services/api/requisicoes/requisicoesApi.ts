@@ -23,7 +23,8 @@ const toQueryString = (filters: RequisicaoFilters = {}): string => {
   if (filters.tipo) params.append('tipo', filters.tipo);
   if (filters.prioridade) params.append('prioridade', filters.prioridade);
   if (filters.criadoPorNome) params.append('criadoPorNome', filters.criadoPorNome);
-  if (filters.geridoPorNome) params.append('geridoPorNome', filters.geridoPorNome);
+  if (filters.dataInicio) params.append('dataInicio', filters.dataInicio);
+  if (filters.dataFim) params.append('dataFim', filters.dataFim);
   const query = params.toString();
   return query ? `?${query}` : '';
 };

@@ -38,18 +38,16 @@ const SECTIONS: { id: ReportSection; label: string; description: string }[] = [
 
 const ESTADO_LABELS: Record<string, string> = {
   AGENDADO: 'Agendado',
-  EM_PROGRESSO: 'Em Progresso',
   CONCLUIDO: 'Concluído',
   CANCELADO: 'Cancelado',
   NAO_COMPARECIDO: 'Não Compareceu',
   INVALIDO: 'Inválido',
   EM_PREENCHIMENTO: 'Em Preenchimento',
-  ENVIADA: 'Enviada',
-  EM_ANALISE: 'Em Análise',
-  ACEITE: 'Aceite',
-  RECUSADA: 'Recusada',
-  CONCLUIDA: 'Concluída',
-  CANCELADA: 'Cancelada',
+  // Requisitions (includes EM_PROGRESSO)
+  ABERTO: 'Aberto',
+  EM_PROGRESSO: 'Em Progresso',
+  FECHADO: 'Fechado',
+  RECUSADO: 'Recusado',
 };
 
 const PRIORIDADE_LABELS: Record<string, string> = {
