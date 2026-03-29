@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Plus, ArrowLeft } from 'lucide-react';
+
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -1534,9 +1536,18 @@ export function SharedRequisitionsPage({
           />
 
           <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+              </div>
+              <Button
+                onClick={() => setActiveSection('create')}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('requisitions.ui.createRequest')}
+              </Button>
             </div>
 
             <div className="px-5 pb-5 pt-4 space-y-4">
@@ -1575,9 +1586,19 @@ export function SharedRequisitionsPage({
       ) : (
         <div className="space-y-6">
           <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('requisitions.ui.fillToCreate')}</p>
+            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('requisitions.ui.fillToCreate')}</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setActiveSection('list')}
+                className="border-gray-300 dark:border-gray-600"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('common.back')}
+              </Button>
             </div>
             <div className="p-5">
               {createFormContent}
