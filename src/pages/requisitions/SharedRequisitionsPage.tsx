@@ -17,12 +17,18 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 
-import { parseDateInput } from '../../components/ui/date-picker-field';
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { useRequisitionFilters } from '../../hooks/requisitions/useRequisitionFilters';
 import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitionCreateForm';
+import {
+  validateDescricao,
+  validateMaterialLinhas,
+  validateTransporteDestino,
+  isDateInPast,
+  composeDateTimeStr,
+} from '../../utils/validations/requisition.validation';
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
@@ -32,7 +38,6 @@ import {
   RequisicaoPrioridade,
   RequisicaoResponse,
   RequisicaoTipo,
-  TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
 import {
@@ -50,11 +55,8 @@ import {
   getEstadosVisiveisNoSeletor,
   getPassengerCapacity,
   getRequisicaoTransportes,
-  isDateInputInPast,
   normalizarTexto,
   periodsOverlap,
-  previousDateInput,
-  toIsoFromDateOnly,
 } from './sharedRequisitions.helpers';
 import { RequisitionsStatsCards } from '../../components/shared/requisitions/RequisitionsStatsCards';
 import { RequisitionsConflictDialog } from '../../components/shared/requisitions/RequisitionsConflictDialog';
@@ -152,23 +154,6 @@ export function SharedRequisitionsPage({
     }
   }, [initialParams.tab]);
 
-  /* 
-  useEffect(() => {
-    setSearchParams(prev => {
-      const next = new URLSearchParams(prev);
-      next.set('mode', activeSection);
-      next.set('tab', filters.activeTab);
-      if (filters.filterTipo) next.set('type', filters.filterTipo);
-      else next.delete('type');
-      if (filters.filterPrioridade) next.set('priority', filters.filterPrioridade);
-      else next.delete('priority');
-      
-      if (next.toString() === prev.toString()) return prev;
-      return next;
-    }, { replace: true });
-  }, [activeSection, filters.activeTab, filters.filterTipo, filters.filterPrioridade, setSearchParams]);
-  */
-
   // Dirty state and navigation guards
   useEffect(() => {
     onDirtyChange?.(createForm.isDirty);
@@ -260,8 +245,7 @@ export function SharedRequisitionsPage({
     const fetchAcceptedTransports = async () => {
       try {
         const todasRequisicoes = await requisicoesApi.procurar({
-          tipo: 'TRANSPORTE',
-          estado: 'EM_PROGRESSO'
+          tipo: 'TRANSPORTE'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -345,7 +329,8 @@ export function SharedRequisitionsPage({
       : monthlyRequisicoes;
 
     todasRequisicoes.forEach((requisicao) => {
-      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'EM_PROGRESSO') return;
+      if (requisicao.tipo !== 'TRANSPORTE') return;
+      if (requisicao.estado !== 'FECHADO') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
         dataHoraRegressoSelecionada,
@@ -391,39 +376,39 @@ export function SharedRequisitionsPage({
   // Keep this in one place because selection quality depends on this exact knapsack scoring strategy.
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const recommendedTransportIds = useMemo(() => {
-    if (passageirosSolicitados <= 0) return [] as number[];
+    if (passageirosSolicitados < 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenadosDisponiveis
-      .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
+    const viaturasPotenciais = transportesOrdenadosDisponiveis
+      .filter((transporte) => transporte.id && (transporte.lotacao || 0) >= 1)
       .map((transporte) => ({
         id: transporte.id,
-        capacidade: getPassengerCapacity(transporte.lotacao),
+        capacidadePassageiros: getPassengerCapacity(transporte.lotacao),
+        lotacaoTotal: transporte.lotacao || 0,
       }));
-    if (viaturasComLotacao.length === 0) return [] as number[];
 
-    const capacidadeMaxima = viaturasComLotacao.reduce((sum, item) => sum + item.capacidade, 0);
+    if (viaturasPotenciais.length === 0) return [] as number[];
+
+    if (passageirosSolicitados === 0) {
+      // Pick the smallest available vehicle for the driver
+      const smallest = [...viaturasPotenciais].sort((a, b) => a.lotacaoTotal - b.lotacaoTotal)[0];
+      return smallest ? [smallest.id] : [] as number[];
+    }
+
+    const capacidadeMaxima = viaturasPotenciais.reduce((sum, item) => sum + item.capacidadePassageiros, 0);
     if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
 
-    // Custo combinado: nº_viaturas × K + lugares_vazios
-    // K (Peso/Penalização de usar 1 viatura extra)
-    // Para 17 passageiros, usar 3 carrinhas (3 lugares vazios totais) vs 1 autocarro (12 lugares vazios):
-    // Se K for pequeno, o DP escolhe as 3 carrinhas para evitar levar 12 lugares vazios às costas.
-    // Usando K = ceil(passageiros / 2.5) e min de 3:
-    // Ex 1: 5 pass (K=3) -> 2 carros (custo=2×3+3vazios=9) vs 1 bus (custo=1×3+24vazios=27). Traz 2 carros.
-    // Ex 2: 17 pass (K=7) -> 3 carrinhas (custo=3×7+3vazios=24) vs 1 bus (custo=1×7+12vazios=19). Traz o minibus!
     const penalizacaoViatura = Math.max(3, Math.ceil(passageirosSolicitados / 2.5));
 
-    // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
     const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
       new Array(capacidadeMaxima + 1).fill(undefined);
     dp[0] = { ids: [], custoViaturas: 0 };
 
-    for (const viatura of viaturasComLotacao) {
-      for (let cap = capacidadeMaxima - viatura.capacidade; cap >= 0; cap -= 1) {
+    for (const viatura of viaturasPotenciais) {
+      for (let cap = capacidadeMaxima - viatura.capacidadePassageiros; cap >= 0; cap -= 1) {
         const base = dp[cap];
         if (!base) continue;
 
-        const novaCap = cap + viatura.capacidade;
+        const novaCap = cap + viatura.capacidadePassageiros;
         const novoCusto = base.custoViaturas + penalizacaoViatura;
         const existente = dp[novaCap];
 
@@ -433,7 +418,6 @@ export function SharedRequisitionsPage({
       }
     }
 
-    // Escolhe a capacidade cujo custo total (viaturas + lugares vazios) é mínimo
     let melhor: { ids: number[]; custoTotal: number } | undefined;
 
     for (let cap = passageirosSolicitados; cap <= capacidadeMaxima; cap += 1) {
@@ -493,12 +477,7 @@ export function SharedRequisitionsPage({
     if (!createForm.dataRegresso) {
       createForm.setDataRegresso(createForm.dataSaida);
     }
-
-    if (!createForm.tempoLimiteManuallyEdited) {
-      const previousDate = previousDateInput(createForm.dataSaida);
-      createForm.setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
-    }
-  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso, createForm.tempoLimiteManuallyEdited]);
+  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso]);
 
   useEffect(() => {
     if (createForm.createTouched.materialItens) {
@@ -523,33 +502,17 @@ export function SharedRequisitionsPage({
 
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  const validateCreateField = useCallback((field: CreateField): string | undefined => {
-    if (field === 'descricao') {
-      return undefined;
-    }
+  const validateCreateField = useCallback((field: CreateField, manualValue?: string | number): string | undefined => {
+    if (!createForm.tipo) return undefined;
+    
+    // Descricao can be manual or from state
+    const currentDescricao = field === 'descricao' && manualValue !== undefined ? String(manualValue) : createForm.descricao;
 
-    if (field === 'tempoLimite') {
-      if (!createForm.tempoLimite) return undefined;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const limite = new Date(createForm.tempoLimite);
-      limite.setHours(0, 0, 0, 0);
-
-      if (limite < today) return t('requisitions.errors.deadlineCannotBePast');
-
-      if (createForm.tipo === 'TRANSPORTE' && createForm.dataSaida) {
-        const saidaMatch = parseDateInput(createForm.dataSaida);
-        if (saidaMatch && limite >= saidaMatch) return t('requisitions.errors.deadlineBeforeDeparture');
-      }
-
-      return undefined;
-    }
+    if (field === 'descricao') return validateDescricao(currentDescricao);
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-      if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
-      return undefined;
+      return validateMaterialLinhas(linhasValidas);
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
@@ -559,23 +522,32 @@ export function SharedRequisitionsPage({
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino' && !createForm.destinoTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'destino') return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
+    if (field === 'condutor') {
+      const val = manualValue !== undefined ? String(manualValue).trim() : createForm.condutorTransporte.trim();
+      if (!val) return t('requisitions.errors.requiredField');
+    }
+    
+    // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInputInPast(createForm.dataSaida)) {
+    // Logic validations using helpers
+    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInPast(createForm.dataSaida)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInputInPast(createForm.dataRegresso)) {
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInPast(createForm.dataRegresso)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
     if (field === 'numeroPassageiros') {
-      if (!createForm.numeroPassageiros) return t('requisitions.errors.requiredField');
-      if (passageirosSolicitados < 1) return t('requisitions.errors.invalidPassengers');
+      const val = String(manualValue !== undefined ? manualValue : createForm.numeroPassageiros).trim();
+      if (!val && val !== '0') return t('requisitions.errors.requiredField');
+      const num = Number(val);
+      if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
@@ -583,33 +555,25 @@ export function SharedRequisitionsPage({
       return t('requisitions.errors.selectOneVehicle');
     }
 
-    const saida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
-    const regresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
-    if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
-      const saidaDate = new Date(saida);
-      const regressoDate = new Date(regresso);
-      if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
+    const saidaStr = composeDateTimeStr(createForm.dataSaida, createForm.horaSaida);
+    const regressoStr = composeDateTimeStr(createForm.dataRegresso, createForm.horaRegresso);
+    
+    if ((field === 'horaRegresso' || field === 'dataRegresso') && saidaStr && regressoStr) {
+      if (new Date(regressoStr) <= new Date(saidaStr)) {
         return t('requisitions.errors.returnAfterDeparture');
       }
     }
-
     return undefined;
-  }, [createForm, passageirosSolicitados, t]);
+  }, [createForm, t]);
 
-  const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
-    const error = validateCreateField(field);
+  const validateAndSetField = useCallback((field: CreateField, markTouched = false, manualValue?: string | number): string | undefined => {
+    const error = validateCreateField(field, manualValue);
     if (markTouched) {
       createForm.setFieldTouched(field);
     }
     createForm.setFieldError(field, error);
     return error;
   }, [validateCreateField, createForm]);
-
-  useEffect(() => {
-    if (createForm.createTouched.tempoLimite) {
-      validateAndSetField('tempoLimite');
-    }
-  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite, validateAndSetField]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -673,20 +637,23 @@ export function SharedRequisitionsPage({
   }, [createForm]);
 
   const toggleItemAttributesVisibility = useCallback((itemKey: string) => {
-    createForm.setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+    createForm.setExpandedMaterialItems((prev) => {
+      const isCurrentlyOpen = prev[itemKey] === true;
+      if (isCurrentlyOpen) {
+        return { ...prev, [itemKey]: false };
+      }
+      // Se não está aberto, fecha todos os outros e abre este
+      return { [itemKey]: true };
+    });
   }, [createForm]);
 
   const toggleCategoriaExpansion = useCallback((categoria: MaterialCategoria) => {
-    createForm.setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+    createForm.setExpandedMaterialCategorias(() => ({ [categoria]: true }));
+    // Ao trocar de categoria, fechamos todos os itens expandidos
+    createForm.setExpandedMaterialItems({});
   }, [createForm]);
 
-  const toggleTransporteCategoriaExpansion = useCallback((categoria: TransporteCategoria) => {
-    createForm.setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  }, [createForm]);
 
-  const toggleTransporteDetalhes = useCallback((transporteId: number) => {
-    createForm.setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
-  }, [createForm]);
 
   const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
     createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
@@ -721,26 +688,6 @@ export function SharedRequisitionsPage({
     });
   }, [createForm]);
 
-  const handleItemToggle = useCallback((item: MaterialItemGroup, checked: boolean) => {
-    if (checked) {
-      createForm.setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
-      if (item.variantes.length === 1) {
-        toggleVariante(item.variantes[0].id, true);
-      }
-      return;
-    }
-
-    createForm.setExpandedMaterialItems((prev) => {
-      const next = { ...prev };
-      delete next[item.itemKey];
-      return next;
-    });
-
-    createForm.setMaterialLinhas((prev) => {
-      const ids = new Set(item.variantes.map((variante) => String(variante.id)));
-      return prev.filter((linha) => !ids.has(linha.materialId));
-    });
-  }, [createForm, toggleVariante]);
 
   const updateVarianteQuantidade = useCallback((materialId: number, quantidade: string) => {
     let finalValue = quantidade;
@@ -816,7 +763,6 @@ export function SharedRequisitionsPage({
     }
 
     const fieldsToValidate: CreateField[] = [];
-    fieldsToValidate.push('tempoLimite');
 
     if (createForm.tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
@@ -830,6 +776,7 @@ export function SharedRequisitionsPage({
         'horaRegresso',
         'numeroPassageiros',
         'transporteIds',
+        'condutor'
       );
     }
     if (createForm.tipo === 'MANUTENCAO') {
@@ -857,7 +804,6 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        tempoLimite: toIsoFromDateOnly(createForm.tempoLimite),
         criadoPorId: currentUserId,
       };
 
@@ -1389,23 +1335,12 @@ export function SharedRequisitionsPage({
           onChangeTipo={createForm.setTipo}
           prioridade={createForm.prioridade}
           onChangePrioridade={createForm.setPrioridade}
-          tempoLimite={createForm.tempoLimite}
-          onChangeTempoLimite={(value) => {
-            createForm.setTempoLimite(value);
-            createForm.setTempoLimiteManuallyEdited(true);
-            createForm.setFieldTouched('tempoLimite');
-          }}
           descricaoError={createForm.createErrors.descricao}
-          tempoLimiteError={createForm.createErrors.tempoLimite}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
           selectFieldClassName={selectFieldClassName}
           t={t}
         />
-
-        {createForm.tipo === 'TRANSPORTE' && !createForm.tempoLimiteManuallyEdited && createForm.dataSaida && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
-        )}
       </div>
 
       <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
@@ -1426,12 +1361,10 @@ export function SharedRequisitionsPage({
                     itens,
                   };
                 })}
-                materiaisAdicionados={[]}
                 materiaisAdicionadosTotal={materiaisAdicionadosTotal}
                 materiaisAdicionadosAgrupados={materiaisAdicionadosAgrupados}
                 onToggleCategoriaExpansion={(categoria) => toggleCategoriaExpansion(categoria as MaterialCategoria)}
                 onToggleItemVisibility={toggleItemAttributesVisibility}
-                onToggleItem={handleItemToggle}
                 onToggleVariante={toggleVariante}
                 onUpdateVarianteQuantidade={updateVarianteQuantidade}
                 onRemoveMaterialLinha={handleRemoveMaterialLinha}
@@ -1483,22 +1416,21 @@ export function SharedRequisitionsPage({
                   validateAndSetField('horaSaida');
                 }}
                 numeroPassageiros={createForm.numeroPassageiros}
-                onChangeNumeroPassageiros={(value) => {
-                  createForm.setNumeroPassageiros(value);
-                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                onChangeNumeroPassageiros={(val) => {
+                  createForm.setNumeroPassageiros(val);
+                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros', false, val);
                 }}
                 condutorTransporte={createForm.condutorTransporte}
-                onChangeCondutor={createForm.setCondutorTransporte}
+                onChangeCondutor={(value) => {
+                  createForm.setCondutorTransporte(value);
+                  if (createForm.createTouched.condutor) validateAndSetField('condutor', false, value);
+                }}
                 selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
                   toggleSelectedTransport(transporteId, checked);
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteCategorias={createForm.expandedTransporteCategorias as Partial<Record<string, boolean>>}
-                onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
-                expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
-                onToggleTransporteDetalhes={toggleTransporteDetalhes}
                 transportesPorCategoria={transportesPorCategoria}
                 selectedTransportes={selectedTransportes}
                 transportesIndisponiveis={transportesIndisponiveis}
@@ -1509,7 +1441,6 @@ export function SharedRequisitionsPage({
                 loadingCatalogo={catalog.loadingCatalogo}
                 createErrors={createForm.createErrors}
                 inputFieldClassName={inputFieldClassName}
-                selectFieldClassName={selectFieldClassName}
                 onApplySuggestion={handleAplicarSugestaoTransporte}
                 t={t}
               />
@@ -1727,7 +1658,7 @@ export function SharedRequisitionsPage({
       />
 
       {/* Confirmation Modal */}
-      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+      <Dialog open={isConfirmModalOpen} onOpenChange={(open) => setIsConfirmModalOpen(open)}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>{t('requisitions.ui.confirmTitle')}</DialogTitle>
@@ -1749,12 +1680,6 @@ export function SharedRequisitionsPage({
                 {t(`requisitions.labels.${{ BAIXA: 'low', MEDIA: 'medium', ALTA: 'high', URGENTE: 'urgent' }[createForm.prioridade]}`)}
               </span>
             </div>
-            {createForm.tempoLimite && (
-              <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-                <span className="text-gray-500 font-medium">{t('requisitions.ui.deadlineDate')}:</span>
-                <span className="text-gray-900 dark:text-gray-100">{new Date(createForm.tempoLimite).toLocaleDateString('pt-PT')}</span>
-              </div>
-            )}
             
             {createForm.tipo === 'MATERIAL' && (
               <div>

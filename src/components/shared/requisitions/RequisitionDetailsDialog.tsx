@@ -9,12 +9,10 @@ import {
   formatEstado,
   formatPrioridade,
   formatTipo,
-  formatVehicleTitle,
-  formatLotacao,
   formatTransporteCategoria,
-  formatTransporteDisplay,
   getRequisicaoTransportes,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { VehicleSelectionCard } from './VehicleSelectionCard';
 
 interface RequisitionDetailsDialogProps {
   open: boolean;
@@ -72,17 +70,12 @@ export function RequisitionDetailsDialog({
   };
 
   const groupTransportesPorCategoria = (requisicao: RequisicaoResponse) => {
-    const grupos = new Map<string, Array<{ id: string; label: string; matricula: string; meta: string }>>();
+    const grupos = new Map<string, Array<any>>();
     getRequisicaoTransportes(requisicao).forEach((transporte) => {
       const categoria = formatTransporteCategoria(transporte.categoria);
       const key = categoria || t('requisitions.labels.noCategory');
       const grupoAtual = grupos.get(key) ?? [];
-      grupoAtual.push({
-        id: `${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`,
-        label: formatVehicleTitle(transporte),
-        matricula: transporte.matricula ?? '—',
-        meta: `${formatTransporteDisplay(transporte)}${transporte.lotacao ? ` - ${formatLotacao(transporte.lotacao)}` : ''}`,
-      });
+      grupoAtual.push(transporte);
       grupos.set(key, grupoAtual);
     });
     return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
@@ -268,15 +261,18 @@ export function RequisitionDetailsDialog({
                         {groupTransportesPorCategoria(selectedRequisicao).length > 0 ? groupTransportesPorCategoria(selectedRequisicao).map((grupo) => (
                           <div key={grupo.categoria} className="rounded-xl border border-gray-100 dark:border-gray-800 p-3 bg-white dark:bg-gray-900 shadow-sm">
                             <p className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-tighter mb-2">{grupo.categoria}</p>
-                            <div className="space-y-2">
-                              {grupo.itens.map((transporte: any) => (
-                                <div key={transporte.id} className="border-l-2 border-purple-100 dark:border-purple-900/50 pl-3 py-0.5">
-                                  <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                                    {transporte.label} · {transporte.matricula}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
+                             <div className="space-y-2">
+                               {grupo.itens.map((transporte: any) => (
+                                 <VehicleSelectionCard
+                                   key={transporte.id}
+                                   transporte={transporte}
+                                   showCheckbox={false}
+                                   showCategory={false}
+                                   variant="minimal"
+                                   t={t}
+                                 />
+                               ))}
+                             </div>
                           </div>
                         )) : (
                           <p className="text-gray-900 dark:text-gray-100">—</p>

@@ -7,8 +7,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
-  const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
   
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
@@ -28,8 +26,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [condutorTransporte, setCondutorTransporte] = useState('');
   const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
-  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<string, boolean>>>({});
-  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
 
   // Maintenance-specific state
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
@@ -55,8 +51,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   const resetForm = useCallback(() => {
     setDescricao('');
-    setTempoLimite(undefined);
-    setTempoLimiteManuallyEdited(false);
     setMaterialLinhas([]);
     setDestinoTransporte('');
     setDataSaida('');
@@ -69,8 +63,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
-    setExpandedTransporteCategorias({});
-    setExpandedTransporteDetalhes({});
     setSelectedManutencaoItemIds([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
@@ -106,7 +98,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       tipo !== (initialTipo ?? 'MATERIAL') ||
       prioridade !== (initialPrioridade ?? 'MEDIA') ||
       descricao !== '' ||
-      tempoLimite !== undefined ||
       materialLinhas.length > 0 ||
       destinoTransporte !== '' ||
       dataSaida !== '' ||
@@ -125,7 +116,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     prioridade,
     initialPrioridade,
     descricao,
-    tempoLimite,
     materialLinhas,
     destinoTransporte,
     dataSaida,
@@ -147,10 +137,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setDescricao,
     prioridade,
     setPrioridade,
-    tempoLimite,
-    setTempoLimite,
-    tempoLimiteManuallyEdited,
-    setTempoLimiteManuallyEdited,
     isDirty,
     // Validation
     createErrors,
@@ -185,10 +171,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setSelectedTransportIds,
     transportSelectionMode,
     setTransportSelectionMode,
-    expandedTransporteCategorias,
-    setExpandedTransporteCategorias,
-    expandedTransporteDetalhes,
-    setExpandedTransporteDetalhes,
     // Maintenance state
     selectedManutencaoItemIds,
     setSelectedManutencaoItemIds,

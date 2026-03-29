@@ -54,7 +54,6 @@ export interface RequisicaoResponse {
   estado: RequisicaoEstado;
   prioridade: RequisicaoPrioridade;
   tipo: RequisicaoTipo;
-  tempoLimite?: string | null;
   criadoEm?: string;
   ultimaAlteracaoEstadoEm?: string;
   criadoPor?: FuncionarioResumo;
@@ -132,7 +131,6 @@ export interface RequisicaoFilters {
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
-  tempoLimite?: string;
   criadoPorId: number;
   geridoPorId?: number;
 }
