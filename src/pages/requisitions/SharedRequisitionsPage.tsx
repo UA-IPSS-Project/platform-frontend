@@ -32,7 +32,6 @@ import {
   RequisicaoPrioridade,
   RequisicaoResponse,
   RequisicaoTipo,
-  TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
 import {
@@ -559,7 +558,8 @@ export function SharedRequisitionsPage({
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino' && !createForm.destinoTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'destino') return undefined;
+    if (field === 'condutor' && !createForm.condutorTransporte.trim()) return t('requisitions.errors.requiredField');
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
@@ -574,8 +574,8 @@ export function SharedRequisitionsPage({
     }
 
     if (field === 'numeroPassageiros') {
-      if (!createForm.numeroPassageiros) return t('requisitions.errors.requiredField');
-      if (passageirosSolicitados < 1) return t('requisitions.errors.invalidPassengers');
+      if (!createForm.numeroPassageiros && createForm.numeroPassageiros !== '0') return t('requisitions.errors.requiredField');
+      if (Number(createForm.numeroPassageiros) < 0) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
@@ -680,9 +680,6 @@ export function SharedRequisitionsPage({
     createForm.setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
   }, [createForm]);
 
-  const toggleTransporteCategoriaExpansion = useCallback((categoria: TransporteCategoria) => {
-    createForm.setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  }, [createForm]);
 
   const toggleTransporteDetalhes = useCallback((transporteId: number) => {
     createForm.setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
@@ -1495,8 +1492,6 @@ export function SharedRequisitionsPage({
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteCategorias={createForm.expandedTransporteCategorias as Partial<Record<string, boolean>>}
-                onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
                 expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
                 onToggleTransporteDetalhes={toggleTransporteDetalhes}
                 transportesPorCategoria={transportesPorCategoria}
@@ -1509,7 +1504,6 @@ export function SharedRequisitionsPage({
                 loadingCatalogo={catalog.loadingCatalogo}
                 createErrors={createForm.createErrors}
                 inputFieldClassName={inputFieldClassName}
-                selectFieldClassName={selectFieldClassName}
                 onApplySuggestion={handleAplicarSugestaoTransporte}
                 t={t}
               />

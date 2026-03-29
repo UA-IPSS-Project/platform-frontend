@@ -1,8 +1,8 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Checkbox } from '../../ui/checkbox';
 import { Input } from '../../ui/input';
 import { DatePickerField } from '../../ui/date-picker-field';
+import { AlertCircle, Info } from 'lucide-react';
 import {
   formatTransporteCategoria,
   formatLotacao,
@@ -29,8 +29,6 @@ interface RequisitionsCreateTransportFormProps {
   selectedTransportIds: string[];
   onToggleTransport: (transporteId: number, checked: boolean) => void;
   onRemoveTransport: (transporteId: number) => void;
-  expandedTransporteCategorias: Partial<Record<TransporteCategoria, boolean>>;
-  onToggleTransporteCategoriaExpansion: (categoria: TransporteCategoria) => void;
   expandedTransporteDetalhes: Record<number, boolean>;
   onToggleTransporteDetalhes: (transporteId: number) => void;
   transportesPorCategoria: Array<{
@@ -53,11 +51,10 @@ interface RequisitionsCreateTransportFormProps {
     horaRegresso: string;
     numeroPassageiros: string;
     transporteIds: string;
+    condutor: string;
   }>;
   inputFieldClassName: string;
-  selectFieldClassName: string;
   onApplySuggestion: () => void;
-  onSearch?: () => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -79,8 +76,6 @@ export function RequisitionsCreateTransportForm({
   selectedTransportIds,
   onToggleTransport,
   onRemoveTransport,
-  expandedTransporteCategorias,
-  onToggleTransporteCategoriaExpansion,
   expandedTransporteDetalhes,
   onToggleTransporteDetalhes,
   transportesPorCategoria,
@@ -109,26 +104,35 @@ export function RequisitionsCreateTransportForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
-            <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.destination')}</label>
+            <label htmlFor="req-create-transporte-destino" className="text-sm text-gray-600 dark:text-gray-300">
+              {t('requisitions.ui.destination')} {t('common.optional')}
+            </label>
             <Input
               id="req-create-transporte-destino"
-              className={`${inputFieldClassName} ${createErrors?.destino ? '!border-red-500 !ring-red-500' : ''}`}
+              className={inputFieldClassName}
               value={destinoTransporte}
               onChange={(e) => onChangeDestino(e.target.value)}
               placeholder={t('requisitions.ui.destinationPlaceholder')}
+              list="destinations-list"
             />
-            {createErrors?.destino && <p className="text-red-500 text-xs mt-1">{createErrors.destino}</p>}
+            <datalist id="destinations-list">
+              <option value={t('requisitions.ui.destinations.school')} />
+              <option value={t('requisitions.ui.destinations.user')} />
+              <option value={t('requisitions.ui.destinations.exterior')} />
+              <option value={t('requisitions.ui.destinations.stateVisit')} />
+            </datalist>
           </div>
 
           <div>
-            <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.driverOptional')}</label>
+            <label htmlFor="req-create-transporte-condutor" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.driverRequired')}</label>
             <Input
               id="req-create-transporte-condutor"
-              className={inputFieldClassName}
+              className={`${inputFieldClassName} ${createErrors?.condutor ? '!border-red-500 !ring-red-500' : ''}`}
               value={condutorTransporte}
               onChange={(e) => onChangeCondutor(e.target.value)}
               placeholder={t('requisitions.ui.driverPlaceholder')}
             />
+            {createErrors?.condutor && <p className="text-red-500 text-xs mt-1">{createErrors.condutor}</p>}
           </div>
 
           <div>
@@ -136,7 +140,7 @@ export function RequisitionsCreateTransportForm({
             <Input
               id="req-create-transporte-passageiros"
               type="number"
-              min="1"
+              min="0"
               className={`${inputFieldClassName} ${createErrors?.numeroPassageiros ? '!border-red-500 !ring-red-500' : ''}`}
               value={numeroPassageiros}
               onChange={(e) => onChangeNumeroPassageiros(e.target.value)}
@@ -232,7 +236,12 @@ export function RequisitionsCreateTransportForm({
             </p>
           </div>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.capacityHint')}</p>
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+          <p className="text-xs font-semibold text-red-700 dark:text-red-300">
+            {t('requisitions.ui.capacityHint')}
+          </p>
+        </div>
 
         {createErrors?.transporteIds && (
           <p className="text-red-500 text-xs">{createErrors.transporteIds}</p>
@@ -281,103 +290,115 @@ export function RequisitionsCreateTransportForm({
         )}
 
         {!loadingCatalogo && transportesPorCategoria.length > 0 && (
-          <div className="space-y-4">
-            {transportesPorCategoria.map((grupo) => (
-              <div key={grupo.categoria} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                <button
-                  type="button"
-                  onClick={() => onToggleTransporteCategoriaExpansion(grupo.categoria)}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {transportesPorCategoria.flatMap(grupo => grupo.items).map((transporte) => {
+              const isSelected = selectedTransportIds.includes(String(transporte.id));
+              const isRecommended = recommendedTransportIds.includes(transporte.id);
+              const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
+              const isUnavailable = transportesIndisponiveis.has(transporte.id);
+              
+              let cardStyles = "cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 transition-all";
+              if (isSelected) {
+                cardStyles = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm ring-1 ring-emerald-500/50";
+              } else if (isUnavailable) {
+                cardStyles = "opacity-60 grayscale-[0.5] border-amber-200 bg-amber-50/50 dark:bg-amber-950/10 cursor-not-allowed";
+              } else {
+                cardStyles = "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950";
+              }
+
+              const handleToggle = () => {
+                if (!isUnavailable) {
+                  onToggleTransport(transporte.id, !isSelected);
+                }
+              };
+
+              return (
+                <div
+                  key={transporte.id}
+                  onClick={handleToggle}
+                  className={`group rounded-2xl border p-4 flex flex-col justify-between gap-4 ${cardStyles}`}
                 >
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                    {t(grupo.label)}
-                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.vehiclesCount', { count: grupo.items.length })}</span>
-                  </p>
-                  {expandedTransporteCategorias[grupo.categoria] ? (
-                    <ChevronUp className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                  )}
-                </button>
-
-                {expandedTransporteCategorias[grupo.categoria] && (
-                  <div className="px-3 pb-3 grid grid-cols-1 xl:grid-cols-2 gap-3">
-                    {grupo.items.map((transporte) => {
-                      const isSelected = selectedTransportIds.includes(String(transporte.id));
-                      const isRecommended = recommendedTransportIds.includes(transporte.id);
-                      const detailsOpen = expandedTransporteDetalhes[transporte.id] === true;
-                      const isUnavailable = transportesIndisponiveis.has(transporte.id);
-                      let transporteCardClass = 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
-                      if (isSelected) {
-                        transporteCardClass = 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 shadow-sm';
-                      } else if (isUnavailable) {
-                        transporteCardClass = 'border-amber-300 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/10';
-                      }
-
-                      return (
-                        <div
-                          key={transporte.id}
-                          className={`rounded-xl border p-4 transition-all ${transporteCardClass}`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${isSelected
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                                  }`}>
-                                  {transporte.codigo ?? `#${transporte.id}`}
-                                </span>
-                                {isRecommended && (
-                                  <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-                                    {t('requisitions.ui.suggested')}
-                                  </span>
-                                )}
-                                {isUnavailable && (
-                                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                                    {t('requisitions.ui.unavailable')}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatVehicleTitle(transporte)}</p>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">{t('requisitions.ui.capacityLabel')}: {formatLotacao(transporte.lotacao)}</p>
-                              {isUnavailable && (
-                                <p className="text-xs text-amber-700 dark:text-amber-300">{t('requisitions.ui.overlapWarning')}</p>
-                              )}
-                            </div>
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={isUnavailable}
-                              onCheckedChange={(checked) => onToggleTransport(transporte.id, !!checked)}
-                            />
-                          </div>
-
-                          <div className="mt-3">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-8 px-3 text-xs"
-                              onClick={() => onToggleTransporteDetalhes(transporte.id)}
-                            >
-                              {detailsOpen ? t('requisitions.ui.hideDetails') : t('requisitions.ui.details')}
-                            </Button>
-                          </div>
-
-                          {detailsOpen && (
-                            <div className="mt-3 space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                              <p>{formatTransporteCategoria(transporte.categoria)}</p>
-                              <p>{t('requisitions.ui.licensePlate')}: {transporte.matricula ?? t('requisitions.ui.noLicensePlate')}</p>
-                              <p>{t('requisitions.ui.brandModel')}: {[transporte.marca, transporte.modelo].filter(Boolean).join(' ') || t('requisitions.ui.notDefined')}</p>
-                              <p>{t('requisitions.ui.licenseDate')}: {transporte.dataMatricula ? new Date(transporte.dataMatricula).toLocaleDateString('pt-PT') : t('requisitions.ui.notDefined')}</p>
-                            </div>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex gap-1.5 flex-wrap">
+                          {isRecommended && (
+                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-tighter">
+                              {t('requisitions.ui.suggested')}
+                            </span>
+                          )}
+                          {isUnavailable && (
+                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-tighter">
+                              {t('requisitions.ui.unavailable')}
+                            </span>
                           )}
                         </div>
-                      );
-                    })}
+                        <h4 className="text-sm font-black text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                          {formatVehicleTitle(transporte)}
+                        </h4>
+                        <div className="flex items-center gap-2">
+                           <span className="text-[10px] font-bold px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-md">
+                              {transporte.codigo ?? `#${transporte.id}`}
+                           </span>
+                           <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                              {formatTransporteCategoria(transporte.categoria)}
+                           </span>
+                        </div>
+                      </div>
+                      <Checkbox
+                        checked={isSelected}
+                        disabled={isUnavailable}
+                        onCheckedChange={() => handleToggle()}
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
+                        <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.ui.capacityLabel')}</p>
+                        <p className="text-[11px] font-black text-gray-800 dark:text-gray-200">{formatLotacao(transporte.lotacao)}</p>
+                      </div>
+                      <div className="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
+                        <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{t('requisitions.ui.licensePlate')}</p>
+                        <p className="text-[11px] font-black text-gray-800 dark:text-gray-200">{transporte.matricula || '—'}</p>
+                      </div>
+                    </div>
+
+                    {isUnavailable && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        <Info className="w-3 h-3" />
+                        <span>{t('requisitions.ui.overlapWarning')}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <div>
+                     <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full h-8 text-xs font-bold text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleTransporteDetalhes(transporte.id);
+                        }}
+                      >
+                        {detailsOpen ? t('requisitions.ui.hideDetails') : t('requisitions.ui.details')}
+                      </Button>
+                      
+                      {detailsOpen && (
+                        <div className="mt-3 pt-3 border-t border-dashed border-gray-200 dark:border-gray-800 space-y-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400 animate-in fade-in slide-in-from-top-1 duration-200">
+                           {[transporte.marca, transporte.modelo].filter(Boolean).length > 0 && (
+                             <p><span className="font-bold text-gray-400 uppercase tracking-tighter mr-1">{t('requisitions.ui.brandModel')}:</span> {[transporte.marca, transporte.modelo].filter(Boolean).join(' ')}</p>
+                           )}
+                           {transporte.dataMatricula && (
+                             <p><span className="font-bold text-gray-400 uppercase tracking-tighter mr-1">{t('requisitions.ui.licenseDate')}:</span> {new Date(transporte.dataMatricula).toLocaleDateString('pt-PT')}</p>
+                           )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

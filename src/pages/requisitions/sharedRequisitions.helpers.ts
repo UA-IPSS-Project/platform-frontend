@@ -263,8 +263,10 @@ export type CreateField =
   | 'horaRegresso'
   | 'numeroPassageiros'
   | 'transporteIds'
+  | 'condutor'
   | 'manutencaoItens';
 
+// Fields available in requisition creation form
 export const createEmptyMaterialLinha = () => ({
   rowId:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -352,7 +354,9 @@ export const formatLotacao = (lotacao?: number): string => {
 
 export const formatVehicleTitle = (transporte?: TransporteLike): string => {
   const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
-  return (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const title = (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const matricula = transporte?.matricula;
+  return matricula ? `${title} · ${matricula}` : title;
 };
 
 export const formatTransporteDisplay = (transporte?: TransporteLike): string => {
