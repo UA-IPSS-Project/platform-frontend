@@ -267,6 +267,7 @@ export function RequisitionDetailsDialog({
                                    key={transporte.id}
                                    transporte={transporte}
                                    showCheckbox={false}
+                                   showCategory={false}
                                    t={t}
                                  />
                                ))}
