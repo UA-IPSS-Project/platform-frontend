@@ -302,9 +302,6 @@ export function RequisitionsListFiltersContent({
                   <p className="font-extrabold text-base text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors tracking-tight">
                     # {formatTipo(req.tipo)}
                   </p>
-                  <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-                    ID: {req.id}
-                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
@@ -330,20 +327,14 @@ export function RequisitionsListFiltersContent({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-gray-100 dark:border-gray-800 pt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-gray-100 dark:border-gray-800 pt-3">
                 <div className="space-y-0.5">
                   <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     {t('requisitions.labels.status')}
                   </p>
                   <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{formatEstado(req.estado)}</p>
                 </div>
-                <div className="space-y-0.5 text-right">
-                  <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                    {t('requisitions.labels.createdBy')}
-                  </p>
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[120px] ml-auto">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
-                </div>
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 sm:text-center">
                   <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                     Criado a
                   </p>
@@ -351,9 +342,9 @@ export function RequisitionsListFiltersContent({
                 </div>
                 <div className="space-y-0.5 text-right">
                   <p className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                    {t('requisitions.labels.deadline')}
+                    {t('requisitions.labels.createdBy')}
                   </p>
-                  <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tabular-nums">{formatDateTimeOrDash(req.tempoLimite)}</p>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate max-w-[140px] ml-auto">{req.criadoPor?.nome || req.criadoPor?.id || '—'}</p>
                 </div>
               </div>
             </div>
