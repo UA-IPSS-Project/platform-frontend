@@ -34,7 +34,7 @@ function EyeIcon({ className }: { className?: string }) {
   );
 }
 import { Appointment } from '../../types';
-import { marcacoesApi, calendarioApi, BloqueioAgenda, documentosApi, DocumentoDTO } from '../../services/api';
+import { marcacoesApi, calendarioApi, documentosApi, DocumentoDTO } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { DocumentUploadDialog } from '../dialogs/DocumentUploadDialog';
 import { StatusBadge } from '../shared/status-badge';
@@ -153,8 +153,8 @@ function cleanFilename(name: string) {
     const assuntoParts = parts.slice(1, parts.length - 2);
     const assunto = assuntoParts.join("_");
     
-    // Na vista de marcação, apenas NIF_ASSUNTO (sem data, pois já está no título)
-    return `${nif}_${assunto}${extension}`;
+    // Na vista de marcação, apenas NIF_ASSUNTO_DOCX (sem data, pois já está no título)
+    return `${nif}_${assunto}_${parts[parts.length - 1]}${extension}`;
   } else if (parts.length === 3) {
     // Formato legado: NIF_TIPO_UUID
     return `${parts[0]}_${parts[1]}${extension}`;

@@ -77,7 +77,7 @@ function cleanFilename(name: string) {
     if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
       formattedDate = `${rawDate.substring(6, 8)}-${rawDate.substring(4, 6)}-${rawDate.substring(0, 4)}`;
     }
-    return `${nif}_${assunto}_${formattedDate}${extension}`;
+    return `${nif}_${assunto}_${formattedDate}_${parts[parts.length - 1]}${extension}`;
   } else if (parts.length === 3) {
     // Formato legado: NIF_TIPO_UUID
     return `${parts[0]}_${parts[1]}${extension}`;
