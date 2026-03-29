@@ -26,8 +26,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [condutorTransporte, setCondutorTransporte] = useState('');
   const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
-  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<string, boolean>>>({});
-  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
 
   // Maintenance-specific state
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
@@ -65,8 +63,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
-    setExpandedTransporteCategorias({});
-    setExpandedTransporteDetalhes({});
     setSelectedManutencaoItemIds([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
@@ -175,10 +171,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setSelectedTransportIds,
     transportSelectionMode,
     setTransportSelectionMode,
-    expandedTransporteCategorias,
-    setExpandedTransporteCategorias,
-    expandedTransporteDetalhes,
-    setExpandedTransporteDetalhes,
     // Maintenance state
     selectedManutencaoItemIds,
     setSelectedManutencaoItemIds,

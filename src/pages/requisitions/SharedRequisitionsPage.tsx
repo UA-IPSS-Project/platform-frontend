@@ -632,9 +632,6 @@ export function SharedRequisitionsPage({
   }, [createForm]);
 
 
-  const toggleTransporteDetalhes = useCallback((transporteId: number) => {
-    createForm.setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
-  }, [createForm]);
 
   const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
     createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
@@ -1430,8 +1427,6 @@ export function SharedRequisitionsPage({
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
-                onToggleTransporteDetalhes={toggleTransporteDetalhes}
                 transportesPorCategoria={transportesPorCategoria}
                 selectedTransportes={selectedTransportes}
                 transportesIndisponiveis={transportesIndisponiveis}

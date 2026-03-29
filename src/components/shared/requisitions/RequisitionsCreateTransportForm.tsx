@@ -28,8 +28,6 @@ interface RequisitionsCreateTransportFormProps {
   selectedTransportIds: string[];
   onToggleTransport: (transporteId: number, checked: boolean) => void;
   onRemoveTransport: (transporteId: number) => void;
-  expandedTransporteDetalhes: Record<number, boolean>;
-  onToggleTransporteDetalhes: (transporteId: number) => void;
   transportesPorCategoria: Array<{
     categoria: TransporteCategoria;
     label: string;
@@ -75,8 +73,6 @@ export function RequisitionsCreateTransportForm({
   selectedTransportIds,
   onToggleTransport,
   onRemoveTransport,
-  expandedTransporteDetalhes,
-  onToggleTransporteDetalhes,
   transportesPorCategoria,
   selectedTransportes,
   transportesIndisponiveis,
@@ -99,6 +95,12 @@ export function RequisitionsCreateTransportForm({
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Planeamento da deslocação</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">{t('requisitions.ui.transportPlanningHint')}</p>
+          <div className="flex items-start gap-2 p-3 mt-2 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30">
+            <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+              {t('requisitions.ui.capacityHint')}
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -153,12 +155,6 @@ export function RequisitionsCreateTransportForm({
               placeholder={t('requisitions.ui.passengersPlaceholder')}
             />
             {createErrors?.numeroPassageiros && <p className="text-red-500 text-xs mt-1">{createErrors.numeroPassageiros}</p>}
-            <div className="flex items-start gap-2 p-3 mt-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
-              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-              <p className="text-xs font-semibold text-red-700 dark:text-red-300">
-                {t('requisitions.ui.capacityHint')}
-              </p>
-            </div>
           </div>
         </div>
 
