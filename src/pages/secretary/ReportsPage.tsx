@@ -246,10 +246,11 @@ export function ReportsPage() {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
+          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
           body: reqMaterial.map(r => {
             const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
+            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
+            const days = isFinished ? null : getDiffDays(effectiveDate);
             const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
               const cat = i.material?.categoria || 'Geral';
               if (!acc[cat]) acc[cat] = [];
@@ -261,6 +262,7 @@ export function ReportsPage() {
               .join('\n\n') || '—';
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               itensStr,
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
@@ -284,12 +286,14 @@ export function ReportsPage() {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
+          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
           body: reqTransporte.map(r => {
             const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
+            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
+            const days = isFinished ? null : getDiffDays(effectiveDate);
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               r.destino ?? '—',
               r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
@@ -313,12 +317,14 @@ export function ReportsPage() {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
+          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
           body: reqManutencao.map(r => {
             const isFinished = r.estado === 'FECHADO' || r.estado === 'RECUSADO';
-            const days = isFinished ? null : getDiffDays(r.ultimaAlteracaoEstadoEm || r.criadoEm);
+            const effectiveDate = r.ultimaAlteracaoEstadoEm || r.criadoEm || '';
+            const days = isFinished ? null : getDiffDays(effectiveDate);
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
               r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
               r.assunto ?? r.descricao ?? '—',
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
