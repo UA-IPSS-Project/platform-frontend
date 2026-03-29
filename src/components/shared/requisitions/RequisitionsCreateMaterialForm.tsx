@@ -295,7 +295,18 @@ export function RequisitionsCreateMaterialForm({
                     {!isExpanded && (
                       <div className="px-4 pb-4">
                         <Button
-                          onClick={() => onToggleItemVisibility(item.itemKey)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const isSingleVariant = item.variantes.length === 1;
+                            if (isSingleVariant) {
+                              const variante = item.variantes[0];
+                              const isCurrentlySelected = materialLinhas.some(l => l.materialId === String(variante.id));
+                              if (!isCurrentlySelected) {
+                                onToggleVariante(variante.id, true);
+                              }
+                            }
+                            onToggleItemVisibility(item.itemKey);
+                          }}
                           className={`w-full h-9 rounded-xl transition-all duration-300 ${
                             isSelected
                               ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
