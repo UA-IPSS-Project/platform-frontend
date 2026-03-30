@@ -1248,7 +1248,6 @@
   },
   "maintenance": {
     "labels": {
-      "subject": "Assunto *",
       "itemsByCategory": "Itens por Categoria",
       "selectedItems": "{{count}} item(ns) selecionado(s)",
       "clearSelection": "Limpar seleção",
@@ -1257,8 +1256,6 @@
       "item": "Item de Verificação"
     },
     "placeholders": {
-      "subject": "Ex: Reparação de torneira, Substituição de lâmpada...",
-      "subject_hint": "Dê um título curto ao que precisa de intervenção",
       "observations": "Notas adicionais para esta categoria..."
     }
   }

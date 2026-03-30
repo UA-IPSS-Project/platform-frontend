@@ -1,17 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Layout, PenLine, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Layout, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
   MANUTENCAO_CATEGORIA_DISPLAY_LABELS,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
-import { Input } from '../../ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Checkbox } from '../../ui/checkbox';
 
 interface RequisitionsCreateManutencaoFormProps {
-  assunto: string;
-  onUpdateAssunto: (value: string) => void;
   manutencaoItems: ManutencaoItem[];
   onToggleItem: (itemId: number, checked: boolean) => void;
   selectedManutencaoItemIds: number[];
@@ -20,12 +17,9 @@ interface RequisitionsCreateManutencaoFormProps {
   t: any;
   manutencaoError?: string;
   onClearSelection: () => void;
-  inputFieldClassName: string;
 }
 
 export function RequisitionsCreateManutencaoForm({
-  assunto,
-  onUpdateAssunto,
   manutencaoItems,
   onToggleItem,
   selectedManutencaoItemIds,
@@ -34,7 +28,6 @@ export function RequisitionsCreateManutencaoForm({
   t,
   manutencaoError,
   onClearSelection,
-  inputFieldClassName,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
   
   // Estado local para colapsar categorias
@@ -92,29 +85,6 @@ export function RequisitionsCreateManutencaoForm({
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      {/* Subject Section */}
-      <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md group">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 transition-all group-hover:bg-purple-600 group-hover:text-white group-hover:rotate-12 group-hover:scale-110 shadow-sm">
-            <PenLine className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              {t('maintenance.labels.subject')}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {t('maintenance.placeholders.subject_hint')}
-            </p>
-          </div>
-        </div>
-        <Input
-          value={assunto}
-          onChange={(e) => onUpdateAssunto(e.target.value)}
-          placeholder={t('maintenance.placeholders.subject')}
-          className={`${inputFieldClassName} h-12 bg-white/50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-base font-medium`}
-        />
-      </div>
-
       {/* Categories Sections */}
       {sortedCategories.map((category) => {
         const { items, spaces } = groupedData[category];

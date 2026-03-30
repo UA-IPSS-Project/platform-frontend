@@ -762,7 +762,7 @@ export function SharedRequisitionsPage({
       );
     }
     if (createForm.tipo === 'MANUTENCAO') {
-      fieldsToValidate.push('assunto', 'manutencaoItens');
+      fieldsToValidate.push('manutencaoItens');
     }
 
     const validationErrors = fieldsToValidate
@@ -818,16 +818,17 @@ export function SharedRequisitionsPage({
       } else {
         const manutencaoItensPayload = createForm.selectedManutencaoItemIds.map((itemId) => {
           const item = catalog.manutencaoItems.find((m) => m.id === itemId);
-          const observacaoCategoria = item ? item.categoria : '';
+          // Usar a categoria do item para buscar a observação correta no estado do formulário
+          const categoria = item?.categoria || '';
           return {
             itemId,
-            observacoes: createForm.manutencaoObservacoesPorCategoria[observacaoCategoria] || undefined,
+            observacoes: createForm.manutencaoObservacoesPorCategoria[categoria] || undefined,
           };
         });
 
         await requisicoesApi.criarManutencao({
           ...payloadBase,
-          manutencaoItens: manutencaoItensPayload.length > 0 ? manutencaoItensPayload : undefined,
+          manutencaoItens: manutencaoItensPayload,
         });
       }
 
@@ -1432,8 +1433,6 @@ export function SharedRequisitionsPage({
           {createForm.tipo === 'MANUTENCAO' && (
             <div className="space-y-4">
               <RequisitionsCreateManutencaoForm
-                assunto={createForm.assunto}
-                onUpdateAssunto={createForm.setAssunto}
                 manutencaoItems={catalog.manutencaoItems}
                 selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
@@ -1442,7 +1441,6 @@ export function SharedRequisitionsPage({
                 t={t}
                 manutencaoError={createForm.createErrors.manutencaoItens}
                 onClearSelection={createForm.onClearSelection}
-                inputFieldClassName={inputFieldClassName}
               />
             </div>
           )}

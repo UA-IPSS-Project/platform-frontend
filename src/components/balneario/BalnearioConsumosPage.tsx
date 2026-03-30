@@ -208,7 +208,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
             case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
-            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             default: return cat;
         }
     };
@@ -488,7 +487,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 case 'DETERGENTES': return '#22C55E';
                 case 'VESTUARIO': return '#3B82F6';
                 case 'CALCADO': return '#A855F7';
-                case 'VESTUARIO': return '#3B82F6';
                 default: return '#6B7280';
             }
         };

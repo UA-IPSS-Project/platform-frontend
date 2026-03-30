@@ -1245,7 +1245,6 @@
   },
   "maintenance": {
     "labels": {
-      "subject": "Subject *",
       "itemsByCategory": "Items by Category",
       "selectedItems": "{{count}} item(s) selected",
       "clearSelection": "Clear selection",
@@ -1254,8 +1253,6 @@
       "item": "Verification Item"
     },
     "placeholders": {
-      "subject": "Ex: Tap repair, Lamp replacement...",
-      "subject_hint": "Give a short title to what needs intervention",
       "observations": "Additional notes for this category..."
     }
   }

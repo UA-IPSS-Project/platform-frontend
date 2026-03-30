@@ -116,7 +116,6 @@ export interface RequisicaoResponse {
   dataHoraRegresso?: string;
   numeroPassageiros?: number;
   condutor?: string | null;
-  assunto?: string;
 }
 
 export interface RequisicaoFilters {
@@ -163,7 +162,6 @@ export interface CriarManutencaoItemCatalogoRequest {
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
-  assunto?: string;
   manutencaoItens?: ManutencaoItemRequestPayload[];
 }
 
