@@ -102,7 +102,7 @@ export function RequisitionsCreateManutencaoForm({
             <button 
               type="button"
               onClick={() => toggleCategory(category)}
-              className="flex items-center justify-between w-full px-2 group"
+              className="flex items-center justify-between w-full px-4 py-2 group hover:bg-purple-50/50 dark:hover:bg-purple-900/10 rounded-2xl transition-all duration-300"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-1.5 h-6 bg-purple-500 rounded-full transition-all duration-300 ${isCollapsed ? 'scale-y-50 opacity-50' : ''}`} />
