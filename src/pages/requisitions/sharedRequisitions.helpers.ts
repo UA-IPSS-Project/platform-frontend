@@ -115,7 +115,7 @@ export const MANUTENCAO_CATEGORIA_DISPLAY_LABELS: Record<ManutencaoCategoria, st
   CATL: 'CATL',
   RC: 'R/C',
   PRE_ESCOLAR: 'Pré Escolar',
-  CRECHE: 'Crech',
+  CRECHE: 'Creche',
 };
 
 export const MANUTENCAO_ESPACOS_POR_CATEGORIA: Record<ManutencaoCategoria, string[]> = {

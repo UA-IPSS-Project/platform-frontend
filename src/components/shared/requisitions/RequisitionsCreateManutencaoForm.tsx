@@ -30,8 +30,14 @@ export function RequisitionsCreateManutencaoForm({
   onClearSelection,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
   
-  // Estado local para colapsar categorias
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  // Estado local para colapsar categorias - agora abertas por default
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    MANUTENCAO_CATEGORIA_ORDER.forEach(cat => {
+      initial[cat] = true;
+    });
+    return initial;
+  });
 
   const toggleCategory = (category: string) => {
     setCollapsedCategories(prev => ({
