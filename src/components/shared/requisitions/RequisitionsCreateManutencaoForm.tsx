@@ -1,27 +1,33 @@
 import { useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Checkbox } from '../../ui/checkbox';
+import { Layout, PenLine, Trash2 } from 'lucide-react';
 import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
   MANUTENCAO_CATEGORIA_DISPLAY_LABELS,
-  MANUTENCAO_VERIFICACOES_ORDEM,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { MaintenanceCategoryCard } from './maintenance/MaintenanceCategoryCard';
+import { Input } from '../../ui/input';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface RequisitionsCreateManutencaoFormProps {
+  assunto: string;
+  onUpdateAssunto: (value: string) => void;
   manutencaoItems: ManutencaoItem[];
-  expandedManutencaoCategorias: Record<ManutencaoCategoria, boolean>;
-  onToggleCategoriaExpansion: (categoria: ManutencaoCategoria) => void;
+  expandedManutencaoCategorias: Record<string, boolean>;
+  onToggleCategoriaExpansion: (categoria: string) => void;
   onToggleItem: (itemId: number, checked: boolean) => void;
   selectedManutencaoItemIds: number[];
-  manutencaoObservacoesPorCategoria: Record<ManutencaoCategoria, string>;
-  onUpdateObservacaoCategoria: (categoria: ManutencaoCategoria, observacao: string) => void;
+  manutencaoObservacoesPorCategoria: Record<string, string>;
+  onUpdateObservacaoCategoria: (categoria: string, observacao: string) => void;
   t: (key: string) => string;
   manutencaoError?: string;
   onClearSelection: () => void;
+  inputFieldClassName: string;
 }
 
 export function RequisitionsCreateManutencaoForm({
+  assunto,
+  onUpdateAssunto,
   manutencaoItems,
   expandedManutencaoCategorias,
   onToggleCategoriaExpansion,
@@ -32,164 +38,129 @@ export function RequisitionsCreateManutencaoForm({
   t,
   manutencaoError,
   onClearSelection,
+  inputFieldClassName,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
-  const itemsPorCategoria = useMemo(() => manutencaoItems.reduce(
-    (acc, item: ManutencaoItem) => {
-      if (!acc[item.categoria]) {
-        acc[item.categoria] = {};
-      }
-      if (!acc[item.categoria][item.espaco]) {
-        acc[item.categoria][item.espaco] = [];
-      }
-      acc[item.categoria][item.espaco].push(item);
-      return acc;
-    },
-    {} as Record<string, Record<string, ManutencaoItem[]>>
-  ), [manutencaoItems]);
+  
+  const itemsByCategoria = useMemo(() => {
+    const grouped: Record<string, Record<string, ManutencaoItem[]>> = {};
+    manutencaoItems.forEach(item => {
+      if (!grouped[item.categoria]) grouped[item.categoria] = {};
+      if (!grouped[item.categoria][item.espaco]) grouped[item.categoria][item.espaco] = [];
+      grouped[item.categoria][item.espaco].push(item);
+    });
+    return grouped;
+  }, [manutencaoItems]);
 
-  const categories = useMemo(() => 
-    Array.from(new Set(manutencaoItems.map(i => i.categoria))).sort((a: string, b: string) => {
+  const sortedCategories = useMemo(() => {
+    return Object.keys(itemsByCategoria).sort((a, b) => {
       const idxA = MANUTENCAO_CATEGORIA_ORDER.indexOf(a as ManutencaoCategoria);
       const idxB = MANUTENCAO_CATEGORIA_ORDER.indexOf(b as ManutencaoCategoria);
       if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
       return a.localeCompare(b);
-    }),
-    [manutencaoItems]
-  );
-
-  const findItem = (categoria: string, espaco: string, verificacao: string): ManutencaoItem | undefined => {
-    const items = itemsPorCategoria[categoria]?.[espaco];
-    return items?.find((item) => item.itemVerificacao === verificacao);
-  };
+    });
+  }, [itemsByCategoria]);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
-        <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.availableItems')}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Selecione os itens de verificação por espaço.</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Subject Section */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md group">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2.5 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white group-hover:rotate-12">
+            <PenLine className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {t('maintenance.labels.subject')}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Dê um título curto ao que precisa de intervenção
+            </p>
+          </div>
         </div>
-
-        {categories.map((categoria) => {
-          const isExpandedCategoria = expandedManutencaoCategorias[categoria as ManutencaoCategoria] ?? false;
-          const espacos = Array.from(new Set(manutencaoItems.filter(i => i.categoria === categoria).map(i => i.espaco))).sort();
-          const verifficacoes = Array.from(new Set(manutencaoItems.filter(i => i.categoria === categoria).map(i => i.itemVerificacao))).sort((a, b) => {
-            const idxA = MANUTENCAO_VERIFICACOES_ORDEM.indexOf(a as any);
-            const idxB = MANUTENCAO_VERIFICACOES_ORDEM.indexOf(b as any);
-            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-            if (idxA !== -1) return -1;
-            if (idxB !== -1) return 1;
-            return a.localeCompare(b);
-          });
-
-          const displayLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[categoria as ManutencaoCategoria] ?? categoria.replace(/_/g, ' ').toUpperCase();
-
-          return (
-            <div key={categoria} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() => onToggleCategoriaExpansion(categoria as ManutencaoCategoria)}
-                className="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                aria-label={`Toggle ${displayLabel} expansion`}
-              >
-                <span className="font-medium text-gray-900 dark:text-gray-100">{displayLabel}</span>
-                {isExpandedCategoria ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
-                )}
-              </button>
-
-              {isExpandedCategoria && (
-                <div className="p-4 space-y-4">
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr>
-                          <th className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 text-left font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                            Espaço
-                          </th>
-                          {verifficacoes.map((verificacao) => (
-                            <th
-                              key={verificacao}
-                              className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 text-center font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap text-xs"
-                            >
-                              {verificacao}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {espacos.map((espaco) => (
-                          <tr key={espaco}>
-                            <td className="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-2 font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
-                              {espaco}
-                            </td>
-                            {verifficacoes.map((verificacao) => {
-                              const item = findItem(categoria, espaco, verificacao);
-                              if (!item) return <td key={verificacao} className="border border-gray-300 dark:border-gray-600 p-2" />;
-
-                              const isChecked = selectedManutencaoItemIds.includes(item.id);
-                              return (
-                                <td
-                                  key={verificacao}
-                                  className="border border-gray-300 dark:border-gray-600 p-2 text-center"
-                                >
-                                  <div className="flex justify-center">
-                                    <Checkbox
-                                      checked={isChecked}
-                                      onCheckedChange={(nextChecked) => onToggleItem(item.id, !!nextChecked)}
-                                    />
-                                  </div>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-300" htmlFor={`obs-${categoria}`}>
-                      Observações
-                    </label>
-                    <input
-                      id={`obs-${categoria}`}
-                      type="text"
-                      value={manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] ?? ''}
-                      onChange={(e) => onUpdateObservacaoCategoria(categoria as ManutencaoCategoria, e.target.value)}
-                      placeholder="Observações da categoria"
-                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-300 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        <Input
+          value={assunto}
+          onChange={(e) => onUpdateAssunto(e.target.value)}
+          placeholder={t('maintenance.placeholders.subject')}
+          className={`${inputFieldClassName} h-12 bg-gray-50/50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500/20`}
+        />
       </div>
 
-      {manutencaoError && (
-        <p className="text-red-500 text-sm">{manutencaoError}</p>
-      )}
-
-      {selectedManutencaoItemIds.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-blue-50 dark:bg-blue-900/20 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            ✓ {selectedManutencaoItemIds.length} item(ns) selecionado(s)
-          </p>
-          <button
-            type="button"
-            onClick={onClearSelection}
-            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors"
-          >
-            {t('requisitions.ui.clearSelection')}
-          </button>
+      {/* Categories Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <Layout className="w-4 h-4 text-purple-500" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('maintenance.labels.itemsByCategory')}
+            </span>
+          </div>
+          <span className="text-xs text-gray-400">
+            {manutencaoItems.length} itens de verificação no catálogo
+          </span>
         </div>
-      )}
+
+        <div className="grid grid-cols-1 gap-4">
+          {sortedCategories.map((cat) => (
+            <MaintenanceCategoryCard
+              key={cat}
+              displayLabel={MANUTENCAO_CATEGORIA_DISPLAY_LABELS[cat as ManutencaoCategoria] ?? cat}
+              itemsBySpace={itemsByCategoria[cat]}
+              isExpanded={expandedManutencaoCategorias[cat] ?? false}
+              onToggleExpansion={() => onToggleCategoriaExpansion(cat)}
+              selectedIds={selectedManutencaoItemIds}
+              onToggleItem={onToggleItem}
+              observacao={manutencaoObservacoesPorCategoria[cat] ?? ''}
+              onUpdateObservacao={(obs) => onUpdateObservacaoCategoria(cat, obs)}
+              t={t}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Floating Footer / Error / Selection Bar */}
+      <AnimatePresence>
+        {(manutencaoError || selectedManutencaoItemIds.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="sticky bottom-4 z-50 p-4 rounded-2xl border backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden"
+            style={{
+              borderColor: manutencaoError ? 'rgba(239, 68, 68, 0.4)' : 'rgba(147, 51, 234, 0.4)',
+              backgroundColor: manutencaoError ? 'rgba(254, 242, 242, 0.9)' : 'rgba(250, 245, 255, 0.9)',
+            }}
+          >
+            {/* Error Message */}
+            {manutencaoError && (
+              <div className="flex items-center gap-2 text-red-600">
+                <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                <span className="text-sm font-semibold">{manutencaoError}</span>
+              </div>
+            )}
+
+            {/* Selection Summary */}
+            {selectedManutencaoItemIds.length > 0 && !manutencaoError && (
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                <div className="w-2 h-2 rounded-full bg-purple-600" />
+                <span className="text-sm font-semibold">
+                  {selectedManutencaoItemIds.length} item(ns) selecionado(s)
+                </span>
+              </div>
+            )}
+
+            {selectedManutencaoItemIds.length > 0 && (
+              <button
+                type="button"
+                onClick={onClearSelection}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-all hover:scale-105 active:scale-95"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('requisitions.ui.clearSelection')}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

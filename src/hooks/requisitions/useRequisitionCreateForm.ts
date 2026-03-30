@@ -28,6 +28,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
 
   // Maintenance-specific state
+  const [assunto, setAssunto] = useState('');
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
   const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
   const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
@@ -63,6 +64,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
+    setAssunto('');
     setSelectedManutencaoItemIds([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
@@ -107,6 +109,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       numeroPassageiros !== '' ||
       condutorTransporte !== '' ||
       selectedTransportIds.length > 0 ||
+      assunto !== '' ||
       selectedManutencaoItemIds.length > 0 ||
       Object.keys(manutencaoObservacoesPorCategoria).length > 0
     );
@@ -125,6 +128,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     numeroPassageiros,
     condutorTransporte,
     selectedTransportIds,
+    assunto,
     selectedManutencaoItemIds,
     manutencaoObservacoesPorCategoria,
   ]);
@@ -172,6 +176,8 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     transportSelectionMode,
     setTransportSelectionMode,
     // Maintenance state
+    assunto,
+    setAssunto,
     selectedManutencaoItemIds,
     setSelectedManutencaoItemIds,
     expandedManutencaoCategorias,
@@ -194,5 +200,45 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     // Actions
     resetForm,
     resetMaterialDialog,
+    validateAndSetField: (field: CreateField) => {
+      setFieldTouched(field);
+      if (field === 'descricao' && !descricao.trim()) {
+        setFieldError('descricao', 'Campo obrigatório');
+      } else if (field === 'descricao') {
+        setFieldError('descricao', undefined);
+      }
+
+      if (field === 'assunto' && !assunto.trim()) {
+        setFieldError('assunto', 'Campo obrigatório');
+      } else if (field === 'assunto') {
+        setFieldError('assunto', undefined);
+      }
+
+      if (field === 'manutencaoItens' && selectedManutencaoItemIds.length === 0) {
+        setFieldError('manutencaoItens', 'Selecione pelo menos um item');
+      } else if (field === 'manutencaoItens') {
+        setFieldError('manutencaoItens', undefined);
+      }
+    },
+    toggleManutencaoCategoriaExpansion: (categoria: string) => {
+      setExpandedManutencaoCategorias(prev => ({
+        ...prev,
+        [categoria]: !prev[categoria]
+      }));
+    },
+    toggleManutencaoItem: (itemId: number, checked: boolean) => {
+      setSelectedManutencaoItemIds(prev =>
+        checked ? [...prev, itemId] : prev.filter(id => id !== itemId)
+      );
+    },
+    updateManutencaoObservacaoCategoria: (categoria: string, observation: string) => {
+      setManutencaoObservacoesPorCategoria(prev => ({
+        ...prev,
+        [categoria]: observation
+      }));
+    },
+    onClearSelection: () => {
+      setSelectedManutencaoItemIds([]);
+    },
   };
 }

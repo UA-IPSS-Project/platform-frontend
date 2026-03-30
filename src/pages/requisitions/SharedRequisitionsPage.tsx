@@ -655,24 +655,6 @@ export function SharedRequisitionsPage({
 
 
 
-  const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
-    createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  }, [createForm]);
-
-  const toggleManutencaoItem = useCallback((itemId: number, checked: boolean) => {
-    if (checked) {
-      createForm.setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
-    } else {
-      createForm.setSelectedManutencaoItemIds((prev) => prev.filter((id) => id !== itemId));
-    }
-  }, [createForm]);
-
-  const updateManutencaoObservacaoCategoria = useCallback((categoria: string, observacao: string) => {
-    createForm.setManutencaoObservacoesPorCategoria((prev) => ({
-      ...prev,
-      [categoria]: observacao,
-    }));
-  }, [createForm]);
 
   const toggleVariante = useCallback((materialId: number, checked: boolean) => {
     createForm.setMaterialLinhas((prev) => {
@@ -780,7 +762,7 @@ export function SharedRequisitionsPage({
       );
     }
     if (createForm.tipo === 'MANUTENCAO') {
-      fieldsToValidate.push('manutencaoItens');
+      fieldsToValidate.push('assunto', 'manutencaoItens');
     }
 
     const validationErrors = fieldsToValidate
@@ -1450,22 +1432,19 @@ export function SharedRequisitionsPage({
           {createForm.tipo === 'MANUTENCAO' && (
             <div className="space-y-4">
               <RequisitionsCreateManutencaoForm
+                assunto={createForm.assunto}
+                onUpdateAssunto={createForm.setAssunto}
                 manutencaoItems={catalog.manutencaoItems}
                 expandedManutencaoCategorias={createForm.expandedManutencaoCategorias}
                 selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
-                onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
-                onToggleItem={(id, checked) => {
-                  toggleManutencaoItem(id, checked);
-                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
-                }}
-                onUpdateObservacaoCategoria={updateManutencaoObservacaoCategoria}
+                onToggleCategoriaExpansion={createForm.toggleManutencaoCategoriaExpansion}
+                onToggleItem={createForm.toggleManutencaoItem}
+                onUpdateObservacaoCategoria={createForm.updateManutencaoObservacaoCategoria}
                 t={t}
                 manutencaoError={createForm.createErrors.manutencaoItens}
-                onClearSelection={() => {
-                  createForm.setSelectedManutencaoItemIds([]);
-                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
-                }}
+                onClearSelection={createForm.onClearSelection}
+                inputFieldClassName={inputFieldClassName}
               />
             </div>
           )}
