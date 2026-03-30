@@ -1,5 +1,5 @@
-import { useMemo, Fragment } from 'react';
-import { Layout, PenLine, Trash2, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { useMemo } from 'react';
+import { Layout, PenLine, Trash2, MessageSquare } from 'lucide-react';
 import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
@@ -19,7 +19,7 @@ interface RequisitionsCreateManutencaoFormProps {
   selectedManutencaoItemIds: number[];
   manutencaoObservacoesPorCategoria: Record<string, string>;
   onUpdateObservacaoCategoria: (categoria: string, observacao: string) => void;
-  t: any; // Use any to allow i18next interpolation
+  t: any;
   manutencaoError?: string;
   onClearSelection: () => void;
   inputFieldClassName: string;
@@ -39,20 +39,35 @@ export function RequisitionsCreateManutencaoForm({
   inputFieldClassName,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
   
-  // 1. Identificar espaços únicos (colunas)
-  const uniqueSpaces = useMemo(() => {
-    return Array.from(new Set(manutencaoItems.map(item => item.espaco))).sort();
-  }, [manutencaoItems]);
-
-  // 2. Agrupar itens por Categoria e Nome de Item (linhas)
-  // Cada linha representa um "tipo de item" (ex: Lâmpadas) que pode existir em vários espaços.
+  // 1. Agrupar TUDO por Categoria -> Item -> Espaço
   const groupedData = useMemo(() => {
-    const grouped: Record<string, Record<string, Record<string, ManutencaoItem>>> = {};
+    const grouped: Record<string, {
+      spaces: string[],
+      items: Record<string, Record<string, ManutencaoItem>>
+    }> = {};
     
     manutencaoItems.forEach(item => {
-      if (!grouped[item.categoria]) grouped[item.categoria] = {};
-      if (!grouped[item.categoria][item.itemVerificacao]) grouped[item.categoria][item.itemVerificacao] = {};
-      grouped[item.categoria][item.itemVerificacao][item.espaco] = item;
+      if (!grouped[item.categoria]) {
+        grouped[item.categoria] = {
+          spaces: [],
+          items: {}
+        };
+      }
+      
+      if (!grouped[item.categoria].spaces.includes(item.espaco)) {
+        grouped[item.categoria].spaces.push(item.espaco);
+      }
+      
+      if (!grouped[item.categoria].items[item.itemVerificacao]) {
+        grouped[item.categoria].items[item.itemVerificacao] = {};
+      }
+      
+      grouped[item.categoria].items[item.itemVerificacao][item.espaco] = item;
+    });
+
+    // Ordenar espaços de cada categoria
+    Object.keys(grouped).forEach(cat => {
+      grouped[cat].spaces.sort();
     });
 
     return grouped;
@@ -68,7 +83,7 @@ export function RequisitionsCreateManutencaoForm({
   }, [groupedData]);
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       {/* Subject Section */}
       <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-md rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md group">
         <div className="flex items-center gap-3 mb-4">
@@ -88,101 +103,103 @@ export function RequisitionsCreateManutencaoForm({
           value={assunto}
           onChange={(e) => onUpdateAssunto(e.target.value)}
           placeholder={t('maintenance.placeholders.subject')}
-          className={`${inputFieldClassName} h-12 bg-white/50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-base`}
+          className={`${inputFieldClassName} h-12 bg-white/50 dark:bg-gray-950/50 border-gray-200 dark:border-gray-800 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-base font-medium`}
         />
       </div>
 
-      {/* Main Table Section */}
-      <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-md sticky top-0 z-20">
-                <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 min-w-[200px] bg-gray-50/90 dark:bg-gray-800/90">
-                <div className="flex items-center gap-2">
-                  <Layout className="w-4 h-4 text-purple-500" />
-                  {t('maintenance.labels.item')}
-                </div>
-                </th>
-                {uniqueSpaces.map(space => (
-                  <th key={space} className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 text-center min-w-[120px]">
-                    {space}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedCategories.map(category => (
-                <Fragment key={category}>
-                  {/* Category Header Row */}
-                  <tr className="bg-purple-50/50 dark:bg-purple-900/10">
-                    <td colSpan={uniqueSpaces.length + 1} className="p-3 border-b border-gray-100 dark:border-gray-800">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-purple-400">
-                          {MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category}
-                        </span>
-                        
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 dark:bg-gray-800/50 border border-purple-100 dark:border-purple-900/30">
-                            <MessageSquare className="w-3 h-3 text-purple-400" />
-                            <input
-                              type="text"
-                              value={manutencaoObservacoesPorCategoria[category] ?? ''}
-                              onChange={(e) => onUpdateObservacaoCategoria(category, e.target.value)}
-                              placeholder={t('maintenance.placeholders.observations')}
-                              className="bg-transparent border-none outline-none text-[10px] text-gray-600 dark:text-gray-400 w-48 placeholder:italic"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
+      {/* Categories Sections */}
+      {sortedCategories.map((category) => {
+        const { spaces, items } = groupedData[category];
+        const categoryLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category;
 
-                  {/* Item Rows */}
-                  {Object.keys(groupedData[category]).sort().map(itemName => (
-                    <tr key={itemName} className="group hover:bg-purple-50/30 dark:hover:bg-purple-900/5 transition-colors border-b border-gray-50 dark:border-gray-800">
-                      <td className="p-4 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
-                        {itemName}
-                      </td>
-                      {uniqueSpaces.map(space => {
-                        const item = groupedData[category][itemName][space];
-                        if (!item) return <td key={space} className="p-4 text-center text-gray-200 dark:text-gray-800 font-bold">•</td>;
-                        
-                        const isSelected = selectedManutencaoItemIds.includes(item.id);
-                        
-                        return (
-                          <td key={space} className="p-4 text-center">
-                            <div className="flex justify-center items-center">
-                              <Checkbox
-                                id={`item-${item.id}`}
-                                checked={isSelected}
-                                onCheckedChange={(checked) => onToggleItem(item.id, checked as boolean)}
-                                className={`w-5 h-5 rounded-md transition-all duration-300 border-2 ${
-                                  isSelected 
-                                    ? 'bg-purple-600 border-purple-600 scale-110 shadow-lg shadow-purple-500/20' 
-                                    : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
-                                }`}
-                              />
-                            </div>
-                          </td>
-                        );
-                      })}
+        return (
+          <section key={category} className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-purple-500 rounded-full" />
+                <h2 className="text-lg font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+                  {categoryLabel}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                <Layout className="w-3 h-3" />
+                {spaces.length} {t('maintenance.labels.spaces') || 'Espaços'}
+              </div>
+            </div>
+
+            <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg transition-all hover:shadow-xl">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-md">
+                      <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800 min-w-[200px]">
+                        {t('maintenance.labels.item')}
+                      </th>
+                      {spaces.map(space => (
+                        <th key={space} className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800 text-center min-w-[100px]">
+                          {space}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </thead>
+                  <tbody>
+                    {Object.keys(items).sort().map((itemName) => (
+                      <tr key={itemName} className="group hover:bg-purple-50/40 dark:hover:bg-purple-900/10 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-0">
+                        <td className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
+                          {itemName}
+                        </td>
+                        {spaces.map(space => {
+                          const item = items[itemName][space];
+                          if (!item) return (
+                            <td key={space} className="p-4 text-center text-gray-200 dark:text-gray-800 font-bold select-none cursor-default">
+                              <span className="opacity-20">—</span>
+                            </td>
+                          );
+                          
+                          const isSelected = selectedManutencaoItemIds.includes(item.id);
+                          
+                          return (
+                            <td key={space} className="p-4 text-center">
+                              <div className="flex justify-center items-center">
+                                <Checkbox
+                                  id={`item-${item.id}`}
+                                  checked={isSelected}
+                                  onCheckedChange={(checked) => onToggleItem(item.id, checked as boolean)}
+                                  className={`w-5 h-5 rounded-md transition-all duration-300 border-2 ${
+                                    isSelected 
+                                      ? 'bg-purple-600 border-purple-600 scale-110 shadow-lg shadow-purple-500/20' 
+                                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
+                                  }`}
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-      {/* Stats/Summary hint */}
-      <div className="flex items-center gap-4 px-4 py-2 text-xs text-gray-500 dark:text-gray-400 italic">
-          <div className="flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 text-green-500" />
-            <span>Selecione os itens necessários em cada espaço para criar a requisição.</span>
-          </div>
-      </div>
+              {/* Observation Section PER Category */}
+              <div className="p-4 bg-gray-50/30 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="w-3 h-3 text-purple-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    {t('maintenance.labels.observations')}
+                  </span>
+                </div>
+                <textarea
+                  value={manutencaoObservacoesPorCategoria[category] ?? ''}
+                  onChange={(e) => onUpdateObservacaoCategoria(category, e.target.value)}
+                  placeholder={t('maintenance.placeholders.observations')}
+                  className="w-full bg-white/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500/30 transition-all resize-none h-20 placeholder:italic"
+                />
+              </div>
+            </div>
+          </section>
+        );
+      })}
 
       {/* Floating Footer / Error / Selection Bar */}
       <AnimatePresence>
@@ -191,29 +208,31 @@ export function RequisitionsCreateManutencaoForm({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="sticky bottom-4 z-50 p-4 rounded-2xl border backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 overflow-hidden"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-4 rounded-2xl border backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6 min-w-[320px] max-w-[90vw]"
             style={{
               borderColor: manutencaoError ? 'rgba(239, 68, 68, 0.4)' : 'rgba(147, 51, 234, 0.4)',
-              backgroundColor: manutencaoError ? 'rgba(254, 242, 242, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+              backgroundColor: manutencaoError ? 'rgba(254, 242, 242, 0.98)' : 'rgba(255, 255, 255, 0.98)',
             }}
           >
-            {/* Error Message */}
-            {manutencaoError && (
-              <div className="flex items-center gap-2 text-red-600">
-                <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                <span className="text-sm font-bold">{manutencaoError}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-6">
+              {/* Error Message */}
+              {manutencaoError && (
+                <div className="flex items-center gap-2 text-red-600">
+                  <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                  <span className="text-sm font-bold tracking-tight">{manutencaoError}</span>
+                </div>
+              )}
 
-            {/* Selection Summary */}
-            {selectedManutencaoItemIds.length > 0 && !manutencaoError && (
-              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                <div className="w-2 h-2 rounded-full bg-purple-600" />
-                <span className="text-sm font-bold">
-                  {t('maintenance.labels.selectedItems', { count: selectedManutencaoItemIds.length })}
-                </span>
-              </div>
-            )}
+              {/* Selection Summary */}
+              {selectedManutencaoItemIds.length > 0 && !manutencaoError && (
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                  <div className="w-2.5 h-2.5 rounded-full bg-purple-600 shadow-sm" />
+                  <span className="text-sm font-bold tracking-tight">
+                    {t('maintenance.labels.selectedItems', { count: selectedManutencaoItemIds.length })}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {selectedManutencaoItemIds.length > 0 && (
               <button
