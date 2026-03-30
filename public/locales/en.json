@@ -1241,6 +1241,21 @@
       "Roupa Interior": "Underwear",
       "Meias": "Socks",
       "Agasalho/Casaco": "Coat/Jacket"
+    },
+    "maintenance": {
+      "labels": {
+        "subject": "Subject *",
+        "itemsByCategory": "Items by Category",
+        "selectedItems": "{{count}} item(s) selected",
+        "clearSelection": "Clear selection",
+        "observations": "Observations by Category",
+        "space": "Space",
+        "item": "Verification Item"
+      },
+      "placeholders": {
+        "subject": "Ex: Tap repair, Lamp replacement...",
+        "observations": "Additional notes for this category..."
+      }
     }
   }
 }
