@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Layout, PenLine, Trash2, MessageSquare } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Layout, PenLine, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
@@ -13,8 +13,6 @@ interface RequisitionsCreateManutencaoFormProps {
   assunto: string;
   onUpdateAssunto: (value: string) => void;
   manutencaoItems: ManutencaoItem[];
-  expandedManutencaoCategorias: Record<string, boolean>;
-  onToggleCategoriaExpansion: (categoria: string) => void;
   onToggleItem: (itemId: number, checked: boolean) => void;
   selectedManutencaoItemIds: number[];
   manutencaoObservacoesPorCategoria: Record<string, string>;
@@ -39,35 +37,45 @@ export function RequisitionsCreateManutencaoForm({
   inputFieldClassName,
 }: Readonly<RequisitionsCreateManutencaoFormProps>) {
   
-  // 1. Agrupar TUDO por Categoria -> Item -> Espaço
+  // Estado local para colapsar categorias
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+
+  const toggleCategory = (category: string) => {
+    setCollapsedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  // 1. Agrupar TUDO por Categoria -> Espaço -> Item (para as Linhas serem Espaços)
   const groupedData = useMemo(() => {
     const grouped: Record<string, {
-      spaces: string[],
-      items: Record<string, Record<string, ManutencaoItem>>
+      items: string[], // Nomes de itens únicos (Colunas)
+      spaces: Record<string, Record<string, ManutencaoItem>> // Espaços (Linhas)
     }> = {};
     
     manutencaoItems.forEach(item => {
       if (!grouped[item.categoria]) {
         grouped[item.categoria] = {
-          spaces: [],
-          items: {}
+          items: [],
+          spaces: {}
         };
       }
       
-      if (!grouped[item.categoria].spaces.includes(item.espaco)) {
-        grouped[item.categoria].spaces.push(item.espaco);
+      if (!grouped[item.categoria].items.includes(item.itemVerificacao)) {
+        grouped[item.categoria].items.push(item.itemVerificacao);
       }
       
-      if (!grouped[item.categoria].items[item.itemVerificacao]) {
-        grouped[item.categoria].items[item.itemVerificacao] = {};
+      if (!grouped[item.categoria].spaces[item.espaco]) {
+        grouped[item.categoria].spaces[item.espaco] = {};
       }
       
-      grouped[item.categoria].items[item.itemVerificacao][item.espaco] = item;
+      grouped[item.categoria].spaces[item.espaco][item.itemVerificacao] = item;
     });
 
-    // Ordenar espaços de cada categoria
+    // Ordenar itens (colunas) de cada categoria
     Object.keys(grouped).forEach(cat => {
-      grouped[cat].spaces.sort();
+      grouped[cat].items.sort();
     });
 
     return grouped;
@@ -95,7 +103,7 @@ export function RequisitionsCreateManutencaoForm({
               {t('maintenance.labels.subject')}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {t('maintenance.placeholders.subject_hint') || 'Dê um título curto ao que precisa de intervenção'}
+              {t('maintenance.placeholders.subject_hint')}
             </p>
           </div>
         </div>
@@ -109,94 +117,113 @@ export function RequisitionsCreateManutencaoForm({
 
       {/* Categories Sections */}
       {sortedCategories.map((category) => {
-        const { spaces, items } = groupedData[category];
+        const { items, spaces } = groupedData[category];
         const categoryLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category;
+        const isCollapsed = collapsedCategories[category];
 
         return (
           <section key={category} className="space-y-4">
-            <div className="flex items-center justify-between px-2">
+            <button 
+              type="button"
+              onClick={() => toggleCategory(category)}
+              className="flex items-center justify-between w-full px-2 group"
+            >
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-purple-500 rounded-full" />
-                <h2 className="text-lg font-black uppercase tracking-widest text-gray-800 dark:text-gray-200">
+                <div className={`w-1.5 h-6 bg-purple-500 rounded-full transition-all duration-300 ${isCollapsed ? 'scale-y-50 opacity-50' : ''}`} />
+                <h2 className="text-lg font-black uppercase tracking-widest text-gray-800 dark:text-gray-200 group-hover:text-purple-600 transition-colors">
                   {categoryLabel}
                 </h2>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                <Layout className="w-3 h-3" />
-                {spaces.length} {t('maintenance.labels.spaces') || 'Espaços'}
-              </div>
-            </div>
-
-            <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg transition-all hover:shadow-xl">
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-md">
-                      <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800 min-w-[200px]">
-                        {t('maintenance.labels.item')}
-                      </th>
-                      {spaces.map(space => (
-                        <th key={space} className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800 text-center min-w-[100px]">
-                          {space}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.keys(items).sort().map((itemName) => (
-                      <tr key={itemName} className="group hover:bg-purple-50/40 dark:hover:bg-purple-900/10 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-0">
-                        <td className="p-4 text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors">
-                          {itemName}
-                        </td>
-                        {spaces.map(space => {
-                          const item = items[itemName][space];
-                          if (!item) return (
-                            <td key={space} className="p-4 text-center text-gray-200 dark:text-gray-800 font-bold select-none cursor-default">
-                              <span className="opacity-20">—</span>
-                            </td>
-                          );
-                          
-                          const isSelected = selectedManutencaoItemIds.includes(item.id);
-                          
-                          return (
-                            <td key={space} className="p-4 text-center">
-                              <div className="flex justify-center items-center">
-                                <Checkbox
-                                  id={`item-${item.id}`}
-                                  checked={isSelected}
-                                  onCheckedChange={(checked) => onToggleItem(item.id, checked as boolean)}
-                                  className={`w-5 h-5 rounded-md transition-all duration-300 border-2 ${
-                                    isSelected 
-                                      ? 'bg-purple-600 border-purple-600 scale-110 shadow-lg shadow-purple-500/20' 
-                                      : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
-                                  }`}
-                                />
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Observation Section PER Category */}
-              <div className="p-4 bg-gray-50/30 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageSquare className="w-3 h-3 text-purple-400" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    {t('maintenance.labels.observations')}
-                  </span>
+              <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                <div className="flex items-center gap-2">
+                  <Layout className="w-3 h-3" />
+                  {Object.keys(spaces).length} {t('maintenance.labels.space')}
                 </div>
-                <textarea
-                  value={manutencaoObservacoesPorCategoria[category] ?? ''}
-                  onChange={(e) => onUpdateObservacaoCategoria(category, e.target.value)}
-                  placeholder={t('maintenance.placeholders.observations')}
-                  className="w-full bg-white/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500/30 transition-all resize-none h-20 placeholder:italic"
-                />
+                {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
               </div>
-            </div>
+            </button>
+
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-3xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-lg transition-all hover:shadow-xl">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-md">
+                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-gray-400 border-b border-gray-100 dark:border-gray-800 min-w-[150px] sticky left-0 bg-gray-50/90 dark:bg-gray-800/90 z-10 backdrop-blur-md">
+                              {t('maintenance.labels.space')}
+                            </th>
+                            {items.map(itemName => (
+                              <th key={itemName} className="p-4 text-[9px] font-black uppercase tracking-normal text-gray-400 border-b border-gray-100 dark:border-gray-800 text-center min-w-[100px] leading-tight max-w-[120px] whitespace-normal">
+                                {itemName}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.keys(spaces).sort().map((spaceName) => (
+                            <tr key={spaceName} className="group hover:bg-purple-50/40 dark:hover:bg-purple-900/10 transition-colors border-b border-gray-50/50 dark:border-gray-800/50 last:border-0">
+                              <td className="p-4 text-sm font-semibold text-gray-600 dark:text-gray-400 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors sticky left-0 bg-white/60 dark:bg-gray-900/60 z-10 backdrop-blur-sm">
+                                {spaceName}
+                              </td>
+                              {items.map(itemName => {
+                                const item = spaces[spaceName][itemName];
+                                if (!item) return (
+                                  <td key={itemName} className="p-4 text-center text-gray-200 dark:text-gray-800 font-bold select-none cursor-default">
+                                    <span className="opacity-10">/</span>
+                                  </td>
+                                );
+                                
+                                const isSelected = selectedManutencaoItemIds.includes(item.id);
+                                
+                                return (
+                                  <td key={itemName} className="p-4 text-center">
+                                    <div className="flex justify-center items-center">
+                                      <Checkbox
+                                        id={`item-${item.id}`}
+                                        checked={isSelected}
+                                        onCheckedChange={(checked) => onToggleItem(item.id, checked as boolean)}
+                                        className={`w-5 h-5 rounded-md transition-all duration-300 border-2 ${
+                                          isSelected 
+                                            ? 'bg-purple-600 border-purple-600 scale-110 shadow-lg shadow-purple-500/20' 
+                                            : 'border-gray-300 dark:border-gray-600 hover:border-purple-400'
+                                        }`}
+                                      />
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Observation Section PER Category */}
+                    <div className="p-4 bg-gray-50/30 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800">
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare className="w-3 h-3 text-purple-400" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                          {t('maintenance.labels.observations')}
+                        </span>
+                      </div>
+                      <textarea
+                        value={manutencaoObservacoesPorCategoria[category] ?? ''}
+                        onChange={(e) => onUpdateObservacaoCategoria(category, e.target.value)}
+                        placeholder={t('maintenance.placeholders.observations')}
+                        className="w-full bg-white/50 dark:bg-gray-950/50 border border-gray-200 dark:border-gray-800 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-300 outline-none focus:ring-2 focus:ring-purple-500/10 focus:border-purple-500/30 transition-all resize-none h-20 placeholder:italic"
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         );
       })}

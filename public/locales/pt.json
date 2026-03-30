@@ -1244,21 +1244,21 @@
       "Roupa Interior": "Roupa Interior",
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
+  },
+  "maintenance": {
+    "labels": {
+      "subject": "Assunto *",
+      "itemsByCategory": "Itens por Categoria",
+      "selectedItems": "{{count}} item(ns) selecionado(s)",
+      "clearSelection": "Limpar seleção",
+      "observations": "Observações por Categoria",
+      "space": "Espaço",
+      "item": "Item de Verificação"
     },
-    "maintenance": {
-      "labels": {
-        "subject": "Assunto *",
-        "itemsByCategory": "Itens por Categoria",
-        "selectedItems": "{{count}} item(ns) selecionado(s)",
-        "clearSelection": "Limpar seleção",
-        "observations": "Observações por Categoria",
-        "space": "Espaço",
-        "item": "Item de Verificação"
-      },
-      "placeholders": {
-        "subject": "Ex: Reparação de torneira, Substituição de lâmpada...",
-        "observations": "Notas adicionais para esta categoria..."
-      }
+    "placeholders": {
+      "subject": "Ex: Reparação de torneira, Substituição de lâmpada...",
+      "subject_hint": "Dê um título curto ao que precisa de intervenção",
+      "observations": "Notas adicionais para esta categoria..."
     }
   }
 }

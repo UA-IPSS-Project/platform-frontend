@@ -1435,10 +1435,8 @@ export function SharedRequisitionsPage({
                 assunto={createForm.assunto}
                 onUpdateAssunto={createForm.setAssunto}
                 manutencaoItems={catalog.manutencaoItems}
-                expandedManutencaoCategorias={createForm.expandedManutencaoCategorias}
                 selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
-                onToggleCategoriaExpansion={createForm.toggleManutencaoCategoriaExpansion}
                 onToggleItem={createForm.toggleManutencaoItem}
                 onUpdateObservacaoCategoria={createForm.updateManutencaoObservacaoCategoria}
                 t={t}
