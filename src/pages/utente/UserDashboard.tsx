@@ -6,6 +6,7 @@ import { NotificationsPage } from '../NotificationsPage';
 import { Sidebar } from '../../components/layout/Sidebar';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
+import { UserCandidaturas } from './UserCandidaturas';
 import { HistoryPage } from '../HistoryPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
@@ -347,6 +348,17 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                     </div>
                   </div>
                 </>
+              } />
+
+              {/* Candidaturas */}
+              <Route path="/creche" element={
+                <UserCandidaturas
+                  user={userData}
+                  onLogout={onLogout}
+                  isDarkMode={isDarkMode}
+                  onToggleDarkMode={onToggleDarkMode}
+                  candidaturaType="CRECHE"
+                />
               } />
 
               {/* History */}
