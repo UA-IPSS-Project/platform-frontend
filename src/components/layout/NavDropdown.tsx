@@ -58,8 +58,8 @@ export function NavDropdown({ label, items, isActive, onSelect, onLabelClick, cl
     >
       <button
         className={`flex items-center gap-1 px-3 py-2 rounded-md transition-colors text-sm ${isActive
-          ? 'bg-purple-600 hover:bg-purple-700 text-white'
-          : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+          ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+          : 'text-foreground/80 hover:bg-primary/10 hover:text-primary'
           }`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
@@ -80,12 +80,12 @@ export function NavDropdown({ label, items, isActive, onSelect, onLabelClick, cl
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 min-w-[200px] bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+        <div className="absolute top-full left-0 mt-1 min-w-[200px] bg-popover rounded-md shadow-lg border border-border py-1 z-50">
           {items.map((item) => (
             <button
               key={item.id}
               onClick={() => handleItemClick(item.id)}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+              className="w-full text-left px-4 py-2 text-sm text-popover-foreground hover:bg-primary/10 hover:text-primary transition-colors"
             >
               {item.label}
             </button>

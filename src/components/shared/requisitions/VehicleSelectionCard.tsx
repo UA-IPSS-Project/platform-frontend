@@ -48,11 +48,11 @@ export function VehicleSelectionCard({
 
   let cardStyles = "transition-all duration-200";
   if (isSelected) {
-    cardStyles = "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm ring-1 ring-emerald-500/30";
+    cardStyles = "border-status-success bg-status-success-soft/50 shadow-sm ring-1 ring-status-success/30";
   } else if (isUnavailable) {
-    cardStyles = "opacity-60 grayscale-[0.3] border-amber-200 bg-amber-50/30 dark:bg-amber-950/10 cursor-not-allowed";
+    cardStyles = "opacity-60 grayscale-[0.3] border-status-warning/40 bg-status-warning-soft/40 cursor-not-allowed";
   } else {
-    cardStyles = "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 hover:border-purple-300 dark:hover:border-purple-700";
+    cardStyles = "border-border bg-card hover:border-primary/50";
   }
 
   const content = (
@@ -60,17 +60,17 @@ export function VehicleSelectionCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1.5 flex-wrap">
           {showCategory && (
-            <span className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-tighter">
+            <span className="text-[10px] font-black text-primary uppercase tracking-tighter">
               {formatTransporteCategoria(transporte.categoria)}
             </span>
           )}
           {isRecommended && (
-            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 uppercase tracking-tighter">
+            <span className="inline-flex items-center rounded-full bg-status-info-soft px-2 py-0.5 text-[10px] font-bold text-status-info uppercase tracking-tighter">
               {t('requisitions.ui.suggested')}
             </span>
           )}
           {isUnavailable && (
-            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 uppercase tracking-tighter">
+            <span className="inline-flex items-center rounded-full bg-status-warning-soft px-2 py-0.5 text-[10px] font-bold text-status-warning uppercase tracking-tighter">
               {t('requisitions.ui.unavailable')}
             </span>
           )}
@@ -87,16 +87,16 @@ export function VehicleSelectionCard({
       </div>
       
       <div className="pl-1 py-0.5 space-y-1">
-        <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors leading-tight">
+        <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
           {formatVehicleTitle(transporte)}
         </h4>
-        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
-          {t('requisitions.ui.capacityLabel')}: <span className="font-bold text-gray-700 dark:text-gray-300">{formatLotacao(transporte.lotacao)}</span>
+        <p className="text-[11px] font-medium text-muted-foreground">
+          {t('requisitions.ui.capacityLabel')}: <span className="font-bold text-foreground/85">{formatLotacao(transporte.lotacao)}</span>
         </p>
       </div>
 
       {isUnavailable && (
-        <div className="flex items-center gap-1.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+        <div className="flex items-center gap-1.5 text-[10px] font-medium text-status-warning">
           <Info className="w-3 h-3" />
           <span>{t('requisitions.ui.overlapWarning')}</span>
         </div>

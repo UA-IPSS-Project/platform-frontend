@@ -93,10 +93,10 @@ export function RequisitionsCreateMaterialForm({
         {/* Search and Navigation */}
         <div className="space-y-4">
           <div className="relative group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-purple-500 transition-colors z-10 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10 pointer-events-none" />
             <Input
               placeholder={t('requisitions.ui.searchPlaceholder', { defaultValue: 'Pesquisar materiais...' })}
-              className="pl-10 pr-10 h-11 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 rounded-xl shadow-sm focus:ring-purple-500/20"
+              className="pl-10 pr-10 h-11 bg-card border-border rounded-xl shadow-sm focus:ring-primary/20"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -104,7 +104,7 @@ export function RequisitionsCreateMaterialForm({
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-muted-foreground hover:text-foreground z-10"
                 onClick={() => setSearchTerm('')}
               >
                 <X className="w-4 h-4" />
@@ -125,12 +125,12 @@ export function RequisitionsCreateMaterialForm({
                   onClick={() => onToggleCategoriaExpansion(cat.categoria)}
                   className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isActive
-                      ? 'bg-purple-600 text-white shadow-md scale-105'
-                      : 'bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700'
+                      ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                      : 'bg-card/60 text-muted-foreground hover:bg-muted border border-border'
                   }`}
                 >
                   {t(cat.label)}
-                  <span className={`ml-2 text-xs opacity-70 ${isActive ? 'text-white' : 'text-gray-400'}`}>
+                  <span className={`ml-2 text-xs opacity-70 ${isActive ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                     {matchCount}
                   </span>
                 </button>
@@ -162,8 +162,8 @@ export function RequisitionsCreateMaterialForm({
                     key={item.itemKey}
                     className={`group relative flex flex-col rounded-2xl border transition-all duration-300 ${
                       isSelected
-                        ? 'border-purple-200 dark:border-purple-900 bg-purple-50/30 dark:bg-purple-900/10 ring-1 ring-purple-100 dark:ring-purple-900/20'
-                        : 'border-gray-200 dark:border-gray-800 bg-white/40 dark:bg-gray-900/40 hover:border-purple-300 dark:hover:border-purple-800'
+                        ? 'border-primary/30 bg-primary/10 ring-1 ring-primary/20'
+                        : 'border-border bg-card/40 hover:border-primary/40'
                     }`}
                   >
                     <div 
@@ -171,13 +171,13 @@ export function RequisitionsCreateMaterialForm({
                       onClick={() => handleItemSelection(item)}
                     >
                       <div className="flex items-start justify-between">
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        <h4 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                           {item.nome}
                         </h4>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-purple-100 dark:bg-purple-900/40' : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}
+                          className={`rounded-full transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-primary/15' : 'hover:bg-primary/10'}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleItemSelection(item);
@@ -196,7 +196,7 @@ export function RequisitionsCreateMaterialForm({
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden pt-2"
                           >
-                            <div className="space-y-3 p-3 rounded-xl bg-white/60 dark:bg-gray-950/40 border border-gray-100 dark:border-gray-800">
+                            <div className="space-y-3 p-3 rounded-xl bg-card/70 border border-border">
                               {item.variantes.map((variante) => {
                                 const checked = materialLinhas.some((linha) => linha.materialId === String(variante.id));
                                 const linha = materialLinhas.find((l) => l.materialId === String(variante.id));
@@ -207,7 +207,7 @@ export function RequisitionsCreateMaterialForm({
                                     <div key={variante.id} className="space-y-2">
                                       <div className="flex items-center justify-between gap-2">
                                         <div 
-                                          className="flex-1 flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors group/variant cursor-pointer"
+                                          className="flex-1 flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-accent transition-colors group/variant cursor-pointer"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             onToggleVariante(variante.id, !checked);
@@ -218,22 +218,22 @@ export function RequisitionsCreateMaterialForm({
                                             checked={checked}
                                             onClick={(e) => e.stopPropagation()}
                                             onCheckedChange={(c) => onToggleVariante(variante.id, !!c)}
-                                            className="h-4 w-4 rounded-md border-gray-300 dark:border-gray-700 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                                            className="h-4 w-4 rounded-md border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                           />
                                           <label 
                                             htmlFor={`var-${variante.id}`} 
-                                            className="flex-1 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none truncate"
+                                            className="flex-1 text-sm text-foreground/85 cursor-pointer select-none truncate"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             {label}
                                           </label>
                                         </div>
                                         {checked && (
-                                          <div className="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-lg p-0.5 border border-gray-100 dark:border-gray-800 shadow-sm">
+                                          <div className="flex items-center gap-1 bg-card rounded-lg p-0.5 border border-border shadow-sm">
                                             <Button
                                               variant="ghost"
                                               size="icon"
-                                              className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                              className="h-6 w-6 rounded-md hover:bg-primary/10 text-primary"
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 const current = parseInt(linha?.quantidade || '1', 10);
@@ -262,7 +262,7 @@ export function RequisitionsCreateMaterialForm({
                                             <Button
                                               variant="ghost"
                                               size="icon"
-                                              className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                              className="h-6 w-6 rounded-md hover:bg-primary/10 text-primary"
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 const current = parseInt(linha?.quantidade || '1', 10);
@@ -294,8 +294,8 @@ export function RequisitionsCreateMaterialForm({
                           }}
                           className={`w-full h-9 rounded-xl transition-all duration-300 ${
                             isSelected
-                              ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
-                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600 text-gray-700 dark:text-gray-300'
+                              ? 'bg-primary/15 text-primary hover:bg-primary/20'
+                              : 'bg-card border-border hover:border-primary/50 text-foreground/85'
                           }`}
                           variant="outline"
                         >
@@ -311,12 +311,12 @@ export function RequisitionsCreateMaterialForm({
 
               {!currentCategoryData && searchTerm && (
                 <div className="col-span-full flex flex-col items-center justify-center py-12 text-center space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <Search className="w-8 h-8 text-gray-400" />
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+                    <Search className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-gray-600 dark:text-gray-400">{t('requisitions.ui.noMatches', { defaultValue: 'Nenhum material encontrado' })}</p>
-                    <p className="text-xs text-gray-500">"{searchTerm}"</p>
+                    <p className="text-muted-foreground">{t('requisitions.ui.noMatches', { defaultValue: 'Nenhum material encontrado' })}</p>
+                    <p className="text-xs text-muted-foreground">"{searchTerm}"</p>
                   </div>
                 </div>
               )}
@@ -328,27 +328,27 @@ export function RequisitionsCreateMaterialForm({
       {/* Cart Summary Side Panel */}
       <div className="space-y-6">
         <div className="sticky top-6">
-          <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
-            <div className="p-5 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-purple-500/5 to-blue-500/5">
+          <div className="rounded-3xl border border-border bg-card/60 backdrop-blur-xl shadow-xl overflow-hidden flex flex-col max-h-[calc(100vh-200px)]">
+            <div className="p-5 border-b border-border bg-gradient-to-r from-primary/10 to-status-info-soft/40">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-purple-600 shadow-lg shadow-purple-500/20">
-                    <ShoppingBag className="w-5 h-5 text-white" />
+                  <div className="p-2.5 rounded-2xl bg-primary shadow-lg shadow-primary/20">
+                    <ShoppingBag className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">{t('requisitions.ui.addedMaterials')}</h3>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-0.5">{t('requisitions.ui.selectionSummary', { defaultValue: 'Resumo da Seleção' })}</p>
+                    <h3 className="font-bold text-foreground">{t('requisitions.ui.addedMaterials')}</h3>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5">{t('requisitions.ui.selectionSummary', { defaultValue: 'Resumo da Seleção' })}</p>
                   </div>
                 </div>
                 {materialLinhas.length > 0 && (
-                  <div className="px-2 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold">
+                  <div className="px-2 py-1 rounded-lg bg-primary/15 text-primary text-[10px] font-bold">
                     {materiaisAdicionadosTotal} units
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
               {materialLinhas.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
                   <Box className="w-12 h-12 mb-3" />
@@ -359,9 +359,9 @@ export function RequisitionsCreateMaterialForm({
                   {materiaisAdicionadosAgrupados.map((grupo) => (
                     <div key={grupo.categoria} className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{t(grupo.label)}</span>
-                        <div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">{t(grupo.label)}</span>
+                        <div className="h-px flex-1 bg-border" />
                       </div>
 
                       <div className="space-y-2">
@@ -371,21 +371,21 @@ export function RequisitionsCreateMaterialForm({
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             key={item.rowId}
-                            className="group p-3 rounded-2xl border border-gray-100 dark:border-gray-700/50 bg-white dark:bg-gray-800/40 hover:border-purple-200 dark:hover:border-purple-900/50 transition-all duration-300 shadow-sm hover:shadow-md"
+                            className="group p-3 rounded-2xl border border-border bg-card hover:border-primary/30 transition-all duration-300 shadow-sm hover:shadow-md"
                           >
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0 space-y-1">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={item.descricao}>
+                                <p className="text-sm font-semibold text-foreground truncate" title={item.descricao}>
                                   {item.descricao}
                                 </p>
                                 <div className="flex items-center gap-3">
                                   <div className="flex items-center gap-1.5 pr-1">
-                                    <span className="text-[10px] text-gray-500 font-medium">{t('requisitions.ui.quantityShort')}:</span>
-                                    <div className="flex items-center gap-1 bg-white/80 dark:bg-gray-900/80 border border-gray-100 dark:border-gray-800 rounded-lg p-0.5 shadow-sm transition-shadow focus-within:shadow-md">
+                                    <span className="text-[10px] text-muted-foreground font-medium">{t('requisitions.ui.quantityShort')}:</span>
+                                    <div className="flex items-center gap-1 bg-card/90 border border-border rounded-lg p-0.5 shadow-sm transition-shadow focus-within:shadow-md">
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                        className="h-6 w-6 rounded-md hover:bg-primary/10 text-primary"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           const current = parseInt(item.quantidade || '1', 10);
@@ -399,7 +399,7 @@ export function RequisitionsCreateMaterialForm({
                                       <Input
                                         type="text"
                                         inputMode="numeric"
-                                        className="h-6 w-10 text-center text-xs border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-purple-500 rounded font-bold text-purple-600 dark:text-purple-400 p-0"
+                                        className="h-6 w-10 text-center text-xs border-none bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-primary rounded font-bold text-primary p-0"
                                         value={item.quantidade}
                                         onClick={(e) => e.stopPropagation()}
                                         onChange={(e) => {
@@ -414,7 +414,7 @@ export function RequisitionsCreateMaterialForm({
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-6 w-6 rounded-md hover:bg-purple-50 dark:hover:bg-purple-900/40 text-purple-600"
+                                        className="h-6 w-6 rounded-md hover:bg-primary/10 text-primary"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           const current = parseInt(item.quantidade || '1', 10);
@@ -433,7 +433,7 @@ export function RequisitionsCreateMaterialForm({
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-all duration-200"
+                                className="h-8 w-8 rounded-xl opacity-0 group-hover:opacity-100 hover:bg-status-error-soft hover:text-status-error transition-all duration-200"
                                 onClick={() => onRemoveMaterialLinha(item.rowId)}
                               >
                                 <X className="w-4 h-4" />
@@ -448,13 +448,13 @@ export function RequisitionsCreateMaterialForm({
               )}
             </div>
 
-            <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
-              <div className="flex items-center justify-between font-bold text-gray-900 dark:text-gray-100">
+            <div className="p-5 border-t border-border bg-muted/40">
+              <div className="flex items-center justify-between font-bold text-foreground">
                 <span className="text-sm">{t('requisitions.ui.totalSelected', { defaultValue: 'Total Selecionado' })}</span>
-                <span className="text-lg text-purple-600 dark:text-purple-400">{materialLinhas.length} items</span>
+                <span className="text-lg text-primary">{materialLinhas.length} items</span>
               </div>
               {materiaisError && (
-                <p className="text-red-500 text-[10px] mt-2 font-medium">{materiaisError}</p>
+                <p className="text-status-error text-[10px] mt-2 font-medium">{materiaisError}</p>
               )}
             </div>
           </div>
