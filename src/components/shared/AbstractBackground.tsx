@@ -1,23 +1,15 @@
-import { useEffect, useState } from 'react';
-
 interface AbstractBackgroundProps {
   isDarkMode?: boolean;
 }
 
 export default function AbstractBackground({ isDarkMode = false }: AbstractBackgroundProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden transition-colors duration-500">
       {/* Fundo Base - Dark mode com roxo médio/escuro em vez de preto */}
       <div
         className="absolute inset-0 transition-colors duration-500"
         // Force explicit backgrounds for both modes to avoid CSS variable or cascade conflicts
-        style={isDarkMode ? { background: 'rgb(31, 35, 62)' } : { background: 'rgb(250, 246, 255)' }}
+        style={{ background: 'var(--background)' }}
       />
       
       {/* Animated SVG waves */}
@@ -33,18 +25,18 @@ export default function AbstractBackground({ isDarkMode = false }: AbstractBackg
           {!isDarkMode && (
             <>
               <linearGradient id="wave1-light" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#fbcfe8" stopOpacity="0.5" />
-                <stop offset="50%" stopColor="#e9d5ff" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#fce7f3" stopOpacity="0.5" />
+                <stop offset="0%" stopColor="var(--status-info-soft)" stopOpacity="0.5" />
+                <stop offset="50%" stopColor="var(--accent)" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="var(--status-info-soft)" stopOpacity="0.5" />
               </linearGradient>
               <linearGradient id="wave2-light" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#ddd6fe" stopOpacity="0.4" />
-                <stop offset="50%" stopColor="#f5d0fe" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#fae8ff" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="var(--muted)" stopOpacity="0.4" />
+                <stop offset="50%" stopColor="var(--status-info-soft)" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.4" />
               </linearGradient>
               <linearGradient id="wave3-light" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#fce7f3" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#e9d5ff" stopOpacity="0.45" />
+                <stop offset="0%" stopColor="var(--status-info-soft)" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.45" />
               </linearGradient>
             </>
           )}
@@ -55,22 +47,22 @@ export default function AbstractBackground({ isDarkMode = false }: AbstractBackg
             <>
               {/* Onda 1: Azul/Roxo Profundo (Base para combinar com o fundo) */}
               <linearGradient id="wave1-dark" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#100f3eff" stopOpacity="0.3" /> {/* Indigo-900 */}
-                <stop offset="50%" stopColor="#4c1d95" stopOpacity="0.3" /> {/* Violet-900 */}
-                <stop offset="100%" stopColor="#5b21b6" stopOpacity="0.3" /> {/* Violet-800 */}
+                <stop offset="0%" stopColor="var(--status-neutral-soft)" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="var(--accent)" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="var(--status-info)" stopOpacity="0.3" />
               </linearGradient>
 
               {/* Onda 2: O Toque de ROSA (Magenta Escuro) */}
               <linearGradient id="wave2-dark" x1="100%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#001affff" stopOpacity="0.3" /> {/* Pink-900 */}
-                <stop offset="50%" stopColor="#be185d" stopOpacity="0.25" /> {/* Pink-700 */}
-                <stop offset="100%" stopColor="#9d174d" stopOpacity="0.3" /> {/* Pink-800 */}
+                <stop offset="0%" stopColor="var(--status-neutral-soft)" stopOpacity="0.3" />
+                <stop offset="50%" stopColor="var(--primary)" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="var(--status-info-soft)" stopOpacity="0.3" />
               </linearGradient>
 
               {/* Onda 3: Roxo intermédio para ligar os dois */}
               <linearGradient id="wave3-dark" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#ff00ddff" stopOpacity="0.25" /> {/* Violet-700 */}
-                <stop offset="100%" stopColor="#701a75" stopOpacity="0.25" /> {/* Fuchsia-900 */}
+                <stop offset="0%" stopColor="var(--status-info)" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.25" />
               </linearGradient>
             </>
           )}

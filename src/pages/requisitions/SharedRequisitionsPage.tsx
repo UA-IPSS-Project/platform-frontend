@@ -83,7 +83,6 @@ export interface SharedRequisitionsPageProps {
 }
 
 export function SharedRequisitionsPage({
-  isDarkMode,
   currentUserId,
   initialTipo,
   initialPrioridade,
@@ -1317,16 +1316,16 @@ export function SharedRequisitionsPage({
     [estadosPermitidosSelecionados],
   );
 
-  const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
-  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
-  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30 cursor-text';
-  const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-  const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
+  const headingClass = 'text-foreground';
+  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-border bg-background px-3 text-sm text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none';
+  const inputFieldClassName = 'mt-1 border-2 border-border bg-background shadow-sm focus-visible:border-primary focus-visible:ring-primary/30 cursor-text';
+  const textareaFieldClassName = 'mt-1 border-2 border-border bg-background shadow-sm focus-visible:border-primary focus-visible:ring-primary/30';
+  const quantityFieldClassName = 'mt-1 h-9 border-2 border-border bg-background text-foreground shadow-sm focus-visible:border-primary focus-visible:ring-primary/30';
 
   const createFormContent = (
     <div className="space-y-5">
-      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
+      <div className="rounded-lg border-2 border-border bg-card p-4 space-y-4">
+        <h3 className="text-sm font-medium text-foreground">{t('requisitions.ui.mainData')}</h3>
 
         <RequisitionsCreateCommonFields
           tipo={createForm.tipo}
@@ -1343,8 +1342,8 @@ export function SharedRequisitionsPage({
         />
       </div>
 
-      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.detailsByType')}</h3>
+      <div className="rounded-lg border-2 border-border bg-card p-4 space-y-4">
+        <h3 className="text-sm font-medium text-foreground">{t('requisitions.ui.detailsByType')}</h3>
 
         <div>
           {createForm.tipo === 'MATERIAL' && (
@@ -1480,7 +1479,7 @@ export function SharedRequisitionsPage({
         >
           {t('requisitions.ui.close')}
         </Button>
-        <Button onClick={handlePreSubmit} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+        <Button onClick={handlePreSubmit} disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           {submitting ? t('requisitions.ui.creatingRequest') : t('requisitions.ui.createRequest')}
         </Button>
       </div>
@@ -1497,15 +1496,15 @@ export function SharedRequisitionsPage({
             t={t}
           />
 
-          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+          <GlassCard className="w-full p-0 overflow-hidden border border-border">
+            <div className="px-5 py-5 border-b border-border flex justify-between items-center">
               <div>
                 <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+                <p className="text-sm text-muted-foreground mt-1">{summaryText}</p>
               </div>
               <Button
                 onClick={() => setActiveSection('create')}
-                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 shadow-lg shadow-purple-500/20 transition-all hover:-translate-y-0.5"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 transition-all hover:-translate-y-0.5"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {t('requisitions.ui.createRequest')}
@@ -1549,16 +1548,16 @@ export function SharedRequisitionsPage({
         </div>
       ) : (
         <div className="space-y-6">
-          <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-            <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+          <GlassCard className="w-full p-0 overflow-hidden border border-border">
+            <div className="px-5 py-5 border-b border-border flex justify-between items-center">
               <div>
                 <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('requisitions.ui.fillToCreate')}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t('requisitions.ui.fillToCreate')}</p>
               </div>
               <Button
                 variant="outline"
                 onClick={handleBackWithCheck}
-                className="rounded-xl px-6 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all hover:-translate-x-1"
+                className="rounded-xl px-6 border-border hover:bg-accent transition-all hover:-translate-x-1"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t('common.back')}
@@ -1606,7 +1605,7 @@ export function SharedRequisitionsPage({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscardChanges}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {t('profile.unsaved.discard')}
             </AlertDialogAction>
@@ -1667,24 +1666,24 @@ export function SharedRequisitionsPage({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 my-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-md text-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-              <span className="text-gray-500 font-medium">{t('requisitions.ui.type')}:</span>
-              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+          <div className="space-y-3 my-4 bg-muted/40 p-4 rounded-md text-sm border border-border">
+            <div className="flex items-center justify-between border-b pb-2 border-border">
+              <span className="text-muted-foreground font-medium">{t('requisitions.ui.type')}:</span>
+              <span className="text-foreground font-semibold">
                 {t(`requisitions.labels.${{ MATERIAL: 'material', TRANSPORTE: 'transport', MANUTENCAO: 'maintenance' }[createForm.tipo]}`)}
               </span>
             </div>
-            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-              <span className="text-gray-500 font-medium">{t('requisitions.ui.priority')}:</span>
-              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+            <div className="flex items-center justify-between border-b pb-2 border-border">
+              <span className="text-muted-foreground font-medium">{t('requisitions.ui.priority')}:</span>
+              <span className="text-foreground font-semibold">
                 {t(`requisitions.labels.${{ BAIXA: 'low', MEDIA: 'medium', ALTA: 'high', URGENTE: 'urgent' }[createForm.prioridade]}`)}
               </span>
             </div>
             
             {createForm.tipo === 'MATERIAL' && (
               <div>
-                <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.materials')}:</span>
-                <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                <span className="text-muted-foreground font-medium mb-1 block">{t('requisitions.ui.materials')}:</span>
+                <ul className="list-disc pl-5 text-foreground">
                   {createForm.materialLinhas.filter(l => l.materialId && Number(l.quantidade) > 0).map((l, idx) => {
                     const itemName = catalog.materiais.find(m => m.id === Number(l.materialId))?.nome || `#${l.materialId}`;
                     return <li key={idx}>{itemName} x {l.quantidade}</li>;
@@ -1695,17 +1694,17 @@ export function SharedRequisitionsPage({
 
             {createForm.tipo === 'TRANSPORTE' && (
               <>
-                <div className="flex flex-col border-b pb-2 border-gray-200 dark:border-gray-800">
-                  <span className="text-gray-500 font-medium">{t('requisitions.ui.destination')}:</span>
-                  <span className="text-gray-900 dark:text-gray-100">{createForm.destinoTransporte}</span>
+                <div className="flex flex-col border-b pb-2 border-border">
+                  <span className="text-muted-foreground font-medium">{t('requisitions.ui.destination')}:</span>
+                  <span className="text-foreground">{createForm.destinoTransporte}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-                  <span className="text-gray-500 font-medium">{t('requisitions.ui.passengersCount')}:</span>
-                  <span className="text-gray-900 dark:text-gray-100">{passageirosSolicitados}</span>
+                <div className="flex items-center justify-between border-b pb-2 border-border">
+                  <span className="text-muted-foreground font-medium">{t('requisitions.ui.passengersCount')}:</span>
+                  <span className="text-foreground">{passageirosSolicitados}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.suggestedAndSelectedVehicles')}:</span>
-                  <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                  <span className="text-muted-foreground font-medium mb-1 block">{t('requisitions.ui.suggestedAndSelectedVehicles')}:</span>
+                  <ul className="list-disc pl-5 text-foreground">
                     {createForm.selectedTransportIds.map((id, idx) => {
                       const tInfo = catalog.transportes.find(x => x.id === Number(id));
                       return <li key={idx}>{tInfo ? formatTransporteDisplay(tInfo) : `#${id}`}</li>;
@@ -1717,7 +1716,7 @@ export function SharedRequisitionsPage({
 
             {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItemIds.length > 0 && (
               <div>
-                <span className="text-gray-500 font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
+                <span className="text-muted-foreground font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
                 {(() => {
                   const grouped = createForm.selectedManutencaoItemIds.reduce((acc, id) => {
                     const mInfo = catalog.manutencaoItems.find((m) => m.id === id);
@@ -1737,15 +1736,15 @@ export function SharedRequisitionsPage({
 
                   return Object.entries(grouped).map(([categoria, items]) => (
                     <div key={categoria} className="mb-2 last:mb-0 ml-2">
-                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                      <p className="font-medium text-sm text-foreground">
                         {labelMap[categoria] || categoria}:
                       </p>
                       {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-1 italic">
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-1 italic">
                           Obs: {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria]}
                         </p>
                       )}
-                      <ul className="list-disc pl-5 mt-1 text-gray-700 dark:text-gray-300">
+                      <ul className="list-disc pl-5 mt-1 text-muted-foreground">
                         {items.map((item, idx) => (
                           <li key={idx} className="text-sm">{item.espaco} - {item.itemVerificacao}</li>
                         ))}
@@ -1757,9 +1756,9 @@ export function SharedRequisitionsPage({
             )}
 
             {createForm.descricao && (
-              <div className="flex flex-col mt-2 pt-2 border-t border-gray-200 dark:border-gray-800">
-                <span className="text-gray-500 font-medium">{t('requisitions.ui.description')}:</span>
-                <span className="text-gray-900 dark:text-gray-100 truncate">{createForm.descricao}</span>
+              <div className="flex flex-col mt-2 pt-2 border-t border-border">
+                <span className="text-muted-foreground font-medium">{t('requisitions.ui.description')}:</span>
+                <span className="text-foreground truncate">{createForm.descricao}</span>
               </div>
             )}
           </div>
@@ -1768,7 +1767,7 @@ export function SharedRequisitionsPage({
             <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} disabled={submitting}>
               {t('requisitions.ui.confirmCancelBtn')}
             </Button>
-            <Button onClick={() => void confirmAndSubmit()} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button onClick={() => void confirmAndSubmit()} disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {submitting ? t('requisitions.ui.creating') : t('requisitions.ui.confirmSubmitBtn')}
             </Button>
           </DialogFooter>

@@ -282,27 +282,27 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl bg-card text-foreground border-border p-6 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader className="mb-4">
                     <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-red-500" />
+                        <Lock className="w-5 h-5 text-destructive" />
                         {t('blockedSchedule.title')}
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-6">
                     {/* Create Form */}
-                    <form onSubmit={handleCreate} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg space-y-4 border border-gray-100 dark:border-gray-700">
+                    <form onSubmit={handleCreate} className="bg-muted/40 p-4 rounded-lg space-y-4 border border-border">
                         <div className="grid grid-cols-2 gap-4">
                             {/* Start Date & Time */}
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase text-gray-500 font-semibold">{t('blockedSchedule.start')}</Label>
+                                <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.start')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
+                                                className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground hover:ring-2 hover:ring-ring"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
                                                 {startDate ? format(startDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
@@ -336,7 +336,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                         const nextSlot = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
                                         setEndTime(nextSlot);
                                     }}>
-                                        <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -352,13 +352,13 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                             {/* End Date & Time */}
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase text-gray-500 font-semibold">{t('blockedSchedule.end')}</Label>
+                                <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.end')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="outline"
-                                                className="flex-1 justify-start text-left font-normal bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:ring-2 hover:ring-purple-600"
+                                                className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground hover:ring-2 hover:ring-ring"
                                             >
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
                                                 {endDate ? format(endDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
@@ -386,7 +386,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                     </Popover>
 
                                     <Select value={endTime} onValueChange={setEndTime}>
-                                        <SelectTrigger className="w-[110px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -425,7 +425,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                         <Button
                             type="submit"
                             disabled={loading || !startDate || !endDate}
-                            className="w-full bg-red-600 hover:bg-red-700 text-white font-medium h-10"
+                            className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium h-10"
                         >
                             {loading ? t('blockedSchedule.processing') : t('blockedSchedule.addBlock')}
                         </Button>
@@ -433,14 +433,14 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
                     {/* List Table */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            <Lock className="w-4 h-4 text-red-500" />
+                        <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                            <Lock className="w-4 h-4 text-destructive" />
                             {t('blockedSchedule.activeBlocks')}
                         </h3>
 
-                        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <div className="border border-border rounded-lg overflow-hidden">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium border-b border-gray-200 dark:border-gray-700">
+                                <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
                                     <tr>
                                         <th className="px-4 py-3">{t('blockedSchedule.day')}</th>
                                         <th className="px-4 py-3">{t('blockedSchedule.start')}</th>
@@ -448,23 +448,23 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                         <th className="px-4 py-3 text-right">{t('blockedSchedule.actions')}</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                                <tbody className="divide-y divide-border bg-card">
                                     {bloqueios.length === 0 ? (
                                         <tr>
-                                            <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                                            <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                                                 {t('blockedSchedule.noRegisteredBlocks')}
                                             </td>
                                         </tr>
                                     ) : (
                                         bloqueios.map((b) => (
-                                            <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                            <tr key={b.id} className="hover:bg-muted/40">
                                                 <td className="px-4 py-3 font-medium">
                                                     {b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: dateLocale }) : '-'}
                                                 </td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                                                <td className="px-4 py-3 text-muted-foreground">
                                                     {b.horaInicio?.substring(0, 5)}
                                                 </td>
-                                                <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                                                <td className="px-4 py-3 text-muted-foreground">
                                                     {b.horaFim?.substring(0, 5)}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
@@ -472,7 +472,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => handleDelete(b.id)}
-                                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 h-8 w-8 p-0"
+                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>

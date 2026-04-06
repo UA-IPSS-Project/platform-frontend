@@ -243,8 +243,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const renderPlaceholder = (title: string) => (
     <div className="flex items-center justify-center h-[500px]">
       <div className="text-center">
-        <h2 className="text-xl text-gray-600 dark:text-gray-300 mb-2">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <h2 className="text-xl text-foreground/80 mb-2">{title}</h2>
+        <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>
     </div>
   );
@@ -256,7 +256,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
         onClick={() => navigateWithGuard('/dashboard')}
-        className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+        className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground/80 hover:bg-primary/10 hover:text-primary'}`}
       >
         {t('sidebar.secretary')}
       </Button>
@@ -340,10 +340,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       />
                     </div>
                   </div>
-                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-card/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-primary">
                     <div className="flex items-center gap-3">
-                      <ClockIcon className="w-5 h-5 text-purple-600" />
-                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
+                      <ClockIcon className="w-5 h-5 text-primary" />
+                      <p className="text-foreground/90">{currentActivity}</p>
                     </div>
                   </div>
                 </>
@@ -518,7 +518,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             }}>
               Ficar
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
               Descartar
             </AlertDialogAction>
           </AlertDialogFooter>

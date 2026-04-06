@@ -35,9 +35,9 @@ function AdminOverview({ summaryCards }: Readonly<{
             {summaryCards.map((card) => (
                 <GlassCard key={card.title} className="p-6 flex items-start justify-between">
                     <div>
-                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
-                        <p className="mt-2 text-4xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-muted-foreground">{card.title}</p>
+                        <p className="mt-2 text-4xl leading-none font-semibold text-foreground">{card.value}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">{card.description}</p>
                     </div>
                     <div className={`flex-shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.iconClassName}`}>
                         <card.icon className="w-5 h-5" />
@@ -68,12 +68,12 @@ function SlotsManagement({
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
                 <div>
-                    <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
                         <Settings2 className="w-4 h-4" />
                         {t('dashboard.admin.slots.operationalConfiguration')}
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">{t('dashboard.admin.slots.title')}</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
+                    <h2 className="mt-2 text-xl font-semibold text-foreground">{t('dashboard.admin.slots.title')}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
                         {t('dashboard.admin.slots.description')}
                     </p>
                 </div>
@@ -82,15 +82,15 @@ function SlotsManagement({
                     {slotTypes.map((slotType) => (
                         <div
                             key={slotType.tipo}
-                            className="rounded-2xl border border-gray-200/80 bg-white/70 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/50"
+                            className="rounded-2xl border border-border bg-card p-5 shadow-sm"
                         >
                             <div className="space-y-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{slotType.titulo}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{slotType.descricao}</p>
+                                <h3 className="text-lg font-semibold text-foreground">{slotType.titulo}</h3>
+                                <p className="text-sm text-muted-foreground">{slotType.descricao}</p>
                             </div>
 
                             <div className="mt-5 space-y-2">
-                                <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-foreground">
                                     {t('dashboard.admin.slots.maxPerSlot')}
                                 </Label>
                                 <Input
@@ -100,7 +100,7 @@ function SlotsManagement({
                                     max={20}
                                     value={slotCapacities[slotType.tipo]}
                                     onChange={(event) => onChange(slotType.tipo, event.target.value)}
-                                    className="bg-white dark:bg-gray-900"
+                                    className="bg-background"
                                 />
                             </div>
                         </div>
@@ -112,7 +112,7 @@ function SlotsManagement({
                         type="button"
                         onClick={onSave}
                         disabled={isSavingSlots || isLoadingSlots}
-                        className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <Save className="w-4 h-4" />
                         {isSavingSlots ? t('dashboard.admin.slots.saving') : t('dashboard.admin.slots.saveConfiguration')}
@@ -206,36 +206,36 @@ export function SecretaryAdminArea() {
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
             description: t('dashboard.admin.summary.slots.description'),
             icon: CalendarDays,
-            iconClassName: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: t('dashboard.admin.summary.materials.title'),
             value: catalogCounts.materiais,
             description: t('dashboard.admin.summary.materials.description'),
             icon: Package,
-            iconClassName: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: t('dashboard.admin.summary.transports.title'),
             value: catalogCounts.transportes,
             description: t('dashboard.admin.summary.transports.description'),
             icon: Truck,
-            iconClassName: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: t('dashboard.admin.summary.maintenanceTypes.title'),
             value: catalogCounts.tiposManutencao,
             description: t('dashboard.admin.summary.maintenanceTypes.description'),
             icon: Wrench,
-            iconClassName: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
     ], [slotCapacities, catalogCounts, t]);
 
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('dashboard.admin.mainTitle')}</h1>
-                <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
+                <h1 className="text-3xl font-bold text-foreground">{t('dashboard.admin.mainTitle')}</h1>
+                <p className="text-muted-foreground max-w-2xl">
                     {t('dashboard.admin.mainDescription')}
                 </p>
             </div>
@@ -255,15 +255,15 @@ export function SecretaryAdminArea() {
                 t={t}
             />
             <GlassCard className="p-6 mt-6">
-                <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
                     {t('dashboard.admin.catalogs.title')}
                 </div>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl mb-4">
+                <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-4">
                     {t('dashboard.admin.catalogs.description')}
                 </p>
                 
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-xl font-semibold text-foreground mb-6">
                     {t('dashboard.admin.catalogs.managementTitle')}
                 </h2>
 

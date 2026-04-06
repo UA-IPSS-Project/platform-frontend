@@ -70,18 +70,18 @@ export function DashboardLayout({
             <div className="min-h-screen relative bg-transparent transition-colors duration-200">
                 <div className="relative">
                     {/* Header - Full Width */}
-                    <header className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 relative z-10 sticky top-0">
+                    <header className="bg-card/95 backdrop-blur-sm border-b border-border relative z-10 sticky top-0">
                         <div className="px-6 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img
-                                    src={isDarkMode ? '/assets/LogoModoEscuro1.png' : '/assets/LogoSemTextoUltimo.png'}
+                                    src={isDarkMode ? '/assets/LogoSemTextoModoEscuro.png' : '/assets/LogoSemTexto.png'}
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
-                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-gray-700 dark:text-gray-200" aria-label={t('sidebar.closeSidebar')} aria-expanded={false}>
+                                <Button variant="ghost" size="icon" onClick={onMenuToggle} className="text-foreground/80" aria-label={t('sidebar.closeSidebar')} aria-expanded={false}>
                                     <MenuIcon className="w-5 h-5" aria-hidden="true" />
                                 </Button>
-                                <span className="text-gray-700 dark:text-gray-200 font-medium hidden sm:inline-block">
+                                <span className="text-foreground/80 font-medium hidden sm:inline-block">
                                     {roleTitle}
                                 </span>
                             </div>
@@ -96,7 +96,7 @@ export function DashboardLayout({
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="relative text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                        className="relative text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
                                         onClick={() => onToggleNotifications(!showNotifications)}
                                         aria-label={t('sidebar.notifications')}
                                         aria-expanded={showNotifications}
@@ -104,7 +104,7 @@ export function DashboardLayout({
                                     >
                                         <BellIcon className="w-5 h-5" aria-hidden="true" />
                                         {unreadCount > 0 && (
-                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-purple-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4" aria-hidden="true">
+                                            <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 bg-primary text-primary-foreground text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm transform translate-x-1/4 -translate-y-1/4" aria-hidden="true">
                                                 {unreadCount}
                                             </span>
                                         )}
@@ -137,7 +137,7 @@ export function DashboardLayout({
                                     variant="ghost"
                                     size="icon"
                                     onClick={onToggleDarkMode}
-                                    className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                    className="text-foreground/80 hover:bg-primary/10 hover:text-primary transition-colors"
                                     aria-label={t('header.toggleTheme')}
                                 >
                                     {isDarkMode ? <SunIcon className="w-5 h-5" aria-hidden="true" /> : <MoonIcon className="w-5 h-5" aria-hidden="true" />}

@@ -30,7 +30,7 @@ export function LanguageToggle({ variant = 'full', className = '' }: LanguageTog
       variant="ghost"
       size={variant === 'icon' ? 'icon' : 'sm'}
       onClick={() => void handleToggleLanguage()}
-      className={`text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${variant === 'full' ? 'px-2 gap-2' : ''} ${className}`}
+      className={`text-foreground hover:bg-accent transition-colors ${variant === 'full' ? 'px-2 gap-2' : ''} ${className}`}
       aria-label={t('header.switchLanguage')}
       title={t('header.language')}
     >

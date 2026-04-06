@@ -32,7 +32,7 @@ export function RequisitionsCreateCommonFields({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
+          <label htmlFor="req-create-tipo" className="text-sm text-muted-foreground">{t('requisitions.ui.type')}</label>
           <select
             id="req-create-tipo"
             value={tipo}
@@ -46,7 +46,7 @@ export function RequisitionsCreateCommonFields({
         </div>
 
         <div>
-          <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
+          <label htmlFor="req-create-prioridade" className="text-sm text-muted-foreground">{t('requisitions.ui.priority')}</label>
           <select
             id="req-create-prioridade"
             value={prioridade}
@@ -61,7 +61,7 @@ export function RequisitionsCreateCommonFields({
       </div>
 
       <div>
-        <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.description')}</label>
+        <label htmlFor="req-create-descricao" className="text-sm text-muted-foreground">{t('requisitions.ui.description')}</label>
         <Textarea
           id="req-create-descricao"
           className={textareaFieldClassName}
@@ -70,7 +70,7 @@ export function RequisitionsCreateCommonFields({
           placeholder={t('requisitions.ui.descriptionPlaceholder')}
           rows={3}
         />
-        {descricaoError && <p className="text-red-500 text-xs mt-1">{descricaoError}</p>}
+        {descricaoError && <p className="text-status-error text-xs mt-1">{descricaoError}</p>}
       </div>
     </div>
   );
