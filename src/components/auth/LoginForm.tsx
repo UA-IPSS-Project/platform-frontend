@@ -88,7 +88,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <img
-            src={isDarkMode ? "/assets/LogoModoEscuro1.png" : "/assets/LogoSemTextoUltimo.png"}
+            src={'/assets/LogoSemTexto.png'}
             alt="Logo Florinhas"
             className="h-16 w-auto object-contain"
           />

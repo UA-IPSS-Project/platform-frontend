@@ -74,7 +74,7 @@ export function DashboardLayout({
                         <div className="px-6 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <img
-                                    src={isDarkMode ? '/assets/LogoSemTextoModoEscuro.png' : '/assets/LogoSemTexto.png'}
+                                    src={'/assets/LogoSemTexto.png'}
                                     alt="Logo Florinhas do Vouga"
                                     className="h-10 w-auto object-contain"
                                 />
