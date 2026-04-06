@@ -26,3 +26,6 @@ export * from './requisicoes/requisicoesApi';
 export * from './requisicoes/types';
 
 export * from './armazem/armazemApi';
+
+export * from './candidaturas/candidaturasApi';
+export * from './candidaturas/types';

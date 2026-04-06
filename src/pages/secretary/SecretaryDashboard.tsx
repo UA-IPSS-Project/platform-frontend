@@ -20,6 +20,7 @@ import { UserManagement } from '../../components/secretary/UserManagement';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { ReportsPage } from './ReportsPage';
+import { CandidaturasByTypePage } from '../candidaturas/CandidaturasByTypePage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -30,6 +31,7 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
+import { CandidaturaDetailPage } from '../candidaturas/CandidaturaDetailPage';
 
 interface SecretaryDashboardProps {
   user: {
@@ -56,6 +59,10 @@ interface SecretaryDashboardProps {
 export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: SecretaryDashboardProps) {
   const { user: authUser, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
+  const location = useLocation();
+
+  const candidaturaDetailMatch = location.pathname.match(/^\/dashboard\/(creche|catl|erpi)\/([^/]+)$/i);
+  const isCandidaturaDetailView = Boolean(candidaturaDetailMatch);
 
   const {
     appointments,
@@ -386,7 +393,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            {currentView === 'home' ? (
+            {isCandidaturaDetailView ? (
+              <CandidaturaDetailPage />
+            ) : currentView === 'home' ? (
               <SecretaryHome
                 isDarkMode={isDarkMode}
                 onNavigate={navigateTo}
@@ -536,6 +545,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               />
             ) : currentView === 'reports' ? (
               <ReportsPage />
+            ) : ['creche', 'catl', 'erpi'].includes(currentView) ? (
+              <CandidaturasByTypePage
+                mode="secretaria"
+                candidaturaType={currentView}
+                currentUserName={userData.name}
+              />
             ) : (
               renderPlaceholder(currentView)
             )}

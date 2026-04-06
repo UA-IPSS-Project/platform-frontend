@@ -438,6 +438,72 @@
       }
     }
   },
+  "applications": {
+    "flow": {
+      "filters": {
+        "candidateName": "Candidate Name",
+        "candidateNamePlaceholder": "Search by name",
+        "candidateStatus": "Candidate Status",
+        "applicationDate": "Application Date"
+      },
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "labels": {
+        "titleByType": "Applications {{type}}",
+        "code": "Code",
+        "applicationDate": "Application date"
+      },
+      "actions": {
+        "applyFilters": "Apply Filters",
+        "clearFilters": "Clear Filters",
+        "newApplication": "New Application",
+        "changeStatus": "Change Status",
+        "cancel": "Cancel",
+        "continue": "Continue",
+        "no": "No",
+        "confirm": "Yes, confirm",
+        "updating": "Updating..."
+      },
+      "messages": {
+        "loadFormsError": "Could not load application forms.",
+        "loadApplicationsError": "Could not load applications.",
+        "loadingApplications": "Loading applications...",
+        "statusUpdatedSuccess": "Application status updated successfully.",
+        "statusUpdateError": "Could not update application status.",
+        "noResults": "No applications found for the current filters.",
+        "noResultsForUser": "No applications found for {{name}} with the current filters."
+      },
+      "statusDialog": {
+        "title": "Change Application Status",
+        "description": "Select the new status for application {{candidaturaCode}}.",
+        "newStatus": "New status",
+        "confirmTitle": "Confirm status change",
+        "confirmDescription": "Do you confirm changing the status to {{status}} for application {{candidaturaCode}}?"
+      }
+    },
+    "detail": {
+      "labels": {
+        "status": "Status"
+      },
+      "actions": {
+        "back": "Back",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "save": "Save Changes",
+        "saving": "Saving..."
+      },
+      "messages": {
+        "loading": "Loading application...",
+        "loadError": "Could not load application details.",
+        "saveSuccess": "Application updated successfully.",
+        "saveError": "Could not save changes."
+      }
+    }
+  },
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",

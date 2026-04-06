@@ -10,7 +10,7 @@ import {
     AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ShieldCheck, Settings2, Save, Package2, CalendarDays, Package, Truck, Wrench, type LucideIcon } from 'lucide-react';
+import { ShieldCheck, Settings2, Save, Package2, CalendarDays, Package, Truck, Wrench, ClipboardList, type LucideIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -20,11 +20,13 @@ import { RequisitionsCatalogManagement } from '../../components/admin/Requisitio
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { calendarioApi, requisicoesApi } from '../../services/api';
+import { candidaturasApi } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { AdminFormsManagementPage } from './AdminFormsManagementPage';
 
-type AdminView = 'overview' | 'slots' | 'catalogs' | 'profile' | 'settings';
+type AdminView = 'overview' | 'slots' | 'catalogs' | 'forms' | 'profile' | 'settings';
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -49,10 +51,12 @@ function AdminOverview({
     summaryCards,
     onOpenSlots,
     onOpenCatalogs,
+    onOpenForms,
 }: Readonly<{
     summaryCards: Array<{ title: string; value: number | string; description: string; icon: LucideIcon; iconClassName: string }>;
     onOpenSlots: () => void;
     onOpenCatalogs: () => void;
+    onOpenForms: () => void;
 }>) {
     const managementAreas = [
         {
@@ -68,6 +72,13 @@ function AdminOverview({
             icon: Package2,
             action: onOpenCatalogs,
             actionLabel: 'Abrir catálogo',
+        },
+        {
+            title: 'Gestão de formulários',
+            description: 'Gere os formulários RJSF disponíveis para cada tipo de candidatura.',
+            icon: ClipboardList,
+            action: onOpenForms,
+            actionLabel: 'Gerir formulários',
         },
     ];
 
@@ -232,6 +243,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         transportes: 0,
         tiposManutencao: 0,
     });
+    const [formsCount, setFormsCount] = useState(0);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
 
@@ -258,10 +270,11 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
     useEffect(() => {
         const loadCatalogCounts = async () => {
             try {
-                const [materiais, transportes, tiposManutencao] = await Promise.all([
+                const [materiais, transportes, tiposManutencao, forms] = await Promise.all([
                     requisicoesApi.listarMateriais(),
                     requisicoesApi.listarTransportes(),
                     requisicoesApi.listarTiposManutencao(),
+                    candidaturasApi.listarFormularios(),
                 ]);
 
                 setCatalogCounts({
@@ -269,6 +282,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
                     tiposManutencao: Array.isArray(tiposManutencao) ? tiposManutencao.length : 0,
                 });
+                setFormsCount(Array.isArray(forms) ? forms.length : 0);
             } catch (error) {
                 console.error('Erro ao carregar métricas de catálogos:', error);
             }
@@ -342,7 +356,14 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             icon: Wrench,
             iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         },
-    ], [slotCapacities, catalogCounts]);
+        {
+            title: 'Formulários candidatura',
+            value: formsCount,
+            description: 'formulários ativos',
+            icon: ClipboardList,
+            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+        },
+    ], [slotCapacities, catalogCounts, formsCount]);
 
     const AdminNavigation = (
         <>
@@ -373,6 +394,15 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             >
                 {t('dashboard.admin.navigation.catalogs')}
             </Button>
+            <Button
+                variant={currentView === 'forms' ? 'default' : 'ghost'}
+                onClick={() => safeSetView('forms')}
+                aria-label="Ir para Formulários"
+                aria-current={currentView === 'forms' ? 'page' : undefined}
+                className={`text-sm ${currentView === 'forms' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+            >
+                Formulários
+            </Button>
         </>
     );
 
@@ -380,6 +410,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         overview: 'Este painel serve apenas para administração operacional. O admin gere slots, materiais, transportes e tipos de manutenção.',
         slots: 'Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.',
         catalogs: 'Cria, edita e remove materiais, transportes e tipos de manutenção usados nas requisições.',
+        forms: 'Gere os formulários RJSF disponíveis para candidaturas e prepara os tipos para o portal do utente.',
         profile: '',
         settings: '',
     };
@@ -403,6 +434,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                         summaryCards={summaryCards}
                         onOpenSlots={() => safeSetView('slots')}
                         onOpenCatalogs={() => safeSetView('catalogs')}
+                        onOpenForms={() => safeSetView('forms')}
                     />
                 ) : null}
 
@@ -437,6 +469,15 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
 
                 {currentView === 'catalogs' ? (
                     <RequisitionsCatalogManagement />
+                ) : null}
+
+                {currentView === 'forms' ? (
+                    <AdminFormsManagementPage
+                        onFormsChanged={async () => {
+                            const forms = await candidaturasApi.listarFormularios();
+                            setFormsCount(Array.isArray(forms) ? forms.length : 0);
+                        }}
+                    />
                 ) : null}
             </div>
         );

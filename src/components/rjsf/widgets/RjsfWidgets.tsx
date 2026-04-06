@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../components/ui/select';
+} from '../../ui/select';
 
 type RjsfWidgetProps = {
   id: string;

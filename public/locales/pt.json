@@ -438,6 +438,72 @@
       }
     }
   },
+  "applications": {
+    "flow": {
+      "filters": {
+        "candidateName": "Nome do Candidato",
+        "candidateNamePlaceholder": "Pesquisar por nome",
+        "candidateStatus": "Estado do Candidato",
+        "applicationDate": "Data da Candidatura"
+      },
+      "status": {
+        "all": "Todos",
+        "pending": "Pendente",
+        "approved": "Aprovada",
+        "rejected": "Rejeitada"
+      },
+      "labels": {
+        "titleByType": "Candidaturas {{type}}",
+        "code": "Código",
+        "applicationDate": "Data da candidatura"
+      },
+      "actions": {
+        "applyFilters": "Aplicar Filtros",
+        "clearFilters": "Remover Filtros",
+        "newApplication": "Nova Candidatura",
+        "changeStatus": "Alterar Estado",
+        "cancel": "Cancelar",
+        "continue": "Continuar",
+        "no": "Não",
+        "confirm": "Sim, confirmar",
+        "updating": "A atualizar..."
+      },
+      "messages": {
+        "loadFormsError": "Não foi possível carregar os formulários de candidatura.",
+        "loadApplicationsError": "Não foi possível carregar as candidaturas.",
+        "loadingApplications": "A carregar candidaturas...",
+        "statusUpdatedSuccess": "Estado da candidatura atualizado com sucesso.",
+        "statusUpdateError": "Não foi possível alterar o estado da candidatura.",
+        "noResults": "Não existem candidaturas para os filtros atuais.",
+        "noResultsForUser": "Não existem candidaturas para {{name}} com os filtros atuais."
+      },
+      "statusDialog": {
+        "title": "Alterar Estado da Candidatura",
+        "description": "Seleciona o novo estado para a candidatura {{candidaturaCode}}.",
+        "newStatus": "Novo estado",
+        "confirmTitle": "Confirmar mudança de estado",
+        "confirmDescription": "Confirma a alteração de estado para {{status}} na candidatura {{candidaturaCode}}?"
+      }
+    },
+    "detail": {
+      "labels": {
+        "status": "Estado"
+      },
+      "actions": {
+        "back": "Voltar",
+        "edit": "Editar",
+        "cancel": "Cancelar",
+        "save": "Guardar Alterações",
+        "saving": "A guardar..."
+      },
+      "messages": {
+        "loading": "A carregar candidatura...",
+        "loadError": "Não foi possível carregar o detalhe da candidatura.",
+        "saveSuccess": "Candidatura atualizada com sucesso.",
+        "saveError": "Não foi possível guardar alterações."
+      }
+    }
+  },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
     "back": "Voltar",
