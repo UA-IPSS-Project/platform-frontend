@@ -513,7 +513,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             <AlertDialogCancel onClick={cancelDiscard}>{t('profile.unsaved.stay')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscard}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-destructive hover:bg-destructive/90 text-white"
             >
               {t('profile.unsaved.discard')}
             </AlertDialogAction>

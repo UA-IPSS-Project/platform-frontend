@@ -670,7 +670,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         <AlertDialogCancel onClick={() => setPendingTab(null)}>
                             {t('profile.unsaved.stay', 'Ficar')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-destructive hover:bg-destructive/90 text-white">
                             {t('profile.unsaved.discard', 'Descartar')}
                         </AlertDialogAction>
                     </AlertDialogFooter>

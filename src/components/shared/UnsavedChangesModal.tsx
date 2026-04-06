@@ -31,7 +31,7 @@ export function UnsavedChangesModal({ isOpen, onConfirm, onCancel }: UnsavedChan
           <AlertDialogCancel onClick={onCancel}>Ficar</AlertDialogCancel>
           <AlertDialogAction 
             onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 focus:ring-ring"
+            className="bg-destructive text-white hover:bg-destructive/90 focus:ring-ring"
           >
             Sair e Perder Dados
           </AlertDialogAction>

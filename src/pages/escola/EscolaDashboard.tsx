@@ -183,7 +183,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                    <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-white">
                         Descartar
                     </AlertDialogAction>
                 </AlertDialogFooter>
