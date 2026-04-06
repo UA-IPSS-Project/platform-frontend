@@ -7,6 +7,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { UserCandidaturas } from './UserCandidaturas';
+import { RjsfCandidaturaPage } from '../candidaturas/RjsfCandidaturaPage';
 import { HistoryPage } from '../HistoryPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
@@ -103,6 +104,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (path.endsWith('/history')) return 'history';
     if (path.endsWith('/profile')) return 'profile';
     if (path.endsWith('/notifications')) return 'notificacoes';
+    if (path.includes('/creche')) return 'candidaturas';
     if (path.includes('/dashboard')) return 'appointments'; // default
     return 'appointments';
   };
@@ -361,6 +363,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                 />
               } />
 
+              <Route path="/creche/new" element={<RjsfCandidaturaPage />} />
+
               {/* History */}
               <Route path="/history" element={
                 <HistoryPage
@@ -539,3 +543,5 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     </>
   );
 }
+
+
