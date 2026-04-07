@@ -223,9 +223,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         if (selectedOptions['Sapatos/Sapatilhas'] && !shoeSize) {
             newErrors.shoeSize = 'Tamanho obrigatório';
         }
+
+        setErrors(newErrors);
         
         if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
             return;
         }
 
