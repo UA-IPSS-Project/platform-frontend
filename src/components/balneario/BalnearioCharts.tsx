@@ -1,3 +1,5 @@
+
+import type React from 'react';
 import {
     BarChart,
     Bar,
@@ -9,7 +11,8 @@ import {
     Cell,
     PieChart,
     Pie,
-    Legend
+    Legend,
+    type TooltipProps
 } from 'recharts';
 import { GlassCard } from '../ui/glass-card';
 
@@ -25,7 +28,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
     const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
                 <div className={`p-4 rounded-xl shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-transparent'}`}>
