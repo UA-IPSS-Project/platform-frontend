@@ -24,7 +24,6 @@ interface BalnearioChartsProps {
 export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle, customColors }: BalnearioChartsProps) {
     const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
-    const borderClass = isDarkMode ? 'border-gray-800' : 'border-gray-100';
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
