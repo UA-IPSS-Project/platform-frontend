@@ -40,8 +40,8 @@ export const validateMaterialLinhas = (linhas: Array<{ materialId: string; quant
   return undefined;
 };
 
-export const validateManutencaoItens = (selectedIds: number[]): string | undefined => {
-  if (selectedIds.length === 0) return i18n.t('requisitions.errors.addOneMaintenanceItem');
+export const validateManutencaoItens = (items: Array<{ itemId: number; transporteId?: number }>): string | undefined => {
+  if (items.length === 0) return i18n.t('requisitions.errors.addOneMaintenanceItem');
   return undefined;
 };
 

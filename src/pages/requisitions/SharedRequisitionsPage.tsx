@@ -36,6 +36,7 @@ import {
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
+  ManutencaoItem,
   MaterialCategoria,
   MaterialCatalogo,
   RequisicaoEstado,
@@ -519,7 +520,7 @@ export function SharedRequisitionsPage({
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
-      return validateManutencaoItens(createForm.selectedManutencaoItemIds);
+      return validateManutencaoItens(createForm.selectedManutencaoItems);
     }
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
@@ -1693,30 +1694,31 @@ export function SharedRequisitionsPage({
               </>
             )}
 
-            {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItemIds.length > 0 && (
+            {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItems.length > 0 && (
               <div>
                 <span className="text-muted-foreground font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
                 {(() => {
-                  const grouped = createForm.selectedManutencaoItemIds.reduce((acc, id) => {
-                    const mInfo = catalog.manutencaoItems.find((m) => m.id === id);
+                  const grouped = createForm.selectedManutencaoItems.reduce((acc, { itemId, transporteId }) => {
+                    const mInfo = catalog.manutencaoItems.find((m) => m.id === itemId);
                     if (mInfo) {
                       if (!acc[mInfo.categoria]) acc[mInfo.categoria] = [];
-                      acc[mInfo.categoria].push(mInfo);
+                      acc[mInfo.categoria].push({ ...mInfo, transporteId });
                     }
                     return acc;
-                  }, {} as Record<string, typeof catalog.manutencaoItems>);
+                  }, {} as Record<string, Array<ManutencaoItem & { transporteId?: number }>>);
                   
                   const labelMap: Record<string, string> = {
                     CATL: t('requisitions.labels.maintenanceCategoryCATL'),
                     RC: t('requisitions.labels.maintenanceCategoryRC'),
                     PRE_ESCOLAR: t('requisitions.labels.maintenanceCategoryPreschool'),
-                    CRECHE: t('requisitions.labels.maintenanceCategoryDaycare')
+                    CRECHE: t('requisitions.labels.maintenanceCategoryDaycare'),
+                    VEICULOS: t('requisitions.labels.maintenanceCategoryVehicles')
                   };
 
                   return Object.entries(grouped).map(([categoria, items]) => (
                     <div key={categoria} className="mb-2 last:mb-0 ml-2">
                       <p className="font-medium text-sm text-foreground">
-                        {labelMap[categoria] || categoria}:
+                        {labelMap[categoria] || (categoria === 'VEICULOS' ? t('requisitions.labels.maintenanceCategoryVehicles') : categoria)}:
                       </p>
                       {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] && (
                         <p className="text-xs text-muted-foreground mt-0.5 mb-1 italic">
@@ -1724,9 +1726,16 @@ export function SharedRequisitionsPage({
                         </p>
                       )}
                       <ul className="list-disc pl-5 mt-1 text-muted-foreground">
-                        {items.map((item, idx) => (
-                          <li key={idx} className="text-sm">{item.espaco} - {item.itemVerificacao}</li>
-                        ))}
+                        {items.map((item, idx) => {
+                          let label = `${item.espaco} - ${item.itemVerificacao}`;
+                          if (categoria === 'VEICULOS' && item.transporteId) {
+                            const tpt = catalog.transportes.find(t => t.id === item.transporteId);
+                            label = `${item.itemVerificacao} [${tpt?.matricula || '?'}]`;
+                          } else if (categoria === 'VEICULOS') {
+                            label = item.itemVerificacao;
+                          }
+                          return <li key={idx} className="text-sm">{label}</li>;
+                        })}
                       </ul>
                     </div>
                   ));
