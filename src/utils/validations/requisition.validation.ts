@@ -31,7 +31,11 @@ export const finalizeMaterialQuantity = (value: string): string => {
  */
 export const validateDescricao = (valor: string): string | undefined => {
   if (!valor.trim()) return i18n.t('requisitions.errors.requiredField', { defaultValue: 'Campo obrigatório' });
-  if (valor.length < 5) return 'A descrição deve ter pelo menos 5 caracteres.';
+  if (valor.length < 5) {
+    return i18n.t('requisitions.errors.descriptionMinLength', {
+      defaultValue: 'A descrição deve ter pelo menos 5 caracteres.',
+    });
+  }
   return undefined;
 };
 
