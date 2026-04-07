@@ -1,16 +1,35 @@
-node_modules
+# Dependencies
+node_modules/
+.npm
+.yarn-cache
+
+# Build
+build/
+dist/
+target/
+
+# Logs
+*.log
 npm-debug.log*
-.yarn
-.pnpm-store
-.git
-.gitignore
-.vscode
-.idea
+yarn-debug.log*
+yarn-error.log*
+
+# IDE settings
+.idea/
+.vscode/
+*.iml
+.settings/
+.project
+.classpath
+
+# OS/Miscellaneous
 .DS_Store
-build
-coverage
+Thumbs.db
+
+# Environment and env files
 .env
 .env.*
-tmp
-*.local
-Dockerfile
+.git/
+.gitignore
+.editorconfig
+README.md

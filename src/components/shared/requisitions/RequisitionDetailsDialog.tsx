@@ -9,12 +9,10 @@ import {
   formatEstado,
   formatPrioridade,
   formatTipo,
-  formatVehicleTitle,
-  formatLotacao,
   formatTransporteCategoria,
-  formatTransporteDisplay,
   getRequisicaoTransportes,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
+import { VehicleSelectionCard } from './VehicleSelectionCard';
 
 interface RequisitionDetailsDialogProps {
   open: boolean;
@@ -72,16 +70,12 @@ export function RequisitionDetailsDialog({
   };
 
   const groupTransportesPorCategoria = (requisicao: RequisicaoResponse) => {
-    const grupos = new Map<string, Array<{ id: string; label: string; meta: string }>>();
+    const grupos = new Map<string, Array<any>>();
     getRequisicaoTransportes(requisicao).forEach((transporte) => {
       const categoria = formatTransporteCategoria(transporte.categoria);
       const key = categoria || t('requisitions.labels.noCategory');
       const grupoAtual = grupos.get(key) ?? [];
-      grupoAtual.push({
-        id: `${transporte.id}-${transporte.codigo ?? 'sem-codigo'}`,
-        label: formatVehicleTitle(transporte),
-        meta: `${formatTransporteDisplay(transporte)}${transporte.lotacao ? ` - ${formatLotacao(transporte.lotacao)}` : ''}`,
-      });
+      grupoAtual.push(transporte);
       grupos.set(key, grupoAtual);
     });
     return Array.from(grupos.entries()).map(([categoria, itens]) => ({ categoria, itens }));
@@ -130,140 +124,220 @@ export function RequisitionDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle># {selectedRequisicao ? formatTipo(selectedRequisicao.tipo) : t('requisitions.ui.requestDetails')}</DialogTitle>
+      <DialogContent className="max-w-3xl bg-card border-border text-foreground max-h-[90vh] overflow-y-auto p-0 gap-0 rounded-2xl shadow-2xl">
+        <DialogHeader className="p-6 border-b border-border bg-muted/50 backdrop-blur-md">
+          <DialogTitle className="text-xl font-black tracking-tight text-primary">
+            # {selectedRequisicao ? formatTipo(selectedRequisicao.tipo) : t('requisitions.ui.requestDetails')}
+          </DialogTitle>
         </DialogHeader>
 
         {selectedRequisicao && (
-          <div className="space-y-4">
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Informação principal</h3>
-              <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
-                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.currentStatus')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatEstado(selectedRequisicao.estado)}</span></p>
-                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.priority')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatPrioridade(selectedRequisicao.prioridade)}</span></p>
-                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.createdBy')}:</span> <span className="text-gray-900 dark:text-gray-100">{selectedRequisicao.criadoPor?.nome || '—'}</span></p>
-                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.managedBy')}:</span> <span className="text-gray-900 dark:text-gray-100">{selectedRequisicao.geridoPor?.nome || '—'}</span></p>
-                <p><span className="text-gray-500 dark:text-gray-400">Criado a:</span> <span className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</span></p>
-                <p><span className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.deadline')}:</span> <span className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.tempoLimite)}</span></p>
+          <div className="p-6 space-y-6">
+            {/* Informação principal - Premium Card */}
+            <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 p-5 shadow-sm">
+              <h3 className="text-xs font-black text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                Informação Principal
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.currentStatus')}</p>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-card border border-border text-foreground shadow-sm">
+                    {formatEstado(selectedRequisicao.estado)}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.priority')}</p>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider border shadow-sm ${
+                    selectedRequisicao.prioridade === 'URGENTE' 
+                      ? 'bg-status-error-soft text-status-error border-status-error/40' 
+                      : selectedRequisicao.prioridade === 'ALTA'
+                      ? 'bg-status-warning-soft text-status-warning border-status-warning/40'
+                      : 'bg-status-info-soft text-status-info border-status-info/40'
+                  }`}>
+                    {formatPrioridade(selectedRequisicao.prioridade)}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.createdBy')}</p>
+                  <p className="text-sm font-semibold text-foreground">{selectedRequisicao.criadoPor?.nome || '—'}</p>
+                </div>
+                <div className="space-y-1 text-right md:text-left">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Criado a</p>
+                  <p className="text-sm font-semibold text-foreground tabular-nums">{formatDateTimeOrDash(selectedRequisicao.criadoEm)}</p>
+                </div>
+                {selectedRequisicao.geridoPor && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.managedBy')}</p>
+                    <p className="text-sm font-semibold text-foreground">{selectedRequisicao.geridoPor.nome}</p>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.lastUpdate')}</p>
+                  <p className="text-sm font-semibold text-foreground tabular-nums">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Detalhes</h3>
-              <div className="text-sm grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.description')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.descricao || '—'}</p>
+            {/* Detalhes Específicos */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">Detalhes da Requisição</h3>
+                <div className="h-px bg-border w-full" />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div className="space-y-1.5 md:col-span-2">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.description')}</p>
+                  <p className="text-sm text-foreground bg-muted p-3 rounded-xl border border-border leading-relaxed">
+                    {selectedRequisicao.descricao || '—'}
+                  </p>
+                </div>
 
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.type')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatTipo(selectedRequisicao.tipo)}</p>
-
-                <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.lastUpdate')}</p>
-                <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.ultimaAlteracaoEstadoEm)}</p>
 
                 {selectedRequisicao.tipo === 'MATERIAL' && (
                   <>
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.quantity')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">
-                      {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
-                        ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
-                        : selectedRequisicao.quantidade || '—'}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.quantity')}</p>
+                      <p className="text-sm font-black text-primary">
+                        {selectedRequisicao.itens && selectedRequisicao.itens.length > 0
+                          ? selectedRequisicao.itens.reduce((sum: number, item: RequisicaoItem) => sum + (item.quantidade || 0), 0)
+                          : selectedRequisicao.quantidade || '—'}
+                      </p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.materials')}</p>
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {materiaisAgrupados.length > 0 ? materiaisAgrupados.map((grupo) => (
-                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
-                          <ul className="mt-1 list-disc list-inside text-gray-700 dark:text-gray-300 space-y-0.5">
-                            {grupo.itens.map((item) => (
-                              <li key={item.id}>{item.label}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )) : (
-                        <p className="text-gray-900 dark:text-gray-100">—</p>
-                      )}
+                    <div className="md:col-span-2 space-y-3">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.materials')}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {materiaisAgrupados.length > 0 ? materiaisAgrupados.map((grupo) => (
+                          <div key={grupo.categoria} className="rounded-xl border border-border p-3 bg-card shadow-sm">
+                            <p className="text-[11px] font-black text-primary uppercase tracking-tighter mb-2">{grupo.categoria}</p>
+                            <ul className="list-inside space-y-1">
+                              {grupo.itens.map((item) => (
+                                <li key={item.id} className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                  <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                                  {item.label}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )) : (
+                          <p className="text-sm text-foreground">—</p>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
                 {selectedRequisicao.tipo === 'TRANSPORTE' && (
                   <>
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.destination')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.destino || '—'}</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.destination')}</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.destino || '—'}</p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.departure')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraSaida)}</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.passengers')}</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.numeroPassageiros || '—'}</p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.return')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{formatDateTimeOrDash(selectedRequisicao.dataHoraRegresso)}</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.departure')}</p>
+                      <p className="text-sm font-medium text-foreground tabular-nums">{formatDateTimeOrDash(selectedRequisicao.dataHoraSaida)}</p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.passengers')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.numeroPassageiros || '—'}</p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.return')}</p>
+                      <p className="text-sm font-medium text-foreground tabular-nums">{formatDateTimeOrDash(selectedRequisicao.dataHoraRegresso)}</p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400">{t('requisitions.labels.driver')}</p>
-                    <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.condutor || t('requisitions.labels.toBeDefined')}</p>
+                    <div className="space-y-1 md:col-span-2">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.driver')}</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.condutor || t('requisitions.labels.toBeDefined')}</p>
+                    </div>
 
-                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.vehicles')}</p>
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {groupTransportesPorCategoria(selectedRequisicao).length > 0 ? groupTransportesPorCategoria(selectedRequisicao).map((grupo) => (
-                        <div key={grupo.categoria} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoria}:</p>
-                          <div className="mt-1 space-y-1">
-                            {grupo.itens.map((transporte) => (
-                              <div key={transporte.id}>
-                                <p className="text-gray-900 dark:text-gray-100">{transporte.label}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{transporte.meta}</p>
-                              </div>
-                            ))}
+                    <div className="md:col-span-2 space-y-3">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.vehicles')}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {groupTransportesPorCategoria(selectedRequisicao).length > 0 ? groupTransportesPorCategoria(selectedRequisicao).map((grupo) => (
+                          <div key={grupo.categoria} className="rounded-xl border border-border p-3 bg-card shadow-sm">
+                            <p className="text-[11px] font-black text-primary uppercase tracking-tighter mb-2">{grupo.categoria}</p>
+                             <div className="space-y-2">
+                               {grupo.itens.map((transporte: any) => (
+                                 <VehicleSelectionCard
+                                   key={transporte.id}
+                                   transporte={transporte}
+                                   showCheckbox={false}
+                                   showCategory={false}
+                                   variant="minimal"
+                                   t={t}
+                                 />
+                               ))}
+                             </div>
                           </div>
-                        </div>
-                      )) : (
-                        <p className="text-gray-900 dark:text-gray-100">—</p>
-                      )}
+                        )) : (
+                          <p className="text-foreground">—</p>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
                 {selectedRequisicao.tipo === 'MANUTENCAO' && (
                   <>
-                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">{t('requisitions.labels.subject')}</p>
-                    <div className="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 p-3">
-                      <p className="text-gray-900 dark:text-gray-100">{selectedRequisicao.assunto || '—'}</p>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.subject')}</p>
+                      <p className="text-sm font-semibold text-foreground bg-card p-3 rounded-xl border border-border">{selectedRequisicao.assunto || '—'}</p>
                     </div>
 
-                    <p className="text-gray-500 dark:text-gray-400 md:col-span-2">Itens de manutenção</p>
-                    <div className="md:col-span-2 grid grid-cols-1 gap-4">
-                      {manutencaoAgrupada.length > 0 ? manutencaoAgrupada.map((grupo) => (
-                        <div key={grupo.categoriaLabel} className="rounded-md border border-gray-200 dark:border-gray-700 p-3">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">{grupo.categoriaLabel}</p>
-                          {grupo.observacoes ? (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Obs: {grupo.observacoes}</p>
-                          ) : null}
-                          <ul className="mt-1 list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                            {grupo.itens.map((item) => (
-                              <li key={item.id}>{item.label}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )) : (
-                        <p className="text-gray-900 dark:text-gray-100">—</p>
-                      )}
+                    <div className="md:col-span-2 space-y-3">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Itens de manutenção</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {manutencaoAgrupada.length > 0 ? manutencaoAgrupada.map((grupo) => (
+                          <div key={grupo.categoriaLabel} className="rounded-xl border border-border p-4 bg-card shadow-sm">
+                            <div className="flex justify-between items-start mb-3">
+                              <p className="text-xs font-black text-primary uppercase tracking-wider">{grupo.categoriaLabel}</p>
+                              {grupo.observacoes ? (
+                                <span className="text-[9px] font-bold bg-status-warning-soft text-status-warning px-2 py-0.5 rounded-full border border-status-warning/30">
+                                  Com observações
+                                </span>
+                              ) : null}
+                            </div>
+                            {grupo.observacoes ? (
+                              <p className="mb-3 text-[11px] text-muted-foreground font-medium italic bg-muted p-2 rounded-lg">
+                                {grupo.observacoes}
+                              </p>
+                            ) : null}
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {grupo.itens.map((item) => (
+                                <li key={item.id} className="text-xs font-semibold text-foreground flex items-center gap-2">
+                                  <span className="w-1 h-1 rounded-full bg-primary/40" />
+                                  {item.label}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )) : (
+                          <p className="text-foreground">—</p>
+                        )}
+                      </div>
                     </div>
                   </>
                 )}
               </div>
             </div>
 
-            {canManageRequests ? (
-              <>
-                <div>
-                  <label htmlFor="req-estado-modal" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.labels.newStatus')}</label>
+            {/* Ações de Gestão */}
+            {canManageRequests && (
+              <div className="border-t border-border pt-6 space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="req-estado-modal" className="text-xs font-black text-muted-foreground uppercase tracking-widest ml-1">
+                    {t('requisitions.labels.newStatus')}
+                  </label>
                   <select
                     id="req-estado-modal"
                     value={estadoEdicao}
                     onChange={(e) => onChangeEstadoEdicao(e.target.value as RequisicaoEstado)}
                     disabled={!podeAtualizarEstado}
-                    className="w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none"
+                    className="w-full h-11 rounded-xl border-2 border-border bg-card px-4 text-sm font-semibold text-foreground transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {ESTADO_SECRETARIA_OPTIONS
                       .filter((option) => estadosVisiveisSelecionados.includes(option.value))
@@ -272,34 +346,38 @@ export function RequisitionDetailsDialog({
                       ))}
                   </select>
                   {!podeAtualizarEstado && (
-                    <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    <p className="mt-1 text-[10px] font-bold text-status-warning uppercase tracking-tighter">
                       {t('requisitions.labels.finalStateRuleHint')}
                     </p>
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-3 pt-2">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     onClick={onClose}
                     disabled={updatingEstadoId === selectedRequisicao.id}
+                    className="rounded-xl font-bold text-sm h-11 px-6 hover:bg-accent"
                   >
                     {t('requisitions.ui.close')}
                   </Button>
                   <Button
                     onClick={onSaveStatus}
                     disabled={updatingEstadoId === selectedRequisicao.id || !podeAtualizarEstado}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    className="min-w-[140px] rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm h-11 px-8 shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
                   >
                     {updatingEstadoId === selectedRequisicao.id ? t('common.saving') : t('requisitions.ui.saveStatus')}
                   </Button>
                 </div>
-              </>
-            ) : (
-              <div className="flex justify-end">
+              </div>
+            )}
+            
+            {!canManageRequests && (
+              <div className="flex justify-end pt-4">
                 <Button
                   variant="outline"
                   onClick={onClose}
+                  className="rounded-xl font-bold text-sm h-11 px-8"
                 >
                   {t('requisitions.ui.close')}
                 </Button>

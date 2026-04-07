@@ -28,7 +28,7 @@ interface UtenteRegisterData {
   email: string;
   password: string;
   nif: string;
-  telefone: string;
+  telefone?: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
   termsAccepted: boolean;
 }
@@ -38,7 +38,7 @@ interface FuncionarioRegisterData {
   email: string;
   password: string;
   nif: string;
-  contacto: string;
+  contacto?: string;
   funcao: string;
   dataNasc: string; // ISO format: YYYY-MM-DD
   termsAccepted: boolean;

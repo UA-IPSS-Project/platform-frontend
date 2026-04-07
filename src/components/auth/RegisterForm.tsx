@@ -4,7 +4,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
-import { ArrowLeft, Check, X, Eye, EyeOff, User as UserIcon, Briefcase as BriefcaseIcon } from 'lucide-react';
+import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react';
 import { DatePickerField } from '../ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { GlassCard } from '../ui/glass-card';
@@ -18,8 +18,7 @@ import {
   validateEmail,
   validatePassword,
   isPasswordValid as checkPasswordValid,
-  validateBirthDate,
-  type PasswordValidation
+  validateBirthDate
 } from '../../lib/validations';
 import { useTranslation } from 'react-i18next';
 
@@ -82,9 +81,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       newErrors.nif = t('auth.nifMustHave9Digits');
     }
 
-    if (!formData.contact) {
-      newErrors.contact = t('auth.contactRequired');
-    } else if (!validateContact(formData.contact)) {
+    if (formData.contact && !validateContact(formData.contact)) {
       newErrors.contact = t('auth.contactMustHave9Digits');
     }
 
@@ -190,7 +187,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerUtente({
           nome: formData.name,
           nif: formData.nif,
-          telefone: formData.contact,
+          telefone: formData.contact || undefined,
           email: formData.email,
           dataNasc: isoDate,
           password: formData.password,
@@ -202,7 +199,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerFuncionario({
           nome: formData.name,
           nif: formData.nif,
-          contacto: formData.contact,
+          contacto: formData.contact || undefined,
           email: formData.email,
           dataNasc: isoDate,
           funcao: employeeRole,
@@ -244,23 +241,22 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   };
 
   return (
-    <GlassCard className="w-full max-w-md p-8 border border-white/20 dark:border-gray-700/30">
+    <GlassCard className="w-full max-w-md p-8 border border-border/40">
       <button
         onClick={onNavigateToLogin}
-        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 mb-6 transition-colors"
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>{t('auth.backToLogin')}</span>
       </button>
 
       <div className="text-center mb-8">
-        <h1 className="text-gray-800 dark:text-gray-100 mb-2">{t('auth.createAccount')}</h1>
-        <p className="text-gray-600 dark:text-gray-400">{t('auth.registerInSystem')}</p>
+        <h1 className="text-foreground mb-2">{t('auth.createAccount')}</h1>
+        <p className="text-muted-foreground">{t('auth.registerInSystem')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">
-          {/*<Label className="text-gray-700 dark:text-gray-300 block text-left mb-2">Tipo de Conta</Label> */}
           <LightSwitch
             value={accountType}
             onChange={(val: 'user' | 'employee') => handleAccountTypeChange(val)}
@@ -269,7 +265,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name" className="text-gray-700 dark:text-gray-300">
+          <Label htmlFor="name" className="text-foreground/85">
             {t('auth.fullName')} *
           </Label>
           <Input
@@ -278,12 +274,12 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             placeholder="João Silva"
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.name ? 'border-red-500' : ''
+            className={`bg-muted border-border text-foreground placeholder:text-muted-foreground/70 ${errors.name ? 'border-status-error' : ''
               }`}
           />
 
           {errors.name && (
-            <div className="text-red-500 text-sm mt-1 ml-1 space-y-0.5">
+            <div className="text-status-error text-sm mt-1 ml-1 space-y-0.5">
               {errors.name.split('\n').filter(Boolean).map((msg, idx) => (
                 <p key={idx}>{msg}</p>
               ))}
@@ -292,21 +288,21 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         </div>
 
         <div className="space-y-2">
-          <Label className="text-gray-700 dark:text-gray-300">
+          <Label className="text-foreground/85">
             {t('auth.birthDate')} *
           </Label>
           <DatePickerField
             value={toInputDate(formData.birthDate)}
             onChange={(value) => handleChange('birthDate', toDisplayDate(value))}
-            buttonClassName={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 ${errors.birthDate ? 'border-red-500' : ''}`}
+            buttonClassName={`bg-muted border-border text-foreground ${errors.birthDate ? 'border-status-error' : ''}`}
           />
-          {errors.birthDate && <p className="text-red-500 text-sm">{errors.birthDate}</p>}
+          {errors.birthDate && <p className="text-status-error text-sm">{errors.birthDate}</p>}
         </div>
 
         {/* NIF and Contact fields - always visible */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="nif" className="text-gray-700 dark:text-gray-300">
+            <Label htmlFor="nif" className="text-foreground/85">
               NIF *
             </Label>
             <Input
@@ -316,15 +312,15 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               maxLength={9}
               value={formData.nif}
               onChange={(e) => handleChange('nif', e.target.value.replace(/\D/g, ''))}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.nif ? 'border-red-500' : ''
+              className={`bg-muted border-border text-foreground placeholder:text-muted-foreground/70 ${errors.nif ? 'border-status-error' : ''
                 }`}
             />
-            {errors.nif && <p className="text-red-500 text-sm">{errors.nif}</p>}
+            {errors.nif && <p className="text-status-error text-sm">{errors.nif}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="contact" className="text-gray-700 dark:text-gray-300">
-              {t('auth.contact')} *
+            <Label htmlFor="contact" className="text-foreground/85">
+              {t('auth.contact')} <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
             </Label>
             <Input
               id="contact"
@@ -333,35 +329,34 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               maxLength={9}
               value={formData.contact}
               onChange={(e) => handleChange('contact', e.target.value.replace(/\D/g, ''))}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.contact ? 'border-red-500' : ''
+              className={`bg-muted border-border text-foreground placeholder:text-muted-foreground/70 ${errors.contact ? 'border-status-error' : ''
                 }`}
             />
-            {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
+            {errors.contact && <p className="text-status-error text-sm">{errors.contact}</p>}
           </div>
         </div>
 
         {accountType === 'employee' ? (
           <div className="space-y-3">
-            <Label className="text-gray-700 dark:text-gray-300">{t('auth.institutionalEmailLabel')} *</Label>
+            <Label className="text-foreground/85">{t('auth.institutionalEmailLabel')} *</Label>
 
             <div className="space-y-3">
               {/* Option 1: Auto Generated */}
               <div
                 onClick={() => setEmailSelection('auto')}
                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'auto'
-                  ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                  ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                  : 'bg-card border-border hover:border-primary/30'
                   }`}
               >
                 <div className={`flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${emailSelection === 'auto'
-                  ? 'border-purple-600 bg-purple-600'
-                  : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-primary bg-primary'
+                  : 'border-border'
                   }`}>
-                  {emailSelection === 'auto' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  {emailSelection === 'auto' && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
                 </div>
                 <div className="flex flex-col">
-                  {/* <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Automático</span> */}
-                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'auto' ? 'text-primary' : 'text-foreground/80'}`}>
                     {formData.name ? generateInstitutionalEmail(formData.name) : t('auth.fillNameFirst')}
                   </span>
                 </div>
@@ -371,18 +366,18 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               <div
                 onClick={() => setEmailSelection('manual')}
                 className={`flex flex-col gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'manual'
-                  ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                  ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                  : 'bg-card border-border hover:border-primary/30'
                   }`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`flex items-center justify-center w-5 h-5 rounded-full border transition-colors ${emailSelection === 'manual'
-                    ? 'border-purple-600 bg-purple-600'
-                    : 'border-gray-300 dark:border-gray-600'
+                    ? 'border-primary bg-primary'
+                    : 'border-border'
                     }`}>
-                    {emailSelection === 'manual' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    {emailSelection === 'manual' && <div className="w-2 h-2 rounded-full bg-primary-foreground" />}
                   </div>
-                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <span className={`text-sm font-medium transition-colors ${emailSelection === 'manual' ? 'text-primary' : 'text-foreground/80'}`}>
                     {t('auth.other')}
                   </span>
                 </div>
@@ -399,9 +394,9 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                         handleChange('email', prefix + '@florinhasdovouga.pt');
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className={`h-9 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-purple-500 text-sm ${errors.email ? 'border-red-500' : ''}`}
+                      className={`h-9 bg-card border-border focus:ring-ring text-sm ${errors.email ? 'border-status-error' : ''}`}
                     />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0">@florinhasdovouga.pt</span>
+                    <span className="text-sm text-muted-foreground font-medium shrink-0">@florinhasdovouga.pt</span>
                   </div>
                 )}
               </div>
@@ -409,7 +404,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           </div>
         ) : (
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 dark:text-gray-300">
+            <Label htmlFor="email" className="text-foreground/85">
               Email *
             </Label>
             <Input
@@ -418,20 +413,20 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               placeholder="email@exemplo.pt"
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.email ? 'border-red-500' : ''
+              className={`bg-muted border-border text-foreground placeholder:text-muted-foreground/70 ${errors.email ? 'border-status-error' : ''
                 }`}
             />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+            {errors.email && <p className="text-status-error text-sm">{errors.email}</p>}
           </div>
         )}
 
         {
           accountType === 'employee' && (
             <div className="space-y-2">
-              <Label className="text-gray-700 dark:text-gray-300">{t('auth.role')} *</Label>
+              <Label className="text-foreground/85">{t('auth.role')} *</Label>
               <div className="flex items-center gap-2">
                 <Select onValueChange={(val) => { setEmployeeRole(val); if (errors.employeeRole) { const ne = { ...errors }; delete ne.employeeRole; setErrors(ne); } }}>
-                  <SelectTrigger className={`w-full text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10 ${errors.employeeRole ? 'border-red-500' : ''}`}>
+                  <SelectTrigger className={`w-full text-sm bg-card border-border h-10 ${errors.employeeRole ? 'border-status-error' : ''}`}>
                     <SelectValue placeholder={t('auth.selectRole')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -442,19 +437,19 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                   </SelectContent>
                 </Select>
               </div>
-              {errors.employeeRole && <p className="text-red-500 text-sm">{errors.employeeRole}</p>}
+              {errors.employeeRole && <p className="text-status-error text-sm">{errors.employeeRole}</p>}
             </div>
           )
         }
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+          <Label htmlFor="password" className="text-foreground/85">
             {t('auth.password')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
-            ? 'border-red-500 focus-within:ring-red-500/50'
-            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
-            } bg-gray-50 dark:bg-gray-700`}>
+            ? 'border-status-error focus-within:ring-status-error/50'
+            : 'border-border focus-within:border-foreground'
+            } bg-muted`}>
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -462,64 +457,64 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               value={formData.password}
               onChange={(e) => handleChange('password', e.target.value)}
               onFocus={() => setShowPasswordValidation(true)}
-              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-muted-foreground/70 text-foreground"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+              className="ml-2 text-muted-foreground hover:text-foreground focus:outline-none"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           {showPasswordValidation && formData.password && (
             <div className="space-y-1 text-sm">
-              <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
+              <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-status-success' : 'text-muted-foreground'}`}>
                 {passwordValidation.minLength ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                 <span>{t('auth.passwordRuleMinLength')}</span>
               </div>
-              <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-green-600' : 'text-gray-500'}`}>
+              <div className={`flex items-center gap-2 ${passwordValidation.hasUpperLower ? 'text-status-success' : 'text-muted-foreground'}`}>
                 {passwordValidation.hasUpperLower ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                 <span>{t('auth.passwordRuleCases')}</span>
               </div>
-              <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
+              <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-status-success' : 'text-muted-foreground'}`}>
                 {passwordValidation.hasNumber ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                 <span>{t('auth.passwordRuleNumbers')}</span>
               </div>
             </div>
           )}
-          {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
+          {errors.password && <p className="text-status-error text-sm">{errors.password}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword" className="text-gray-700 dark:text-gray-300">
+          <Label htmlFor="confirmPassword" className="text-foreground/85">
             {t('auth.confirmPassword')} *
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.confirmPassword
-            ? 'border-red-500 focus-within:ring-red-500/50'
-            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
-            } bg-gray-50 dark:bg-gray-700`}>
+            ? 'border-status-error focus-within:ring-status-error/50'
+            : 'border-border focus-within:border-foreground'
+            } bg-muted`}>
             <input
               id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={formData.confirmPassword}
               onChange={(e) => handleChange('confirmPassword', e.target.value)}
-              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-muted-foreground/70 text-foreground"
             />
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+              className="ml-2 text-muted-foreground hover:text-foreground focus:outline-none"
             >
               {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
+          {errors.confirmPassword && <p className="text-status-error text-sm">{errors.confirmPassword}</p>}
         </div>
 
         <div className="space-y-2">
-          <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="bg-muted/60 border border-border rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <Checkbox
                 id="termsAccepted"
@@ -531,11 +526,11 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                   }
                   handleChange('termsAccepted', checked === true ? 'true' : 'false');
                 }}
-                className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-red-500' : ''}`}
+                className={`mt-1 shrink-0 ${errors.termsAccepted ? 'border-status-error' : ''}`}
               />
               <label
                 htmlFor="termsAccepted"
-                className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed cursor-pointer select-none text-left"
+                className="text-sm text-foreground/85 leading-relaxed cursor-pointer select-none text-left"
               >
                 {t('auth.acceptTermsPrefix')}{' '}
                 <button
@@ -544,7 +539,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                     e.preventDefault();
                     setShowTermsModal(true);
                   }}
-                  className="font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline inline focus:outline-none"
+                  className="font-medium text-primary hover:text-primary/90 hover:underline inline focus:outline-none"
                 >
                   {t('auth.termsAndPrivacy')}
                 </button>
@@ -552,13 +547,13 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             </div>
           </div>
           {errors.termsAccepted && (
-            <p className="text-red-500 text-sm pl-1">{errors.termsAccepted}</p>
+            <p className="text-status-error text-sm pl-1">{errors.termsAccepted}</p>
           )}
         </div>
 
         <Button
           type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200 mt-6"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200 mt-6"
         >
           {t('auth.createAccount')}
         </Button>

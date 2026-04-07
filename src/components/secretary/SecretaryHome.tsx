@@ -19,14 +19,15 @@ interface SecretaryHomeProps {
 }
 
 const recentActivity = [
-  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-purple-500' },
-  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-pink-500' },
-  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-blue-500' },
-  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-green-500' },
+  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-[color:var(--status-info)]' },
+  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-primary' },
+  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-[color:var(--status-warning)]' },
+  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-[color:var(--status-success)]' },
 ];
 
 export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
   const isMobile = useIsMobile();
+  void isDarkMode;
   const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
   const [utentesAtivos, setUtentesAtivos] = useState<string>('...');
 
@@ -50,14 +51,14 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
   }, []);
 
   const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: '#a855f7', view: 'appointments' }, // purple-500
-    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: '#db2777', view: 'candidaturas' }, // pink-600
-    { icon: ClipboardList, label: 'Requisições', value: '5', color: '#2563eb', view: 'requisitions' }, // blue-600
-    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: '#16a34a', view: 'management' }, // green-600
+    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
+    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'var(--primary)', view: 'candidaturas' },
+    { icon: ClipboardList, label: 'Requisições', value: '5', color: 'var(--status-warning)', view: 'requisitions' },
+    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--status-success)', view: 'management' },
   ];
 
-  const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
-  const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
+  const textClass = 'text-foreground';
+  const textSecondaryClass = 'text-muted-foreground';
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
@@ -72,7 +73,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
               Gestão completa da instituição
             </p>
           </div>
-          <div className={`flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-4 py-2 rounded-full border border-gray-100 dark:border-gray-700 ${isMobile ? 'w-full justify-center' : 'whitespace-nowrap'}`}>
+          <div className={`flex items-center gap-2 bg-muted/40 px-4 py-2 rounded-full border border-border ${isMobile ? 'w-full justify-center' : 'whitespace-nowrap'}`}>
             <Clock className={`w-4 h-4 ${textSecondaryClass}`} />
             <span className={`text-sm font-medium ${textSecondaryClass} capitalize ${isMobile ? 'text-xs' : ''}`}>
               {new Date().toLocaleDateString('pt-PT', {
@@ -106,7 +107,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                   className="p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3"
                   style={{ backgroundColor: stat.color }}
                 >
-                  <stat.icon className="w-6 h-6 text-white" />
+                  <stat.icon className="w-6 h-6 text-primary-foreground" />
                 </div>
               </div>
             </GlassCard>
@@ -119,11 +120,11 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
         {/* Recent Activity */}
         <div className="h-full">
           <GlassCard className="p-0 overflow-hidden h-full min-h-[400px]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h2 className={`text-lg font-bold ${textClass}`}>Atividade Recente</h2>
               <button
                 onClick={() => onNavigate('notificacoes')}
-                className="text-purple-600 dark:text-purple-400 text-sm font-medium hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-1 transition-colors"
+                className="text-primary text-sm font-medium hover:opacity-80 flex items-center gap-1 transition-colors"
               >
                 Ver tudo <ArrowRight className="w-4 h-4" />
               </button>
@@ -137,18 +138,18 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                   utente: <Users className="w-5 h-5" />,
                 };
                 return (
-                  <div key={index} className="group p-4 rounded-xl border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 bg-gray-50/50 dark:bg-gray-800/30 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm flex-shrink-0 ${activity.color}`}>
+                  <div key={index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
                       {iconMap[activity.type] ?? <Calendar className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors`}>{activity.text}</p>
+                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{activity.text}</p>
                       <div className="flex items-center gap-1.5">
                         <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
                         <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-purple-500 transition-colors transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors transform group-hover:translate-x-1" />
                   </div>
                 );
               })}
@@ -159,21 +160,17 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
         {/* Quick Actions */}
         <div className="h-full">
           <GlassCard className="p-0 h-full min-h-[400px] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="px-6 py-4 border-b border-border">
               <h2 className={`text-lg font-bold ${textClass}`}>Ações Rápidas</h2>
             </div>
             <div className="p-4 flex-1 flex items-center">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
                 <button
                   onClick={() => onNavigate('appointments')}
-                  className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                  style={{
-                    backgroundColor: isDarkMode ? 'rgba(88, 28, 135, 0.2)' : '#faf5ff', // purple-50
-                    borderColor: isDarkMode ? '#6b21a8' : '#f3e8ff'
-                  }}
+                  className="p-6 rounded-2xl border border-[color:var(--status-info)]/30 bg-[color:var(--status-info-soft)] transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: isDarkMode ? 'rgba(88, 28, 135, 0.5)' : '#ffffff', color: '#9333ea' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-info)' }}>
                     <Calendar className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Nova Marcação</p>
@@ -182,14 +179,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
 
                 <button
                   onClick={() => onNavigate('candidaturas')}
-                  className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                  style={{
-                    backgroundColor: isDarkMode ? 'rgba(131, 24, 67, 0.2)' : '#fdf2f8', // pink-50 (#fdf2f8)
-                    borderColor: isDarkMode ? '#9d174d' : '#fce7f3'
-                  }}
+                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: isDarkMode ? 'rgba(131, 24, 67, 0.5)' : '#ffffff', color: '#db2777' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                     <FileText className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Candidaturas</p>
@@ -198,14 +191,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
 
                 <button
                   onClick={() => onNavigate('management')}
-                  className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                  style={{
-                    backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.2)' : '#eff6ff', // blue-50 (#eff6ff)
-                    borderColor: isDarkMode ? '#1e40af' : '#dbeafe'
-                  }}
+                  className="p-6 rounded-2xl border border-[color:var(--status-warning)]/30 bg-[color:var(--status-warning-soft)] transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: isDarkMode ? 'rgba(30, 58, 138, 0.5)' : '#ffffff', color: '#2563eb' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-warning)' }}>
                     <UserPlus className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Criar Conta</p>
@@ -214,14 +203,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
 
                 <button
                   onClick={() => onNavigate('reports')}
-                  className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                  style={{
-                    backgroundColor: isDarkMode ? 'rgba(20, 83, 45, 0.2)' : '#f0fdf4', // green-50 (#f0fdf4)
-                    borderColor: isDarkMode ? '#166534' : '#dcfce7'
-                  }}
+                  className="p-6 rounded-2xl border border-[color:var(--status-success)]/30 bg-[color:var(--status-success-soft)] transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: isDarkMode ? 'rgba(20, 83, 45, 0.5)' : '#ffffff', color: '#16a34a' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-success)' }}>
                     <TrendingUp className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Relatórios</p>

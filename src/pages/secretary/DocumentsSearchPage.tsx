@@ -36,13 +36,13 @@ const MIME_OPTIONS = [
 
 /** Returns a short label and colour scheme for a MIME type */
 function getMimeInfo(mime: string): { label: string; color: string; bg: string } {
-  if (mime?.includes('pdf')) return { label: 'PDF', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' };
+  if (mime?.includes('pdf')) return { label: 'PDF', color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30' };
   if (mime?.includes('jpeg') || mime?.includes('jpg'))
-    return { label: 'JPEG', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' };
-  if (mime?.includes('png')) return { label: 'PNG', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800' };
+    return { label: 'JPEG', color: 'text-primary', bg: 'bg-primary/10 border-primary/30' };
+  if (mime?.includes('png')) return { label: 'PNG', color: 'text-primary', bg: 'bg-primary/10 border-primary/30' };
   if (mime?.includes('word') || mime?.includes('doc'))
-    return { label: 'DOC', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' };
-  return { label: mime?.split('/')[1]?.toUpperCase() || '—', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700' };
+    return { label: 'DOC', color: 'text-primary', bg: 'bg-primary/10 border-primary/30' };
+  return { label: mime?.split('/')[1]?.toUpperCase() || '—', color: 'text-muted-foreground', bg: 'bg-muted border-border' };
 }
 
 function formatSize(bytes: number) {
@@ -69,7 +69,8 @@ function cleanFilename(name: string) {
   if (parts.length >= 4) {
     // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
     const nif = parts[0];
-    const rawDate = parts[parts.length - 2];
+    const rawDate = parts[parts.length - 1];
+    const contador = parts[parts.length - 2];
     const assuntoParts = parts.slice(1, parts.length - 2);
     const assunto = assuntoParts.join("_");
     
@@ -77,7 +78,7 @@ function cleanFilename(name: string) {
     if (rawDate.length === 8 && /^\d+$/.test(rawDate)) {
       formattedDate = `${rawDate.substring(6, 8)}-${rawDate.substring(4, 6)}-${rawDate.substring(0, 4)}`;
     }
-    return `${nif}_${assunto}_${formattedDate}${extension}`;
+    return `${nif}_${assunto}_${contador}_${formattedDate}${extension}`;
   } else if (parts.length === 3) {
     // Formato legado: NIF_TIPO_UUID
     return `${parts[0]}_${parts[1]}${extension}`;
@@ -177,29 +178,29 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
         <Button
           variant="ghost"
           onClick={onBack}
-          className="gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+          className="gap-2 text-foreground hover:bg-accent rounded-lg"
         >
           <ChevronLeftIcon className="w-4 h-4" />
           {t('common.back')}
         </Button>
-        <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+        <div className="h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
-          <FileTextIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('documents.title')}</h1>
+          <FileTextIcon className="w-5 h-5 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">{t('documents.title')}</h1>
         </div>
       </div>
 
       {/* ── Filter panel ── */}
       <GlassCard className="p-5 space-y-5">
         <div className="flex items-center gap-2">
-          <SlidersIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">{t('documents.metadataFilters')}</h2>
+          <SlidersIcon className="w-4 h-4 text-primary" />
+          <h2 className="text-base font-semibold text-foreground">{t('documents.metadataFilters')}</h2>
         </div>
 
         {/* Row 1: text filters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.originalName')}
             </label>
             <Input
@@ -211,7 +212,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.userName')}
             </label>
             <Input
@@ -223,7 +224,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.userNif')}
             </label>
             <Input
@@ -238,13 +239,13 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
         {/* Row 2: type + dates */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.type')}
             </label>
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
-              className="w-full h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
             >
               {MIME_OPTIONS.map((option) => (
                 <option key={option.value || 'all'} value={option.value}>{option.label}</option>
@@ -253,14 +254,14 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.from')} (data marcação)
             </label>
             <DatePickerField value={marcacaoDesde} onChange={setMarcacaoDesde} buttonClassName="mt-0" />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               {t('documents.filters.to')} (data marcação)
             </label>
             <DatePickerField value={marcacaoAte} onChange={setMarcacaoAte} buttonClassName="mt-0" />
@@ -271,7 +272,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
         <div className="flex items-center gap-2 pt-1">
           <Button
             onClick={handlePesquisar}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-5"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-5"
             disabled={loading}
           >
             {loading ? (
@@ -294,24 +295,24 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
       <GlassCard className="p-5 space-y-4">
         {/* Results header */}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100">{t('documents.resultsTitle')}</h2>
+          <h2 className="text-base font-semibold text-foreground">{t('documents.resultsTitle')}</h2>
           {resultados.length > 0 && (
             <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-primary/15 text-primary">
                 {resultados.length} {resultados.length === 1 ? 'documento' : 'documentos'}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{totalSizeMb} MB total</span>
+              <span className="text-xs text-muted-foreground">{totalSizeMb} MB total</span>
             </div>
           )}
         </div>
 
         {/* Empty state */}
         {resultados.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <FileTextIcon className="w-7 h-7 text-gray-400 dark:text-gray-500" />
+          <div className="flex flex-col items-center justify-center gap-3 py-16 rounded-xl border border-dashed border-border">
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+              <FileTextIcon className="w-7 h-7 text-muted-foreground" />
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('documents.noResults')}</p>
+            <p className="text-sm text-muted-foreground">{t('documents.noResults')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -329,10 +330,10 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                   return (
                     <div
                       key={doc.id}
-                      className="group relative rounded-xl border border-gray-200 dark:border-gray-700/60 bg-white dark:bg-gray-900/80 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition-all duration-200 overflow-hidden"
+                      className="group relative rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200 overflow-hidden"
                     >
                       {/* Subtle top accent line */}
-                      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-purple-500/0 via-purple-500/60 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/0 via-primary/60 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
 
                       <div className="p-4 flex items-start gap-4">
                         {/* File type icon badge */}
@@ -346,14 +347,14 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
 
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate leading-snug" title={doc.nomeOriginal}>
+                          <p className="font-semibold text-foreground truncate leading-snug" title={doc.nomeOriginal}>
                             {cleanFilename(doc.nomeOriginal)}
                           </p>
 
                           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                             {/* Appointment ref */}
-                            <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 dark:bg-purple-500 flex-shrink-0" />
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 flex-shrink-0" />
                               {t('documents.card.appointmentRef', {
                                 id: doc.marcacaoId,
                                 mime: doc.tipoMime,
@@ -364,16 +365,16 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
 
                           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
                             {/* Patient */}
-                            <span className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                              <UserIcon className="w-3 h-3 flex-shrink-0 text-gray-400" />
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <UserIcon className="w-3 h-3 flex-shrink-0 text-muted-foreground" />
                               {doc.utenteNome || '—'}
                               {doc.utenteNif && (
-                                <span className="ml-1 font-mono text-gray-400 dark:text-gray-500">({doc.utenteNif})</span>
+                                <span className="ml-1 font-mono text-muted-foreground">({doc.utenteNif})</span>
                               )}
                             </span>
                           </div>
 
-                          <div className="mt-1 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                             <ClockIcon className="w-3 h-3 flex-shrink-0" />
                             {new Date(doc.uploadedEm).toLocaleString(currentLocale)}
                           </div>
@@ -385,7 +386,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                              className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                               onClick={() => documentosApi.previewDocumento(doc.id)}
                               title={t('appointmentDetails.previewDocument')}
                             >
@@ -395,7 +396,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 border-gray-200 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-600 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                            className="h-8 w-8 border-border hover:border-primary/60 hover:text-primary transition-colors"
                             onClick={() => handleDownload(doc)}
                             title={t('documents.actions.download')}
                           >
@@ -411,17 +412,17 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
 
             {/* ── Pagination ── */}
             {resultados.length > itensPorPagina && (
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
                 <div className="flex items-center gap-3">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {t('documents.pagination.pageOf', { page: paginaAtual, total: totalPaginas })}
                   </p>
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-gray-400 dark:text-gray-500">{t('documents.pagination.perPage')}</label>
+                    <label className="text-xs text-muted-foreground">{t('documents.pagination.perPage')}</label>
                     <select
                       value={itensPorPagina}
                       onChange={(e) => { setItensPorPagina(Number(e.target.value)); setPaginaAtual(1); }}
-                      className="h-8 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                      className="h-8 rounded-md border border-border bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -453,14 +454,14 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
                       }, [])
                       .map((p, idx) =>
                         p === '...' ? (
-                          <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-xs">…</span>
+                          <span key={`ellipsis-${idx}`} className="px-1 text-muted-foreground text-xs">…</span>
                         ) : (
                           <button
                             key={p}
                             onClick={() => setPaginaAtual(p as number)}
                             className={`w-7 h-7 rounded-md text-xs font-medium transition-colors ${paginaAtual === p
-                              ? 'bg-purple-600 text-white'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:bg-accent'
                               }`}
                           >
                             {p}

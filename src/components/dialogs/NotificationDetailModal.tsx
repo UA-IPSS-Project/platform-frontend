@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { CalendarIcon, ClipboardListIcon, AlertCircleIcon, XIcon } from '../shared/CustomIcons';
+import { CalendarIcon, ClipboardListIcon, AlertCircleIcon } from '../shared/CustomIcons';
 import { NotificationWithType, useNotificationAction, NotificationActionCallbacks } from '../../hooks/useNotificationAction';
 
 interface NotificationDetailModalProps {
@@ -66,13 +66,13 @@ export function NotificationDetailModal({
   const getIconColorClasses = (icon: string) => {
     switch (icon) {
       case 'calendar':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+        return 'bg-[color:var(--status-info-soft)] text-[color:var(--status-info)]';
       case 'document':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400';
+        return 'bg-[color:var(--status-success-soft)] text-[color:var(--status-success)]';
       case 'alert':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+        return 'bg-[color:var(--status-error-soft)] text-[color:var(--status-error)]';
       default:
-        return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+        return 'bg-[color:var(--status-neutral-soft)] text-[color:var(--status-neutral)]';
     }
   };
 
@@ -86,10 +86,10 @@ export function NotificationDetailModal({
               {getIconComponent(notification.icon)}
             </div>
             <div className="flex-1 pt-1">
-              <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              <DialogTitle className="text-xl font-semibold text-foreground">
                 {notification.title}
               </DialogTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {formatDateTime(notification.timestamp)}
               </p>
             </div>
@@ -97,7 +97,7 @@ export function NotificationDetailModal({
         </DialogHeader>
 
         {/* Mensagem da Notificação */}
-        <DialogDescription className="text-base text-gray-700 dark:text-gray-300 leading-relaxed py-4 border-t border-gray-200 dark:border-gray-700">
+        <DialogDescription className="text-base text-foreground leading-relaxed py-4 border-t border-border">
           {notification.message}
         </DialogDescription>
 

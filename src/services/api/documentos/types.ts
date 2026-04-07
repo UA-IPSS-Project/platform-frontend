@@ -7,6 +7,7 @@ export interface DocumentoDTO {
     uploadedEm: string; // Backend envia como "uploadedEm"
     utenteNome?: string | null;
     utenteNif?: string | null;
+    sequencia: number;
 }
 
 export interface PesquisaDocumentosParams {

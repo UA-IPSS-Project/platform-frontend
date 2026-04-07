@@ -1,15 +1,34 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { ChevronDown, ChevronLeft, ChevronUp } from 'lucide-react';
+import { Plus, ArrowLeft } from 'lucide-react';
+
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../../components/ui/dialog';
-import { parseDateInput } from '../../components/ui/date-picker-field';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
+
 import { ApiRequestError } from '../../services/api/core/client';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { useRequisitionFilters } from '../../hooks/requisitions/useRequisitionFilters';
 import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitionCreateForm';
+import {
+  validateDescricao,
+  validateMaterialLinhas,
+  validateTransporteDestino,
+  isDateInPast,
+  composeDateTimeStr,
+} from '../../utils/validations/requisition.validation';
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
@@ -19,7 +38,6 @@ import {
   RequisicaoPrioridade,
   RequisicaoResponse,
   RequisicaoTipo,
-  TransporteCategoria,
   requisicoesApi,
 } from '../../services/api';
 import {
@@ -37,11 +55,8 @@ import {
   getEstadosVisiveisNoSeletor,
   getPassengerCapacity,
   getRequisicaoTransportes,
-  isDateInputInPast,
   normalizarTexto,
   periodsOverlap,
-  previousDateInput,
-  toIsoFromDateOnly,
 } from './sharedRequisitions.helpers';
 import { RequisitionsStatsCards } from '../../components/shared/requisitions/RequisitionsStatsCards';
 import { RequisitionsConflictDialog } from '../../components/shared/requisitions/RequisitionsConflictDialog';
@@ -63,17 +78,28 @@ export interface SharedRequisitionsPageProps {
   initialPrioridade?: RequisicaoPrioridade;
   scopeRole?: 'ALL' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
   canManageRequests?: boolean;
+  initialSection?: 'create' | 'list';
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function SharedRequisitionsPage({
-  isDarkMode,
   currentUserId,
   initialTipo,
   initialPrioridade,
   scopeRole = 'ALL',
   canManageRequests = true,
+  initialSection = 'list',
+  onDirtyChange,
 }: Readonly<SharedRequisitionsPageProps>) {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const initialParams = useMemo(() => ({
+    mode: searchParams.get('mode') as 'list' | 'create' | null,
+    tab: searchParams.get('tab') as string | null,
+    type: searchParams.get('type') as RequisicaoTipo | null,
+    priority: searchParams.get('priority') as RequisicaoPrioridade | null,
+  }), [searchParams]);
+
   const locale = i18n.language.startsWith('en') ? 'en-GB' : 'pt-PT';
   const formatDateTimeOrDash = (value?: string | null) => {
     if (!value) return '—';
@@ -81,8 +107,8 @@ export function SharedRequisitionsPage({
   };
 
   // Use custom hooks for state management
-  const filters = useRequisitionFilters(initialTipo, initialPrioridade);
-  const createForm = useRequisitionCreateForm(initialTipo, initialPrioridade);
+  const filters = useRequisitionFilters(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
+  const createForm = useRequisitionCreateForm(initialParams.type ?? initialTipo, initialParams.priority ?? initialPrioridade);
   const catalog = useRequisitionCatalog(t);
 
   // List and dialog state
@@ -91,10 +117,12 @@ export function SharedRequisitionsPage({
   const [requisicoes, setRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [monthlyRequisicoes, setMonthlyRequisicoes] = useState<RequisicaoResponse[]>([]);
   const [todasRequisicoesTransporteAceites, setTodasRequisicoesTransporteAceites] = useState<RequisicaoResponse[]>([]);
-  const [activeSection, setActiveSection] = useState<'create' | 'list' | null>('list');
-  const sectionSwitchTimeoutRef = useRef<number | null>(null);
+  const [activeSection, setActiveSection] = useState<'list' | 'create'>(() => {
+    if (initialParams.mode === 'list' || initialParams.mode === 'create') return initialParams.mode;
+    return initialSection;
+  });
   const [openedRequisicaoId, setOpenedRequisicaoId] = useState<number | null>(null);
-  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_ANALISE');
+  const [estadoEdicao, setEstadoEdicao] = useState<RequisicaoEstado>('EM_PROGRESSO');
   const [updatingEstadoId, setUpdatingEstadoId] = useState<number | null>(null);
   const [conflitoDialogOpen, setConflitoDialogOpen] = useState(false);
   const [conflitosPendentes, setConflitosPendentes] = useState<RequisicaoConflito[]>([]);
@@ -102,47 +130,60 @@ export function SharedRequisitionsPage({
   const [conflitoDialogMode, setConflitoDialogMode] = useState<ConflitoDialogMode>('warning');
   const [submittingMaterial, setSubmittingMaterial] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
-  const isRequestVisibleForScope = (requisicao?: RequisicaoResponse | null): boolean => {
+
+  const isRequestVisibleForScope = useCallback((requisicao?: RequisicaoResponse | null): boolean => {
     if (!requisicao) return false;
     if (scopeRole === 'ALL') return true;
     return requisicao.criadoPor?.tipo === scopeRole;
-  };
+  }, [scopeRole]);
 
-  const applyScopeFilter = (lista: RequisicaoResponse[]): RequisicaoResponse[] => {
+  const applyScopeFilter = useCallback((lista: RequisicaoResponse[]): RequisicaoResponse[] => {
     if (scopeRole === 'ALL') return lista;
     return lista.filter((item) => isRequestVisibleForScope(item));
-  };
+  }, [scopeRole, isRequestVisibleForScope]);
 
   const isSecretaryView = scopeRole === 'ALL' && canManageRequests;
 
+  // Sync URL from state with comparison to avoid loops
   useEffect(() => {
-    filters.setFilterTipo(initialTipo ?? '');
-    filters.setFilterPrioridade(initialPrioridade ?? '');
-    if (initialPrioridade === 'URGENTE') {
-      filters.setActiveTab('URGENTE');
-    } else if (initialTipo) {
-      filters.setActiveTab(initialTipo);
-    } else {
-      filters.setActiveTab('GERAL');
+    if (initialParams.tab) {
+      filters.setActiveTab(initialParams.tab as any);
     }
-    if (initialTipo) createForm.setTipo(initialTipo);
-    if (initialPrioridade) createForm.setPrioridade(initialPrioridade);
-  }, [initialTipo, initialPrioridade]);
+  }, [initialParams.tab]);
+
+  // Dirty state and navigation guards
+  useEffect(() => {
+    onDirtyChange?.(createForm.isDirty);
+  }, [createForm.isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (activeSection === 'create' && createForm.isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeSection, createForm.isDirty]);
 
   const fetchRequisicoes = useCallback(async (overrides?: {
     estado?: RequisicaoEstado | '';
     tipo?: RequisicaoTipo | '';
     prioridade?: RequisicaoPrioridade | '';
     criadoPorNome?: string;
-    geridoPorNome?: string;
+    dataInicio?: string;
+    dataFim?: string;
     criadoPorTipo?: '' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO';
   }) => {
     const estado = overrides?.estado ?? filters.filterEstado;
     const tipoFiltro = overrides?.tipo ?? filters.filterTipo;
     const prioridadeFiltro = overrides?.prioridade ?? filters.filterPrioridade;
     const criadoPor = overrides?.criadoPorNome ?? filters.filterCriadoPorNome;
-    const geridoPor = overrides?.geridoPorNome ?? filters.filterGeridoPorNome;
+    const dataInicio = overrides?.dataInicio ?? filters.filterDataInicio;
+    const dataFim = overrides?.dataFim ?? filters.filterDataFim;
     const criadoPorTipo = overrides?.criadoPorTipo ?? filters.filterCriadoPorTipo;
 
     try {
@@ -152,33 +193,44 @@ export function SharedRequisitionsPage({
         tipo: tipoFiltro || undefined,
         prioridade: prioridadeFiltro || undefined,
         criadoPorNome: criadoPor || undefined,
-        geridoPorNome: geridoPor || undefined,
+        dataInicio: dataInicio || undefined,
+        dataFim: dataFim || undefined,
       });
       const listaScope = applyScopeFilter(Array.isArray(data) ? data : []);
       const lista = isSecretaryView && criadoPorTipo
         ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
         : listaScope;
       setRequisicoes(lista);
-      // Reutiliza o resultado já carregado para alimentar o overview mensal,
-      // evitando uma segunda chamada não filtrada a requisicoesApi.procurar({}).
-      setMonthlyRequisicoes(lista);
     } catch (error: any) {
       toast.error(error?.message || t('requisitions.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [filters, t]);
-  // chamada adicional não filtrada a requisicoesApi.procurar({}).
+  }, [filters, t, isSecretaryView, applyScopeFilter, activeSection]);
+
+  const fetchMonthlyRequisicoes = useCallback(async () => {
+    if (activeSection !== 'list') return;
+    try {
+      const data = await requisicoesApi.procurar({});
+      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
+      setMonthlyRequisicoes(lista);
+    } catch (error: any) {
+      console.error('Failed to fetch monthly requisitions:', error);
+    }
+  }, [applyScopeFilter, activeSection]);
 
   useEffect(() => {
+    if (activeSection !== 'list') return;
+    fetchMonthlyRequisicoes();
     fetchRequisicoes({
       estado: '',
       tipo: initialTipo ?? '',
       prioridade: initialPrioridade ?? '',
       criadoPorNome: '',
-      geridoPorNome: '',
+      dataInicio: '',
+      dataFim: '',
     });
-  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes]);
+  }, [initialTipo, initialPrioridade, filters.filterCriadoPorTipo, scopeRole, canManageRequests, fetchRequisicoes, fetchMonthlyRequisicoes, activeSection]);
 
   useEffect(() => {
     createForm.setCreateErrors({});
@@ -192,8 +244,7 @@ export function SharedRequisitionsPage({
     const fetchAcceptedTransports = async () => {
       try {
         const todasRequisicoes = await requisicoesApi.procurar({
-          tipo: 'TRANSPORTE',
-          estado: 'ACEITE'
+          tipo: 'TRANSPORTE'
         });
         setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
       } catch (error: any) {
@@ -205,12 +256,10 @@ export function SharedRequisitionsPage({
   }, [createForm.tipo]);
 
   useEffect(() => {
-    return () => {
-      if (sectionSwitchTimeoutRef.current) {
-        globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
 
   const materiaisPorCategoria = useMemo(() => {
     const map = new Map<string, MaterialItemGroup[]>();
@@ -279,7 +328,8 @@ export function SharedRequisitionsPage({
       : monthlyRequisicoes;
 
     todasRequisicoes.forEach((requisicao) => {
-      if (requisicao.tipo !== 'TRANSPORTE' || requisicao.estado !== 'ACEITE') return;
+      if (requisicao.tipo !== 'TRANSPORTE') return;
+      if (requisicao.estado !== 'FECHADO') return;
       if (!periodsOverlap(
         dataHoraSaidaSelecionada,
         dataHoraRegressoSelecionada,
@@ -325,39 +375,39 @@ export function SharedRequisitionsPage({
   // Keep this in one place because selection quality depends on this exact knapsack scoring strategy.
   // eslint-disable-next-line sonarjs/cognitive-complexity
   const recommendedTransportIds = useMemo(() => {
-    if (passageirosSolicitados <= 0) return [] as number[];
+    if (passageirosSolicitados < 0) return [] as number[];
 
-    const viaturasComLotacao = transportesOrdenadosDisponiveis
-      .filter((transporte) => transporte.id && getPassengerCapacity(transporte.lotacao) > 0)
+    const viaturasPotenciais = transportesOrdenadosDisponiveis
+      .filter((transporte) => transporte.id && (transporte.lotacao || 0) >= 1)
       .map((transporte) => ({
         id: transporte.id,
-        capacidade: getPassengerCapacity(transporte.lotacao),
+        capacidadePassageiros: getPassengerCapacity(transporte.lotacao),
+        lotacaoTotal: transporte.lotacao || 0,
       }));
-    if (viaturasComLotacao.length === 0) return [] as number[];
 
-    const capacidadeMaxima = viaturasComLotacao.reduce((sum, item) => sum + item.capacidade, 0);
+    if (viaturasPotenciais.length === 0) return [] as number[];
+
+    if (passageirosSolicitados === 0) {
+      // Pick the smallest available vehicle for the driver
+      const smallest = [...viaturasPotenciais].sort((a, b) => a.lotacaoTotal - b.lotacaoTotal)[0];
+      return smallest ? [smallest.id] : [] as number[];
+    }
+
+    const capacidadeMaxima = viaturasPotenciais.reduce((sum, item) => sum + item.capacidadePassageiros, 0);
     if (capacidadeMaxima < passageirosSolicitados) return [] as number[];
 
-    // Custo combinado: nº_viaturas × K + lugares_vazios
-    // K (Peso/Penalização de usar 1 viatura extra)
-    // Para 17 passageiros, usar 3 carrinhas (3 lugares vazios totais) vs 1 autocarro (12 lugares vazios):
-    // Se K for pequeno, o DP escolhe as 3 carrinhas para evitar levar 12 lugares vazios às costas.
-    // Usando K = ceil(passageiros / 2.5) e min de 3:
-    // Ex 1: 5 pass (K=3) -> 2 carros (custo=2×3+3vazios=9) vs 1 bus (custo=1×3+24vazios=27). Traz 2 carros.
-    // Ex 2: 17 pass (K=7) -> 3 carrinhas (custo=3×7+3vazios=24) vs 1 bus (custo=1×7+12vazios=19). Traz o minibus!
     const penalizacaoViatura = Math.max(3, Math.ceil(passageirosSolicitados / 2.5));
 
-    // 0/1 knapsack: para cada capacidade alcançável guarda o menor custo de viaturas
     const dp: Array<{ ids: number[]; custoViaturas: number } | undefined> =
       new Array(capacidadeMaxima + 1).fill(undefined);
     dp[0] = { ids: [], custoViaturas: 0 };
 
-    for (const viatura of viaturasComLotacao) {
-      for (let cap = capacidadeMaxima - viatura.capacidade; cap >= 0; cap -= 1) {
+    for (const viatura of viaturasPotenciais) {
+      for (let cap = capacidadeMaxima - viatura.capacidadePassageiros; cap >= 0; cap -= 1) {
         const base = dp[cap];
         if (!base) continue;
 
-        const novaCap = cap + viatura.capacidade;
+        const novaCap = cap + viatura.capacidadePassageiros;
         const novoCusto = base.custoViaturas + penalizacaoViatura;
         const existente = dp[novaCap];
 
@@ -367,7 +417,6 @@ export function SharedRequisitionsPage({
       }
     }
 
-    // Escolhe a capacidade cujo custo total (viaturas + lugares vazios) é mínimo
     let melhor: { ids: number[]; custoTotal: number } | undefined;
 
     for (let cap = passageirosSolicitados; cap <= capacidadeMaxima; cap += 1) {
@@ -427,12 +476,7 @@ export function SharedRequisitionsPage({
     if (!createForm.dataRegresso) {
       createForm.setDataRegresso(createForm.dataSaida);
     }
-
-    if (!createForm.tempoLimiteManuallyEdited) {
-      const previousDate = previousDateInput(createForm.dataSaida);
-      createForm.setTempoLimite(previousDate ? parseDateInput(previousDate) : undefined);
-    }
-  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso, createForm.tempoLimiteManuallyEdited]);
+  }, [createForm.tipo, createForm.dataSaida, createForm.dataRegresso]);
 
   useEffect(() => {
     if (createForm.createTouched.materialItens) {
@@ -457,33 +501,17 @@ export function SharedRequisitionsPage({
 
 
   // eslint-disable-next-line sonarjs/cognitive-complexity
-  const validateCreateField = useCallback((field: CreateField): string | undefined => {
-    if (field === 'descricao') {
-      return undefined;
-    }
+  const validateCreateField = useCallback((field: CreateField, manualValue?: string | number): string | undefined => {
+    if (!createForm.tipo) return undefined;
+    
+    // Descricao can be manual or from state
+    const currentDescricao = field === 'descricao' && manualValue !== undefined ? String(manualValue) : createForm.descricao;
 
-    if (field === 'tempoLimite') {
-      if (!createForm.tempoLimite) return undefined;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const limite = new Date(createForm.tempoLimite);
-      limite.setHours(0, 0, 0, 0);
-
-      if (limite < today) return t('requisitions.errors.deadlineCannotBePast');
-
-      if (createForm.tipo === 'TRANSPORTE' && createForm.dataSaida) {
-        const saidaMatch = parseDateInput(createForm.dataSaida);
-        if (saidaMatch && limite >= saidaMatch) return t('requisitions.errors.deadlineBeforeDeparture');
-      }
-
-      return undefined;
-    }
+    if (field === 'descricao') return validateDescricao(currentDescricao);
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
-      if (linhasValidas.length === 0) return t('requisitions.errors.addOneMaterial');
-      return undefined;
+      return validateMaterialLinhas(linhasValidas);
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
@@ -493,23 +521,32 @@ export function SharedRequisitionsPage({
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino' && !createForm.destinoTransporte.trim()) return t('requisitions.errors.requiredField');
+    if (field === 'destino') return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
+    if (field === 'condutor') {
+      const val = manualValue !== undefined ? String(manualValue).trim() : createForm.condutorTransporte.trim();
+      if (!val) return t('requisitions.errors.requiredField');
+    }
+    
+    // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInputInPast(createForm.dataSaida)) {
+    // Logic validations using helpers
+    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInPast(createForm.dataSaida)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInputInPast(createForm.dataRegresso)) {
+    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInPast(createForm.dataRegresso)) {
       return t('requisitions.errors.dateCannotBePast');
     }
 
     if (field === 'numeroPassageiros') {
-      if (!createForm.numeroPassageiros) return t('requisitions.errors.requiredField');
-      if (passageirosSolicitados < 1) return t('requisitions.errors.invalidPassengers');
+      const val = String(manualValue !== undefined ? manualValue : createForm.numeroPassageiros).trim();
+      if (!val && val !== '0') return t('requisitions.errors.requiredField');
+      const num = Number(val);
+      if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
       return undefined;
     }
 
@@ -517,33 +554,25 @@ export function SharedRequisitionsPage({
       return t('requisitions.errors.selectOneVehicle');
     }
 
-    const saida = composeDateTime(createForm.dataSaida, createForm.horaSaida);
-    const regresso = composeDateTime(createForm.dataRegresso, createForm.horaRegresso);
-    if ((field === 'horaRegresso' || field === 'dataRegresso') && saida && regresso) {
-      const saidaDate = new Date(saida);
-      const regressoDate = new Date(regresso);
-      if (!Number.isNaN(saidaDate.getTime()) && !Number.isNaN(regressoDate.getTime()) && regressoDate <= saidaDate) {
+    const saidaStr = composeDateTimeStr(createForm.dataSaida, createForm.horaSaida);
+    const regressoStr = composeDateTimeStr(createForm.dataRegresso, createForm.horaRegresso);
+    
+    if ((field === 'horaRegresso' || field === 'dataRegresso') && saidaStr && regressoStr) {
+      if (new Date(regressoStr) <= new Date(saidaStr)) {
         return t('requisitions.errors.returnAfterDeparture');
       }
     }
-
     return undefined;
-  }, [createForm, passageirosSolicitados, t]);
+  }, [createForm, t]);
 
-  const validateAndSetField = useCallback((field: CreateField, markTouched = false): string | undefined => {
-    const error = validateCreateField(field);
+  const validateAndSetField = useCallback((field: CreateField, markTouched = false, manualValue?: string | number): string | undefined => {
+    const error = validateCreateField(field, manualValue);
     if (markTouched) {
       createForm.setFieldTouched(field);
     }
     createForm.setFieldError(field, error);
     return error;
   }, [validateCreateField, createForm]);
-
-  useEffect(() => {
-    if (createForm.createTouched.tempoLimite) {
-      validateAndSetField('tempoLimite');
-    }
-  }, [createForm.tempoLimite, createForm.dataSaida, createForm.createTouched.tempoLimite, validateAndSetField]);
 
   const toCreateFieldErrors = (error: ApiRequestError): Partial<Record<CreateField, string>> => {
     if (!error.fieldErrors) return {};
@@ -607,20 +636,23 @@ export function SharedRequisitionsPage({
   }, [createForm]);
 
   const toggleItemAttributesVisibility = useCallback((itemKey: string) => {
-    createForm.setExpandedMaterialItems((prev) => ({ ...prev, [itemKey]: prev[itemKey] === false }));
+    createForm.setExpandedMaterialItems((prev) => {
+      const isCurrentlyOpen = prev[itemKey] === true;
+      if (isCurrentlyOpen) {
+        return { ...prev, [itemKey]: false };
+      }
+      // Se não está aberto, fecha todos os outros e abre este
+      return { [itemKey]: true };
+    });
   }, [createForm]);
 
   const toggleCategoriaExpansion = useCallback((categoria: MaterialCategoria) => {
-    createForm.setExpandedMaterialCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
+    createForm.setExpandedMaterialCategorias(() => ({ [categoria]: true }));
+    // Ao trocar de categoria, fechamos todos os itens expandidos
+    createForm.setExpandedMaterialItems({});
   }, [createForm]);
 
-  const toggleTransporteCategoriaExpansion = useCallback((categoria: TransporteCategoria) => {
-    createForm.setExpandedTransporteCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  }, [createForm]);
 
-  const toggleTransporteDetalhes = useCallback((transporteId: number) => {
-    createForm.setExpandedTransporteDetalhes((prev) => ({ ...prev, [transporteId]: !prev[transporteId] }));
-  }, [createForm]);
 
   const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
     createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
@@ -655,26 +687,6 @@ export function SharedRequisitionsPage({
     });
   }, [createForm]);
 
-  const handleItemToggle = useCallback((item: MaterialItemGroup, checked: boolean) => {
-    if (checked) {
-      createForm.setExpandedMaterialItems((prev) => ({ ...prev, [item.itemKey]: true }));
-      if (item.variantes.length === 1) {
-        toggleVariante(item.variantes[0].id, true);
-      }
-      return;
-    }
-
-    createForm.setExpandedMaterialItems((prev) => {
-      const next = { ...prev };
-      delete next[item.itemKey];
-      return next;
-    });
-
-    createForm.setMaterialLinhas((prev) => {
-      const ids = new Set(item.variantes.map((variante) => String(variante.id)));
-      return prev.filter((linha) => !ids.has(linha.materialId));
-    });
-  }, [createForm, toggleVariante]);
 
   const updateVarianteQuantidade = useCallback((materialId: number, quantidade: string) => {
     let finalValue = quantidade;
@@ -701,6 +713,21 @@ export function SharedRequisitionsPage({
   const handleResetCreateForm = useCallback(() => {
     createForm.resetForm();
   }, [createForm]);
+
+  const handleBackWithCheck = useCallback(() => {
+    if (createForm.isDirty) {
+      setShowUnsavedDialog(true);
+    } else {
+      handleResetCreateForm();
+      setActiveSection('list');
+    }
+  }, [createForm.isDirty, handleResetCreateForm]);
+
+  const confirmDiscardChanges = useCallback(() => {
+    handleResetCreateForm();
+    setShowUnsavedDialog(false);
+    setActiveSection('list');
+  }, [handleResetCreateForm]);
 
   const toggleSelectedTransport = useCallback((transporteId: number, checked: boolean) => {
     if (checked && transportesIndisponiveis.has(transporteId)) {
@@ -735,7 +762,6 @@ export function SharedRequisitionsPage({
     }
 
     const fieldsToValidate: CreateField[] = [];
-    fieldsToValidate.push('tempoLimite');
 
     if (createForm.tipo === 'MATERIAL') {
       fieldsToValidate.push('materialItens');
@@ -749,6 +775,7 @@ export function SharedRequisitionsPage({
         'horaRegresso',
         'numeroPassageiros',
         'transporteIds',
+        'condutor'
       );
     }
     if (createForm.tipo === 'MANUTENCAO') {
@@ -776,7 +803,6 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        tempoLimite: toIsoFromDateOnly(createForm.tempoLimite),
         criadoPorId: currentUserId,
       };
 
@@ -865,7 +891,8 @@ export function SharedRequisitionsPage({
       filters.setFilterPrioridade('');
     }
     filters.setFilterCriadoPorNome('');
-    filters.setFilterGeridoPorNome('');
+    filters.setFilterDataInicio('');
+    filters.setFilterDataFim('');
     filters.setFilterCriadoPorTipo('');
   };
 
@@ -888,7 +915,8 @@ export function SharedRequisitionsPage({
           tipo: nextTipo,
           prioridade: nextPrioridade,
           criadoPorNome: filters.filterCriadoPorNome,
-          geridoPorNome: filters.filterGeridoPorNome,
+          dataInicio: filters.filterDataInicio,
+          dataFim: filters.filterDataFim,
         }),
       );
   };
@@ -934,7 +962,7 @@ export function SharedRequisitionsPage({
 
     const conflitos = outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'RECUSADA' && outra.estado !== 'CANCELADA')
+      .filter((outra) => outra.estado !== 'FECHADO')
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -964,7 +992,7 @@ export function SharedRequisitionsPage({
       return null;
     }
 
-    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'ACEITE');
+    const conflitosBloqueantes = conflitos.filter((conflito) => conflito.estado === 'FECHADO');
     const conflitosParaMostrar = conflitosBloqueantes.length > 0 ? conflitosBloqueantes : conflitos;
     const nomesTransportesConflito = Array.from(new Set(
       transportesSelecionados
@@ -984,7 +1012,7 @@ export function SharedRequisitionsPage({
     outrasRequisicoes: RequisicaoResponse[],
   ): RequisicaoResponse[] => {
     // Similar to calcularConflitosTransporte, but includes ALL conflicting requisitions
-    // regardless of their state (except CANCELADA), for automatic rejection
+    // regardless of their state (except FECHADO), for automatic closure
     const transportesSelecionados = getRequisicaoTransportes(requisicaoAtual);
     const idsSelecionados = new Set(
       transportesSelecionados
@@ -998,7 +1026,7 @@ export function SharedRequisitionsPage({
 
     return outrasRequisicoes
       .filter((outra) => outra.id !== requisicaoAtual.id)
-      .filter((outra) => outra.estado !== 'CANCELADA') // Don't reject cancelled requests
+      .filter((outra) => outra.estado !== 'FECHADO') // Don't reject closed requests
       .filter((outra) => {
         const transportesOutra = getRequisicaoTransportes(outra);
         const partilhaTransporte = transportesOutra.some(
@@ -1058,16 +1086,20 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    // Ao visualizar uma requisição ENVIADA na secretaria, a requisição entra automaticamente em análise.
-    if (req.estado === 'ENVIADA') {
+    if (req.estado === 'ABERTO') {
       try {
         setUpdatingEstadoId(req.id);
-        await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_ANALISE' });
-        await fetchRequisicoes();
-        setEstadoEdicao('EM_ANALISE');
+        const updatedReq = await requisicoesApi.atualizarEstado(req.id, { estado: 'EM_PROGRESSO' });
+        
+        // Update local state immediately for snappy UI
+        setRequisicoes(prev => prev.map(r => r.id === req.id ? updatedReq : r));
+        setEstadoEdicao('FECHADO');
+        
+        // Background refresh to keep everything in sync
+        fetchRequisicoes();
       } catch (error: any) {
         toast.error(error?.message || t('requisitions.errors.updateStatusFailed'));
-        setEstadoEdicao('EM_ANALISE');
+        setEstadoEdicao('ABERTO');
       } finally {
         setUpdatingEstadoId(null);
       }
@@ -1097,7 +1129,7 @@ export function SharedRequisitionsPage({
       return;
     }
 
-    if (selectedRequisicao.tipo === 'TRANSPORTE' && estadoEdicao === 'ACEITE') {
+    if (selectedRequisicao.tipo === 'TRANSPORTE' && (estadoEdicao === 'EM_PROGRESSO' || estadoEdicao === 'FECHADO')) {
       try {
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
@@ -1237,41 +1269,34 @@ export function SharedRequisitionsPage({
     try {
       setUpdatingEstadoId(openedRequisicaoId);
 
-      // First, accept the current request
-      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: 'ACEITE' });
+      // First, move to the intended state (EM_PROGRESSO or FECHADO)
+      await requisicoesApi.atualizarEstado(openedRequisicaoId, { estado: estadoEdicao });
 
-      // Then, automatically reject ALL conflicting transport requests regardless of their state
+      // Then, automatically close ALL conflicting transport requests
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
           const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
 
-          // Get ALL conflicting requests (including ENVIADA, EM_ANALISE, etc)
+          // Get ALL conflicting requests
           const todosOsConflitos = calcularTodosOsConflitosTransporte(
             selectedRequisicao,
             requisicoesList,
           );
 
           if (todosOsConflitos.length > 0) {
-            // Backend only allows ENVIADA -> EM_ANALISE -> RECUSADA.
-            // For other pending states, RECUSADA can be applied directly.
-            const rejeitarConflito = async (conflito: RequisicaoResponse) => {
-              if (conflito.estado === 'RECUSADA') {
+            const fecharConflito = async (conflito: RequisicaoResponse) => {
+              if (conflito.estado === 'FECHADO' || conflito.estado === 'RECUSADO') {
                 return;
               }
 
-              if (conflito.estado === 'ENVIADA') {
-                await requisicoesApi.atualizarEstado(conflito.id, { estado: 'EM_ANALISE' });
-              }
-
-              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADA' });
+              await requisicoesApi.atualizarEstado(conflito.id, { estado: 'RECUSADO' });
             };
 
-            await Promise.all(todosOsConflitos.map((conflito) => rejeitarConflito(conflito)));
+            await Promise.all(todosOsConflitos.map((conflito) => fecharConflito(conflito)));
           }
         } catch (error: any) {
-          // Log rejection errors but don't block the main acceptance
-          console.error('Failed to reject conflicting requisitions:', error);
+          console.error('Failed to close conflicting requisitions:', error);
         }
       }
 
@@ -1291,35 +1316,16 @@ export function SharedRequisitionsPage({
     [estadosPermitidosSelecionados],
   );
 
-  const headingClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
-  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 outline-none';
-  const inputFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30 cursor-text';
-  const textareaFieldClassName = 'mt-1 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800/90 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-  const quantityFieldClassName = 'mt-1 h-9 border-2 border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus-visible:border-purple-500 focus-visible:ring-purple-500/30';
-
-  const toggleSection = (targetSection: 'create' | 'list') => {
-    if (sectionSwitchTimeoutRef.current) {
-      globalThis.clearTimeout(sectionSwitchTimeoutRef.current);
-      sectionSwitchTimeoutRef.current = null;
-    }
-
-    if (activeSection === targetSection) {
-      const oppositeSection = targetSection === 'create' ? 'list' : 'create';
-      setActiveSection(null);
-      sectionSwitchTimeoutRef.current = globalThis.setTimeout(() => {
-        setActiveSection(oppositeSection);
-        sectionSwitchTimeoutRef.current = null;
-      }, 140);
-      return;
-    }
-
-    setActiveSection(targetSection);
-  };
+  const headingClass = 'text-foreground';
+  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border-2 border-border bg-background px-3 text-sm text-foreground shadow-sm focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none';
+  const inputFieldClassName = 'mt-1 border-2 border-border bg-background shadow-sm focus-visible:border-primary focus-visible:ring-primary/30 cursor-text';
+  const textareaFieldClassName = 'mt-1 border-2 border-border bg-background shadow-sm focus-visible:border-primary focus-visible:ring-primary/30';
+  const quantityFieldClassName = 'mt-1 h-9 border-2 border-border bg-background text-foreground shadow-sm focus-visible:border-primary focus-visible:ring-primary/30';
 
   const createFormContent = (
     <div className="space-y-5">
-      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.mainData')}</h3>
+      <div className="rounded-lg border-2 border-border bg-card p-4 space-y-4">
+        <h3 className="text-sm font-medium text-foreground">{t('requisitions.ui.mainData')}</h3>
 
         <RequisitionsCreateCommonFields
           tipo={createForm.tipo}
@@ -1328,27 +1334,16 @@ export function SharedRequisitionsPage({
           onChangeTipo={createForm.setTipo}
           prioridade={createForm.prioridade}
           onChangePrioridade={createForm.setPrioridade}
-          tempoLimite={createForm.tempoLimite}
-          onChangeTempoLimite={(value) => {
-            createForm.setTempoLimite(value);
-            createForm.setTempoLimiteManuallyEdited(true);
-            createForm.setFieldTouched('tempoLimite');
-          }}
           descricaoError={createForm.createErrors.descricao}
-          tempoLimiteError={createForm.createErrors.tempoLimite}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
           selectFieldClassName={selectFieldClassName}
           t={t}
         />
-
-        {createForm.tipo === 'TRANSPORTE' && !createForm.tempoLimiteManuallyEdited && createForm.dataSaida && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.transportAutoDeadlineHint')}</p>
-        )}
       </div>
 
-      <div className="rounded-lg border-2 border-gray-300 dark:border-gray-700 bg-white/95 dark:bg-gray-900/85 p-4 space-y-4">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.detailsByType')}</h3>
+      <div className="rounded-lg border-2 border-border bg-card p-4 space-y-4">
+        <h3 className="text-sm font-medium text-foreground">{t('requisitions.ui.detailsByType')}</h3>
 
         <div>
           {createForm.tipo === 'MATERIAL' && (
@@ -1365,12 +1360,10 @@ export function SharedRequisitionsPage({
                     itens,
                   };
                 })}
-                materiaisAdicionados={[]}
                 materiaisAdicionadosTotal={materiaisAdicionadosTotal}
                 materiaisAdicionadosAgrupados={materiaisAdicionadosAgrupados}
                 onToggleCategoriaExpansion={(categoria) => toggleCategoriaExpansion(categoria as MaterialCategoria)}
                 onToggleItemVisibility={toggleItemAttributesVisibility}
-                onToggleItem={handleItemToggle}
                 onToggleVariante={toggleVariante}
                 onUpdateVarianteQuantidade={updateVarianteQuantidade}
                 onRemoveMaterialLinha={handleRemoveMaterialLinha}
@@ -1422,22 +1415,21 @@ export function SharedRequisitionsPage({
                   validateAndSetField('horaSaida');
                 }}
                 numeroPassageiros={createForm.numeroPassageiros}
-                onChangeNumeroPassageiros={(value) => {
-                  createForm.setNumeroPassageiros(value);
-                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros');
+                onChangeNumeroPassageiros={(val) => {
+                  createForm.setNumeroPassageiros(val);
+                  if (createForm.createTouched.numeroPassageiros) validateAndSetField('numeroPassageiros', false, val);
                 }}
                 condutorTransporte={createForm.condutorTransporte}
-                onChangeCondutor={createForm.setCondutorTransporte}
+                onChangeCondutor={(value) => {
+                  createForm.setCondutorTransporte(value);
+                  if (createForm.createTouched.condutor) validateAndSetField('condutor', false, value);
+                }}
                 selectedTransportIds={createForm.selectedTransportIds}
                 onToggleTransport={(transporteId, checked) => {
                   toggleSelectedTransport(transporteId, checked);
                   validateAndSetField('transporteIds', true);
                 }}
                 onRemoveTransport={(transporteId) => toggleSelectedTransport(transporteId, false)}
-                expandedTransporteCategorias={createForm.expandedTransporteCategorias as Partial<Record<string, boolean>>}
-                onToggleTransporteCategoriaExpansion={toggleTransporteCategoriaExpansion}
-                expandedTransporteDetalhes={createForm.expandedTransporteDetalhes}
-                onToggleTransporteDetalhes={toggleTransporteDetalhes}
                 transportesPorCategoria={transportesPorCategoria}
                 selectedTransportes={selectedTransportes}
                 transportesIndisponiveis={transportesIndisponiveis}
@@ -1448,7 +1440,6 @@ export function SharedRequisitionsPage({
                 loadingCatalogo={catalog.loadingCatalogo}
                 createErrors={createForm.createErrors}
                 inputFieldClassName={inputFieldClassName}
-                selectFieldClassName={selectFieldClassName}
                 onApplySuggestion={handleAplicarSugestaoTransporte}
                 t={t}
               />
@@ -1483,15 +1474,12 @@ export function SharedRequisitionsPage({
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
-          onClick={() => {
-            handleResetCreateForm();
-            setActiveSection('list');
-          }}
+          onClick={handleBackWithCheck}
           disabled={submitting}
         >
           {t('requisitions.ui.close')}
         </Button>
-        <Button onClick={handlePreSubmit} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+        <Button onClick={handlePreSubmit} disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           {submitting ? t('requisitions.ui.creatingRequest') : t('requisitions.ui.createRequest')}
         </Button>
       </div>
@@ -1499,53 +1487,33 @@ export function SharedRequisitionsPage({
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6">
-      <RequisitionsStatsCards
-        stats={stats}
-        onCardShortcut={handleCardShortcut}
-        t={t}
-      />
+    <div className="max-w-[1600px] mx-auto space-y-6 animate-in fade-in duration-500">
+      {activeSection === 'list' ? (
+        <div className="space-y-6">
+          <RequisitionsStatsCards
+            stats={stats}
+            onCardShortcut={handleCardShortcut}
+            t={t}
+          />
 
-      <div className="lg:hidden space-y-6">
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-              {activeSection !== 'create' && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.clickToOpenForm')}</p>}
+          <GlassCard className="w-full p-0 overflow-hidden border border-border">
+            <div className="px-5 py-5 border-b border-border flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{summaryText}</p>
+              </div>
+              <Button
+                onClick={() => setActiveSection('create')}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 transition-all hover:-translate-y-0.5"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t('requisitions.ui.createRequest')}
+              </Button>
             </div>
-            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
 
-          {activeSection === 'create' && (
-            <div className="px-5 pb-5 border-t border-gray-200 dark:border-gray-800">
-              {createFormContent}
-            </div>
-          )}
-        </GlassCard>
-
-        <GlassCard className="w-full p-0 overflow-hidden border border-gray-300 dark:border-gray-700">
-          <button
-            type="button"
-            onClick={() => toggleSection('list')}
-            className="w-full flex items-center justify-between p-5 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
-            aria-label={t('requisitions.ui.toggleRequestsSection')}
-          >
-            <div className="text-left">
-              <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
-            </div>
-            {activeSection === 'list' ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-          </button>
-
-          {activeSection === 'list' && (
-            <div className="px-5 pb-5 space-y-4">
+            <div className="px-5 pb-5 pt-4 space-y-4">
               <RequisitionsListFiltersContent
-                desktop={false}
+                desktop={true}
                 activeTab={filters.activeTab}
                 onSelectTab={handleSelectTab}
                 filterEstado={filters.filterEstado}
@@ -1554,15 +1522,21 @@ export function SharedRequisitionsPage({
                 setFilterPrioridade={filters.setFilterPrioridade}
                 filterCriadoPorNome={filters.filterCriadoPorNome}
                 setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                filterGeridoPorNome={filters.filterGeridoPorNome}
-                setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
+                filterDataInicio={filters.filterDataInicio}
+                setFilterDataInicio={filters.setFilterDataInicio}
+                filterDataFim={filters.filterDataFim}
+                setFilterDataFim={filters.setFilterDataFim}
                 showCreatedByRoleFilter={isSecretaryView}
                 filterCriadoPorTipo={filters.filterCriadoPorTipo}
                 setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
                 onSearch={() => fetchRequisicoes()}
                 onClearFilters={handleClearFilters}
                 loading={loading}
-                requisicoes={requisicoes}
+                requisicoes={requisicoes.filter(req => {
+                  if (filters.activeTab === 'GERAL') return true;
+                  if (filters.activeTab === 'URGENTE') return req.prioridade === 'URGENTE';
+                  return req.tipo === filters.activeTab;
+                })}
                 onOpenRequisicao={handleOpenRequisicao}
                 selectFieldClassName={selectFieldClassName}
                 inputFieldClassName={inputFieldClassName}
@@ -1570,94 +1544,31 @@ export function SharedRequisitionsPage({
                 t={t}
               />
             </div>
-          )}
-        </GlassCard>
-      </div>
-
-      <div className="hidden lg:flex gap-6 items-stretch">
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-1/5 min-w-[180px]' : 'w-full'}`}>
-          {activeSection === 'create' ? (
-            <button
-              type="button"
-              onClick={() => toggleSection('list')}
-              className="h-full w-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50"
-              aria-label={t('requisitions.ui.toggleRequestsSection')}
-            >
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.requests')}</span>
-              <ChevronLeft className="w-5 h-5 text-gray-500 rotate-180" />
-            </button>
-          ) : (
-            <>
-              <div className="px-5 py-5 border-b border-gray-200 dark:border-gray-800">
-                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.requests')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{summaryText}</p>
+          </GlassCard>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <GlassCard className="w-full p-0 overflow-hidden border border-border">
+            <div className="px-5 py-5 border-b border-border flex justify-between items-center">
+              <div>
+                <h2 className={`text-xl font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
+                <p className="text-sm text-muted-foreground mt-1">{t('requisitions.ui.fillToCreate')}</p>
               </div>
-
-              <div className="px-5 pb-5 pt-4 space-y-4">
-                <RequisitionsListFiltersContent
-                  desktop
-                  activeTab={filters.activeTab}
-                  onSelectTab={handleSelectTab}
-                  filterEstado={filters.filterEstado}
-                  setFilterEstado={filters.setFilterEstado}
-                  filterPrioridade={filters.filterPrioridade}
-                  setFilterPrioridade={filters.setFilterPrioridade}
-                  filterCriadoPorNome={filters.filterCriadoPorNome}
-                  setFilterCriadoPorNome={filters.setFilterCriadoPorNome}
-                  filterGeridoPorNome={filters.filterGeridoPorNome}
-                  setFilterGeridoPorNome={filters.setFilterGeridoPorNome}
-                  showCreatedByRoleFilter={isSecretaryView}
-                  filterCriadoPorTipo={filters.filterCriadoPorTipo}
-                  setFilterCriadoPorTipo={filters.setFilterCriadoPorTipo}
-                  onSearch={() => fetchRequisicoes()}
-                  onClearFilters={handleClearFilters}
-                  loading={loading}
-                  requisicoes={requisicoes}
-                  onOpenRequisicao={handleOpenRequisicao}
-                  selectFieldClassName={selectFieldClassName}
-                  inputFieldClassName={inputFieldClassName}
-                  formatDateTimeOrDash={formatDateTimeOrDash}
-                  t={t}
-                />
-
-              </div>
-            </>
-          )}
-        </GlassCard>
-
-        <GlassCard className={`p-0 overflow-hidden border border-gray-300 dark:border-gray-700 transition-all duration-300 ${activeSection === 'create' ? 'w-4/5 opacity-100' : 'w-[160px] opacity-100'}`}>
-          <button
-            type="button"
-            onClick={() => toggleSection('create')}
-            className={`w-full transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${activeSection === 'create'
-              ? 'flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800'
-              : 'h-full min-h-[560px] px-3 py-6 flex flex-col items-center justify-center gap-3'
-              }`}
-            aria-label={t('requisitions.ui.toggleNewRequestSection')}
-          >
-            {activeSection === 'create' ? (
-              <>
-                <div className="text-left">
-                  <h2 className={`text-lg font-semibold ${headingClass}`}>{t('requisitions.ui.newRequest')}</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('requisitions.ui.creationPanel')}</p>
-                </div>
-                <ChevronUp className="w-5 h-5 text-gray-500" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('requisitions.ui.create')}</span>
-                <ChevronLeft className="w-5 h-5 text-gray-500" />
-              </>
-            )}
-          </button>
-
-          {activeSection === 'create' && (
-            <div className="px-4 pb-4 pt-3">
+              <Button
+                variant="outline"
+                onClick={handleBackWithCheck}
+                className="rounded-xl px-6 border-border hover:bg-accent transition-all hover:-translate-x-1"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('common.back')}
+              </Button>
+            </div>
+            <div className="p-5">
               {createFormContent}
             </div>
-          )}
-        </GlassCard>
-      </div>
+          </GlassCard>
+        </div>
+      )}
 
       <RequisitionDetailsDialog
         open={openedRequisicaoId !== null}
@@ -1679,6 +1590,29 @@ export function SharedRequisitionsPage({
         locale={locale}
         t={t}
       />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('profile.unsaved.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('profile.unsaved.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowUnsavedDialog(false)}>
+              {t('profile.unsaved.stay')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDiscardChanges}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {t('profile.unsaved.discard')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {canManageRequests && (
         <RequisitionsConflictDialog
@@ -1723,7 +1657,7 @@ export function SharedRequisitionsPage({
       />
 
       {/* Confirmation Modal */}
-      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+      <Dialog open={isConfirmModalOpen} onOpenChange={(open) => setIsConfirmModalOpen(open)}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle>{t('requisitions.ui.confirmTitle')}</DialogTitle>
@@ -1732,30 +1666,24 @@ export function SharedRequisitionsPage({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 my-4 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-md text-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-              <span className="text-gray-500 font-medium">{t('requisitions.ui.type')}:</span>
-              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+          <div className="space-y-3 my-4 bg-muted/40 p-4 rounded-md text-sm border border-border">
+            <div className="flex items-center justify-between border-b pb-2 border-border">
+              <span className="text-muted-foreground font-medium">{t('requisitions.ui.type')}:</span>
+              <span className="text-foreground font-semibold">
                 {t(`requisitions.labels.${{ MATERIAL: 'material', TRANSPORTE: 'transport', MANUTENCAO: 'maintenance' }[createForm.tipo]}`)}
               </span>
             </div>
-            <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-              <span className="text-gray-500 font-medium">{t('requisitions.ui.priority')}:</span>
-              <span className="text-gray-900 dark:text-gray-100 font-semibold">
+            <div className="flex items-center justify-between border-b pb-2 border-border">
+              <span className="text-muted-foreground font-medium">{t('requisitions.ui.priority')}:</span>
+              <span className="text-foreground font-semibold">
                 {t(`requisitions.labels.${{ BAIXA: 'low', MEDIA: 'medium', ALTA: 'high', URGENTE: 'urgent' }[createForm.prioridade]}`)}
               </span>
             </div>
-            {createForm.tempoLimite && (
-              <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-                <span className="text-gray-500 font-medium">{t('requisitions.ui.deadlineDate')}:</span>
-                <span className="text-gray-900 dark:text-gray-100">{new Date(createForm.tempoLimite).toLocaleDateString('pt-PT')}</span>
-              </div>
-            )}
             
             {createForm.tipo === 'MATERIAL' && (
               <div>
-                <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.materials')}:</span>
-                <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                <span className="text-muted-foreground font-medium mb-1 block">{t('requisitions.ui.materials')}:</span>
+                <ul className="list-disc pl-5 text-foreground">
                   {createForm.materialLinhas.filter(l => l.materialId && Number(l.quantidade) > 0).map((l, idx) => {
                     const itemName = catalog.materiais.find(m => m.id === Number(l.materialId))?.nome || `#${l.materialId}`;
                     return <li key={idx}>{itemName} x {l.quantidade}</li>;
@@ -1766,17 +1694,17 @@ export function SharedRequisitionsPage({
 
             {createForm.tipo === 'TRANSPORTE' && (
               <>
-                <div className="flex flex-col border-b pb-2 border-gray-200 dark:border-gray-800">
-                  <span className="text-gray-500 font-medium">{t('requisitions.ui.destination')}:</span>
-                  <span className="text-gray-900 dark:text-gray-100">{createForm.destinoTransporte}</span>
+                <div className="flex flex-col border-b pb-2 border-border">
+                  <span className="text-muted-foreground font-medium">{t('requisitions.ui.destination')}:</span>
+                  <span className="text-foreground">{createForm.destinoTransporte}</span>
                 </div>
-                <div className="flex items-center justify-between border-b pb-2 border-gray-200 dark:border-gray-800">
-                  <span className="text-gray-500 font-medium">{t('requisitions.ui.passengersCount')}:</span>
-                  <span className="text-gray-900 dark:text-gray-100">{passageirosSolicitados}</span>
+                <div className="flex items-center justify-between border-b pb-2 border-border">
+                  <span className="text-muted-foreground font-medium">{t('requisitions.ui.passengersCount')}:</span>
+                  <span className="text-foreground">{passageirosSolicitados}</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-gray-500 font-medium mb-1 block">{t('requisitions.ui.suggestedAndSelectedVehicles')}:</span>
-                  <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
+                  <span className="text-muted-foreground font-medium mb-1 block">{t('requisitions.ui.suggestedAndSelectedVehicles')}:</span>
+                  <ul className="list-disc pl-5 text-foreground">
                     {createForm.selectedTransportIds.map((id, idx) => {
                       const tInfo = catalog.transportes.find(x => x.id === Number(id));
                       return <li key={idx}>{tInfo ? formatTransporteDisplay(tInfo) : `#${id}`}</li>;
@@ -1788,7 +1716,7 @@ export function SharedRequisitionsPage({
 
             {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItemIds.length > 0 && (
               <div>
-                <span className="text-gray-500 font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
+                <span className="text-muted-foreground font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
                 {(() => {
                   const grouped = createForm.selectedManutencaoItemIds.reduce((acc, id) => {
                     const mInfo = catalog.manutencaoItems.find((m) => m.id === id);
@@ -1808,15 +1736,15 @@ export function SharedRequisitionsPage({
 
                   return Object.entries(grouped).map(([categoria, items]) => (
                     <div key={categoria} className="mb-2 last:mb-0 ml-2">
-                      <p className="font-medium text-sm text-gray-800 dark:text-gray-200">
+                      <p className="font-medium text-sm text-foreground">
                         {labelMap[categoria] || categoria}:
                       </p>
                       {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 mb-1 italic">
+                        <p className="text-xs text-muted-foreground mt-0.5 mb-1 italic">
                           Obs: {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria]}
                         </p>
                       )}
-                      <ul className="list-disc pl-5 mt-1 text-gray-700 dark:text-gray-300">
+                      <ul className="list-disc pl-5 mt-1 text-muted-foreground">
                         {items.map((item, idx) => (
                           <li key={idx} className="text-sm">{item.espaco} - {item.itemVerificacao}</li>
                         ))}
@@ -1828,9 +1756,9 @@ export function SharedRequisitionsPage({
             )}
 
             {createForm.descricao && (
-              <div className="flex flex-col mt-2 pt-2 border-t border-gray-200 dark:border-gray-800">
-                <span className="text-gray-500 font-medium">{t('requisitions.ui.description')}:</span>
-                <span className="text-gray-900 dark:text-gray-100 truncate">{createForm.descricao}</span>
+              <div className="flex flex-col mt-2 pt-2 border-t border-border">
+                <span className="text-muted-foreground font-medium">{t('requisitions.ui.description')}:</span>
+                <span className="text-foreground truncate">{createForm.descricao}</span>
               </div>
             )}
           </div>
@@ -1839,7 +1767,7 @@ export function SharedRequisitionsPage({
             <Button variant="outline" onClick={() => setIsConfirmModalOpen(false)} disabled={submitting}>
               {t('requisitions.ui.confirmCancelBtn')}
             </Button>
-            <Button onClick={() => void confirmAndSubmit()} disabled={submitting} className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button onClick={() => void confirmAndSubmit()} disabled={submitting} className="bg-primary hover:bg-primary/90 text-primary-foreground">
               {submitting ? t('requisitions.ui.creating') : t('requisitions.ui.confirmSubmitBtn')}
             </Button>
           </DialogFooter>

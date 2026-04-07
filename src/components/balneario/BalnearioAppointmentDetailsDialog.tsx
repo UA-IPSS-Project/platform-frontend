@@ -310,56 +310,56 @@ export function BalnearioAppointmentDetailsDialog({
     return (
         <>
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
+            <DialogContent hideCloseButton className="max-w-xl p-0 bg-card border-border flex flex-col max-h-[90vh]">
                 <DialogTitle className="sr-only">{t('balnearioAppointmentDetails.dialogTitle')}</DialogTitle>
                 <DialogPrimitive.Description className="sr-only">
                     {t('balnearioAppointmentDetails.dialogDescription')}
                 </DialogPrimitive.Description>
 
                 {/* Header - Fixed */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+                <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t('balnearioAppointmentDetails.title')}</h2>
+                            <h2 className="text-lg font-bold text-foreground">{t('balnearioAppointmentDetails.title')}</h2>
                             <StatusBadge status={appointment.status} size="md" />
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
+                        <p className="text-sm text-muted-foreground">{dateString}</p>
                         {/* Duração da marcação balneário */}
                         <div className="mt-2 flex items-center gap-2">
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                            <Label className="text-xs font-medium text-foreground/80">
                                 {t('appointmentDialog.durationLabel', 'Duração da marcação')}
                             </Label>
-                            <Badge color="purple" className="text-xs">
+                            <Badge className="text-xs bg-primary/10 text-primary border-primary/30">
                                 {t('appointmentDialog.durationBalneario', '30 minutos')}
                             </Badge>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                        className="p-2 hover:bg-muted rounded-lg transition-colors"
                         aria-label={t('appointmentDetails.closeDetails')}
                     >
-                        <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <XIcon className="w-5 h-5 text-muted-foreground" />
                     </button>
                 </div>
 
                 {/* Scrollable Content */}
                 <div className="p-6 space-y-6 overflow-y-auto flex-1">
                     {/* Patient Name */}
-                    <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                    <div className="bg-muted/50 rounded-xl p-5 border border-border">
                         <Label className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 mb-2">
                             {t('balnearioAppointmentDetails.patientName')}
                         </Label>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
+                        <p className="text-2xl font-bold text-foreground">{appointment.patientName}</p>
                     </div>
 
                     {/* Cancellation info */}
                     {appointment.status === 'cancelled' && appointment.cancellationReason && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                            <p className="text-sm font-bold text-red-700 dark:text-red-300 mb-1">
+                        <div className="bg-[color:var(--status-error-soft)]/50 border border-[color:var(--status-error)]/40 rounded-xl p-4">
+                            <p className="text-sm font-bold text-status-error mb-1">
                                 {t('appointmentDetails.cancelledAppointment')}
                             </p>
-                            <p className="text-sm text-red-600 dark:text-red-200">
+                            <p className="text-sm text-status-error">
                                 {t('appointmentDetails.reason')}: {appointment.cancellationReason}
                             </p>
                         </div>
@@ -367,16 +367,16 @@ export function BalnearioAppointmentDetailsDialog({
 
                     {/* Editable Checklist */}
                     <div>
-                        <Label className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
+                        <Label className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
                             {t('balnearioAppointmentDetails.markedNeeds')}
-                            {isEditable && <span className="text-xs font-normal text-gray-500">({t('balnearioAppointmentDetails.editable')})</span>}
+                            {isEditable && <span className="text-xs font-normal text-muted-foreground">({t('balnearioAppointmentDetails.editable')})</span>}
                         </Label>
 
                         {isEditable ? (
                             <div className="space-y-4">
                                 {/* Hygiene */}
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
+                                <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                    <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {HYGIENE_OPTIONS.map((opt) => (
                                             <div key={opt.value} className="flex items-center space-x-3">
@@ -384,17 +384,17 @@ export function BalnearioAppointmentDetailsDialog({
                                                     id={`detail-${opt.value}`}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
+                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-foreground/80">{t(opt.labelKey)}</label>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
                                 {/* Laundry */}
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</Label>
+                                <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                    <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {LAUNDRY_OPTIONS.map((opt) => (
                                             <div key={opt.value} className="flex items-center space-x-3">
@@ -402,17 +402,17 @@ export function BalnearioAppointmentDetailsDialog({
                                                     id={`detail-${opt.value}`}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
+                                                <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-foreground/80">{t(opt.labelKey)}</label>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
                                 {/* Clothing */}
-                                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                    <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</Label>
+                                <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                    <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {CLOTHING_OPTIONS.map((opt) => (
                                             <div key={opt.value} className="flex flex-col">
@@ -421,33 +421,33 @@ export function BalnearioAppointmentDetailsDialog({
                                                         id={`detail-${opt.value}`}
                                                         checked={selectedOptions[opt.value] || false}
                                                         onCheckedChange={() => toggleOption(opt.value)}
-                                                        className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                        className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                     />
-                                                    <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-gray-700 dark:text-gray-200">{t(opt.labelKey)}</label>
+                                                    <label htmlFor={`detail-${opt.value}`} className="text-sm cursor-pointer select-none text-foreground/80">{t(opt.labelKey)}</label>
                                                 </div>
                                                 {/* Shoe size input */}
                                                 {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (
                                                     <div className="ml-8 mt-2 space-y-1">
                                                         <div className="flex items-center gap-2">
-                                                            <Label className="text-xs text-gray-500 dark:text-gray-400">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
+                                                            <Label className="text-xs text-muted-foreground">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
                                                             <Input
                                                                 type="text"
                                                                 inputMode="numeric"
                                                                 value={shoeSize}
                                                                 onChange={(e) => handleShoeSizeChange(e.target.value)}
                                                                 placeholder="35-46"
-                                                                className="w-20 h-7 text-sm text-center border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                                                                className="w-20 h-7 text-sm text-center border-border bg-background"
                                                                 maxLength={2}
                                                             />
                                                         </div>
                                                         {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
-                                                            <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                            <p className="text-xs text-status-error flex items-center gap-1">
                                                                 <AlertTriangle className="w-3 h-3" />
                                                                 {t('consumos.outOfStock', 'Esgotado no armazém')}
                                                             </p>
                                                         )}
                                                         {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
-                                                            <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                                                            <p className="text-xs text-status-warning flex items-center gap-1">
                                                                 <AlertTriangle className="w-3 h-3" />
                                                                 {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
                                                             </p>
@@ -456,7 +456,7 @@ export function BalnearioAppointmentDetailsDialog({
                                                 )}
                                                 {/* Stock warning for non-shoe items */}
                                                 {opt.value !== 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                    <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                    <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
                                                         <AlertTriangle className="w-3 h-3" />
                                                         {getStockWarning(opt.value)}
                                                     </p>
@@ -471,7 +471,7 @@ export function BalnearioAppointmentDetailsDialog({
                                     <Button
                                         onClick={handleSaveDetails}
                                         disabled={isSaving}
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                                     >
                                         <Save className="w-4 h-4 mr-2" />
                                         {isSaving ? t('balnearioAppointment.saving') : t('balnearioAppointmentDetails.saveChanges')}
@@ -481,30 +481,30 @@ export function BalnearioAppointmentDetailsDialog({
                         ) : (
                             /* Read-only view for completed/cancelled/no-show */
                             <div className="space-y-2">
-                                <h4 className="text-sm font-medium text-gray-500 mb-2">{t('balnearioAppointmentDetails.requestedServices')}</h4>
+                                <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('balnearioAppointmentDetails.requestedServices')}</h4>
                                 {(!appointment.balnearioDetails?.produtosHigiene &&
                                     !appointment.balnearioDetails?.lavagemRoupa &&
                                     (!appointment.balnearioDetails?.roupas || appointment.balnearioDetails.roupas.length === 0)) ? (
-                                    <p className="text-sm text-gray-500 italic">{t('balnearioAppointmentDetails.noSpecificServices')}</p>
+                                    <p className="text-sm text-muted-foreground italic">{t('balnearioAppointmentDetails.noSpecificServices')}</p>
                                 ) : (
                                     <>
                                         {appointment.balnearioDetails?.produtosHigiene && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            <div className="flex items-center gap-2 text-sm text-foreground/80 bg-muted/40 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-status-info"></div>
                                                 {t('balnearioAppointmentDetails.hygieneProducts')}
                                             </div>
                                         )}
 
                                         {appointment.balnearioDetails?.lavagemRoupa && (
-                                            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            <div className="flex items-center gap-2 text-sm text-foreground/80 bg-muted/40 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-status-info"></div>
                                                 {t('balnearioAppointmentDetails.laundryService')}
                                             </div>
                                         )}
 
                                         {appointment.balnearioDetails?.roupas && appointment.balnearioDetails.roupas.map((roupa, index) => (
-                                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                                            <div key={index} className="flex items-center gap-2 text-sm text-foreground/80 bg-muted/40 p-2 rounded-md">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-status-info"></div>
                                                 {t('balnearioAppointmentDetails.supplyItem', {
                                                     category: getOptionLabel(roupa.categoria),
                                                     sizePart: roupa.tamanho ? ` (${t('balnearioAppointmentDetails.size')}: ${roupa.tamanho})` : '',
@@ -521,20 +521,20 @@ export function BalnearioAppointmentDetailsDialog({
                     {/* Additional Notes */}
                     {appointment.description && appointment.description !== 'Serviços Logísticos' && (
                         <div>
-                            <h4 className="text-sm font-medium text-gray-500 mb-2">{t('balnearioAppointment.additionalNotes')}:</h4>
-                            <p className="text-sm text-gray-700 bg-yellow-50 p-3 rounded-md whitespace-pre-wrap border border-yellow-100">
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">{t('balnearioAppointment.additionalNotes')}:</h4>
+                            <p className="text-sm text-foreground/80 bg-[color:var(--status-warning-soft)]/40 p-3 rounded-md whitespace-pre-wrap border border-[color:var(--status-warning)]/30">
                                 {appointment.description}
                             </p>
                         </div>
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex flex-col gap-2 pt-4 pb-2 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-col gap-2 pt-4 pb-2 border-t border-border/60">
                         {(appointment.status === 'scheduled' || appointment.status === 'warning') && (
                             <div className="space-y-3 mb-2">
                                 <Button
                                     onClick={handleStartAppointment}
-                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-sm transition-all py-6 h-auto"
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-sm transition-all py-6 h-auto"
                                 >
                                     {t('balnearioAppointmentDetails.markPresent')}
                                 </Button>
@@ -561,7 +561,7 @@ export function BalnearioAppointmentDetailsDialog({
                         {appointment.status === 'in-progress' && (
                             <Button
                                 onClick={handleCompleteAppointment}
-                                className="bg-green-600 hover:bg-green-700 text-white font-medium w-full py-6 h-auto mb-2"
+                                className="bg-[color:var(--status-success)] hover:bg-[color:var(--status-success)]/90 text-primary-foreground font-medium w-full py-6 h-auto mb-2"
                             >
                                 {t('balnearioAppointmentDetails.completeService')}
                             </Button>
@@ -577,7 +577,7 @@ export function BalnearioAppointmentDetailsDialog({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                        <AlertTriangle className="w-5 h-5 text-status-warning" />
                         {t('consumos.stockWarningTitle', 'Aviso de Stock')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
@@ -588,7 +588,7 @@ export function BalnearioAppointmentDetailsDialog({
                     <AlertDialogCancel>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => { setShowStockWarning(false); doStartAppointment(); }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        className="bg-[color:var(--status-warning)] hover:bg-[color:var(--status-warning)]/90 text-primary-foreground"
                     >
                         {t('consumos.stockWarningContinue', 'Sim, continuar')}
                     </AlertDialogAction>

@@ -292,10 +292,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     return (
         <>
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="text-gray-900 dark:text-gray-100">{t('balnearioAppointment.title')}</DialogTitle>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <DialogTitle className="text-foreground">{t('balnearioAppointment.title')}</DialogTitle>
+                    <p className="text-sm text-muted-foreground">
                         {date.toLocaleDateString(i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
                     </p>
                 </DialogHeader>
@@ -305,7 +305,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name" className="text-gray-900 dark:text-gray-100 font-bold text-base">{t('balnearioAppointment.patientName')}</Label>
+                        <Label htmlFor="name" className="text-foreground font-bold text-base">{t('balnearioAppointment.patientName')}</Label>
                         <Input
                             id="name"
                             type="text"
@@ -317,18 +317,18 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                             }}
                             aria-invalid={!!errors.name}
                             aria-describedby={errors.name ? 'balneario-name-error' : undefined}
-                            className={`text-lg py-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
+                            className={`text-lg py-6 bg-background border-border text-foreground ${errors.name ? 'border-status-error' : ''}`}
                         />
-                        {errors.name && <p id="balneario-name-error" className="text-sm text-red-500">{errors.name}</p>}
+                        {errors.name && <p id="balneario-name-error" className="text-sm text-status-error">{errors.name}</p>}
                     </div>
 
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-purple-700 dark:text-purple-400 border-b border-purple-100 dark:border-purple-900/40 pb-2">{t('balnearioAppointment.patientNeeds')}</h3>
+                        <h3 className="font-semibold text-primary border-b border-primary/20 pb-2">{t('balnearioAppointment.patientNeeds')}</h3>
 
                         <div className="space-y-4">
                             {/* Hygiene */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
+                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {HYGIENE_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -337,12 +337,12 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     id={optionId('higiene', opt.value)}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
                                                 <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                             </div>
                                             {selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" />
                                                     {getStockWarning(opt.value)}
                                                 </p>
@@ -353,8 +353,8 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                             </div>
 
                             {/* Laundry */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.laundry')}</Label>
+                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {LAUNDRY_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -363,12 +363,12 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     id={optionId('lavandaria', opt.value)}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
                                                 <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                             </div>
                                             {selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" />
                                                     {getStockWarning(opt.value)}
                                                 </p>
@@ -379,8 +379,8 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                             </div>
 
                             {/* Clothing */}
-                            <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                                <Label className="font-medium text-gray-700 dark:text-gray-300 block mb-3">{t('balnearioAppointment.clothing')}</Label>
+                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {CLOTHING_OPTIONS.map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
@@ -389,7 +389,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     id={optionId('vestuario', opt.value)}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-purple-600 border-gray-300 dark:border-gray-600 flex-shrink-0"
+                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
                                                 <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
                                             </div>
@@ -397,25 +397,25 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                             {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (
                                                 <div className="ml-8 mt-2 space-y-1">
                                                     <div className="flex items-center gap-2">
-                                                        <Label className="text-xs text-gray-500 dark:text-gray-400">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
+                                                        <Label className="text-xs text-muted-foreground">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
                                                         <Input
                                                             type="text"
                                                             inputMode="numeric"
                                                             value={shoeSize}
                                                             onChange={(e) => handleShoeSizeChange(e.target.value)}
                                                             placeholder="35-46"
-                                                            className="w-20 h-7 text-sm text-center border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                                                            className="w-20 h-7 text-sm text-center border-border bg-background"
                                                             maxLength={2}
                                                         />
                                                     </div>
                                                     {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
-                                                        <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                        <p className="text-xs text-status-error flex items-center gap-1">
                                                             <AlertTriangle className="w-3 h-3" />
                                                             {t('consumos.outOfStock', 'Esgotado no armazém')}
                                                         </p>
                                                     )}
                                                     {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
-                                                        <p className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                                                        <p className="text-xs text-status-warning flex items-center gap-1">
                                                             <AlertTriangle className="w-3 h-3" />
                                                             {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
                                                         </p>
@@ -424,7 +424,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                             )}
                                             {/* Stock warning for non-shoe items */}
                                             {opt.value !== 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" />
                                                     {getStockWarning(opt.value)}
                                                 </p>
@@ -437,22 +437,22 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="notes" className="text-gray-900 dark:text-gray-100">{t('balnearioAppointment.additionalNotes')}</Label>
+                        <Label htmlFor="notes" className="text-foreground">{t('balnearioAppointment.additionalNotes')}</Label>
                         <Textarea
                             id="notes"
                             placeholder={t('balnearioAppointment.notesPlaceholder')}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
-                            className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                            className="bg-background border-border text-foreground"
                         />
                     </div>
 
-                    <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    <div className="flex gap-3 pt-4 border-t border-border">
                         <Button type="button" variant="outline" onClick={requestClose} className="flex-1" disabled={isLoading}>
                             {t('appointmentDialog.actions.cancel')}
                         </Button>
-                        <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+                        <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
                             {isLoading ? t('balnearioAppointment.saving') : t('balnearioAppointment.confirmBook')}
                         </Button>
                     </div>
@@ -465,7 +465,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-orange-500" />
+                        <AlertTriangle className="w-5 h-5 text-status-warning" />
                         {t('consumos.stockWarningTitle', 'Aviso de Stock')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
@@ -476,7 +476,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     <AlertDialogCancel>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => { setShowStockWarning(false); doSubmit(); }}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
+                        className="bg-[color:var(--status-warning)] hover:bg-[color:var(--status-warning)]/90 text-primary-foreground"
                     >
                         {t('consumos.stockWarningContinue', 'Sim, continuar')}
                     </AlertDialogAction>

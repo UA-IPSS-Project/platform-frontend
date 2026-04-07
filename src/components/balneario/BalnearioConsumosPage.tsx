@@ -208,7 +208,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
             case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
-            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
             default: return cat;
         }
     };
@@ -226,8 +225,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         const changed = hasItemChanges(item);
 
         return (
-            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-gray-100 dark:border-gray-700/30 last:border-b-0">
-                <span className="font-medium text-gray-900 dark:text-gray-100">
+            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-border last:border-b-0">
+                <span className="font-medium text-foreground">
                     {isCalcado ? `${t('consumos.size', 'Tamanho')} ${item.nome}` : t(`consumos.products.${item.nome}`, item.nome)}
                 </span>
 
@@ -235,7 +234,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 <div className="flex items-center gap-2 w-40 justify-center">
                     <button
                         onClick={() => handleQuantidadeChange(item, -1)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         aria-label="Diminuir"
                     >
                         <Minus className="w-3.5 h-3.5" />
@@ -246,15 +245,15 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         onChange={(e) => handleQuantidadeInput(item, e.target.value)}
                         className={`w-16 h-8 text-center text-sm font-semibold border rounded-lg ${
                             estado === 'BAIXO'
-                                ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                                ? 'border-[color:var(--status-error)]/40 bg-[color:var(--status-error-soft)] text-[color:var(--status-error)]'
+                                : 'border-border bg-background text-foreground'
                         }`}
                         min={0}
                     />
-                    <span className="text-xs text-gray-400 w-8">{item.unidade}</span>
+                    <span className="text-xs text-muted-foreground w-8">{item.unidade}</span>
                     <button
                         onClick={() => handleQuantidadeChange(item, 1)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         aria-label="Aumentar"
                     >
                         <Plus className="w-3.5 h-3.5" />
@@ -268,11 +267,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             type="number"
                             value={min}
                             onChange={(e) => handleMinimoChange(item, e.target.value)}
-                            className="w-16 h-8 text-center text-sm mx-auto border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                            className="w-16 h-8 text-center text-sm mx-auto border-border bg-background"
                             min={0}
                         />
                     ) : (
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{min} {item.unidade}</span>
+                        <span className="text-sm text-muted-foreground">{min} {item.unidade}</span>
                     )}
                 </div>
 
@@ -283,7 +282,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             size="sm"
                             onClick={() => handleSaveItem(item)}
                             disabled={isSaving}
-                            className="h-7 px-2 bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                            className="h-7 px-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs"
                         >
                             <Save className="w-3 h-3 mr-1" />
                             {isSaving ? '...' : t('consumos.save', 'Guardar')}
@@ -291,8 +290,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     ) : (
                         <Badge className={`text-xs px-3 py-1 ${
                             estado === 'OK'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800'
+                                ? 'bg-[color:var(--status-success-soft)] text-[color:var(--status-success)] border-[color:var(--status-success)]/40'
+                                : 'bg-[color:var(--status-error-soft)] text-[color:var(--status-error)] border-[color:var(--status-error)]/40'
                         }`}>
                             {estado === 'OK' ? (
                                 <span>OK</span>
@@ -317,7 +316,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (isLoading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 </div>
             );
         }
@@ -326,7 +325,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             <div className="space-y-6">
                 {/* Action bar */}
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                         {t('consumos.armazemDescription', 'Gestão de inventário do balneário. Clique nos valores para editar.')}
                     </p>
                     <div className="flex items-center gap-2">
@@ -334,14 +333,14 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             variant={editingMinimos ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setEditingMinimos(!editingMinimos)}
-                            className={editingMinimos ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
+                            className={editingMinimos ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}
                         >
                             {editingMinimos ? t('consumos.exitEditing', 'Sair da edição') : t('consumos.editMinimos', 'Editar Mínimos')}
                         </Button>
                         {anyChanges && (
                             <Button
                                 onClick={handleSaveAll}
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 size="sm"
                             >
                                 <Save className="w-4 h-4 mr-1" />
@@ -361,16 +360,16 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     const isCollapsed = collapsedCategories[categoria];
 
                     return (
-                        <div key={categoria} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-6">
+                        <div key={categoria} className="bg-card rounded-2xl border border-border p-6 shadow-sm mb-6">
                             <div 
                                 className="flex items-center justify-between mb-5 cursor-pointer select-none group"
                                 onClick={() => toggleCategory(categoria)}
                             >
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">
+                                <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">
                                     {getCategoryLabel(categoria)}
                                 </h2>
                                 <button
-                                    className="p-1.5 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700 dark:group-hover:bg-gray-700 transition-colors"
+                                    className="p-1.5 rounded-full bg-muted/60 text-muted-foreground group-hover:bg-muted group-hover:text-foreground transition-colors"
                                 >
                                     {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                                 </button>
@@ -380,32 +379,32 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                     {/* Table Header */}
                                     <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8" : ""}>
-                                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-border/70">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                                 {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-40">
                                                 {t('consumos.quantity', 'Quantidade')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                 {t('consumos.minimum', 'Mínimo')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                 {t('consumos.status', 'Estado')}
                                             </span>
                                         </div>
                                         {categoria === 'CALCADO' && (
-                                            <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-border/70">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                                     {t('consumos.size', 'Tamanho')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-40">
                                                     {t('consumos.quantity', 'Quantidade')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                     {t('consumos.minimum', 'Mínimo')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                     {t('consumos.status', 'Estado')}
                                                 </span>
                                             </div>
@@ -413,7 +412,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                     </div>
 
                                     {catItems.length === 0 ? (
-                                        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <div className="py-6 text-center text-sm text-muted-foreground">
                                             {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
                                         </div>
                                     ) : (
@@ -427,8 +426,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
                                     {/* Total count for calçado */}
                                     {categoria === 'CALCADO' && (
-                                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                                            <span className="text-sm text-muted-foreground">
                                                 {t('consumos.totalInStock', 'Total em stock')}: <strong>
                                                     {catItems.reduce((sum, item) => {
                                                         const editing = editingItems[item.id];
@@ -455,7 +454,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (statsLoading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 </div>
             );
         }
@@ -484,12 +483,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
         const getCatBarColorHex = (cat: string) => {
             switch (cat) {
-                case 'HIGIENE': return '#EC4899';
-                case 'DETERGENTES': return '#22C55E';
-                case 'VESTUARIO': return '#3B82F6';
-                case 'CALCADO': return '#A855F7';
-                case 'VESTUARIO': return '#3B82F6';
-                default: return '#6B7280';
+                case 'HIGIENE': return 'var(--primary)';
+                case 'DETERGENTES': return 'var(--status-success)';
+                case 'VESTUARIO': return 'var(--status-info)';
+                case 'CALCADO': return 'var(--status-warning)';
+                default: return 'var(--status-neutral)';
             }
         };
 
@@ -527,7 +525,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             variant={statsPeriodo === periodo ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setStatsPeriodo(periodo)}
-                            className={statsPeriodo === periodo ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
+                            className={statsPeriodo === periodo ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}
                         >
                             {periodo === 'DIA' ? t('consumos.day', 'Hoje') : periodo === 'SEMANA' ? t('consumos.week', 'Semana') : t('consumos.month', 'Mês')}
                         </Button>
@@ -536,22 +534,22 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
                 {/* Summary cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
-                                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{stats.totalGeral}</p>
+                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
+                                <p className="text-3xl font-bold text-primary mt-1">{stats.totalGeral}</p>
                             </div>
                             {Object.entries(catTotals).map(([cat, total]) => (
-                                <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{catLabels[cat] || cat}</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{total}</p>
+                                <div key={cat} className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{catLabels[cat] || cat}</p>
+                                    <p className="text-3xl font-bold text-foreground mt-1">{total}</p>
                                 </div>
                             ))}
                         </div>
 
                         {/* Modular Category Bar Charts */}
                         {Object.entries(statsByCategory).length === 0 ? (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center h-48 mt-6">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
+                            <div className="bg-card rounded-xl border border-border p-6 flex flex-col items-center justify-center h-48 mt-6">
+                                <p className="text-sm text-muted-foreground">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -562,12 +560,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 }).map(cat => {
                                     const items = statsByCategory[cat].sort((a,b) => b.quantidade - a.quantidade);
                                     return (
-                                        <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
-                                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-tight">
+                                        <div key={cat} className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col">
+                                            <h3 className="text-base font-bold text-foreground mb-6 uppercase tracking-tight">
                                                 {catLabels[cat] || cat}
                                             </h3>
                                             {items.length === 0 ? (
-                                                <div className="flex-1 flex items-center justify-center text-sm text-gray-400 py-10">
+                                                <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground py-10">
                                                     {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
                                                 </div>
                                             ) : (
@@ -578,12 +576,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                         data={items} 
                                                         margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
                                                     >
-                                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
+                                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
                                                         <XAxis 
                                                             type="number"
                                                             axisLine={false}
                                                             tickLine={false}
-                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                                                             allowDecimals={false}
                                                         />
                                                         <YAxis 
@@ -592,15 +590,15 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                             tickFormatter={(nome) => cat === 'CALCADO' ? String(nome).replace(/N[º°]\s*/i, '').trim() : (t(`consumos.products.${nome}`, nome) as string)}
                                                             axisLine={false}
                                                             tickLine={false}
-                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                                                             width={cat === 'CALCADO' ? 60 : 100}
                                                         />
                                                         <Tooltip 
-                                                            cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#111827' }}
-                                                            formatter={(value: number) => [<span className="font-bold text-purple-600">{value}</span>, t('consumos.quantity', 'Quantidade')]}
+                                                            cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: 'var(--foreground)', backgroundColor: 'var(--card)' }}
+                                                            formatter={(value: number) => [<span className="font-bold text-primary">{value}</span>, t('consumos.quantity', 'Quantidade')]}
                                                             labelFormatter={(nome) => cat === 'CALCADO' ? `Tamanho ${nome}` : t(`consumos.products.${nome}`, nome as string)}
-                                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#374151' }}
+                                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--foreground)' }}
                                                         />
                                                         <Bar 
                                                             dataKey="quantidade" 
@@ -632,13 +630,13 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         <div className="max-w-[1200px] mx-auto">
             {/* Header with Tabs */}
             <div className="flex justify-start mb-8">
-                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 w-[350px]">
+                <div className="flex bg-muted rounded-xl p-1.5 w-[350px]">
                     <button
                         onClick={() => handleTabSwitch('armazem')}
                         className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                             activeTab === 'armazem'
-                                ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                ? 'bg-card text-primary shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {t('consumos.warehouse', 'Armazém')}
@@ -647,8 +645,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         onClick={() => handleTabSwitch('estatisticas')}
                         className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                             activeTab === 'estatisticas'
-                                ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                ? 'bg-card text-primary shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
                         }`}
                     >
                         {t('consumos.statistics', 'Estatísticas')}
@@ -672,7 +670,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         <AlertDialogCancel onClick={() => setPendingTab(null)}>
                             {t('profile.unsaved.stay', 'Ficar')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-destructive hover:bg-destructive/90 text-white">
                             {t('profile.unsaved.discard', 'Descartar')}
                         </AlertDialogAction>
                     </AlertDialogFooter>

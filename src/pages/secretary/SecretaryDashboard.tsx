@@ -124,6 +124,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
   const [profileIsDirty, setProfileIsDirty] = useState(false);
+  const [requisitionsIsDirty, setRequisitionsIsDirty] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
 
@@ -131,8 +132,15 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     setProfileIsDirty(isDirty);
   }, []);
 
+  const handleRequisitionsDirtyChange = useCallback((isDirty: boolean) => {
+    setRequisitionsIsDirty(isDirty);
+  }, []);
+
   const navigateTo = (view: ViewType) => {
-    if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+    const isProfileDirty = currentView === 'profile' && profileIsDirty;
+    const isRequisitionsDirty = ['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) && requisitionsIsDirty;
+
+    if ((isProfileDirty || isRequisitionsDirty) && view !== currentView) {
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
@@ -140,9 +148,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
     }
   };
 
-  const confirmLeaveProfile = () => {
-    sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
-    setProfileIsDirty(false);
+  const confirmLeave = () => {
+    if (currentView === 'profile') {
+      sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+      setProfileIsDirty(false);
+    } else {
+      setRequisitionsIsDirty(false);
+    }
+
     setShowLeaveConfirm(false);
     if (pendingNavigation) {
       setViewHistory(prev => [...prev, pendingNavigation]);
@@ -247,7 +260,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const renderPlaceholder = (view: ViewType) => (
     <div className="flex items-center justify-center h-[600px]">
       <div className="text-center">
-        <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
+        <h2 className="text-2xl text-muted-foreground mb-2">
           {view === 'requisitions' && 'Requisições'}
           {view === 'sections' && 'Secções'}
           {view === 'management' && 'Gestão'}
@@ -268,7 +281,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {view === 'reports' && 'Relatórios'}
           {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>
     </div>
   );
@@ -278,12 +291,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       <NavDropdown
         label={t('sidebar.requisitions')}
         items={[
-          { id: 'material', label: t('sidebar.material') },
-          { id: 'manutencao', label: t('sidebar.maintenance') },
-          { id: 'transportes', label: t('sidebar.transport') },
-          { id: 'urgente', label: t('sidebar.highPriority') },
+          { id: 'requisitions', label: t('sidebar.requisitions') },
+          { id: 'requisitions-create', label: t('sidebar.createRequisition') },
         ]}
-        isActive={['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
+        isActive={['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         onLabelClick={() => navigateTo('requisitions')}
       />
@@ -302,7 +313,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
         onClick={() => navigateTo('appointments')}
-        className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+        className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
       >
         {t('sidebar.appointments')}
       </Button>
@@ -322,7 +333,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       <Button
         variant={currentView === 'reports' ? 'default' : 'ghost'}
         onClick={() => navigateTo('reports')}
-        className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+        className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
       >
         {t('sidebar.reports')}
       </Button>
@@ -414,10 +425,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   </div>
                 </div>
 
-                <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                <div className="mt-6 max-w-[1600px] mx-auto bg-card backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-primary">
                   <div className="flex items-center gap-3">
-                    <ClockIcon className="w-5 h-5 text-purple-600" />
-                    <p className="text-gray-800 dark:text-gray-200">{getCurrentActivity(appointments, true)}</p>
+                    <ClockIcon className="w-5 h-5 text-primary" />
+                    <p className="text-foreground">{getCurrentActivity(appointments, true)}</p>
                   </div>
                 </div>
               </>
@@ -439,10 +450,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onBack={navigateBack}
                 isDarkMode={isDarkMode}
               />
-            ) : ['requisitions', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
+            ) : ['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) ? (
               <SecretaryRequisitionsPage
                 isDarkMode={isDarkMode}
                 currentUserId={authUser?.id || 0}
+                initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
                 initialTipo={
                   currentView === 'material'
                     ? 'MATERIAL'
@@ -453,6 +465,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                         : undefined
                 }
                 initialPrioridade={currentView === 'urgente' ? 'URGENTE' : undefined}
+                onDirtyChange={handleRequisitionsDirtyChange}
               />
             ) : currentView === 'management' ? (
               <UserManagement
@@ -612,7 +625,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+            <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-white">
               Descartar
             </AlertDialogAction>
           </AlertDialogFooter>

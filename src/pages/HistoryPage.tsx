@@ -31,6 +31,7 @@ const parseAppointmentDate = (value: Appointment['date']) => {
 };
 
 export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMode, startDate, endDate, onDateChange, isClient = false }: HistoryPageProps) {
+  void isDarkMode;
   const { t, i18n } = useTranslation();
   const { getStatusLabel } = useAppointmentStatus();
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,24 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
   /* Sorting State */
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const currentLocale = i18n.resolvedLanguage === 'en' ? 'en-GB' : 'pt-PT';
+
+  const readThemeColor = (variable: string, fallback: string) => {
+    if (typeof window === 'undefined') return fallback;
+    const value = getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    return value || fallback;
+  };
+
+  const themePalette = {
+    primary: readThemeColor('--primary', 'black'),
+    foreground: readThemeColor('--foreground', 'black'),
+    background: readThemeColor('--background', 'white'),
+    border: readThemeColor('--border', 'gray'),
+    mutedForeground: readThemeColor('--muted-foreground', 'gray'),
+    statusSuccess: readThemeColor('--status-success', 'green'),
+    statusWarning: readThemeColor('--status-warning', 'orange'),
+    statusError: readThemeColor('--status-error', 'red'),
+    statusNeutral: readThemeColor('--status-neutral', 'gray'),
+  };
 
   // Sort appointments by date
   const sortedAppointments = [...appointments].sort((a, b) => {
@@ -195,16 +214,16 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
     // Função para obter cor do status
     const getStatusColor = (statusKey: string) => {
       switch (statusKey) {
-        case 'completed': return '#38a169';
-        case 'no-show': return '#f97316';
-        case 'warning': return '#d69e2e';
-        case 'cancelled': return '#e53e3e';
-        default: return '#4a5568';
+        case 'completed': return themePalette.statusSuccess;
+        case 'no-show': return themePalette.statusWarning;
+        case 'warning': return themePalette.statusWarning;
+        case 'cancelled': return themePalette.statusError;
+        default: return themePalette.statusNeutral;
       }
     };
 
     let tableContent = '<table border="1">';
-    tableContent += '<tr>' + headers.map(h => `<th style="background-color:#4a5568;color:white;font-weight:bold;padding:8px;">${h}</th>`).join('') + '</tr>';
+    tableContent += '<tr>' + headers.map(h => `<th style="background-color:${themePalette.primary};color:${readThemeColor('--primary-foreground', 'white')};font-weight:bold;padding:8px;">${h}</th>`).join('') + '</tr>';
 
     filteredAppointments.forEach(apt => {
       const date = parseAppointmentDate(apt.date);
@@ -278,18 +297,26 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         <meta charset="UTF-8">
         <title>${t('history.title')}</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
-          .subtitle { text-align: center; color: #4a5568; margin-bottom: 20px; }
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: ${themePalette.background};
+            color: ${themePalette.foreground};
+          }
+          h1 { color: ${themePalette.primary}; text-align: center; margin-bottom: 5px; }
+          .subtitle { text-align: center; color: ${themePalette.mutedForeground}; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th { background-color: #4a5568; color: white; padding: 10px; text-align: left; font-size: 12px; }
-          td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
-          tr:nth-child(even) { background-color: #f7fafc; }
-          .status-completed { color: #38a169; font-weight: bold; }
-          .status-cancelled { color: #e53e3e; }
-          .status-no_show { color: #f97316; font-weight: bold; }
-          .status-warning { color: #d69e2e; font-weight: bold; }
-          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #718096; }
+          th { background-color: ${themePalette.primary}; color: ${readThemeColor('--primary-foreground', 'white')}; padding: 10px; text-align: left; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid ${themePalette.border}; font-size: 11px; }
+          tr:nth-child(even) { background-color: ${readThemeColor('--muted', 'whitesmoke')}; }
+          .status-completed { color: ${themePalette.statusSuccess}; font-weight: bold; }
+          .status-cancelled { color: ${themePalette.statusError}; }
+          .status-no_show { color: ${themePalette.statusWarning}; font-weight: bold; }
+          .status-warning { color: ${themePalette.statusWarning}; font-weight: bold; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: ${themePalette.mutedForeground}; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
         </style>
       </head>
       <body>
@@ -359,17 +386,17 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
       {/* Back Button */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
+        className="flex items-center gap-2 text-foreground hover:text-primary mb-6 transition-colors"
       >
         <ArrowLeftIcon className="w-5 h-5" />
         <span>{t('history.backToAppointments')}</span>
       </button>
 
       {/* History Card */}
-      <div className={`rounded-lg ${isDarkMode ? 'bg-gray-900/50 border border-gray-800 shadow-lg' : 'bg-white shadow-xl'} p-6`}>
+      <div className="rounded-lg bg-card border border-border shadow-xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl text-gray-900 dark:text-gray-100">{t('history.title')}</h1>
+          <h1 className="text-2xl text-foreground">{t('history.title')}</h1>
           <Button
             variant="outline"
             onClick={handleExport}
@@ -384,16 +411,16 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Filters and Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="md:col-span-1">
-            <label className="text-xs text-gray-500 mb-1 ml-1 block">{t('history.filters.fromDate')}</label>
+            <label className="text-xs text-muted-foreground mb-1 ml-1 block">{t('history.filters.fromDate')}</label>
             <DatePickerField
               value={startDate ? formatDateInput(startDate) : ''}
               onChange={(value) => onDateChange(parseDateInput(value) ?? null, endDate)}
-              buttonClassName={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+              buttonClassName="bg-background border-border text-foreground shadow-sm"
             />
           </div>
 
           <div className="md:col-span-3">
-            <label className="text-xs text-gray-500 mb-1 ml-1 block">{t('history.filters.searchLabel')}</label>
+            <label className="text-xs text-muted-foreground mb-1 ml-1 block">{t('history.filters.searchLabel')}</label>
             <Input
               type="text"
               placeholder={t('history.filters.searchPlaceholder')}
@@ -402,7 +429,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}
+              className="bg-background border-border text-foreground shadow-sm"
             />
           </div>
         </div>
@@ -416,7 +443,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}>
+            <SelectTrigger className="bg-background border-border text-foreground shadow-sm">
               <SelectValue placeholder={t('history.filters.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
@@ -435,7 +462,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-100' : 'bg-white'} shadow-sm`}>
+            <SelectTrigger className="bg-background border-border text-foreground shadow-sm">
               <SelectValue placeholder={t('history.filters.allSubjects')} />
             </SelectTrigger>
             <SelectContent>
@@ -452,31 +479,31 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className={isDarkMode ? 'bg-gray-900/30' : 'bg-gray-50'}>
-              <tr className={`border-b ${isDarkMode ? 'border-gray-800' : 'border-gray-200'}`}>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.timeHeader').toUpperCase()}</th>
+            <thead className="bg-muted/50">
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 text-sm text-primary">{t('history.table.timeHeader').toUpperCase()}</th>
                 <th
-                  className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group select-none"
+                  className="text-left py-3 px-4 text-sm text-primary cursor-pointer hover:bg-muted/60 transition-colors group select-none"
                   onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                 >
                   <div className="flex items-center gap-1">
                     {t('history.table.dayHeader').toUpperCase()}
                     <span className="flex flex-col -space-y-1">
-                      <svg className={`w-2 h-2 ${sortOrder === 'asc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
-                      <svg className={`w-2 h-2 ${sortOrder === 'desc' ? 'text-purple-600 font-bold' : 'text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                      <svg className={`w-2 h-2 ${sortOrder === 'asc' ? 'text-primary font-bold' : 'text-muted-foreground/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" /></svg>
+                      <svg className={`w-2 h-2 ${sortOrder === 'desc' ? 'text-primary font-bold' : 'text-muted-foreground/50'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
                     </span>
                   </div>
                 </th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.attendantHeader').toUpperCase()}</th>
-                {!isClient && <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.patientHeader').toUpperCase()}</th>}
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.subjectHeader').toUpperCase()}</th>
-                <th className="text-left py-3 px-4 text-sm text-purple-600 dark:text-purple-400">{t('history.table.statusHeader').toUpperCase()}</th>
+                <th className="text-left py-3 px-4 text-sm text-primary">{t('history.table.attendantHeader').toUpperCase()}</th>
+                {!isClient && <th className="text-left py-3 px-4 text-sm text-primary">{t('history.table.patientHeader').toUpperCase()}</th>}
+                <th className="text-left py-3 px-4 text-sm text-primary">{t('history.table.subjectHeader').toUpperCase()}</th>
+                <th className="text-left py-3 px-4 text-sm text-primary">{t('history.table.statusHeader').toUpperCase()}</th>
               </tr>
             </thead>
             <tbody>
               {paginatedAppointments.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
                     {t('history.table.noResults')}
                   </td>
                 </tr>
@@ -485,18 +512,15 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                   <tr
                     key={apt.id}
                     onClick={() => onViewAppointment(apt)}
-                    className={`border-b cursor-pointer transition-colors ${isDarkMode
-                      ? 'border-gray-800 hover:bg-gray-800/50'
-                      : 'border-gray-100 hover:bg-gray-50'
-                      }`}
+                    className="border-b border-border cursor-pointer transition-colors hover:bg-muted/40"
                   >
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.time}</td>
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">
+                    <td className="py-4 px-4 text-foreground">{apt.time}</td>
+                    <td className="py-4 px-4 text-foreground">
                       {parseAppointmentDate(apt.date)?.toLocaleDateString(currentLocale) ?? String(apt.date)}
                     </td>
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.attendantName || '-'}</td>
-                    {!isClient && <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{apt.patientName}</td>}
-                    <td className="py-4 px-4 text-gray-900 dark:text-gray-100">{getSubjectLabel(apt.subject, t)}</td>
+                    <td className="py-4 px-4 text-foreground">{apt.attendantName || '-'}</td>
+                    {!isClient && <td className="py-4 px-4 text-foreground">{apt.patientName}</td>}
+                    <td className="py-4 px-4 text-foreground">{getSubjectLabel(apt.subject, t)}</td>
                     <td className="py-4 px-4"><StatusBadge status={apt.status} /></td>
                   </tr>
                 ))
@@ -508,7 +532,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         {/* Pagination */}
         {filteredAppointments.length > 0 && (
           <div className="flex items-center justify-between mt-6">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {t('history.pagination.showingRange', {
                 start: startIndex + 1,
                 end: Math.min(endIndex, filteredAppointments.length),
@@ -520,7 +544,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 variant="outline"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className={isDarkMode ? 'border-gray-700' : ''}
+                className="border-border"
               >
                 {t('history.pagination.previous')}
               </Button>
@@ -528,7 +552,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
                 variant="outline"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages || totalPages === 0}
-                className={isDarkMode ? 'border-gray-700' : ''}
+                className="border-border"
               >
                 {t('history.pagination.next')}
               </Button>
@@ -539,57 +563,57 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
 
       {/* Export Dialog */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
-        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+        <DialogContent className="max-w-md w-full bg-card text-foreground border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl">{t('history.export.dialogTitle')}</DialogTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {t('history.export.dialogDescription', { count: filteredAppointments.length })}
             </p>
           </DialogHeader>
           <div className="grid gap-3 mt-4">
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted/50 transition-colors"
               onClick={handleExportCSV}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30">
-                <FileTextIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[color:var(--status-success-soft)]">
+                <FileTextIcon className="w-5 h-5 text-[color:var(--status-success)]" />
               </div>
               <div className="text-left">
                 <div className="font-medium">CSV</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.csvDescription')}</div>
+                <div className="text-xs text-muted-foreground">{t('history.export.csvDescription')}</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted/50 transition-colors"
               onClick={handleExportExcel}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[color:var(--status-info-soft)]">
+                <svg className="w-5 h-5 text-[color:var(--status-info)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="text-left">
                 <div className="font-medium">Excel</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.excelDescription')}</div>
+                <div className="text-xs text-muted-foreground">{t('history.export.excelDescription')}</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted/50 transition-colors"
               onClick={handleExportPDF}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
-                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[color:var(--status-error-soft)]">
+                <svg className="w-5 h-5 text-[color:var(--status-error)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="text-left">
                 <div className="font-medium">PDF</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{t('history.export.pdfDescription')}</div>
+                <div className="text-xs text-muted-foreground">{t('history.export.pdfDescription')}</div>
               </div>
             </Button>
           </div>

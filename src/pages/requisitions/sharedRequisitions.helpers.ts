@@ -15,38 +15,40 @@ import {
 
 export const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: '', label: 'requisitions.labels.allStatuses' },
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
+  { value: 'ABERTO', label: 'requisitions.labels.open' },
+  { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
+  { value: 'FECHADO', label: 'requisitions.labels.closed' },
+  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
 ];
 
 export const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
+  { value: 'ABERTO', label: 'requisitions.labels.open' },
+  { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
+  { value: 'FECHADO', label: 'requisitions.labels.closed' },
+  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
 ];
 
 export const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
+  if (estadoAtual === 'ABERTO') {
+    return ['EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
   }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['ACEITE', 'RECUSADA'];
+  if (estadoAtual === 'EM_PROGRESSO') {
+    return ['FECHADO', 'RECUSADO'];
   }
   return [];
 };
 
 export const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
+  if (estadoAtual === 'ABERTO') {
+    return ['ABERTO', 'EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
   }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
+  if (estadoAtual === 'EM_PROGRESSO') {
+    return ['FECHADO', 'RECUSADO'];
   }
   if (estadoAtual) {
     return [estadoAtual];
   }
-  return ['EM_ANALISE'];
+  return ['ABERTO', 'EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
 };
 
 export const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
@@ -252,7 +254,6 @@ export type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo
 export type TransporteSelectionMode = 'auto' | 'manual';
 export type CreateField =
   | 'descricao'
-  | 'tempoLimite'
   | 'materialItens'
   | 'destino'
   | 'dataSaida'
@@ -261,8 +262,10 @@ export type CreateField =
   | 'horaRegresso'
   | 'numeroPassageiros'
   | 'transporteIds'
+  | 'condutor'
   | 'manutencaoItens';
 
+// Fields available in requisition creation form
 export const createEmptyMaterialLinha = () => ({
   rowId:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -350,7 +353,9 @@ export const formatLotacao = (lotacao?: number): string => {
 
 export const formatVehicleTitle = (transporte?: TransporteLike): string => {
   const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
-  return (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const title = (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const matricula = transporte?.matricula;
+  return matricula ? `${title} · ${matricula}` : title;
 };
 
 export const formatTransporteDisplay = (transporte?: TransporteLike): string => {
@@ -359,7 +364,6 @@ export const formatTransporteDisplay = (transporte?: TransporteLike): string => 
   const parts = [
     transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
     formatVehicleTitle(transporte),
-    transporte.matricula,
   ].filter(Boolean);
 
   return parts.join(' · ');

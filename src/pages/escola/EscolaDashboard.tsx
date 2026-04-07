@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { NavDropdown } from '../../components/layout/NavDropdown';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePersistentState } from '../../hooks/usePersistentState';
@@ -23,7 +24,7 @@ interface EscolaDashboardProps {
     onToggleDarkMode: () => void;
 }
 
-type EscolaView = 'home' | 'requisitions' | 'profile' | 'settings';
+type EscolaView = 'home' | 'requisitions' | 'requisitions-create' | 'profile' | 'settings';
 
 export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: EscolaDashboardProps) {
     const { user: authUser } = useAuth();
@@ -35,6 +36,11 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
 
     const handleProfileDirtyChange = (isDirty: boolean) => {
         setProfileIsDirty(isDirty);
+    };
+
+    const [requisitionsIsDirty, setRequisitionsIsDirty] = useState(false);
+    const handleRequisitionsDirtyChange = (isDirty: boolean) => {
+        setRequisitionsIsDirty(isDirty);
     };
     const [userData, setUserData] = useState({
         name: authUser?.nome || '',
@@ -57,7 +63,10 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
     };
 
     const safeSetView = (view: EscolaView) => {
-        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+        const isProfileDirty = currentView === 'profile' && profileIsDirty;
+        const isRequisitionsDirty = (currentView === 'requisitions' || currentView === 'requisitions-create') && requisitionsIsDirty;
+
+        if ((isProfileDirty || isRequisitionsDirty) && view !== currentView) {
             setPendingNavigation(view);
             setShowLeaveConfirm(true);
         } else {
@@ -65,9 +74,14 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
         }
     };
 
-    const confirmLeaveProfile = () => {
-        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
-        setProfileIsDirty(false);
+    const confirmLeave = () => {
+        if (currentView === 'profile') {
+            sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+            setProfileIsDirty(false);
+        } else {
+            setRequisitionsIsDirty(false);
+        }
+
         setShowLeaveConfirm(false);
         if (pendingNavigation) {
             setCurrentView(pendingNavigation);
@@ -92,20 +106,22 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             return (
                 <div className="flex items-center justify-center h-[500px]">
                     <div className="text-center">
-                        <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">
+                        <h2 className="text-2xl text-muted-foreground mb-2">
                             Definições
                         </h2>
-                        <p className="text-gray-500">Em desenvolvimento</p>
+                        <p className="text-muted-foreground">Em desenvolvimento</p>
                     </div>
                 </div>
             );
         }
 
-        if (currentView === 'requisitions') {
+        if (currentView === 'requisitions' || currentView === 'requisitions-create') {
             return (
                 <EscolaRequisitionsPage
                     isDarkMode={isDarkMode}
                     currentUserId={authUser?.id || 0}
+                    initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
+                    onDirtyChange={handleRequisitionsDirtyChange}
                 />
             );
         }
@@ -113,8 +129,8 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
         return (
             <div className="flex items-center justify-center h-[500px]">
                 <div className="text-center">
-                    <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">Painel Escola</h2>
-                    <p className="text-gray-500">Em desenvolvimento</p>
+                    <h2 className="text-2xl text-muted-foreground mb-2">Painel Escola</h2>
+                    <p className="text-muted-foreground">Em desenvolvimento</p>
                 </div>
             </div>
         );
@@ -125,17 +141,20 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             <Button
                 variant={currentView === 'home' ? 'default' : 'ghost'}
                 onClick={() => safeSetView('home')}
-                className={`text-sm ${currentView === 'home' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'home' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground/80'}`}
             >
                 {t('sidebar.home')}
             </Button>
-            <Button
-                variant={currentView === 'requisitions' ? 'default' : 'ghost'}
-                onClick={() => safeSetView('requisitions')}
-                className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-            >
-                {t('sidebar.requisitions')}
-            </Button>
+            <NavDropdown
+                label={t('sidebar.requisitions')}
+                items={[
+                    { id: 'requisitions', label: t('sidebar.requisitions') },
+                    { id: 'requisitions-create', label: t('sidebar.createRequisition') },
+                ]}
+                isActive={['requisitions', 'requisitions-create'].includes(currentView)}
+                onSelect={(id) => safeSetView(id as EscolaView)}
+                onLabelClick={() => safeSetView('requisitions')}
+            />
         </>
     );
 
@@ -164,7 +183,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                    <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-white">
                         Descartar
                     </AlertDialogAction>
                 </AlertDialogFooter>

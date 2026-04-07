@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'RECUSADA' | 'CONCLUIDA' | 'CANCELADA';
+export type RequisicaoEstado = 'ABERTO' | 'EM_PROGRESSO' | 'FECHADO' | 'RECUSADO';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 
@@ -54,7 +54,6 @@ export interface RequisicaoResponse {
   estado: RequisicaoEstado;
   prioridade: RequisicaoPrioridade;
   tipo: RequisicaoTipo;
-  tempoLimite?: string | null;
   criadoEm?: string;
   ultimaAlteracaoEstadoEm?: string;
   criadoPor?: FuncionarioResumo;
@@ -125,13 +124,13 @@ export interface RequisicaoFilters {
   tipo?: RequisicaoTipo;
   prioridade?: RequisicaoPrioridade;
   criadoPorNome?: string;
-  geridoPorNome?: string;
+  dataInicio?: string;
+  dataFim?: string;
 }
 
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
-  tempoLimite?: string;
   criadoPorId: number;
   geridoPorId?: number;
 }

@@ -21,7 +21,7 @@ interface TodayAppointmentsProps {
   isBalneario?: boolean;
 }
 
-export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, onShowDocumentSearch, isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
+export function TodayAppointments({ appointments, onViewAppointment, onShowHistory, onShowDocumentSearch, isDarkMode: _isDarkMode, showFilter = false, isBalneario = false }: TodayAppointmentsProps) {
   const { t } = useTranslation();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -44,7 +44,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
     toast.success(t('todayAppointments.exportSuccess'));
   };
 
-  const headerTextClass = isDarkMode ? 'text-gray-100' : 'text-gray-900';
+  const headerTextClass = 'text-foreground';
 
   // Filter state (used when showFilter === true)
   const [searchTerm, setSearchTerm] = useState('');
@@ -97,7 +97,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
           {showFilter && (
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-xs shrink-0 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-accent">
                   {t('todayAppointments.filter')}
                 </Button>
               </PopoverTrigger>
@@ -120,7 +120,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
                       <SelectItem value="scheduled">{t('statusBadge.scheduled')}</SelectItem>
                       <SelectItem value="warning">
                         <div className="flex items-center gap-2">
-                          <AlertTriangleIcon className="w-3 h-3 text-yellow-500" />
+                          <AlertTriangleIcon className="w-3 h-3 text-status-warning" />
                           <span>{t('statusBadge.warning')}</span>
                         </div>
                       </SelectItem>
@@ -145,7 +145,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
                   <div className="flex gap-2 mt-2">
                     <Button
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={() => {
                         // apply temporary filters to active filters
                         setSearchTerm(tempSearch);
@@ -177,7 +177,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
             </Popover>
           )}
 
-          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
+          <Button variant="outline" size="sm" onClick={onShowHistory} className="gap-2 h-8 text-xs shrink-0 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-accent">
             <HistoryIcon className="w-3.5 h-3.5" />
             {t('sidebar.history')}
           </Button>
@@ -187,7 +187,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
               variant="outline"
               size="sm"
               onClick={onShowDocumentSearch}
-              className="gap-2 h-8 text-xs shrink-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+              className="gap-2 h-8 text-xs shrink-0 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-accent"
             >
               <FileTextIcon className="w-3.5 h-3.5" />
               {t('documents.title')}
@@ -199,35 +199,29 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
       {/* Transparent container for floating cards list */}
       <div className="flex-1 h-[650px] relative overflow-hidden flex flex-col">
         {/* Appointments List - Container com scroll */}
-        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-400 scrollbar-track-gray-200 dark:scrollbar-thumb-purple-600 dark:scrollbar-track-gray-800">
+        <div className="flex-1 overflow-y-auto pr-2">
           <div className="space-y-3">
             {filteredTodayAppointments.length === 0 ? (
-              <div className={`rounded-lg p-8 text-center border-dashed border-2 ${isDarkMode
-                ? 'border-gray-700 bg-gray-800/50'
-                : 'border-gray-200 bg-gray-50/50'
-                }`}>
-                <ClockIcon className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-600 opacity-50" />
-                <p className="text-sm text-gray-500 dark:text-gray-500">{t(isBalneario ? 'todayAppointments.emptyBalneario' : 'todayAppointments.emptySecretary')}</p>
+              <div className="rounded-lg p-8 text-center border-dashed border-2 border-border bg-muted/40">
+                <ClockIcon className="w-12 h-12 mx-auto mb-2 text-muted-foreground opacity-50" />
+                <p className="text-sm text-muted-foreground">{t(isBalneario ? 'todayAppointments.emptyBalneario' : 'todayAppointments.emptySecretary')}</p>
               </div>
             ) : (
               filteredTodayAppointments.map((apt) => (
                 <div
                   key={apt.id}
-                  className={`rounded-xl p-4 cursor-pointer transition-all duration-200 border ${isDarkMode
-                    ? 'bg-gray-900/95 border-gray-800 hover:bg-gray-900 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10'
-                    : 'bg-white/95 border-gray-100 hover:bg-white hover:border-purple-200 hover:shadow-md'
-                    }`}
+                  className="rounded-xl p-4 cursor-pointer transition-all duration-200 border bg-card/95 border-border hover:bg-card hover:border-primary/30 hover:shadow-md"
                   onClick={() => onViewAppointment(apt)}
                 >
                   <div className="flex items-start justify-between">
-                    <span className="font-medium text-gray-900 dark:text-gray-100 text-lg">
+                    <span className="font-medium text-foreground text-lg">
                       {apt.time}
                     </span>
                     <StatusBadge status={apt.status} />
                   </div>
 
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">{apt.patientName}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{getSubjectLabel(apt.subject, t)}</p>
+                  <h3 className="text-sm font-semibold text-foreground mb-1">{apt.patientName}</h3>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{getSubjectLabel(apt.subject, t)}</p>
                 </div>
               ))
             )}
@@ -237,7 +231,7 @@ export function TodayAppointments({ appointments, onViewAppointment, onShowHisto
 
       {/* Export Button */}
       {filteredTodayAppointments.length > 0 && (
-        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800" onClick={handleExport}>
+        <Button variant="outline" className="w-full gap-2 h-9 text-sm mt-4 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-accent" onClick={handleExport}>
           <DownloadIcon className="w-4 h-4" />
           {t('todayAppointments.exportAction')}
         </Button>

@@ -196,10 +196,10 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   return (
     <>
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <DialogTitle className="text-foreground">{t('appointmentDialog.title')}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
             {date.toLocaleDateString(i18n.resolvedLanguage?.startsWith('en') ? 'en-GB' : 'pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
           </p>
         </DialogHeader>
@@ -209,40 +209,40 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="client-subject" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.subject')}</Label>
+            <Label htmlFor="client-subject" className="text-foreground">{t('appointmentDialog.fields.subject')}</Label>
             <Select value={subject} onValueChange={(value) => setSubject(value)}>
               <SelectTrigger
                 id="client-subject"
                 aria-invalid={!!errors.subject}
                 aria-describedby={errors.subject ? 'client-subject-error' : undefined}
-                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
+                className={`bg-card border-border text-foreground ${errors.subject ? 'border-status-error' : ''}`}
               >
                 <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <SelectContent className="bg-popover border-border">
                 {SUBJECTS.map((option) => (
-                  <SelectItem key={option} value={option} className="text-gray-900 dark:text-gray-100">
+                  <SelectItem key={option} value={option} className="text-popover-foreground">
                     {getSubjectLabel(option, t)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.subject && <p id="client-subject-error" className="text-sm text-red-500">{errors.subject}</p>}
+            {errors.subject && <p id="client-subject-error" className="text-sm text-status-error">{errors.subject}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">{t('requisitions.ui.description')}</Label>
+            <Label htmlFor="description" className="text-foreground">{t('requisitions.ui.description')}</Label>
             <Textarea
               id="description"
               placeholder={t('appointmentDialog.fields.shortDescriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+              className="bg-card border-border text-foreground"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
+            <Label htmlFor="client-upload" className="text-foreground mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
             <FileUpload
               inputId="client-upload"
               describedById="client-upload-help"
@@ -256,7 +256,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
             <Button type="button" variant="outline" onClick={requestClose} className="flex-1">
               {t('appointmentDialog.actions.cancel')}
             </Button>
-            <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
               {isLoading ? t('todayAppointments.processing') : t('appointmentDialog.actions.book')}
             </Button>
           </div>

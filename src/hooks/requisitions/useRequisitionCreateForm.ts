@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
 import { MaterialCategoria } from '../../services/api/requisicoes/types';
@@ -7,8 +7,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
-  const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
   
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
@@ -28,8 +26,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [condutorTransporte, setCondutorTransporte] = useState('');
   const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
-  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<string, boolean>>>({});
-  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
 
   // Maintenance-specific state
   const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
@@ -55,8 +51,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   const resetForm = useCallback(() => {
     setDescricao('');
-    setTempoLimite(undefined);
-    setTempoLimiteManuallyEdited(false);
     setMaterialLinhas([]);
     setDestinoTransporte('');
     setDataSaida('');
@@ -69,8 +63,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
-    setExpandedTransporteCategorias({});
-    setExpandedTransporteDetalhes({});
     setSelectedManutencaoItemIds([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
@@ -101,6 +93,42 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     });
   }, []);
 
+  const isDirty = useMemo(() => {
+    return (
+      tipo !== (initialTipo ?? 'MATERIAL') ||
+      prioridade !== (initialPrioridade ?? 'MEDIA') ||
+      descricao !== '' ||
+      materialLinhas.length > 0 ||
+      destinoTransporte !== '' ||
+      dataSaida !== '' ||
+      horaSaida !== '' ||
+      dataRegresso !== '' ||
+      horaRegresso !== '' ||
+      numeroPassageiros !== '' ||
+      condutorTransporte !== '' ||
+      selectedTransportIds.length > 0 ||
+      selectedManutencaoItemIds.length > 0 ||
+      Object.keys(manutencaoObservacoesPorCategoria).length > 0
+    );
+  }, [
+    tipo,
+    initialTipo,
+    prioridade,
+    initialPrioridade,
+    descricao,
+    materialLinhas,
+    destinoTransporte,
+    dataSaida,
+    horaSaida,
+    dataRegresso,
+    horaRegresso,
+    numeroPassageiros,
+    condutorTransporte,
+    selectedTransportIds,
+    selectedManutencaoItemIds,
+    manutencaoObservacoesPorCategoria,
+  ]);
+
   return {
     // General form state
     tipo,
@@ -109,10 +137,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setDescricao,
     prioridade,
     setPrioridade,
-    tempoLimite,
-    setTempoLimite,
-    tempoLimiteManuallyEdited,
-    setTempoLimiteManuallyEdited,
+    isDirty,
     // Validation
     createErrors,
     setCreateErrors,
@@ -146,10 +171,6 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setSelectedTransportIds,
     transportSelectionMode,
     setTransportSelectionMode,
-    expandedTransporteCategorias,
-    setExpandedTransporteCategorias,
-    expandedTransporteDetalhes,
-    setExpandedTransporteDetalhes,
     // Maintenance state
     selectedManutencaoItemIds,
     setSelectedManutencaoItemIds,
