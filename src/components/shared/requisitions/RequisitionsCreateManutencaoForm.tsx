@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, CSSProperties } from 'react';
 import { Layout, Trash2, MessageSquare, ChevronDown, ChevronUp, Car } from 'lucide-react';
 import { ManutencaoCategoria, ManutencaoItem, TransporteCatalogo } from '../../../services/api';
 import {
@@ -274,7 +274,7 @@ export function RequisitionsCreateManutencaoForm({
                         onChange={(e) => onUpdateObservacaoCategoria(category, e.target.value)}
                         placeholder={t('maintenance.placeholders.observations')}
                         className="w-full bg-background border border-border rounded-lg p-3 text-sm text-foreground outline-none focus:ring-2 focus:border-[color:var(--primary)]/40 transition-all resize-none h-20 placeholder:text-muted-foreground placeholder:italic"
-                        style={{ '--tw-ring-color': 'color-mix(in srgb, var(--primary) 15%, transparent)' } as React.CSSProperties}
+                        style={{ '--tw-ring-color': 'color-mix(in srgb, var(--primary) 15%, transparent)' } as CSSProperties}
                       />
                     </div>
                   </div>
