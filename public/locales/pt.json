@@ -733,6 +733,8 @@
       "materials": "Materiais",
       "destination": "Destino",
       "vehicles": "Viaturas",
+      "vehicles_one": "Viatura",
+      "vehicles_other": "Viaturas",
       "subject": "Assunto",
       "description": "Descrição",
       "type": "Tipo",
@@ -1254,6 +1256,8 @@
       "clearSelection": "Limpar seleção",
       "observations": "Observações por Categoria",
       "space": "Espaço",
+      "space_one": "Espaço",
+      "space_other": "Espaços",
       "item": "Item de Verificação"
     },
     "placeholders": {

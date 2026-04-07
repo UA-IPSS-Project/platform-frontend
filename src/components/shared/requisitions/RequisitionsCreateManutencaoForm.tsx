@@ -119,8 +119,8 @@ export function RequisitionsCreateManutencaoForm({
                 <div className="flex items-center gap-1.5">
                   {isVehicleCategory ? <Car className="w-3 h-3" /> : <Layout className="w-3 h-3" />}
                   {isVehicleCategory 
-                    ? `${transportes.length} ${t('requisitions.labels.vehicles')}`
-                    : `${Object.keys(spaces).length} ${t('maintenance.labels.space')}`
+                    ? `${transportes.length} ${t('requisitions.labels.vehicles', { count: transportes.length })}`
+                    : `${Object.keys(spaces).length} ${t('maintenance.labels.space', { count: Object.keys(spaces).length })}`
                   }
                 </div>
                 {isCollapsed
