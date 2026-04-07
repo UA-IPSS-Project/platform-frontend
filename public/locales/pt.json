@@ -459,6 +459,8 @@
       },
       "actions": {
         "applyFilters": "Aplicar Filtros",
+        "search": "Pesquisar",
+        "searching": "A pesquisar...",
         "clearFilters": "Remover Filtros",
         "newApplication": "Nova Candidatura",
         "changeStatus": "Alterar Estado",

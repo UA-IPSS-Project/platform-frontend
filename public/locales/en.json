@@ -459,6 +459,8 @@
       },
       "actions": {
         "applyFilters": "Apply Filters",
+        "search": "Search",
+        "searching": "Searching...",
         "clearFilters": "Clear Filters",
         "newApplication": "New Application",
         "changeStatus": "Change Status",

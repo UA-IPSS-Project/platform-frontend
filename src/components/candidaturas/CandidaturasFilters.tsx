@@ -1,5 +1,8 @@
+import { Search, X } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { useTranslation } from 'react-i18next';
+import { CandidaturasCard } from './CandidaturasCard';
 
 interface CandidaturasFiltersProps {
   mode: 'secretaria' | 'utente';
@@ -29,31 +32,30 @@ export function CandidaturasFilters({
   const { t } = useTranslation();
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 mb-6 bg-gray-50/70 dark:bg-gray-800/40">
+    <CandidaturasCard className="mb-6 p-4 sm:p-5">
       <div className="flex flex-col md:flex-row md:items-end gap-4">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             {t('applications.flow.filters.candidateName')}
           </label>
-          <input
+          <Input
             type="text"
             value={nameFilter}
             onChange={(event) => onNameFilterChange(event.target.value)}
             placeholder={t('applications.flow.filters.candidateNamePlaceholder')}
-            className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
 
         {mode === 'secretaria' ? (
           <>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 {t('applications.flow.filters.candidateStatus')}
               </label>
               <select
                 value={statusFilter}
                 onChange={(event) => onStatusFilterChange(event.target.value)}
-                className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
               >
                 <option value="">{t('applications.flow.status.all')}</option>
                 <option value="PENDENTE">{t('applications.flow.status.pending')}</option>
@@ -63,14 +65,14 @@ export function CandidaturasFilters({
             </div>
 
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 {t('applications.flow.filters.applicationDate')}
               </label>
               <input
                 type="date"
                 value={dateFilter}
                 onChange={(event) => onDateFilterChange(event.target.value)}
-                className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
             </div>
           </>
@@ -82,17 +84,23 @@ export function CandidaturasFilters({
               <Button
                 type="button"
                 onClick={onApplyFilters}
-                className="w-full md:w-auto bg-gray-800 hover:bg-gray-900 text-white dark:bg-gray-700 dark:hover:bg-gray-600"
+                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl px-6 shadow-sm transition-all hover:-translate-y-0.5"
               >
-                {t('applications.flow.actions.applyFilters')}
+                <span className="flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  {t('applications.flow.actions.search')}
+                </span>
               </Button>
               <Button
                 type="button"
                 onClick={onClearFilters}
                 variant="outline"
-                className="w-full md:w-auto"
+                className="w-full md:w-auto rounded-xl px-6 border-border bg-background shadow-sm transition-all hover:-translate-y-0.5"
               >
-                {t('applications.flow.actions.clearFilters')}
+                <span className="flex items-center gap-2">
+                  <X className="w-4 h-4" />
+                  {t('applications.flow.actions.clearFilters')}
+                </span>
               </Button>
             </>
           ) : null}
@@ -100,7 +108,7 @@ export function CandidaturasFilters({
           {mode === 'utente' && onNewCandidatura ? (
             <Button
               type="button"
-              className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white"
+              className="w-full md:w-auto"
               onClick={onNewCandidatura}
             >
               {t('applications.flow.actions.newApplication')}
@@ -108,6 +116,6 @@ export function CandidaturasFilters({
           ) : null}
         </div>
       </div>
-    </div>
+    </CandidaturasCard>
   );
 }
