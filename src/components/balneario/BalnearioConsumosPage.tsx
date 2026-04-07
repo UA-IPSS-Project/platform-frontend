@@ -25,8 +25,6 @@ interface BalnearioConsumosPageProps {
     variant?: 'armazem' | 'estatisticas';
 }
 
-type TabType = 'armazem' | 'estatisticas';
-
 export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'armazem' }: BalnearioConsumosPageProps) {
     const { t } = useTranslation();
     const [items, setItems] = useState<ItemArmazemDTO[]>([]);
