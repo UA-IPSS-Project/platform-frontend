@@ -177,16 +177,20 @@ export function RequisitionsCreateManutencaoForm({
                                   return (
                                     <td
                                       key={itemName}
-                                      onClick={() => onToggleItem(item.id, !selected, transporte.id)}
-                                      className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
+                                      className="border-r border-border/20 last:border-r-0 select-none transition-all duration-150 p-0"
                                       style={{
                                         backgroundColor: selected
                                           ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
                                           : undefined,
                                       }}
-                                      title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
                                     >
-                                      <div className="flex items-center justify-center h-full w-full py-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => onToggleItem(item.id, !selected, transporte.id)}
+                                        className="w-full h-full flex items-center justify-center py-3 border-0 bg-transparent cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--primary)] transition-all duration-150"
+                                        title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
+                                        aria-pressed={selected}
+                                      >
                                         {selected ? (
                                           <div className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
                                             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -196,7 +200,7 @@ export function RequisitionsCreateManutencaoForm({
                                         ) : (
                                           <div className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40" style={{ borderColor: 'var(--border)' }} />
                                         )}
-                                      </div>
+                                      </button>
                                     </td>
                                   );
                                 })}
@@ -223,16 +227,20 @@ export function RequisitionsCreateManutencaoForm({
                                   return (
                                     <td
                                       key={itemName}
-                                      onClick={() => onToggleItem(item.id, !selected)}
-                                      className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
+                                      className="border-r border-border/20 last:border-r-0 select-none transition-all duration-150 p-0"
                                       style={{
                                         backgroundColor: selected
                                           ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
                                           : undefined,
                                       }}
-                                      title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
                                     >
-                                      <div className="flex items-center justify-center h-full w-full py-3">
+                                      <button
+                                        type="button"
+                                        onClick={() => onToggleItem(item.id, !selected)}
+                                        className="w-full h-full flex items-center justify-center py-3 border-0 bg-transparent cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--primary)] transition-all duration-150"
+                                        title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
+                                        aria-pressed={selected}
+                                      >
                                         {selected ? (
                                           <div
                                             className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm"
@@ -250,7 +258,7 @@ export function RequisitionsCreateManutencaoForm({
                                             style={{ borderColor: 'var(--border)' }}
                                           />
                                         )}
-                                      </div>
+                                      </button>
                                     </td>
                                   );
                                 })}
