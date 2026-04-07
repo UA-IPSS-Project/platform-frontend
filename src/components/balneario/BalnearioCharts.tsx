@@ -26,6 +26,23 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
     const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
     const borderClass = isDarkMode ? 'border-gray-800' : 'border-gray-100';
 
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className={`p-4 rounded-xl shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-transparent'}`}>
+                    <div className={`text-[17px] tracking-wide font-extrabold pb-3 border-b border-dashed ${isDarkMode ? 'text-gray-100 border-gray-600' : 'text-[#202842] border-gray-300'}`}>
+                        {label || payload[0]?.name || ''}
+                    </div>
+                    <div className="flex items-baseline gap-1 mt-3">
+                        <span className={`text-[16px] ${isDarkMode ? 'text-gray-300' : 'text-[#1c2132]'}`}>Quantidade :</span>
+                        <span className="text-[18px] font-bold text-[#c83c74]">{payload[0].value}</span>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -62,14 +79,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip formatter={(value: number) => [value, "Quantidade"]} 
-                                    contentStyle={{ 
-                                        backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                                        borderColor: isDarkMode ? '#374151' : '#e5e7eb',
-                                        color: isDarkMode ? '#f3f4f6' : '#1f2937',
-                                        borderRadius: '8px'
-                                    }}
-                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{fill: isDarkMode ? '#374151' : '#f3f4f6'}} />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                     {data.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -99,13 +109,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number) => [value, "Quantidade"]} 
-                                    contentStyle={{ 
-                                        backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
-                                        borderColor: isDarkMode ? '#374151' : '#e5e7eb',
-                                        borderRadius: '8px'
-                                    }}
-                                />
+                                <Tooltip content={<CustomTooltip />} />
                                 <Legend verticalAlign="bottom" height={36}/>
                             </PieChart>
                         </ResponsiveContainer>

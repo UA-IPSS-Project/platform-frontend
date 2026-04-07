@@ -217,6 +217,18 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        let newErrors: Record<string, string> = {};
+        
+        if (selectedOptions['Sapatos/Sapatilhas'] && !shoeSize) {
+            newErrors.shoeSize = 'Tamanho obrigatório';
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         if (hasStockWarnings()) {
             setShowStockWarning(true);
             return;
@@ -402,12 +414,18 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                             type="text"
                                                             inputMode="numeric"
                                                             value={shoeSize}
-                                                            onChange={(e) => handleShoeSizeChange(e.target.value)}
+                                                            onChange={(e) => {
+                                                                handleShoeSizeChange(e.target.value);
+                                                                if (errors.shoeSize) setErrors({ ...errors, shoeSize: '' });
+                                                            }}
                                                             placeholder="35-46"
-                                                            className="w-20 h-7 text-sm text-center border-border bg-background"
+                                                            className={`w-20 h-7 text-sm text-center bg-background ${errors.shoeSize ? 'border-status-error' : 'border-border'}`}
                                                             maxLength={2}
                                                         />
                                                     </div>
+                                                    {errors.shoeSize && (
+                                                        <p className="text-xs text-status-error">{errors.shoeSize}</p>
+                                                    )}
                                                     {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
                                                         <p className="text-xs text-status-error flex items-center gap-1">
                                                             <AlertTriangle className="w-3 h-3" />
