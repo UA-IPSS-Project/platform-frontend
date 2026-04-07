@@ -393,10 +393,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.title')}</DialogTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <DialogTitle className="text-foreground">{t('appointmentDialog.title')}</DialogTitle>
+          <p className="text-sm text-muted-foreground">
             {date.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} {t('appointmentDialog.at')} {time}
           </p>
         </DialogHeader>
@@ -406,14 +406,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
         {showConfirmation ? (
           <div className="space-y-4 mt-4">
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800 flex gap-3">
-              <AlertCircleIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+            <div className="bg-[color:var(--status-warning-soft)]/40 p-4 rounded-lg border border-[color:var(--status-warning)]/40 flex gap-3">
+              <AlertCircleIcon className="w-6 h-6 text-status-warning flex-shrink-0" />
               <div>
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300">{t('appointmentDialog.confirm.title')}</h4>
-                <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                <h4 className="font-semibold text-status-warning">{t('appointmentDialog.confirm.title')}</h4>
+                <p className="text-sm text-status-warning mt-1">
                   {t('appointmentDialog.confirm.body')}
                 </p>
-                <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
+                <div className="mt-2 text-sm text-status-warning">
                   <ul className="list-disc pl-4">
                     {formData.name !== originalUser?.nome && <li>{t('appointmentDialog.confirm.nameChanged')}</li>}
                     {formData.email !== originalUser?.email && <li>{t('appointmentDialog.confirm.emailChanged')}</li>}
@@ -427,7 +427,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               <Button variant="outline" onClick={() => setShowConfirmation(false)} className="flex-1">
                 {t('appointmentDialog.confirm.back')}
               </Button>
-              <Button onClick={() => { setIsLoading(true); processCreation(); }} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white">
+              <Button onClick={() => { setIsLoading(true); processCreation(); }} className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
                 {t('appointmentDialog.confirm.confirmAndBook')}
               </Button>
             </div>
@@ -436,7 +436,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nif" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.nif')}</Label>
+                <Label htmlFor="nif" className="text-foreground">{t('appointmentDialog.fields.nif')}</Label>
                 <Input
                   id="nif"
                   type="text"
@@ -457,24 +457,24 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   }}
                   aria-invalid={!!errors.nif}
                   aria-describedby={errors.nif ? 'nif-error' : undefined}
-                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.nif ? 'border-red-500' : ''}`}
+                  className={`bg-card border-border text-foreground ${errors.nif ? 'border-status-error' : ''}`}
                 />
-                {errors.nif && <p id="nif-error" className="text-sm text-red-500">{errors.nif}</p>}
+                {errors.nif && <p id="nif-error" className="text-sm text-status-error">{errors.nif}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dob" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.birthDate')}</Label>
+                <Label htmlFor="dob" className="text-foreground">{t('appointmentDialog.fields.birthDate')}</Label>
                 <DatePickerField
                   id="dob"
                   value={formData.dateOfBirth}
                   onChange={(value) => setFormData({ ...formData, dateOfBirth: value })}
-                  buttonClassName={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
+                  buttonClassName={`bg-card border-border text-foreground ${errors.dateOfBirth ? 'border-status-error' : ''}`}
                 />
-                {errors.dateOfBirth && <p className="text-sm text-red-500">{errors.dateOfBirth}</p>}
+                {errors.dateOfBirth && <p className="text-sm text-status-error">{errors.dateOfBirth}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.name')}</Label>
+              <Label htmlFor="name" className="text-foreground">{t('appointmentDialog.fields.name')}</Label>
               <Input
                 id="name"
                 type="text"
@@ -483,13 +483,13 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? 'name-error' : undefined}
-                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.name ? 'border-red-500' : ''}`}
+                className={`bg-card border-border text-foreground ${errors.name ? 'border-status-error' : ''}`}
               />
-              {errors.name && <p id="name-error" className="text-sm text-red-500 whitespace-pre-line">{errors.name}</p>}
+              {errors.name && <p id="name-error" className="text-sm text-status-error whitespace-pre-line">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.email')}</Label>
+              <Label htmlFor="email" className="text-foreground">{t('appointmentDialog.fields.email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -498,14 +498,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? 'email-error' : undefined}
-                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.email ? 'border-red-500' : ''}`}
+                className={`bg-card border-border text-foreground ${errors.email ? 'border-status-error' : ''}`}
               />
-              {errors.email && <p id="email-error" className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && <p id="email-error" className="text-sm text-status-error">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact" className="text-gray-900 dark:text-gray-100">
-                {t('appointmentDialog.fields.contact')} <span className="text-xs font-normal text-gray-500">{t('common.optional')}</span>
+              <Label htmlFor="contact" className="text-foreground">
+                {t('appointmentDialog.fields.contact')} <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
               </Label>
               <Input
                 id="contact"
@@ -516,48 +516,48 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 onChange={(e) => setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') })}
                 aria-invalid={!!errors.contact}
                 aria-describedby={errors.contact ? 'contact-error' : undefined}
-                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.contact ? 'border-red-500' : ''}`}
+                className={`bg-card border-border text-foreground ${errors.contact ? 'border-status-error' : ''}`}
               />
-              {errors.contact && <p id="contact-error" className="text-sm text-red-500">{errors.contact}</p>}
+              {errors.contact && <p id="contact-error" className="text-sm text-status-error">{errors.contact}</p>}
             </div>
 
 
             <div className="space-y-2">
-              <Label htmlFor="secretary-subject" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.subject')}</Label>
+              <Label htmlFor="secretary-subject" className="text-foreground">{t('appointmentDialog.fields.subject')}</Label>
               <Select value={formData.subject} onValueChange={(value) => setFormData({ ...formData, subject: value })}>
                 <SelectTrigger
                   id="secretary-subject"
                   aria-invalid={!!errors.subject}
                   aria-describedby={errors.subject ? 'secretary-subject-error' : undefined}
-                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 ${errors.subject ? 'border-red-500' : ''}`}
+                  className={`bg-card border-border text-foreground ${errors.subject ? 'border-status-error' : ''}`}
                 >
                   <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <SelectContent className="bg-popover border-border">
                   {SUBJECTS.map((subject) => (
-                    <SelectItem key={subject} value={subject} className="text-gray-900 dark:text-gray-100">
+                    <SelectItem key={subject} value={subject} className="text-popover-foreground">
                       {getSubjectLabel(subject, t)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.subject && <p id="secretary-subject-error" className="text-sm text-red-500">{errors.subject}</p>}
+              {errors.subject && <p id="secretary-subject-error" className="text-sm text-status-error">{errors.subject}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-900 dark:text-gray-100">{t('appointmentDialog.fields.shortDescription')}</Label>
+              <Label htmlFor="description" className="text-foreground">{t('appointmentDialog.fields.shortDescription')}</Label>
               <Textarea
                 id="description"
                 placeholder={t('appointmentDialog.fields.shortDescriptionPlaceholder')}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
-                className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                className="bg-card border-border text-foreground"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="secretary-upload" className="text-gray-900 dark:text-gray-100 mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
+              <Label htmlFor="secretary-upload" className="text-foreground mb-2 block">{t('appointmentDialog.fields.attachDocs')}</Label>
               <FileUpload
                 inputId="secretary-upload"
                 describedById="secretary-upload-help"
@@ -568,10 +568,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="flex gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-gray-300 dark:border-gray-700" disabled={isLoading}>
+              <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-border" disabled={isLoading}>
                 {t('appointmentDialog.actions.cancel')}
               </Button>
-              <Button type="submit" className="flex-1 bg-purple-600 hover:bg-purple-700 text-white" disabled={isLoading}>
+              <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
                 {isLoading ? t('appointmentDialog.actions.booking') : t('appointmentDialog.actions.book')}
               </Button>
             </div>

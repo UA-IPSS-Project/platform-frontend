@@ -66,12 +66,12 @@ export function DocumentUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+      <DialogContent className="max-w-2xl bg-card border-border">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">
+          <DialogTitle className="text-foreground">
             Upload de Documentos
           </DialogTitle>
-          <DialogPrimitive.Description className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <DialogPrimitive.Description className="text-sm text-muted-foreground mt-2">
             Anexe documentos relevantes para esta marcação (opcional)
           </DialogPrimitive.Description>
         </DialogHeader>
@@ -97,7 +97,7 @@ export function DocumentUploadDialog({
             <Button
               type="button"
               onClick={handleUpload}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={isUploading || selectedFiles.length === 0}
             >
               {isUploading ? (

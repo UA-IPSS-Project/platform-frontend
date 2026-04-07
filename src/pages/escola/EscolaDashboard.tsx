@@ -106,10 +106,10 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             return (
                 <div className="flex items-center justify-center h-[500px]">
                     <div className="text-center">
-                        <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">
+                        <h2 className="text-2xl text-muted-foreground mb-2">
                             Definições
                         </h2>
-                        <p className="text-gray-500">Em desenvolvimento</p>
+                        <p className="text-muted-foreground">Em desenvolvimento</p>
                     </div>
                 </div>
             );
@@ -129,8 +129,8 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
         return (
             <div className="flex items-center justify-center h-[500px]">
                 <div className="text-center">
-                    <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">Painel Escola</h2>
-                    <p className="text-gray-500">Em desenvolvimento</p>
+                    <h2 className="text-2xl text-muted-foreground mb-2">Painel Escola</h2>
+                    <p className="text-muted-foreground">Em desenvolvimento</p>
                 </div>
             </div>
         );
@@ -141,7 +141,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
             <Button
                 variant={currentView === 'home' ? 'default' : 'ghost'}
                 onClick={() => safeSetView('home')}
-                className={`text-sm ${currentView === 'home' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'home' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground/80'}`}
             >
                 {t('sidebar.home')}
             </Button>
@@ -183,7 +183,7 @@ export function EscolaDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Esco
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmLeave} className="bg-red-600 hover:bg-red-700 text-white">
+                    <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-white">
                         Descartar
                     </AlertDialogAction>
                 </AlertDialogFooter>

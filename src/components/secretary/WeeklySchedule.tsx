@@ -83,7 +83,7 @@ const generateTimeSlots = (intervalMinutes: number = 15, appointmentType?: strin
   return slots;
 };
 
-export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, isDarkMode, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
+export function WeeklySchedule({ appointments, allAppointments, currentUserNif, isClient, onCreateAppointment, onViewAppointment, onRefresh, onBlockSchedule, refreshTrigger, highlightedSlot, currentDate, onDateChange, appointmentType = 'SECRETARIA' }: Readonly<WeeklyScheduleProps>) {
   // Expanded slots state for mobile/tap (must be at top level)
   const [expandedSlots, setExpandedSlots] = useState<{ [key: string]: boolean }>({});
   const isMobile = useIsMobile();
@@ -97,66 +97,64 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Helper function to get status-based styles (must be outside JSX)
   const getStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
     const normalizedStatus = (status || '').toLowerCase();
+    const success = isInteractive
+      ? 'border-l-4 border-status-success bg-status-success-soft text-status-success border-status-success/40 hover:bg-status-success-soft/70'
+      : 'border-l-4 border-status-success bg-status-success-soft text-status-success border-status-success/40';
+    const error = isInteractive
+      ? 'border-l-4 border-status-error bg-status-error-soft text-status-error border-status-error/40 hover:bg-status-error-soft/70'
+      : 'border-l-4 border-status-error bg-status-error-soft text-status-error border-status-error/40';
+    const info = isInteractive
+      ? 'border-l-4 border-status-info bg-status-info-soft text-status-info border-status-info/40 hover:bg-status-info-soft/70'
+      : 'border-l-4 border-status-info bg-status-info-soft text-status-info border-status-info/40';
+    const warning = isInteractive
+      ? 'border-l-4 border-status-warning bg-status-warning-soft text-status-warning border-status-warning/40 hover:bg-status-warning-soft/70'
+      : 'border-l-4 border-status-warning bg-status-warning-soft text-status-warning border-status-warning/40';
+    const primary = isInteractive
+      ? 'border-l-4 border-primary bg-primary/10 text-primary border-primary/30 hover:bg-primary/15'
+      : 'border-l-4 border-primary bg-primary/10 text-primary border-primary/30';
     const statusStyles: Record<string, string> = {
-      'completed': isInteractive
-        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-      'concluded': isInteractive
-        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-      'done': isInteractive
-        ? 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700 dark:hover:bg-emerald-800/55'
-        : 'border-l-4 border-emerald-600 bg-emerald-100 text-emerald-900 border-emerald-300 dark:border-emerald-400 dark:bg-emerald-800/45 dark:text-emerald-100 dark:border-emerald-700',
-      'cancelled': isInteractive
-        ? 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 hover:bg-red-200 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700 dark:hover:bg-red-900/50'
-        : 'border-l-4 border-red-600 bg-red-100 text-red-900 border-red-300 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700',
-      'in-progress': isInteractive
-        ? 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 hover:bg-violet-200 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700 dark:hover:bg-violet-900/50'
-        : 'border-l-4 border-violet-600 bg-violet-100 text-violet-900 border-violet-300 dark:border-violet-400 dark:bg-violet-900/40 dark:text-violet-100 dark:border-violet-700',
-      'scheduled': isInteractive
-        ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
-        : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700',
-      'warning': isInteractive
-        ? 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700 dark:hover:bg-amber-900/50'
-        : 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
-      'no-show': 'border-l-4 border-amber-600 bg-amber-100 text-amber-900 border-amber-300 cursor-not-allowed dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100 dark:border-amber-700',
+      'completed': success,
+      'concluded': success,
+      'done': success,
+      'cancelled': error,
+      'in-progress': info,
+      'scheduled': primary,
+      'warning': warning,
+      'no-show': 'border-l-4 border-status-warning bg-status-warning-soft text-status-warning border-status-warning/40 cursor-not-allowed',
     };
-    const defaultStyle = isInteractive
-      ? 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 hover:bg-pink-200 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700 dark:hover:bg-pink-900/50'
-      : 'border-l-4 border-pink-500 bg-pink-100 text-pink-900 border-pink-300 dark:border-pink-400 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700';
+    const defaultStyle = primary;
     return statusStyles[normalizedStatus] || defaultStyle;
   };
 
   // Helper for mini-cells: only background/text color, no border-l-4
   const getMiniCellStatusStyle = (status: string | undefined, isInteractive: boolean): string => {
     const normalizedStatus = (status || '').toLowerCase();
+    const success = isInteractive
+      ? 'bg-status-success-soft text-status-success hover:bg-status-success-soft/70'
+      : 'bg-status-success-soft text-status-success';
+    const error = isInteractive
+      ? 'bg-status-error-soft text-status-error hover:bg-status-error-soft/70'
+      : 'bg-status-error-soft text-status-error';
+    const info = isInteractive
+      ? 'bg-status-info-soft text-status-info hover:bg-status-info-soft/70'
+      : 'bg-status-info-soft text-status-info';
+    const warning = isInteractive
+      ? 'bg-status-warning-soft text-status-warning hover:bg-status-warning-soft/70'
+      : 'bg-status-warning-soft text-status-warning';
+    const primary = isInteractive
+      ? 'bg-primary/10 text-primary hover:bg-primary/15'
+      : 'bg-primary/10 text-primary';
     const statusStyles: Record<string, string> = {
-      'completed': isInteractive
-        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
-        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
-      'concluded': isInteractive
-        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
-        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
-      'done': isInteractive
-        ? 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-800/45 dark:text-emerald-100 dark:hover:bg-emerald-800/55'
-        : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-800/45 dark:text-emerald-100',
-      'cancelled': isInteractive
-        ? 'bg-red-100 text-red-900 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-100 dark:hover:bg-red-900/50'
-        : 'bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100',
-      'in-progress': isInteractive
-        ? 'bg-violet-100 text-violet-900 hover:bg-violet-200 dark:bg-violet-900/40 dark:text-violet-100 dark:hover:bg-violet-900/50'
-        : 'bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-100',
-      'scheduled': isInteractive
-        ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
-        : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100',
-      'warning': isInteractive
-        ? 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/50'
-        : 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100',
-      'no-show': 'bg-amber-100 text-amber-900 cursor-not-allowed dark:bg-amber-900/40 dark:text-amber-100',
+      'completed': success,
+      'concluded': success,
+      'done': success,
+      'cancelled': error,
+      'in-progress': info,
+      'scheduled': primary,
+      'warning': warning,
+      'no-show': 'bg-status-warning-soft text-status-warning cursor-not-allowed',
     };
-    const defaultStyle = isInteractive
-      ? 'bg-pink-100 text-pink-900 hover:bg-pink-200 dark:bg-pink-900/40 dark:text-pink-100 dark:hover:bg-pink-900/50'
-      : 'bg-pink-100 text-pink-900 dark:bg-pink-900/40 dark:text-pink-100';
+    const defaultStyle = primary;
     return statusStyles[normalizedStatus] || defaultStyle;
   };
   const tt = (pt: string, en: string) => (i18n.language.startsWith('en') ? en : pt);
@@ -194,12 +192,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   // Cache de bloqueios por semana (mantém apenas janela deslizante: -2, -1, 0, +1, +2)
   const [blocksByWeek, setBlocksByWeek] = useState<Record<string, Set<string>>>({});
 
-  // Rastreio de semanas em carregamento (para evitar múltiplas chamadas simultâneas)
-  const [loadingBlockWeeks, setLoadingBlockWeeks] = useState<Set<string>>(new Set());
-
   // Opções de ano (dropdown)
   const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
-  const selectMenuClassName = "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 overflow-y-auto";
+  const selectMenuClassName = "bg-card border-border overflow-y-auto";
   const selectMenuStyle = { maxHeight: '15rem' };
 
   // Ensure currentDate is valid
@@ -835,17 +830,17 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
     // Criar conteúdo HTML que o Excel pode abrir
     let tableContent = '<table border="1">';
-    tableContent += '<tr>' + headers.map(h => `<th style="background-color:#4a5568;color:white;font-weight:bold;padding:8px;">${h}</th>`).join('') + '</tr>';
+    tableContent += '<tr>' + headers.map(h => `<th style="background-color:rgb(74,85,104);color:white;font-weight:bold;padding:8px;">${h}</th>`).join('') + '</tr>';
 
     // Função para obter cor do status
     const getStatusColor = (statusKey: string) => {
       switch (statusKey) {
-        case 'completed': return '#38a169'; // Verde
-        case 'no-show': return '#e53e3e'; // Vermelho
-        case 'warning': return '#d69e2e'; // Amarelo
-        case 'cancelled': return '#718096'; // Cinzento
-        case 'in-progress': return '#805ad5'; // Roxo
-        default: return '#4a5568'; // Default
+        case 'completed': return 'rgb(56,161,105)'; // Verde
+        case 'no-show': return 'rgb(229,62,62)'; // Vermelho
+        case 'warning': return 'rgb(214,158,46)'; // Amarelo
+        case 'cancelled': return 'rgb(113,128,150)'; // Cinzento
+        case 'in-progress': return 'rgb(128,90,213)'; // Roxo
+        default: return 'rgb(74,85,104)'; // Default
       }
     };
 
@@ -915,19 +910,19 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         <title>${tt('Agenda Semanal', 'Weekly Schedule')} - ${periodLabel}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
-          h1 { color: #1a202c; text-align: center; margin-bottom: 5px; }
-          .period { text-align: center; color: #4a5568; margin-bottom: 20px; }
+          h1 { color: rgb(26,32,44); text-align: center; margin-bottom: 5px; }
+          .period { text-align: center; color: rgb(74,85,104); margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th { background-color: #4a5568; color: white; padding: 10px; text-align: left; font-size: 12px; }
-          td { padding: 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
-          tr:nth-child(even) { background-color: #f7fafc; }
-          .status-scheduled { color: #4a5568; }
-          .status-completed { color: #38a169; font-weight: bold; }
-          .status-cancelled { color: #718096; }
-          .status-in_progress { color: #805ad5; font-weight: bold; }
-          .status-no_show { color: #e53e3e; font-weight: bold; }
-          .status-warning { color: #d69e2e; font-weight: bold; }
-          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #718096; }
+          th { background-color: rgb(74,85,104); color: white; padding: 10px; text-align: left; font-size: 12px; }
+          td { padding: 8px; border-bottom: 1px solid rgb(226,232,240); font-size: 11px; }
+          tr:nth-child(even) { background-color: rgb(247,250,252); }
+          .status-scheduled { color: rgb(74,85,104); }
+          .status-completed { color: rgb(56,161,105); font-weight: bold; }
+          .status-cancelled { color: rgb(113,128,150); }
+          .status-in_progress { color: rgb(128,90,213); font-weight: bold; }
+          .status-no_show { color: rgb(229,62,62); font-weight: bold; }
+          .status-warning { color: rgb(214,158,46); font-weight: bold; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: rgb(113,128,150); }
         </style>
       </head>
       <body>
@@ -1256,9 +1251,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       {/* Header - Outside Card */}
       <div className="mb-4 flex flex-col gap-1">
         <div className="mb-1">
-          <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 dark:text-gray-100">{tt('Agenda Semanal', 'Weekly Schedule')}</h2>
+          <h2 className="text-2xl md:text-3xl font-semibold text-foreground">{tt('Agenda Semanal', 'Weekly Schedule')}</h2>
         </div>
-        <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
+        <p className="text-sm md:text-base text-muted-foreground">
           {tt('Clique numa célula vazia para iniciar uma marcação', 'Click an empty cell to start an appointment')}
         </p>
       </div>
@@ -1269,7 +1264,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           variant="ghost"
           size="icon"
           onClick={() => navigateWeek('prev')}
-          className={`h-8 w-8 rounded transition-colors ${isDarkMode ? 'bg-gray-800/10 text-gray-400 hover:bg-gray-800/60 hover:text-gray-200' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+          className="h-8 w-8 rounded transition-colors bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronLeftIcon className="w-4 h-4" />
         </Button>
@@ -1278,7 +1273,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
-              className={`gap-2 h-8 px-3 text-sm rounded transition-opacity ${isDarkMode ? 'bg-gray-800/40 text-gray-200 hover:bg-gray-800/70' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+              className="gap-2 h-8 px-3 text-sm rounded transition-opacity bg-card text-foreground hover:bg-muted"
             >
               <CalendarIcon className="w-4 h-4" />
               {getWeekLabel()}
@@ -1298,7 +1293,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           variant="ghost"
           size="icon"
           onClick={() => navigateWeek('next')}
-          className={`h-8 w-8 rounded transition-colors ${isDarkMode ? 'bg-gray-800/10 text-gray-400 hover:bg-gray-800/60 hover:text-gray-200' : 'bg-white text-gray-700 hover:bg-white/90'}`}
+          className="h-8 w-8 rounded transition-colors bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <ChevronRightIcon className="w-4 h-4" />
         </Button>
@@ -1308,7 +1303,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={onBlockSchedule}
-              className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
+              className="px-3 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-muted"
             >
               {tt('Bloquear', 'Block')}
             </Button>
@@ -1316,7 +1311,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={() => handleQuickDialogToggle(true)}
-              className={`px-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800`}
+              className="px-3 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-muted"
             >
               {tt('Nova marcação', 'New appointment')}
             </Button>
@@ -1331,16 +1326,16 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           {/* CORREÇÃO 1: Scrollbar para os dias/horários: max-height e overflow-y-auto */}
           {/* Header Row - Static outside scroll */}
           <div
-            className={`grid grid-cols-6 gap-2 mb-4 border-b border-gray-200 dark:border-gray-700 pr-4`}
+            className="grid grid-cols-6 gap-2 mb-4 border-b border-border pr-4"
             style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
           >
-            <div className={`p-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{tt('Hora', 'Time')}</div>
+            <div className="p-2 text-sm text-muted-foreground">{tt('Hora', 'Time')}</div>
             {weekDays.map((day, index) => (
               <div key={index} className="text-center">
-                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                <div className="text-sm text-muted-foreground">
                   {isMobile ? weekdaysMobile[index] : isTablet ? weekdaysMedium[index] : weekdaysShort[index]}
                 </div>
-                <div className={`mt-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{day.getDate()}</div>
+                <div className="mt-1 text-foreground">{day.getDate()}</div>
               </div>
             ))}
           </div>
@@ -1356,7 +1351,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   className="grid grid-cols-6 gap-2"
                   style={{ gridTemplateColumns: '80px repeat(5, minmax(0, 1fr))' }}
                 >
-                  <div className={`p-1 text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'} flex items-center`}>
+                  <div className="p-1 text-xs text-muted-foreground flex items-center">
                     {time}
                   </div>
                   {weekDays.map((day, idx) => {
@@ -1374,15 +1369,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                     const slotId = getSlotId(day, time);
                     const isActiveHighlight = activeHighlight === slotId;
                     const base = `p-1.5 min-h-[40px] rounded border transition-all text-xs`;
-                    const available = isDarkMode
-                      ? 'border-gray-800 hover:bg-gray-800/50 hover:border-purple-600 cursor-pointer'
-                      : 'border-gray-200 hover:bg-gray-50 hover:border-purple-600 cursor-pointer';
-                    const pastSlot = isDarkMode
-                      ? 'border-gray-800 bg-gray-900/50 text-gray-600 cursor-not-allowed'
-                      : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
-                    const holidaySlot = isDarkMode
-                      ? 'border-gray-800 bg-gray-900/60 text-gray-500 cursor-not-allowed'
-                      : 'border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed';
+                    const available = 'border-border hover:bg-muted/50 hover:border-primary/40 cursor-pointer';
+                    const pastSlot = 'border-border bg-muted text-muted-foreground cursor-not-allowed';
+                    const holidaySlot = 'border-border bg-muted text-muted-foreground cursor-not-allowed';
 
                     // Use top-level expandedSlots and isMobile
                     const isExpanded = expandedSlots[slotId];
@@ -1406,7 +1395,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             return (
                               <button
                                 key={`${splitAppointment.id}-${splitIndex}`}
-                                className={`text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded hover:bg-purple-100 dark:hover:bg-purple-900/40 transition ${miniCellStatusClass}`}
+                                className={`text-left truncate font-semibold text-[13px] leading-tight px-2 py-1.5 rounded hover:bg-primary/10 transition ${miniCellStatusClass}`}
                                 style={{ minHeight: '38px', height: '38px' }}
                                 aria-label={`Marcação ${splitIndex + 1} de ${slotCapacity}: ${displayText}`}
                                 onClick={e => {
@@ -1422,7 +1411,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           {showAddButton && (
                             <button
                               key={`add-${slotAppointments.length}`}
-                              className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition"
+                              className="flex items-center justify-center gap-1 rounded border border-dashed border-primary/40 bg-primary/10 text-primary py-1.5 px-0 text-base font-bold hover:bg-primary/15 transition"
                               style={{ minHeight: '38px', height: '38px' }}
                               onClick={e => {
                                 e.stopPropagation();
@@ -1443,7 +1432,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         if (appointment) {
                           if (appointment.status === 'reserved') {
                             return (
-                              <div key={idx} id={slotId} className={`${base} bg-gray-200 text-gray-500 border-gray-300 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              <div key={idx} id={slotId} className={`${base} bg-muted text-muted-foreground border-border cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
                                 <span className="text-[10px] font-medium truncate leading-none px-0.5">{tt('Reservado', 'Reserved')}</span>
                               </div>
                             );
@@ -1451,14 +1440,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           if (isOwn) {
                             return (
                               <button key={idx} id={slotId} onClick={() => onViewAppointment(appointment)} title={tt('Clique para ver detalhes', 'Click to view details')} className={`${base} ${getStatusStyle(appointment.status, true)} flex items-center justify-center cursor-pointer min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}>
-                                <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                                <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-background/30 text-center w-full">
                                   {tt('Sua marcação', 'Your appointment')}
                                 </span>
                               </button>
                             );
                           } else {
                             return (
-                              <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              <div key={idx} id={slotId} className={`${base} bg-muted border-border cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
                               </div>
                             );
                           }
@@ -1466,7 +1455,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         if (isBlockedAdmin) {
                           if (inPast) return <div key={idx} className={`${base} ${pastSlot}`}></div>;
                           return (
-                            <div key={idx} id={slotId} className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                            <div key={idx} id={slotId} className={`${base} bg-muted border-border cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
                             </div>
                           );
                         }
@@ -1493,7 +1482,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               className={`${base} ${getStatusStyle(ownApt.status, true)} flex items-center justify-center min-h-[40px] cursor-pointer ${isActiveHighlight ? 'slot-highlight' : ''}`}
                               title={tt('Clique para ver detalhes', 'Click to view details')}
                             >
-                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-white/25 dark:bg-black/20 text-center w-full">
+                              <span className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded bg-background/30 text-center w-full">
                                 {tt('Sua marcação', 'Your appointment')}
                               </span>
                             </button>
@@ -1503,7 +1492,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             <div
                               key={idx}
                               id={slotId}
-                              className={`${base} bg-gray-200 border-gray-300 dark:bg-gray-800 dark:border-gray-700 cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              className={`${base} bg-muted border-border cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             >
                             </div>
                           );
@@ -1530,13 +1519,9 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       // BALNEARIO: tornar marcações sempre clicáveis para editar (staff), mas clientes só podem editar a sua
                       let appointmentStyles: string;
                       if (appointment?.status === 'reserved') {
-                        appointmentStyles = isDarkMode
-                          ? 'bg-gray-600/50 text-gray-300 border-gray-600 cursor-not-allowed'
-                          : 'bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed';
+                        appointmentStyles = 'bg-muted text-muted-foreground border-border cursor-not-allowed';
                       } else if (blocked) {
-                        appointmentStyles = isDarkMode
-                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                        appointmentStyles = 'bg-muted text-muted-foreground border-border cursor-not-allowed';
                       } else if (appointment && appointment.status) {
                         // Colorir pelo estado da marcação
                         const canEdit = !isClient || appointments.some(a => a.id === appointment.id);
@@ -1575,7 +1560,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             title={getSlotTooltip()}
                             className={`${base} ${appointmentStyles} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                           >
-                            <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                            <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-background/30">
                               {isClient && appointmentType === 'BALNEARIO' && ((appointment.patientNIF && currentUserNif && String(appointment.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === appointment.id))
                                 ? tt('Sua marcação', 'Your appointment')
                                 : appointment.patientName}
@@ -1603,7 +1588,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             if (isBlockedAdmin) {
                               if (inPast) return null;
                               return (
-                                <div className="flex items-center justify-center text-center font-medium text-xs text-red-500 bg-red-50 dark:bg-red-900/10 dark:text-red-400 w-full h-full rounded border border-red-200 dark:border-red-800">
+                                <div className="flex items-center justify-center text-center font-medium text-xs text-status-error bg-status-error-soft w-full h-full rounded border border-status-error/30">
                                   <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
                                   {!isMobile && tt('Indisponível', 'Unavailable')}
                                 </div>
@@ -1623,7 +1608,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                               const isOwn = (apt.patientNIF && currentUserNif && String(apt.patientNIF) === String(currentUserNif)) || appointments.some(a => a.id === apt.id);
                               return (
                                 <div className="w-full h-full flex items-center">
-                                  <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">
+                                  <span className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-background/30">
                                     {isClient && isOwn ? tt('Sua marcação', 'Your appointment') : apt.patientName}
                                   </span>
                                 </div>
@@ -1645,7 +1630,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           <div
                             key={idx}
                             id={slotId}
-                            className={`${base} cursor-pointer ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                            className={`${base} cursor-pointer ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-primary/40 bg-primary/10' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             onMouseEnter={() => setHoveredSlot(slotId)}
                             onMouseLeave={() => setHoveredSlot(null)}
                             onClick={() => handleSlotClick(day, time)}
@@ -1659,8 +1644,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                     return (
                                       <span
                                         key={apt.id}
-                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                        style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%`, background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-muted text-muted-foreground uppercase cursor-pointer hover:opacity-90"
+                                        style={{ height: `${100 / Math.min(slotAppointments.length, slotCapacity)}%` }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (onRefresh) onRefresh();
@@ -1690,7 +1675,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                 {!booked && !inPast && !blocked && slotAppointments.length < slotCapacity && (
                                   <button
                                     key={`add-${slotAppointments.length}`}
-                                    className="flex items-center justify-center gap-1 rounded border border-dashed border-purple-400 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200 py-1.5 px-0 text-base font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 transition cursor-pointer"
+                                    className="flex items-center justify-center gap-1 rounded border border-dashed border-primary/40 bg-primary/10 text-primary py-1.5 px-0 text-base font-bold hover:bg-primary/15 transition cursor-pointer"
                                     style={{ minHeight: '38px', height: '38px' }}
                                     onClick={e => {
                                       e.stopPropagation();
@@ -1711,8 +1696,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                   if (apt.status === 'reserved') {
                                     return (
                                       <span
-                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                        style={{ height: '100%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                        className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 h-full flex items-center bg-muted text-muted-foreground uppercase cursor-pointer hover:opacity-90"
+                                        style={{ height: '100%' }}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           if (onRefresh) onRefresh();
@@ -1745,8 +1730,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                           return (
                                             <span
                                               key={apt.id}
-                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                              style={{ height: '50%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-muted text-muted-foreground uppercase cursor-pointer hover:opacity-90"
+                                              style={{ height: '50%' }}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (onRefresh) onRefresh();
@@ -1782,8 +1767,8 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                           return (
                                             <span
                                               key={apt.id}
-                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-gray-400 text-gray-100 dark:bg-gray-800 dark:text-gray-300 uppercase cursor-pointer hover:opacity-90"
-                                              style={{ height: '33.33%', background: 'linear-gradient(135deg, #b0b0b0 60%, #888 100%)' }}
+                                              className="truncate block font-semibold text-[13px] px-2 py-1.5 rounded flex-1 min-h-0 flex items-center bg-muted text-muted-foreground uppercase cursor-pointer hover:opacity-90"
+                                              style={{ height: '33.33%' }}
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (onRefresh) onRefresh();
@@ -1809,7 +1794,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                                         );
                                       })}
                                       <span
-                                        className="text-xs text-gray-400 flex items-center justify-center font-semibold bg-white/10 dark:bg-black/10 rounded flex-1 min-h-0"
+                                        className="text-xs text-muted-foreground flex items-center justify-center font-semibold bg-muted/60 rounded flex-1 min-h-0"
                                         style={{ height: '33.33%' }}
                                       >
                                         +{slotAppointments.length - 2} {tt('mais', 'more')}
@@ -1830,23 +1815,23 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                           <div key={idx} className="relative">
                             <button
                               id={slotId}
-                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-purple-400 bg-purple-50 dark:bg-purple-900/20' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              className={`${base} ${inPast ? pastSlot : isHolidayDay ? holidaySlot : booked ? 'border-primary/40 bg-primary/10' : available} ${isActiveHighlight ? 'slot-highlight' : ''}`}
                               disabled={shouldDisable}
                               aria-label={tt('Expandir marcações', 'Expand appointments')}
                               onClick={() => handleExpandSlot(slotId)}
                             >
                               <div className="flex flex-col gap-0.5 items-stretch w-full">
                                 {slotAppointments.slice(0, 2).map(apt => (
-                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-white/25 dark:bg-black/20">{apt.patientName}</span>
+                                  <span key={apt.id} className="truncate block font-semibold text-[11px] px-1 py-0.5 rounded bg-background/30">{apt.patientName}</span>
                                 ))}
                                 {slotAppointments.length > 2 && (
-                                  <span className="text-xs text-gray-400">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
+                                  <span className="text-xs text-muted-foreground">+{slotAppointments.length - 2} {tt('mais', 'more')}</span>
                                 )}
                               </div>
                             </button>
                             {isExpanded && (
                               <div
-                                className="absolute z-10 left-0 right-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg p-2 mt-1"
+                                className="absolute z-10 left-0 right-0 bg-card border border-border rounded shadow-lg p-2 mt-1"
                                 style={{ minHeight: `${(slotAppointments.length + ((!booked && !inPast && !blocked && slotAppointments.length < slotCapacity) ? 1 : 0)) * 40 + 12}px` }}
                               >
                                 {renderExpandedSlot()}
@@ -1861,9 +1846,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                       // Sempre mostrar célula grande única, nunca mini-células, mesmo para utente
                       let appointmentStyles: string;
                       if (isBlockedAdmin) {
-                        appointmentStyles = isDarkMode
-                          ? 'bg-gray-700 text-gray-400 border-gray-600 cursor-not-allowed'
-                          : 'bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                        appointmentStyles = 'bg-muted text-muted-foreground border-border cursor-not-allowed';
                       } else {
                         appointmentStyles = available;
                       }
@@ -1893,7 +1876,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         </div>
       </GlassCard>
       <div className="flex justify-end mt-4">
-        <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-gray-200 dark:border-gray-800 text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
+        <Button variant="outline" onClick={handleExportClick} className="gap-2 h-9 text-sm bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-muted">
           <DownloadIcon className="w-4 h-4" />
           {tt('Exportar Agenda', 'Export schedule')}
         </Button>
@@ -1909,14 +1892,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           }
         }}
       >
-        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+        <DialogContent className="max-w-md w-full bg-card text-foreground border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle>{tt('Navegar marcações do slot', 'Browse slot appointments')}</DialogTitle>
           </DialogHeader>
 
           {slotNavigator && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {slotNavigator.date.toLocaleDateString('pt-PT')} às {slotNavigator.time}
               </p>
 
@@ -1935,7 +1918,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                   <p className="text-sm font-medium">
                     {tt('Sub-slot', 'Sub-slot')} {slotNavigatorIndex + 1} {tt('de', 'of')} {slotNavigator.slots.length}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {slotNavigator.slots[slotNavigatorIndex]
                       ? `${tt('Marcado para', 'Scheduled for')} ${slotNavigator.slots[slotNavigatorIndex]?.patientName}`
                       : tt('Disponível para nova marcação', 'Available for a new appointment')}
@@ -1955,7 +1938,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               <Button
                 type="button"
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={handleSlotNavigatorAction}
                 aria-label={slotNavigator.slots[slotNavigatorIndex]
                   ? tt('Abrir marcação selecionada', 'Open selected appointment')
@@ -1972,73 +1955,73 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       {/* Dialog de seleção de formato de exportação */}
       <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
-        <DialogContent className="max-w-md w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+        <DialogContent className="max-w-md w-full bg-card text-foreground border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl">{tt('Exportar Agenda', 'Export schedule')}</DialogTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {tt('Escolha o formato de exportação da agenda semanal', 'Choose the weekly schedule export format')}
             </p>
           </DialogHeader>
           <div className="grid gap-3 mt-4">
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted transition-colors"
               onClick={handleExportCSV}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30">
-                <FileTextIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-status-success-soft">
+                <FileTextIcon className="w-5 h-5 text-status-success" />
               </div>
               <div className="text-left">
                 <div className="font-medium">CSV</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Formato de texto compatível com Excel e outras aplicações', 'Text format compatible with Excel and other apps')}</div>
+                <div className="text-xs text-muted-foreground">{tt('Formato de texto compatível com Excel e outras aplicações', 'Text format compatible with Excel and other apps')}</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted transition-colors"
               onClick={handleExportExcel}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-status-info-soft">
+                <svg className="w-5 h-5 text-status-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="text-left">
                 <div className="font-medium">Excel</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Ficheiro formatado para Microsoft Excel', 'File formatted for Microsoft Excel')}</div>
+                <div className="text-xs text-muted-foreground">{tt('Ficheiro formatado para Microsoft Excel', 'File formatted for Microsoft Excel')}</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted transition-colors"
               onClick={handleExportPDF}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30">
-                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-status-error-soft">
+                <svg className="w-5 h-5 text-status-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="text-left">
                 <div className="font-medium">PDF</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Documento para impressão ou visualização', 'Document for printing or viewing')}</div>
+                <div className="text-xs text-muted-foreground">{tt('Documento para impressão ou visualização', 'Document for printing or viewing')}</div>
               </div>
             </Button>
 
             <Button
               variant="outline"
-              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex items-center justify-start gap-4 h-16 px-4 hover:bg-muted transition-colors"
               onClick={handleExportICS}
             >
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
               <div className="text-left">
                 <div className="font-medium">{tt('iCalendar - Apenas marcações agendadas (.ics)', 'iCalendar - Scheduled appointments only (.ics)')}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{tt('Google Calendar, Outlook', 'Google Calendar, Outlook')}</div>
+                <div className="text-xs text-muted-foreground">{tt('Google Calendar, Outlook', 'Google Calendar, Outlook')}</div>
               </div>
             </Button>
           </div>
@@ -2047,10 +2030,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
       <Dialog open={quickDialogOpen} onOpenChange={handleQuickDialogToggle}>
         {/* CORREÇÃO 3: DialogContent como card */}
-        <DialogContent className="max-w-5xl w-full bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-800 shadow-2xl">
+        <DialogContent className="max-w-5xl w-full bg-card text-foreground border-border shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">{tt('Criar nova marcação', 'Create new appointment')}</DialogTitle>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {tt('Escolha rapidamente um dia específico e um horário disponível', 'Quickly choose a specific day and an available time')}
             </p>
           </DialogHeader>
@@ -2061,12 +2044,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Ano (Select/Dropdown) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Ano', 'Year')}</Label>
+                <Label className="text-xs text-muted-foreground uppercase">{tt('Ano', 'Year')}</Label>
                 <Select
                   value={String(quickYear)}
                   onValueChange={(value) => setQuickYear(Number(value))}
                 >
-                  <SelectTrigger className="min-w-[120px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
+                  <SelectTrigger className="min-w-[120px] bg-muted/60 border-border h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={selectMenuClassName} style={selectMenuStyle}>
@@ -2081,12 +2064,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Mês */}
               <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Mês', 'Month')}</Label>
+                <Label className="text-xs text-muted-foreground uppercase">{tt('Mês', 'Month')}</Label>
                 <Select
                   value={String(quickMonth)}
                   onValueChange={(value) => setQuickMonth(Number(value))}
                 >
-                  <SelectTrigger className="min-w-[160px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
+                  <SelectTrigger className="min-w-[160px] bg-muted/60 border-border h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className={selectMenuClassName} style={selectMenuStyle}>
@@ -2104,12 +2087,12 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Dia (Com Scrollbar) - Apenas dias de semana */}
               <div className="flex flex-col gap-1 flex-1 min-w-[110px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Dia', 'Day')}</Label>
+                <Label className="text-xs text-muted-foreground uppercase">{tt('Dia', 'Day')}</Label>
                 <Select
                   value={String(quickDay)}
                   onValueChange={(value) => setQuickDay(Number(value))}
                 >
-                  <SelectTrigger className="min-w-[120px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
+                  <SelectTrigger className="min-w-[120px] bg-muted/60 border-border h-10">
                     <SelectValue />
                   </SelectTrigger>
                   {/* CORREÇÃO 2: Scrollbar para os dias - APENAS DIAS DE SEMANA */}
@@ -2138,13 +2121,13 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
 
               {/* Campo Horário (Com Scrollbar) */}
               <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
-                <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{tt('Horário', 'Time')}</Label>
+                <Label className="text-xs text-muted-foreground uppercase">{tt('Horário', 'Time')}</Label>
                 <Select
                   value={quickTime}
                   onValueChange={setQuickTime}
                   disabled={!quickSlots.length}
                 >
-                  <SelectTrigger className="min-w-[160px] bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 h-10">
+                  <SelectTrigger className="min-w-[160px] bg-muted/60 border-border h-10">
                     <SelectValue placeholder={tt('Sem horários disponíveis', 'No available time slots')} />
                   </SelectTrigger>
                   {/* CORREÇÃO 2: Scrollbar para os horários */}
@@ -2161,7 +2144,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             </div>
 
             <Button
-              className="bg-purple-600 hover:bg-purple-700 text-white h-12 px-8 text-base rounded-lg w-full"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-12 px-8 text-base rounded-lg w-full"
               onClick={handleConfirmQuickAppointment}
               disabled={!quickTime}
             >
@@ -2169,7 +2152,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
             </Button>
 
             {!quickSlots.length && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {tt('Não existem horários disponíveis para esta data.', 'There are no available time slots for this date.')}
               </p>
             )}

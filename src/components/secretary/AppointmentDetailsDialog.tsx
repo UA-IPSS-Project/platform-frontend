@@ -595,27 +595,27 @@ function cleanFilename(name: string) {
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent hideCloseButton className="max-w-xl p-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 flex flex-col max-h-[90vh]">
+        <DialogContent hideCloseButton className="max-w-xl p-0 bg-card border-border flex flex-col max-h-[90vh]">
           <DialogTitle className="sr-only">{t('appointmentDetails.viewAppointment')}</DialogTitle>
           <DialogPrimitive.Description className="sr-only">
             {t('appointmentDetails.viewAndManage')}
           </DialogPrimitive.Description>
 
           {/* Header - Fixed */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+          <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-lg text-gray-900 dark:text-gray-100">{t('appointmentDetails.viewAppointment')}</h2>
+                <h2 className="text-lg text-foreground">{t('appointmentDetails.viewAppointment')}</h2>
                 <StatusBadge status={appointment.status} size="md" />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{dateString}</p>
+              <p className="text-sm text-muted-foreground">{dateString}</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
               aria-label={t('appointmentDetails.closeDetails')}
             >
-              <XIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <XIcon className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
 
@@ -623,13 +623,13 @@ function cleanFilename(name: string) {
           <div className="p-6 space-y-6 overflow-y-auto flex-1">
             {/* Invalid Documents Warning */}
             {invalidDocuments.length > 0 && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="bg-status-warning-soft/40 border border-status-warning/40 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <AlertTriangleIcon className="w-5 h-5 text-status-warning flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-yellow-900 dark:text-yellow-100 mb-2">{t('appointmentDetails.invalidDocuments')}</p>
+                    <p className="text-sm text-status-warning mb-2">{t('appointmentDetails.invalidDocuments')}</p>
                     {invalidDocuments.map((doc, index) => (
-                      <p key={index} className="text-xs text-yellow-800 dark:text-yellow-200">
+                      <p key={index} className="text-xs text-status-warning">
                         • {doc.name}: <em>{doc.reason}</em>
                       </p>
                     ))}
@@ -640,61 +640,61 @@ function cleanFilename(name: string) {
 
             {/* Appointment Info Grid: NIF and Contact side-by-side (Horário removed) */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm mb-2"># NIF</Label>
-                <p className="text-gray-900 dark:text-gray-100">{appointment.patientNIF}</p>
+                <p className="text-foreground">{appointment.patientNIF}</p>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm flex items-center gap-2 mb-2">
                   <PhoneIcon className="w-4 h-4" />
                   {t('appointmentDialog.fields.contact')}
                 </Label>
-                <p className="text-gray-900 dark:text-gray-100">{appointment.patientContact}</p>
+                <p className="text-foreground">{appointment.patientContact}</p>
               </div>
             </div>
 
             {/* Patient Name */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+            <div className="bg-muted/50 rounded-lg p-4 border border-border">
               <Label className="text-sm flex items-center gap-2 mb-2">
                 <UserIcon className="w-4 h-4" />
                 {t('requisitions.ui.name')}
               </Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.patientName}</p>
+              <p className="text-foreground">{appointment.patientName}</p>
             </div>
 
             {/* Email (separate block, similar style to Nome) */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+            <div className="bg-muted/50 rounded-lg p-4 border border-border">
               <Label className="text-sm flex items-center gap-2 mb-2">
                 <MailIcon className="w-4 h-4" />
                 Email
               </Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.patientEmail}</p>
+              <p className="text-foreground">{appointment.patientEmail}</p>
             </div>
 
             {/* Cancellation info */}
             {appointment.status === 'cancelled' && appointment.cancellationReason && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+              <div className="bg-status-error-soft/40 border border-status-error/40 rounded-lg p-4">
+                <p className="text-sm font-medium text-status-error mb-1">
                   {t('appointmentDetails.cancelledAppointment')}
                 </p>
-                <p className="text-sm text-red-600 dark:text-red-200">
+                <p className="text-sm text-status-error">
                   {t('appointmentDetails.reason')}: {appointment.cancellationReason}
                 </p>
               </div>
             )}
 
             {/* Subject */}
-            <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+            <div className="bg-muted/50 rounded-lg p-4 border border-border">
               <Label className="text-sm mb-2">{t('requisitions.ui.subjectOptional')}</Label>
-              <p className="text-gray-900 dark:text-gray-100">{appointment.subject}</p>
+              <p className="text-foreground">{appointment.subject}</p>
             </div>
 
             {/* Description */}
             {appointment.description && (
-              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+              <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm mb-2">{t('requisitions.ui.description')}</Label>
-                <p className="text-gray-900 dark:text-gray-100">{appointment.description}</p>
+                <p className="text-foreground">{appointment.description}</p>
               </div>
             )}
 
@@ -710,7 +710,7 @@ function cleanFilename(name: string) {
                     type="button"
                     size="sm"
                     onClick={() => setShowDocUpload(true)}
-                    className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white"
+                    className="h-7 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Upload className="w-3 h-3 mr-1" />
                     {t('appointmentDetails.add')}
@@ -719,26 +719,26 @@ function cleanFilename(name: string) {
               </div>
 
               {loadingDocs ? (
-                <p className="text-sm text-gray-500">{t('appointmentDetails.loadingDocuments')}</p>
+                <p className="text-sm text-muted-foreground">{t('appointmentDetails.loadingDocuments')}</p>
               ) : documentos.length === 0 ? (
-                <p className="text-sm text-gray-500">{t('appointmentDetails.noDocumentsAttached')}</p>
+                <p className="text-sm text-muted-foreground">{t('appointmentDetails.noDocumentsAttached')}</p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {documentos.map((doc) => (
                     <div
                       key={doc.id}
-                      className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                      className="flex items-center justify-between p-3 rounded border bg-muted/40 border-border"
                     >
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <FileTextIcon className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                        <FileTextIcon className="w-5 h-5 text-primary flex-shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p
-                            className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[300px] md:max-w-[450px] lg:max-w-[550px]"
+                            className="text-sm font-medium text-foreground truncate max-w-[300px] md:max-w-[450px] lg:max-w-[550px]"
                             title={doc.nomeOriginal}
                           >
                             {cleanFilename(doc.nomeOriginal)}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {new Date(doc.uploadedEm).toLocaleDateString('pt-PT')} • {formatFileSize(doc.tamanho)}
                           </p>
                         </div>
@@ -749,37 +749,37 @@ function cleanFilename(name: string) {
                             <button
                               type="button"
                               onClick={() => documentosApi.previewDocumento(doc.id)}
-                              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                              className="p-2 hover:bg-muted rounded"
                               title={t('appointmentDetails.previewDocument', 'Visualizar')}
                               aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
                             >
-                              <EyeIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              <EyeIcon className="w-4 h-4 text-status-info" />
                             </button>
                             {isEditable && (
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <button
                                     type="button"
-                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    className="p-2 hover:bg-muted rounded"
                                     title={t('appointmentDetails.moreOptions', 'Mais opções')}
                                     aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
                                   >
-                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
                                   </button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-xl rounded-xl z-50" align="end">
+                                <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-popover border-border shadow-xl rounded-xl z-50" align="end">
                                   <button
                                     type="button"
                                     onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
                                   >
-                                    <Download className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                                    <Download className="w-4 h-4 text-primary" />
                                     {t('appointmentDetails.download', 'Transferir')}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded-lg transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     {t('appointmentDetails.removeDocument', 'Apagar')}
@@ -789,7 +789,7 @@ function cleanFilename(name: string) {
                                     <button
                                       type="button"
                                       onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded-lg transition-colors"
                                     >
                                       <BellIcon className="w-4 h-4" />
                                       {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
@@ -806,18 +806,18 @@ function cleanFilename(name: string) {
                                 <PopoverTrigger asChild>
                                   <button
                                     type="button"
-                                    className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                    className="p-2 hover:bg-muted rounded"
                                     title={t('appointmentDetails.moreOptions', 'Mais opções')}
                                     aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
                                   >
-                                    <MenuIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
                                   </button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
                                   <button
                                     type="button"
                                     onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded"
                                   >
                                     <Download className="w-4 h-4" />
                                     {t('appointmentDetails.download', 'Transferir')}
@@ -825,7 +825,7 @@ function cleanFilename(name: string) {
                                   <button
                                     type="button"
                                     onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                     {t('appointmentDetails.removeDocument', 'Apagar')}
@@ -833,7 +833,7 @@ function cleanFilename(name: string) {
                                   <button
                                     type="button"
                                     onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded"
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded"
                                   >
                                     <BellIcon className="w-4 h-4" />
                                     {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
@@ -863,17 +863,17 @@ function cleanFilename(name: string) {
                   {appointment.documents.map((doc, index) => (
                     <div key={index}>
                       <div
-                        className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg border border-border"
                       >
                         {!isClient && (
                           <Checkbox
                             checked={selectedDocs.includes(index)}
                             onCheckedChange={() => handleDocToggle(index)}
-                            className="border-slate-300 data-[state=checked]:bg-primary"
+                            className="border-border data-[state=checked]:bg-primary"
                           />
                         )}
-                        <FileTextIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{doc.name}</span>
+                        <FileTextIcon className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground/85 flex-1">{doc.name}</span>
                         {isClient && (
                           <Button
                             size="sm"
@@ -898,7 +898,7 @@ function cleanFilename(name: string) {
                             value={invalidReasons[index] || ''}
                             onChange={(e) => handleReasonChange(index, e.target.value)}
                             rows={2}
-                            className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"
+                            className="text-sm bg-card border-border text-foreground"
                           />
                         </div>
                       )}
@@ -915,7 +915,7 @@ function cleanFilename(name: string) {
                 <>
                   <Button
                     onClick={handleStartAppointment}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     {t('appointmentDetails.startAppointment')}
                   </Button>
@@ -941,7 +941,7 @@ function cleanFilename(name: string) {
               {!isClient && appointment.status === 'in-progress' && (
                 <Button
                   onClick={handleCompleteAppointment}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full bg-status-success hover:bg-status-success/90 text-primary-foreground"
                 >
                   {t('appointmentDetails.complete')}
                 </Button>
@@ -951,7 +951,7 @@ function cleanFilename(name: string) {
                 <Button
                   onClick={handleNotifyInvalid}
                   variant="outline"
-                  className="w-full border-yellow-300 dark:border-yellow-600 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 gap-2"
+                  className="w-full border-status-warning/50 text-status-warning hover:bg-status-warning-soft gap-2"
                 >
                   <BellIcon className="w-4 h-4" />
                   {t('appointmentDetails.notifyInvalidDocument')}
@@ -962,7 +962,7 @@ function cleanFilename(name: string) {
               {isClient && (appointment.status === 'scheduled' || appointment.status === 'warning') && (
                 <>
                   <Button
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white gap-2"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
                     onClick={() => setShowDocUpload(true)}
                   >
                     <FileTextIcon className="w-4 h-4" />
@@ -1013,11 +1013,11 @@ function cleanFilename(name: string) {
         setShowCancelDialog(openState);
         if (!openState) setCancelReason('');
       }}>
-        <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <DialogContent className="max-w-md bg-card border border-border">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {t('appointmentDetails.cancelDialogTitle')}
           </DialogTitle>
-          <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+          <DialogPrimitive.Description className="text-sm text-muted-foreground">
             {isClient
               ? t('appointmentDetails.cancelDialogDescClient')
               : t('appointmentDetails.cancelDialogDescSecretary')}
@@ -1030,9 +1030,9 @@ function cleanFilename(name: string) {
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={4}
-                className="text-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 mt-4"
+                className="text-sm bg-card border-border text-foreground mt-4"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 {t('appointmentDetails.cancelReasonHint')}
               </p>
             </>
@@ -1058,11 +1058,11 @@ function cleanFilename(name: string) {
 
       {/* Diálogo Adicionar Documento */}
       <Dialog open={showAddDocDialog} onOpenChange={setShowAddDocDialog}>
-        <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <DialogContent className="max-w-md bg-card border border-border">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {t('appointmentDetails.addDocTitle')}
           </DialogTitle>
-          <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+          <DialogPrimitive.Description className="text-sm text-muted-foreground">
             {t('appointmentDetails.addDocDesc')}
           </DialogPrimitive.Description>
 
@@ -1081,7 +1081,7 @@ function cleanFilename(name: string) {
               {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={handleAddDocument}
               disabled={!newDocName.trim()}
             >
@@ -1093,11 +1093,11 @@ function cleanFilename(name: string) {
 
       {/* Diálogo Atualizar Documento */}
       <Dialog open={showUpdateDocDialog} onOpenChange={setShowUpdateDocDialog}>
-        <DialogContent className="max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-          <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <DialogContent className="max-w-md bg-card border border-border">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {t('appointmentDetails.updateDocTitle')}
           </DialogTitle>
-          <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+          <DialogPrimitive.Description className="text-sm text-muted-foreground">
             {t('appointmentDetails.updateDocDesc')}
           </DialogPrimitive.Description>
 
@@ -1117,7 +1117,7 @@ function cleanFilename(name: string) {
               {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={handleUpdateDocument}
               disabled={!newDocName.trim()}
             >
@@ -1129,12 +1129,12 @@ function cleanFilename(name: string) {
 
       {/* Diálogo Reagendar */}
       <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
-        <DialogContent className="max-w-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
+        <DialogContent className="max-w-3xl bg-card border border-border">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            <DialogTitle className="text-xl font-semibold text-foreground">
               {t('appointmentDetails.rescheduleDialogTitle')}
             </DialogTitle>
-            <DialogPrimitive.Description className="text-sm text-gray-600 dark:text-gray-400">
+            <DialogPrimitive.Description className="text-sm text-muted-foreground">
               {t('appointmentDetails.rescheduleDialogDesc')}
             </DialogPrimitive.Description>
           </DialogHeader>
@@ -1166,9 +1166,9 @@ function cleanFilename(name: string) {
 
             {/* Horário */}
             <div className="flex flex-col gap-2 flex-1 min-w-[150px]">
-              <Label className="text-xs text-gray-500 dark:text-gray-400 uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
+              <Label className="text-xs text-muted-foreground uppercase">{t('appointmentDetails.rescheduleHour')}</Label>
               {availableRescheduleSlots.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                <p className="text-sm text-muted-foreground italic">
                   {t('appointmentDetails.rescheduleUnavailable')}
                 </p>
               ) : (
@@ -1180,8 +1180,8 @@ function cleanFilename(name: string) {
                       onClick={() => setRescheduleTime(slot)}
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         rescheduleTime === slot
-                          ? 'bg-yellow-500 text-white border-yellow-500'
-                          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                          ? 'bg-status-warning text-primary-foreground border-status-warning'
+                          : 'bg-muted/40 border-border text-foreground/80 hover:border-status-warning/60 hover:bg-status-warning-soft/40'
                       }`}
                     >
                       {slot}
@@ -1197,7 +1197,7 @@ function cleanFilename(name: string) {
               {t('appointmentDialog.actions.cancel')}
             </Button>
             <Button
-              className="bg-yellow-500 hover:bg-yellow-600"
+              className="bg-status-warning hover:bg-status-warning/90 text-primary-foreground"
               onClick={handleReschedule}
               disabled={!rescheduleTime}
             >

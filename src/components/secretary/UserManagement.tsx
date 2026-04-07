@@ -4,8 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Checkbox } from '../ui/checkbox';
-import { Search, UserPlus, Send, Eraser, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, X } from 'lucide-react';
+import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
 import { DatePickerField } from '../ui/date-picker-field';
@@ -29,10 +28,11 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface UserManagementProps {
-    isDarkMode: boolean;
+    isDarkMode?: boolean;
 }
 
 export function UserManagement({ isDarkMode }: UserManagementProps) {
+    void isDarkMode;
     const { t } = useTranslation();
 
     // State for Create Account Form
@@ -395,8 +395,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         <div className="space-y-6 max-w-6xl mx-auto">
             {/* Page Header */}
             <div>
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">{t('userManagement.title')}</h1>
-                <p className="text-gray-500 dark:text-gray-400">{t('userManagement.subtitle')}</p>
+                <h1 className="text-2xl font-bold text-foreground">{t('userManagement.title')}</h1>
+                <p className="text-muted-foreground">{t('userManagement.subtitle')}</p>
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -405,22 +405,22 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 <div className="w-full md:w-[450px] flex-shrink-0 flex flex-col gap-4">
 
                     {/* Create Account Section */}
-                    {/* Using Purple for active state */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-purple-500/30' : 'opacity-80 hover:opacity-100'}`}>
+                    {/* Active state follows semantic primary token */}
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
                         <button
                             onClick={() => setActiveSection('create')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
                         >
                             <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeSection === 'create' ? 'bg-purple-600 shadow-purple-200 dark:shadow-purple-900/20' : 'bg-gray-400'}`}>
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeSection === 'create' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
                                     <UserPlus className="w-5 h-5" />
                                 </div>
                                 <div className="text-left">
-                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">{t('userManagement.createAccount')}</h2>
-                                    {activeSection !== 'create' && <p className="text-xs text-gray-500">{t('userManagement.clickToExpand')}</p>}
+                                    <h2 className="text-lg font-bold text-foreground">{t('userManagement.createAccount')}</h2>
+                                    {activeSection !== 'create' && <p className="text-xs text-muted-foreground">{t('userManagement.clickToExpand')}</p>}
                                 </div>
                             </div>
-                            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                         </button>
 
                         {activeSection === 'create' && (
@@ -428,11 +428,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                 <form onSubmit={handleCreateSubmit} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">NIF *</Label>
+                                            <Label className="text-foreground font-medium text-xs">NIF *</Label>
                                             <Input
                                                 placeholder="123456789"
                                                 maxLength={9}
-                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.nif ? 'border-red-500' : ''}`}
+                                                className={`bg-card h-9 text-sm ${errors.nif ? 'border-status-error' : ''}`}
                                                 value={formData.nif}
                                                 onChange={e => {
                                                     setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') });
@@ -440,58 +440,58 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 }}
                                                 onBlur={checkNifExistence}
                                             />
-                                            {errors.nif && <p className="text-red-500 text-xs">{errors.nif}</p>}
+                                            {errors.nif && <p className="text-status-error text-xs">{errors.nif}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">
+                                            <Label className="text-foreground font-medium text-xs">
                                                 {t('appointmentDialog.fields.contact')} <span className="font-normal opacity-70">{t('common.optional')}</span>
                                             </Label>
                                             <Input
                                                 placeholder="912345678"
                                                 maxLength={9}
-                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.contact ? 'border-red-500' : ''}`}
+                                                className={`bg-card h-9 text-sm ${errors.contact ? 'border-status-error' : ''}`}
                                                 value={formData.contact}
                                                 onChange={e => {
                                                     setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') });
                                                     if (errors.contact) setErrors({ ...errors, contact: '' });
                                                 }}
                                             />
-                                            {errors.contact && <p className="text-red-500 text-xs">{errors.contact}</p>}
+                                            {errors.contact && <p className="text-status-error text-xs">{errors.contact}</p>}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('auth.fullName')} *</Label>
+                                        <Label className="text-foreground font-medium text-xs">{t('auth.fullName')} *</Label>
                                         <Input
                                             placeholder={t('userManagement.namePlaceholder')}
-                                            className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.name ? 'border-red-500' : ''}`}
+                                            className={`bg-card h-9 text-sm ${errors.name ? 'border-status-error' : ''}`}
                                             value={formData.name}
                                             onChange={e => {
                                                 setFormData({ ...formData, name: e.target.value });
                                                 if (errors.name) setErrors({ ...errors, name: '' });
                                             }}
                                         />
-                                        {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
+                                        {errors.name && <p className="text-status-error text-xs">{errors.name}</p>}
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
+                                        <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
                                         <DatePickerField
                                             value={formData.birthDate}
                                             onChange={(value) => {
                                                 setFormData({ ...formData, birthDate: value });
                                                 if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
                                             }}
-                                            buttonClassName={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.birthDate ? 'border-red-500' : ''}`}
+                                            buttonClassName={`bg-card h-9 text-sm ${errors.birthDate ? 'border-status-error' : ''}`}
                                         />
-                                        {errors.birthDate && <p className="text-red-500 text-xs">{errors.birthDate}</p>}
+                                        {errors.birthDate && <p className="text-status-error text-xs">{errors.birthDate}</p>}
                                     </div>
 
                                     {/* Role Selection */}
                                     <div className="space-y-2 pt-2">
-                                        <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.userType')}</Label>
+                                        <Label className="text-foreground font-medium text-xs">{t('userManagement.userType')}</Label>
                                         <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
-                                            <SelectTrigger className="bg-white dark:bg-gray-900 h-9 text-sm">
+                                            <SelectTrigger className="bg-card h-9 text-sm">
                                                 <SelectValue placeholder={t('userManagement.selectRole')} />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -507,7 +507,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                     {formData.role !== 'UTENTE' ? (
                                         <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
                                             <div className="space-y-2">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('auth.institutionalEmail')}</Label>
+                                                <Label className="text-foreground font-medium text-xs">{t('auth.institutionalEmail')}</Label>
 
                                                 {/* Auto/Manual Toggle for Institutional Email */}
                                                 <div className="space-y-3">
@@ -515,18 +515,18 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                     <div
                                                         onClick={() => setEmailSelection('auto')}
                                                         className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'auto'
-                                                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
-                                                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                                                            ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                                                            : 'bg-card border-border hover:border-primary/30'
                                                             }`}
                                                     >
                                                         <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'auto'
-                                                            ? 'border-purple-600 bg-purple-600'
-                                                            : 'border-gray-300 dark:border-gray-600'
+                                                            ? 'border-primary bg-primary'
+                                                            : 'border-border'
                                                             }`}>
-                                                            {emailSelection === 'auto' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                            {emailSelection === 'auto' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                                                         </div>
                                                         <div className="flex flex-col">
-                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'auto' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'auto' ? 'text-primary' : 'text-foreground/80'}`}>
                                                                 {formData.name ? generateInstitutionalEmail(formData.name) : t('userManagement.fillNameFirst')}
                                                             </span>
                                                         </div>
@@ -536,18 +536,18 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                     <div
                                                         onClick={() => setEmailSelection('manual')}
                                                         className={`flex flex-col gap-2 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'manual'
-                                                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800 ring-1 ring-purple-500/20'
-                                                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-700'
+                                                            ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
+                                                            : 'bg-card border-border hover:border-primary/30'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-3">
                                                             <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'manual'
-                                                                ? 'border-purple-600 bg-purple-600'
-                                                                : 'border-gray-300 dark:border-gray-600'
+                                                                ? 'border-primary bg-primary'
+                                                                : 'border-border'
                                                                 }`}>
-                                                                {emailSelection === 'manual' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                                                                {emailSelection === 'manual' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                                                             </div>
-                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'manual' ? 'text-purple-900 dark:text-purple-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'manual' ? 'text-primary' : 'text-foreground/80'}`}>
                                                                 {t('userManagement.other')}
                                                             </span>
                                                         </div>
@@ -563,9 +563,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                                         setFormData({ ...formData, email: prefix + '@florinhasdovouga.pt' });
                                                                     }}
                                                                     onClick={(e) => e.stopPropagation()}
-                                                                    className="h-8 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-xs"
+                                                                    className="h-8 bg-card border-border text-xs"
                                                                 />
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium shrink-0">@florinhas...</span>
+                                                                <span className="text-xs text-muted-foreground font-medium shrink-0">@florinhas...</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -574,18 +574,18 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.email')}</Label>
+                                            <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.email')}</Label>
                                             <Input
                                                 type="email"
                                                 placeholder={t('userManagement.emailPlaceholder')}
-                                                className={`bg-white dark:bg-gray-900 h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
+                                                className={`bg-card h-9 text-sm ${errors.email ? 'border-status-error' : ''}`}
                                                 value={formData.email}
                                                 onChange={e => {
                                                     setFormData({ ...formData, email: e.target.value });
                                                     if (errors.email) setErrors({ ...errors, email: '' });
                                                 }}
                                             />
-                                            {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                                            {errors.email && <p className="text-status-error text-xs">{errors.email}</p>}
                                         </div>
                                     )}
 
@@ -600,7 +600,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                         </Button>
                                         <Button
                                             type="submit"
-                                            className="flex-1 h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium"
+                                            className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium"
                                         >
                                             <UserPlus className="w-3 h-3 mr-2" />
                                             {t('requisitions.ui.create')}
@@ -612,40 +612,40 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     </GlassCard>
 
                     {/* Recover Account Section */}
-                    {/* Using Purple (or consistent theme) instead of Blue, per request */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'recover' ? 'ring-2 ring-purple-500/30' : 'opacity-80 hover:opacity-100'}`}>
+                    {/* Active state follows semantic primary token */}
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'recover' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
                         <button
                             onClick={() => setActiveSection('recover')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors"
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
                         >
                             <div className="flex items-center gap-4">
-                                {/* Changed icon background from blue to purple to match theme as requested */}
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeSection === 'recover' ? 'bg-purple-600 shadow-purple-200 dark:shadow-purple-900/20' : 'bg-gray-400'}`}>
+                                {/* Icon color follows semantic primary token */}
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeSection === 'recover' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
                                     <Lock className="w-5 h-5" />
                                 </div>
                                 <div className="text-left">
-                                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">{t('userManagement.recoverAccount')}</h2>
-                                    {activeSection !== 'recover' && <p className="text-xs text-gray-500">{t('userManagement.clickToExpand')}</p>}
+                                    <h2 className="text-lg font-bold text-foreground">{t('userManagement.recoverAccount')}</h2>
+                                    {activeSection !== 'recover' && <p className="text-xs text-muted-foreground">{t('userManagement.clickToExpand')}</p>}
                                 </div>
                             </div>
-                            {activeSection === 'recover' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                            {activeSection === 'recover' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
                         </button>
 
                         {activeSection === 'recover' && (
                             <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
                                 <form onSubmit={handleRecoverSubmit} className="space-y-4">
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-muted-foreground">
                                         {t('userManagement.recoveryHint')}
                                     </p>
 
                                     {/* Step 1: Search by NIF */}
                                     <div className="flex gap-2 items-end">
                                         <div className="space-y-1 flex-1">
-                                            <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.searchNif')}</Label>
+                                            <Label className="text-foreground font-medium text-xs">{t('userManagement.searchNif')}</Label>
                                             <Input
                                                 placeholder={t('userManagement.userNifPlaceholder')}
                                                 maxLength={9}
-                                                className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                className="bg-card h-9 text-sm"
                                                 value={recoverData.nifSearch}
                                                 onChange={e => setRecoverData({ ...recoverData, nifSearch: e.target.value.replace(/\D/g, '') })}
                                             />
@@ -653,7 +653,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                         <Button
                                             type="button"
                                             onClick={handleSearchForRecovery}
-                                            className="h-9 bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200"
+                                            className="h-9 bg-muted text-foreground hover:bg-muted/80"
                                         >
                                             <Search className="w-4 h-4" />
                                         </Button>
@@ -661,46 +661,46 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                                     {/* Step 2: Confirm Identity & Edit Contact */}
                                     {recoverData.foundUser && (
-                                        <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-700 animate-in slide-in-from-top-2 fade-in">
-                                            <div className="p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg border border-purple-100 dark:border-purple-800/30 mb-2">
-                                                <p className="text-xs text-purple-800 dark:text-purple-300 font-semibold flex items-center gap-2">
+                                        <div className="space-y-3 pt-2 border-t border-border/60 animate-in slide-in-from-top-2 fade-in">
+                                            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 mb-2">
+                                                <p className="text-xs text-primary font-semibold flex items-center gap-2">
                                                     <Check className="w-3 h-3" />
                                                     {t('userManagement.identityFound')}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('requisitions.ui.name')}</Label>
+                                                <Label className="text-foreground font-medium text-xs">{t('requisitions.ui.name')}</Label>
                                                 <Input
                                                     readOnly
-                                                    className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
+                                                    className="bg-muted h-9 text-sm border-dashed"
                                                     value={recoverData.name}
                                                 />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
+                                                <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
                                                 <Input
                                                     readOnly
-                                                    className="bg-gray-50 dark:bg-gray-800 h-9 text-sm border-dashed"
+                                                    className="bg-muted h-9 text-sm border-dashed"
                                                     value={recoverData.birthDate}
                                                 />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.contactEditable')}</Label>
+                                                <Label className="text-foreground font-medium text-xs">{t('userManagement.contactEditable')}</Label>
                                                 <Input
                                                     maxLength={9}
-                                                    className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                    className="bg-card h-9 text-sm"
                                                     value={recoverData.contact}
                                                     onChange={e => setRecoverData({ ...recoverData, contact: e.target.value.replace(/\D/g, '') })}
                                                 />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-gray-700 dark:text-gray-300 font-medium text-xs">{t('userManagement.emailEditable')}</Label>
+                                                <Label className="text-foreground font-medium text-xs">{t('userManagement.emailEditable')}</Label>
                                                 <Input
-                                                    className="bg-white dark:bg-gray-900 h-9 text-sm"
+                                                    className="bg-card h-9 text-sm"
                                                     value={recoverData.email}
                                                     onChange={e => setRecoverData({ ...recoverData, email: e.target.value })}
                                                 />
@@ -708,7 +708,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                                             <Button
                                                 type="submit"
-                                                className="w-full h-9 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium mt-2"
+                                                className="w-full h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium mt-2"
                                             >
                                                 <Send className="w-3 h-3 mr-2" />
                                                 {t('userManagement.notifyRecovery')}
@@ -723,18 +723,18 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 </div>
 
                 {/* Right Panel: Registered Users List */}
-                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-white/20 dark:border-gray-700/30">
+                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-border/40">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
-                            {/* Changed icon background from blue to purple */}
-                            <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600">
+                            {/* Icon color follows semantic primary token */}
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 <Users className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{t('userManagement.registeredUsers')}</h2>
+                                <h2 className="text-xl font-bold text-foreground">{t('userManagement.registeredUsers')}</h2>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
-                                    <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 text-[10px] flex items-center justify-center font-bold">{pendingCount}</span>
+                                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
+                                    <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] flex items-center justify-center font-bold">{pendingCount}</span>
                                 </div>
                             </div>
                         </div>
@@ -750,10 +750,10 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                     {/* Search */}
                     <div className="relative mb-6">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                             placeholder={t('userManagement.searchByNameOrNif')}
-                            className="h-10 pl-9 bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-700 text-sm"
+                            className="h-10 pl-9 bg-card border-border text-sm"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
@@ -762,7 +762,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     {/* Users Table */}
                     <div className="flex-1 overflow-auto">
                         <table className="w-full">
-                            <thead className="text-sm font-medium text-gray-500 border-b border-gray-100 dark:border-gray-700">
+                            <thead className="text-sm font-medium text-muted-foreground border-b border-border/60">
                                 <tr>
                                     <th className="text-left pb-3 pl-2 font-medium">{t('requisitions.ui.name')}</th>
                                     <th className="text-left pb-3 font-medium">NIF</th>
@@ -774,22 +774,22 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                             <tbody className="text-sm">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={5} className="py-20 text-center text-gray-400">
+                                        <td colSpan={5} className="py-20 text-center text-muted-foreground">
                                             {t('documents.actions.searching')}
                                         </td>
                                     </tr>
                                 ) : filteredUsers.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="py-20 text-center text-gray-400">
+                                        <td colSpan={5} className="py-20 text-center text-muted-foreground">
                                             {t('userManagement.noUsersFound')}
                                         </td>
                                     </tr>
                                 ) : (
                                     currentUsers.map((user: any, index) => (
-                                        <tr key={index} className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                            <td className="py-3 pl-2 font-medium text-gray-900 dark:text-gray-200">{user.nome}</td>
-                                            <td className="py-3 text-gray-600 dark:text-gray-400">{user.nif}</td>
-                                            <td className="py-3 text-gray-600 dark:text-gray-400">
+                                        <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
+                                            <td className="py-3 pl-2 font-medium text-foreground">{user.nome}</td>
+                                            <td className="py-3 text-muted-foreground">{user.nif}</td>
+                                            <td className="py-3 text-muted-foreground">
                                                 {user.funcao ? (
                                                     ({
                                                         'SECRETARIA': t('userManagement.roles.secretary'),
@@ -802,8 +802,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             </td>
                                             <td className="py-3 text-left">
                                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.active
-                                                    ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
+                                                    ? 'bg-status-success-soft text-status-success'
+                                                    : 'bg-status-warning-soft text-status-warning'
                                                     }`}>
                                                     {user.active ? t('userManagement.active') : t('userManagement.pending')}
                                                 </span>
@@ -812,7 +812,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 {!user.active && !user.createdBySecretaria && (
                                                     <Button
                                                         size="sm"
-                                                        className="bg-purple-600 hover:bg-purple-700 text-white h-7 text-xs"
+                                                        className="bg-primary hover:bg-primary/90 text-primary-foreground h-7 text-xs"
                                                         onClick={() => handleApprove(user.id)}
                                                     >
                                                         {t('userManagement.approve')}
@@ -828,8 +828,8 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center justify-between pt-4 border-t border-border/60 mt-auto">
+                            <p className="text-xs text-muted-foreground">
                                 {t('userManagement.showingUsers', {
                                     start: startIndex + 1,
                                     end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
@@ -846,7 +846,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </Button>
-                                <span className="text-sm text-gray-600 dark:text-gray-300 min-w-[3rem] text-center">
+                                <span className="text-sm text-muted-foreground min-w-[3rem] text-center">
                                     {currentPage} / {totalPages}
                                 </span>
                                 <Button
@@ -866,10 +866,10 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
             {/* Existing User Dialog */}
             <AlertDialog open={showUserExistsDialog} onOpenChange={setShowUserExistsDialog}>
-                <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('userManagement.userAlreadyExistsTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+                        <AlertDialogDescription className="text-muted-foreground">
                             {t('userManagement.userAlreadyExistsDescription', { nif: existingUserForDialog?.nif })}
                             <br /><br />
                             <strong>{t('requisitions.ui.name')}:</strong> {existingUserForDialog?.nome}
@@ -883,7 +883,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <AlertDialogCancel onClick={() => setShowUserExistsDialog(false)}>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmUpdateExisting}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
                             {t('userManagement.yesUpdateData')}
                         </AlertDialogAction>
@@ -893,10 +893,10 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
             {/* User Not Found Dialog (Recovery -> Create) */}
             <AlertDialog open={showUserNotFoundDialog} onOpenChange={setShowUserNotFoundDialog}>
-                <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+                <AlertDialogContent className="bg-card border-border">
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('userManagement.userNotFoundTitle')}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+                        <AlertDialogDescription className="text-muted-foreground">
                             {t('userManagement.userNotFoundDescription', { nif: searchedNifForDialog })}
                             <br /><br />
                             {t('userManagement.askCreateNewWithNif')}
@@ -906,7 +906,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <AlertDialogCancel onClick={() => setShowUserNotFoundDialog(false)}>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmCreateNew}
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
                             {t('userManagement.yesCreateNewAccount')}
                         </AlertDialogAction>
