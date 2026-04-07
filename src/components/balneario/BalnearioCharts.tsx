@@ -1,5 +1,6 @@
 
 import type React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     BarChart,
     Bar,
@@ -25,6 +26,7 @@ interface BalnearioChartsProps {
 }
 
 export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle, customColors }: BalnearioChartsProps) {
+    const { t } = useTranslation();
     const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
@@ -36,7 +38,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
                         {label || payload[0]?.name || ''}
                     </div>
                     <div className="flex items-baseline gap-1 mt-3">
-                        <span className={`text-[16px] ${isDarkMode ? 'text-gray-300' : 'text-[#1c2132]'}`}>Quantidade :</span>
+                        <span className={`text-[16px] ${isDarkMode ? 'text-gray-300' : 'text-[#1c2132]'}`}>{t('consumos.quantity', 'Quantidade')} :</span>
                         <span className="text-[18px] font-bold text-[#c83c74]">{payload[0].value}</span>
                     </div>
                 </div>
@@ -48,7 +50,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
-                <p className={textSecondaryClass}>A carregar estatísticas...</p>
+                <p className={textSecondaryClass}>{t('consumos.loadingStats', 'A carregar estatísticas...')}</p>
             </div>
         );
     }
