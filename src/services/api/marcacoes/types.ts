@@ -25,6 +25,7 @@ export interface BalnearioAttendanceStats {
     totalPresencas: number;
     totalMarcacoes: number;
     totalFaltou: number;
+    totalAgendadas: number;
     presencasPorDia: AttendanceData[];
     presencasPorHora: Record<number, number>;
 }

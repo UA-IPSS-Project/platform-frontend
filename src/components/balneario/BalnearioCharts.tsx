@@ -62,7 +62,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip 
+                                <Tooltip formatter={(value: number) => [value, "Quantidade"]} 
                                     contentStyle={{ 
                                         backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                                         borderColor: isDarkMode ? '#374151' : '#e5e7eb',
@@ -99,7 +99,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip 
+                                <Tooltip formatter={(value: number) => [value, "Quantidade"]} 
                                     contentStyle={{ 
                                         backgroundColor: isDarkMode ? '#1f2937' : '#ffffff',
                                         borderColor: isDarkMode ? '#374151' : '#e5e7eb',

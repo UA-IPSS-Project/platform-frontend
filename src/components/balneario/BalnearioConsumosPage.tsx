@@ -540,8 +540,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                     <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltou}</p>
                                 </div>
                                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-warning)]">{t('stats.invalid', 'Inválido')}</p>
-                                    <p className="text-3xl font-bold text-[color:var(--status-warning)] mt-1">0</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-warning)]">{t('stats.agendado', 'Agendado')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-warning)] mt-1">{attendanceStats.totalAgendadas}</p>
                                 </div>
                             </div>
                         )}
@@ -553,7 +553,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                 data={[
                                     { name: 'Compareceu', value: attendanceStats.totalPresencas },
                                     { name: 'Faltou', value: attendanceStats.totalFaltou },
-                                    { name: 'Inválido', value: 0 }
+                                    { name: 'Agendado', value: attendanceStats.totalAgendadas }
                                 ]}
                                 barChartTitle="Comparação de Estados"
                                 pieChartTitle="Distribuição de Estados"
