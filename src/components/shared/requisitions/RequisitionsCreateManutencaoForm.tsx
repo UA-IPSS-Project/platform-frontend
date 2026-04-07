@@ -231,58 +231,114 @@ export function RequisitionsCreateManutencaoForm({
         );
       })}
 
-      {/* Floating Footer — Error / Selection Bar */}
+      {/* Error message */}
+      {manutencaoError && (
+        <div
+          className="flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium"
+          style={{
+            color: 'var(--status-error)',
+            borderColor: 'color-mix(in srgb, var(--status-error) 30%, transparent)',
+            backgroundColor: 'var(--status-error-soft)',
+          }}
+        >
+          <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: 'var(--status-error)' }} />
+          {manutencaoError}
+        </div>
+      )}
+
+      {/* Selection Summary Panel */}
       <AnimatePresence>
-        {(manutencaoError || selectedManutencaoItemIds.length > 0) && (
+        {selectedManutencaoItemIds.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 p-4 rounded-2xl border backdrop-blur-md shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6 min-w-[320px] max-w-[90vw]"
+            exit={{ opacity: 0, y: 8 }}
+            className="rounded-2xl border overflow-hidden"
             style={{
-              borderColor: manutencaoError
-                ? 'color-mix(in srgb, var(--status-error) 40%, transparent)'
-                : 'color-mix(in srgb, var(--primary) 30%, transparent)',
-              backgroundColor: manutencaoError
-                ? 'color-mix(in srgb, var(--status-error-soft) 98%, transparent)'
-                : 'color-mix(in srgb, var(--card) 98%, transparent)',
+              borderColor: 'color-mix(in srgb, var(--primary) 25%, transparent)',
+              backgroundColor: 'color-mix(in srgb, var(--status-info-soft) 50%, var(--card))',
             }}
           >
-            <div className="flex items-center gap-6">
-              {/* Error Message */}
-              {manutencaoError && (
-                <div className="flex items-center gap-2" style={{ color: 'var(--status-error)' }}>
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--status-error)' }} />
-                  <span className="text-sm font-bold tracking-tight">{manutencaoError}</span>
-                </div>
-              )}
-
-              {/* Selection Summary */}
-              {selectedManutencaoItemIds.length > 0 && !manutencaoError && (
-                <div className="flex items-center gap-2" style={{ color: 'var(--primary)' }}>
-                  <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: 'var(--primary)' }} />
-                  <span className="text-sm font-bold tracking-tight">
-                    {t('maintenance.labels.selectedItems', { count: selectedManutencaoItemIds.length })}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {selectedManutencaoItemIds.length > 0 && (
+            {/* Panel Header */}
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b"
+              style={{ borderColor: 'color-mix(in srgb, var(--primary) 15%, transparent)' }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
+                <span className="text-sm font-bold" style={{ color: 'var(--primary)' }}>
+                  {selectedManutencaoItemIds.length} {t('maintenance.labels.selectedItems', { count: selectedManutencaoItemIds.length })}
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={onClearSelection}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm border"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:scale-105 active:scale-95"
                 style={{
                   color: 'var(--status-error)',
                   borderColor: 'color-mix(in srgb, var(--status-error) 30%, transparent)',
                   backgroundColor: 'var(--status-error-soft)',
                 }}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
                 {t('maintenance.labels.clearSelection')}
               </button>
-            )}
+            </div>
+
+            {/* Items grouped by category */}
+            <div className="p-4 space-y-4">
+              {sortedCategories.map(category => {
+                const { spaces } = groupedData[category];
+                const categoryLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category;
+
+                // Collect all selected items for this category
+                const selectedInCategory: { item: ManutencaoItem; spaceName: string }[] = [];
+                Object.entries(spaces).forEach(([spaceName, itemMap]) => {
+                  Object.values(itemMap).forEach(item => {
+                    if (selectedManutencaoItemIds.includes(item.id)) {
+                      selectedInCategory.push({ item, spaceName });
+                    }
+                  });
+                });
+
+                if (selectedInCategory.length === 0) return null;
+
+                return (
+                  <div key={category}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                      {categoryLabel} · {selectedInCategory.length}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedInCategory.map(({ item, spaceName }) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium"
+                          style={{
+                            borderColor: 'color-mix(in srgb, var(--primary) 25%, transparent)',
+                            backgroundColor: 'color-mix(in srgb, var(--primary) 8%, transparent)',
+                            color: 'var(--foreground)',
+                          }}
+                        >
+                          <span className="text-muted-foreground">{spaceName}</span>
+                          <span className="text-muted-foreground">·</span>
+                          <span style={{ color: 'var(--primary)' }}>{item.itemVerificacao}</span>
+                          <button
+                            type="button"
+                            onClick={() => onToggleItem(item.id, false)}
+                            className="ml-1 rounded-full w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+                            title={`Remover ${item.itemVerificacao}`}
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
