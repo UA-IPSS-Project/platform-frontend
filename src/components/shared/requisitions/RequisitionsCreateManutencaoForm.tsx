@@ -66,10 +66,10 @@ export function RequisitionsCreateManutencaoForm({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/60 p-4 space-y-4">
+      <div className="rounded-xl border border-border bg-card/80 p-4 space-y-4">
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('requisitions.ui.availableItems')}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Selecione os itens de verificação por espaço.</p>
+          <p className="text-sm font-medium text-foreground/85">{t('requisitions.ui.availableItems')}</p>
+          <p className="text-xs text-muted-foreground">Selecione os itens de verificação por espaço.</p>
         </div>
 
         {categories.map((categoria) => {
@@ -87,18 +87,18 @@ export function RequisitionsCreateManutencaoForm({
           const displayLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[categoria as ManutencaoCategoria] ?? categoria.replace(/_/g, ' ').toUpperCase();
 
           return (
-            <div key={categoria} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div key={categoria} className="border border-border rounded-lg overflow-hidden">
               <button
                 type="button"
                 onClick={() => onToggleCategoriaExpansion(categoria as ManutencaoCategoria)}
-                className="w-full px-4 py-3 flex items-center justify-between bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between bg-muted/50 hover:bg-muted transition-colors"
                 aria-label={`Toggle ${displayLabel} expansion`}
               >
-                <span className="font-medium text-gray-900 dark:text-gray-100">{displayLabel}</span>
+                <span className="font-medium text-foreground">{displayLabel}</span>
                 {isExpandedCategoria ? (
-                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                  <ChevronUp className="w-5 h-5 text-muted-foreground" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
                 )}
               </button>
 
@@ -108,13 +108,13 @@ export function RequisitionsCreateManutencaoForm({
                     <table className="w-full border-collapse text-sm">
                       <thead>
                         <tr>
-                          <th className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 text-left font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                          <th className="border border-border bg-muted p-2 text-left font-semibold text-foreground whitespace-nowrap">
                             Espaço
                           </th>
                           {verifficacoes.map((verificacao) => (
                             <th
                               key={verificacao}
-                              className="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 p-2 text-center font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap text-xs"
+                              className="border border-border bg-muted p-2 text-center font-semibold text-foreground whitespace-nowrap text-xs"
                             >
                               {verificacao}
                             </th>
@@ -124,18 +124,18 @@ export function RequisitionsCreateManutencaoForm({
                       <tbody>
                         {espacos.map((espaco) => (
                           <tr key={espaco}>
-                            <td className="border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 p-2 font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap text-xs">
+                            <td className="border border-border bg-muted/40 p-2 font-medium text-foreground/85 whitespace-nowrap text-xs">
                               {espaco}
                             </td>
                             {verifficacoes.map((verificacao) => {
                               const item = findItem(categoria, espaco, verificacao);
-                              if (!item) return <td key={verificacao} className="border border-gray-300 dark:border-gray-600 p-2" />;
+                              if (!item) return <td key={verificacao} className="border border-border p-2" />;
 
                               const isChecked = selectedManutencaoItemIds.includes(item.id);
                               return (
                                 <td
                                   key={verificacao}
-                                  className="border border-gray-300 dark:border-gray-600 p-2 text-center"
+                                  className="border border-border p-2 text-center"
                                 >
                                   <div className="flex justify-center">
                                     <Checkbox
@@ -153,7 +153,7 @@ export function RequisitionsCreateManutencaoForm({
                   </div>
 
                   <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-300" htmlFor={`obs-${categoria}`}>
+                    <label className="text-sm text-muted-foreground" htmlFor={`obs-${categoria}`}>
                       Observações
                     </label>
                     <input
@@ -162,7 +162,7 @@ export function RequisitionsCreateManutencaoForm({
                       value={manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] ?? ''}
                       onChange={(e) => onUpdateObservacaoCategoria(categoria as ManutencaoCategoria, e.target.value)}
                       placeholder="Observações da categoria"
-                      className="mt-1 w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-300 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                      className="mt-1 w-full px-3 py-2 text-sm border border-border rounded-md bg-card text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
                 </div>
@@ -173,18 +173,18 @@ export function RequisitionsCreateManutencaoForm({
       </div>
 
       {manutencaoError && (
-        <p className="text-red-500 text-sm">{manutencaoError}</p>
+        <p className="text-status-error text-sm">{manutencaoError}</p>
       )}
 
       {selectedManutencaoItemIds.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-blue-50 dark:bg-blue-900/20 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="rounded-lg border border-status-info/30 p-3 bg-status-info-soft/40 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+          <p className="text-sm font-medium text-status-info">
             ✓ {selectedManutencaoItemIds.length} item(ns) selecionado(s)
           </p>
           <button
             type="button"
             onClick={onClearSelection}
-            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors"
+            className="text-status-error hover:text-status-error/90 text-sm font-medium transition-colors"
           >
             {t('requisitions.ui.clearSelection')}
           </button>

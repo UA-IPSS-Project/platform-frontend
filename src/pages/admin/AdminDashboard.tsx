@@ -88,9 +88,9 @@ function AdminOverview({
                 {summaryCards.map((card) => (
                     <GlassCard key={card.title} className="p-6 flex items-start justify-between">
                         <div>
-                            <p className="text-xs uppercase tracking-[0.08em] font-medium text-gray-500 dark:text-gray-400">{card.title}</p>
-                            <p className="mt-3 text-5xl leading-none font-semibold text-gray-900 dark:text-white">{card.value}</p>
-                            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{card.description}</p>
+                            <p className="text-xs uppercase tracking-[0.08em] font-medium text-muted-foreground">{card.title}</p>
+                            <p className="mt-3 text-5xl leading-none font-semibold text-foreground">{card.value}</p>
+                            <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
                         </div>
                         <div className={`flex-shrink-0 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${card.iconClassName}`}>
                             <card.icon className="w-6 h-6" />
@@ -105,16 +105,16 @@ function AdminOverview({
                     return (
                         <GlassCard key={area.title} className="p-6 flex flex-col justify-between">
                             <div className="space-y-4">
-                                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                                     <Icon className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{area.title}</h2>
-                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{area.description}</p>
+                                    <h2 className="text-xl font-semibold text-foreground">{area.title}</h2>
+                                    <p className="mt-2 text-sm text-muted-foreground">{area.description}</p>
                                 </div>
                             </div>
                             <div className="mt-6">
-                                <Button onClick={area.action} className="bg-purple-600 text-white hover:bg-purple-700">
+                                <Button onClick={area.action} className="bg-primary text-primary-foreground hover:bg-primary/90">
                                     {area.actionLabel}
                                 </Button>
                             </div>
@@ -143,12 +143,12 @@ function SlotsManagement({
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
                 <div>
-                    <div className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
                         <Settings2 className="w-4 h-4" />
                         Configuração operacional
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-gray-900 dark:text-white">Capacidade de marcações por slot</h2>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-2xl">
+                    <h2 className="mt-2 text-xl font-semibold text-foreground">Capacidade de marcações por slot</h2>
+                    <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
                         Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.
                     </p>
                 </div>
@@ -157,15 +157,15 @@ function SlotsManagement({
                     {slotTypes.map((slotType) => (
                         <div
                             key={slotType.tipo}
-                            className="rounded-2xl border border-gray-200/80 bg-white/70 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/50"
+                            className="rounded-2xl border border-border bg-card p-5 shadow-sm"
                         >
                             <div className="space-y-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{slotType.titulo}</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{slotType.descricao}</p>
+                                <h3 className="text-lg font-semibold text-foreground">{slotType.titulo}</h3>
+                                <p className="text-sm text-muted-foreground">{slotType.descricao}</p>
                             </div>
 
                             <div className="mt-5 space-y-2">
-                                <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-foreground">
                                     Máximo por slot
                                 </Label>
                                 <Input
@@ -175,7 +175,7 @@ function SlotsManagement({
                                     max={20}
                                     value={slotCapacities[slotType.tipo]}
                                     onChange={(event) => onChange(slotType.tipo, event.target.value)}
-                                    className="bg-white dark:bg-gray-900"
+                                    className="bg-background"
                                 />
                             </div>
                         </div>
@@ -187,7 +187,7 @@ function SlotsManagement({
                         type="button"
                         onClick={onSave}
                         disabled={isSavingSlots || isLoadingSlots}
-                        className="gap-2 bg-purple-600 text-white hover:bg-purple-700"
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <Save className="w-4 h-4" />
                         {isSavingSlots ? 'A guardar...' : 'Guardar configuração'}
@@ -333,28 +333,28 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
             value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
             description: 'capacidade por horário',
             icon: CalendarDays,
-            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: 'Materiais',
             value: catalogCounts.materiais,
             description: 'itens no catálogo',
             icon: Package,
-            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: 'Transportes',
             value: catalogCounts.transportes,
             description: 'transportes no catálogo',
             icon: Truck,
-            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: 'Tipos de manutenção',
             value: catalogCounts.tiposManutencao,
             description: 'tipos disponíveis',
             icon: Wrench,
-            iconClassName: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+            iconClassName: 'bg-primary/15 text-primary',
         },
         {
             title: 'Formulários candidatura',
@@ -372,7 +372,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 onClick={() => safeSetView('overview')}
                 aria-label="Ir para Dashboard"
                 aria-current={currentView === 'overview' ? 'page' : undefined}
-                className={`text-sm ${currentView === 'overview' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'overview' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
             >
                 {t('dashboard.admin.navigation.dashboard')}
             </Button>
@@ -381,7 +381,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 onClick={() => safeSetView('slots')}
                 aria-label="Ir para Slots"
                 aria-current={currentView === 'slots' ? 'page' : undefined}
-                className={`text-sm ${currentView === 'slots' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'slots' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
             >
                 {t('dashboard.admin.navigation.slots')}
             </Button>
@@ -390,7 +390,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 onClick={() => safeSetView('catalogs')}
                 aria-label="Ir para Catálogos"
                 aria-current={currentView === 'catalogs' ? 'page' : undefined}
-                className={`text-sm ${currentView === 'catalogs' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'catalogs' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
             >
                 {t('dashboard.admin.navigation.catalogs')}
             </Button>
@@ -419,12 +419,12 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
         return (
             <div className="space-y-6 max-w-6xl mx-auto">
                 <div className="flex flex-col gap-1">
-                    <p className="inline-flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
+                    <p className="inline-flex items-center gap-2 text-sm font-medium text-primary">
                         <ShieldCheck className="w-4 h-4" />
                         Área reservada à administração
                     </p>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Painel de Administração</h1>
-                    <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
+                    <h1 className="text-3xl font-bold text-foreground">Painel de Administração</h1>
+                    <p className="text-muted-foreground max-w-2xl">
                         {viewDescriptions[currentView]}
                     </p>
                 </div>
@@ -461,8 +461,8 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                 {currentView === 'settings' ? (
                     <div className="flex items-center justify-center h-[400px]">
                         <div className="text-center">
-                            <h2 className="text-2xl text-gray-600 dark:text-gray-300 mb-2">Definições</h2>
-                            <p className="text-gray-500">Em desenvolvimento</p>
+                            <h2 className="text-2xl text-muted-foreground mb-2">Definições</h2>
+                            <p className="text-muted-foreground">Em desenvolvimento</p>
                         </div>
                     </div>
                 ) : null}
@@ -518,7 +518,7 @@ export function AdminDashboard({ isDarkMode, onToggleDarkMode, onLogout }: Reado
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-destructive hover:bg-destructive/90 text-white">
                             Descartar
                         </AlertDialogAction>
                     </AlertDialogFooter>

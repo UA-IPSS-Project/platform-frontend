@@ -119,8 +119,8 @@ export function RequisitionsCatalogManagement() {
     }))
     .filter((grupo) => grupo.items.length > 0);
 
-  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 text-sm text-gray-900 dark:text-gray-100';
-  const inputFieldClassName = 'mt-1 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900';
+  const selectFieldClassName = 'w-full mt-1 h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground';
+  const inputFieldClassName = 'mt-1 border border-border bg-background';
 
   const loadCatalogo = async (retryCount = 0) => {
     const [materiaisResult, transportesResult, manutencaoResult] = await Promise.allSettled([
@@ -477,14 +477,14 @@ export function RequisitionsCatalogManagement() {
         <div className={`${leftColSpan} space-y-4 transition-all duration-300`} onClick={() => setExpandedForm('FORM')}>
           {/* Material Add Panel */}
           <GlassCard className="p-4 space-y-3">
-            <button onClick={() => toggleAddPanel('MATERIAIS')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
-              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addMaterial')}</span>
-              <span className="text-sm text-gray-500">{openAddPanels.MATERIAIS ? '▾' : '▸'}</span>
+            <button onClick={() => toggleAddPanel('MATERIAIS')} className="w-full flex items-center justify-between rounded-md border border-border px-3 py-2 text-left">
+              <span className="font-semibold text-foreground">{t('dashboard.admin.catalogs.addMaterial')}</span>
+              <span className="text-sm text-muted-foreground">{openAddPanels.MATERIAIS ? '▾' : '▸'}</span>
             </button>
             {openAddPanels.MATERIAIS && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.category')}</label>
+                  <label className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.category')}</label>
                   <select value={materialCategoryMode === 'NEW' ? 'NEW' : novoMaterialCategoria} onChange={(e) => {
                     if (e.target.value === 'NEW') setMaterialCategoryMode('NEW');
                     else { setMaterialCategoryMode('SELECT'); setNovoMaterialCategoria(e.target.value as MaterialCategoria); }
@@ -495,29 +495,29 @@ export function RequisitionsCatalogManagement() {
                   {materialCategoryMode === 'NEW' && <Input className={inputFieldClassName + " mt-2"} value={customMaterialCategory} onChange={(e) => setCustomMaterialCategory(e.target.value)} />}
                 </div>
                 <div>
-                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.materialName')}</label>
+                  <label className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.materialName')}</label>
                   <Input className={inputFieldClassName} value={novoMaterialNome} onChange={(e) => setNovoMaterialNome(e.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.attribute')}</label>
+                    <label className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.attribute')}</label>
                     <Input className={inputFieldClassName} value={novoMaterialAtributo} onChange={(e) => setNovoMaterialAtributo(e.target.value)} />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.value')}</label>
+                    <label className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.value')}</label>
                     <Input className={inputFieldClassName} value={novoMaterialValorAtributo} onChange={(e) => setNovoMaterialValorAtributo(e.target.value)} />
                   </div>
                 </div>
-                <Button onClick={() => void handleCreateMaterial()} disabled={savingMaterial} className="bg-purple-600 hover:bg-purple-700 text-white">{t('dashboard.admin.catalogs.addMaterial')}</Button>
+                <Button onClick={() => void handleCreateMaterial()} disabled={savingMaterial} className="bg-primary hover:bg-primary/90 text-primary-foreground">{t('dashboard.admin.catalogs.addMaterial')}</Button>
               </div>
             )}
           </GlassCard>
 
           {/* Transporte Add Panel */}
           <GlassCard className="p-4 space-y-3">
-            <button onClick={() => toggleAddPanel('TRANSPORTES')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
-              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addTransport')}</span>
-              <span className="text-sm text-gray-500">{openAddPanels.TRANSPORTES ? '▾' : '▸'}</span>
+            <button onClick={() => toggleAddPanel('TRANSPORTES')} className="w-full flex items-center justify-between rounded-md border border-border px-3 py-2 text-left">
+              <span className="font-semibold text-foreground">{t('dashboard.admin.catalogs.addTransport')}</span>
+              <span className="text-sm text-muted-foreground">{openAddPanels.TRANSPORTES ? '▾' : '▸'}</span>
             </button>
             {openAddPanels.TRANSPORTES && (
               <div className="space-y-3">
@@ -562,21 +562,21 @@ export function RequisitionsCatalogManagement() {
                     />
                   </div>
                 </div>
-                <Button onClick={() => void handleCreateTransporte()} disabled={savingTransporte} className="bg-purple-600 hover:bg-purple-700 text-white">{t('dashboard.admin.catalogs.addTransport')}</Button>
+                <Button onClick={() => void handleCreateTransporte()} disabled={savingTransporte} className="bg-primary hover:bg-primary/90 text-primary-foreground">{t('dashboard.admin.catalogs.addTransport')}</Button>
               </div>
             )}
           </GlassCard>
 
           {/* Manutencao Add Panel */}
           <GlassCard className="p-4 space-y-3">
-            <button onClick={() => toggleAddPanel('MANUTENCOES')} className="w-full flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2 text-left">
-              <span className="font-semibold text-gray-800 dark:text-white">{t('dashboard.admin.catalogs.addMaintenance')}</span>
-              <span className="text-sm text-gray-500">{openAddPanels.MANUTENCOES ? '▾' : '▸'}</span>
+            <button onClick={() => toggleAddPanel('MANUTENCOES')} className="w-full flex items-center justify-between rounded-md border border-border px-3 py-2 text-left">
+              <span className="font-semibold text-foreground">{t('dashboard.admin.catalogs.addMaintenance')}</span>
+              <span className="text-sm text-muted-foreground">{openAddPanels.MANUTENCOES ? '▾' : '▸'}</span>
             </button>
             {openAddPanels.MANUTENCOES && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-gray-600 dark:text-gray-300">{t('dashboard.admin.catalogs.category')}</label>
+                  <label className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.category')}</label>
                   <select value={manutencaoCategoryMode === 'NEW' ? 'NEW' : novoManutencaoCategoria} onChange={(e) => {
                     if (e.target.value === 'NEW') setManutencaoCategoryMode('NEW');
                     else { setManutencaoCategoryMode('SELECT'); setNovoManutencaoCategoria(e.target.value); }
@@ -589,10 +589,10 @@ export function RequisitionsCatalogManagement() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-3 p-4 border border-purple-100 dark:border-purple-900/30 rounded-lg bg-purple-50/20">
-                    <h4 className="text-sm font-semibold text-purple-700">{t('dashboard.admin.catalogs.addSpace')}</h4>
+                  <div className="space-y-3 p-4 border border-border rounded-lg bg-accent/30">
+                    <h4 className="text-sm font-semibold text-primary">{t('dashboard.admin.catalogs.addSpace')}</h4>
                     <Input placeholder={t('dashboard.admin.catalogs.spaceName')} value={novoManutencaoEspaco} onChange={(e) => setNovoManutencaoEspaco(e.target.value)} className="h-9" />
-                    <Button className="w-full h-9 bg-purple-600" onClick={async () => {
+                    <Button className="w-full h-9 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={async () => {
                       const cat = (manutencaoCategoryMode === 'NEW' ? customManutencaoCategory : novoManutencaoCategoria).trim();
                       if (!cat || !novoManutencaoEspaco.trim()) { toast.error(t('dashboard.admin.catalogs.errors.requiredFields')); return; }
                       try {
@@ -604,10 +604,10 @@ export function RequisitionsCatalogManagement() {
                     }}>{t('dashboard.admin.catalogs.createSpace')}</Button>
                   </div>
 
-                  <div className="space-y-3 p-4 border border-blue-100 dark:border-blue-900/30 rounded-lg bg-blue-50/20">
-                    <h4 className="text-sm font-semibold text-blue-700">{t('dashboard.admin.catalogs.addElement')}</h4>
+                  <div className="space-y-3 p-4 border border-border rounded-lg bg-accent/30">
+                    <h4 className="text-sm font-semibold text-primary">{t('dashboard.admin.catalogs.addElement')}</h4>
                     <Input placeholder={t('dashboard.admin.catalogs.verificationElement')} value={novoManutencaoVerificacao} onChange={(e) => setNovoManutencaoVerificacao(e.target.value)} className="h-9" />
-                    <Button className="w-full h-9 bg-blue-600" onClick={async () => {
+                    <Button className="w-full h-9 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={async () => {
                       const cat = (manutencaoCategoryMode === 'NEW' ? customManutencaoCategory : novoManutencaoCategoria).trim();
                       if (!cat || !novoManutencaoVerificacao.trim()) { toast.error(t('dashboard.admin.catalogs.errors.requiredFields')); return; }
                       try {
@@ -631,15 +631,15 @@ export function RequisitionsCatalogManagement() {
               <div className="space-y-4">
                 <h3 className="font-semibold">{t('dashboard.admin.catalogs.materials')} ({materiais.length})</h3>
                 {materiaisPorCategoria.map(grupo => (
-                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                  <div key={grupo.value} className="border border-border rounded-md p-2">
                     <div className="flex items-center justify-between mb-2">
                       <button onClick={() => toggleMaterialGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
-                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'MATERIAL')}><TrashIcon className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => void handleDeleteCategory(grupo.value, 'MATERIAL')}><TrashIcon className="w-4 h-4" /></Button>
                     </div>
                     {openMaterialGroups[grupo.value] && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                         {grupo.items.map(item => (
-                          <div key={item.id} className="p-2 border dark:border-gray-700 rounded-sm bg-gray-50/50 dark:bg-gray-800/50">
+                          <div key={item.id} className="p-2 border border-border rounded-sm bg-muted/40">
                             {editingMaterialId === item.id ? (
                               <div className="space-y-2">
                                 <Input value={editMaterialNome} onChange={(e) => setEditMaterialNome(e.target.value)} className="h-8" />
@@ -652,13 +652,13 @@ export function RequisitionsCatalogManagement() {
                               <div className="flex items-center justify-between">
                                 <div className="text-sm">
                                   <span className="font-medium">{item.nome}</span>
-                                  <p className="text-xs text-gray-500">{item.atributo}: {item.valorAtributo}</p>
+                                  <p className="text-xs text-muted-foreground">{item.atributo}: {item.valorAtributo}</p>
                                 </div>
                                 <div className="flex gap-1">
                                   <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditMaterial(item)}>
                                     <Pencil className="w-4 h-4" />
                                   </Button>
-                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteMaterial(item.id)}>
+                                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => void handleDeleteMaterial(item.id)}>
                                     <TrashIcon className="w-4 h-4" />
                                   </Button>
                                 </div>
@@ -677,17 +677,17 @@ export function RequisitionsCatalogManagement() {
               <div className="space-y-4">
                 <h3 className="font-semibold">{t('dashboard.admin.catalogs.maintenance')} ({manutencaoItems.length})</h3>
                 {manutencaoPorCategoria.map(grupo => (
-                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                  <div key={grupo.value} className="border border-border rounded-md p-2">
                     <div className="flex items-center justify-between">
                       <button onClick={() => toggleManutencaoGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
-                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'MANUTENCAO')}><TrashIcon className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => void handleDeleteCategory(grupo.value, 'MANUTENCAO')}><TrashIcon className="w-4 h-4" /></Button>
                     </div>
                     {openManutencaoGroups[grupo.value] && (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
                         {/* Table 1: Spaces */}
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold uppercase text-gray-500">{t('dashboard.admin.catalogs.spaces')}</h4>
-                          <div className="border rounded divide-y dark:border-gray-700 dark:divide-gray-700">
+                          <h4 className="text-xs font-bold uppercase text-muted-foreground">{t('dashboard.admin.catalogs.spaces')}</h4>
+                          <div className="border border-border rounded divide-y divide-border">
                             {Array.from(new Set(grupo.items.map(i => i.espaco))).sort().map(space => (
                               <div key={space} className="flex items-center justify-between p-2 text-sm">
                                 {editingSpace?.category === grupo.value && editingSpace.name === space ? (
@@ -699,7 +699,7 @@ export function RequisitionsCatalogManagement() {
                                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingSpace({category: grupo.value, name: space}); setEditSpaceName(space); }}>
                                         <Pencil className="w-3 h-3" />
                                       </Button>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteSpace(grupo.value, space)}>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => void handleDeleteSpace(grupo.value, space)}>
                                         <TrashIcon className="w-3 h-3" />
                                       </Button>
                                     </div>
@@ -711,8 +711,8 @@ export function RequisitionsCatalogManagement() {
                         </div>
                         {/* Table 2: Elements */}
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold uppercase text-gray-500">{t('dashboard.admin.catalogs.elements')}</h4>
-                          <div className="border rounded divide-y dark:border-gray-700 dark:divide-gray-700">
+                          <h4 className="text-xs font-bold uppercase text-muted-foreground">{t('dashboard.admin.catalogs.elements')}</h4>
+                          <div className="border border-border rounded divide-y divide-border">
                             {Array.from(new Set(grupo.items.map(i => i.itemVerificacao))).sort().map(el => (
                               <div key={el} className="flex items-center justify-between p-2 text-sm">
                                 {editingElement?.category === grupo.value && editingElement.name === el ? (
@@ -724,7 +724,7 @@ export function RequisitionsCatalogManagement() {
                                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { setEditingElement({category: grupo.value, name: el}); setEditElementName(el); }}>
                                         <Pencil className="w-3 h-3" />
                                       </Button>
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-red-500" onClick={() => void handleDeleteElement(grupo.value, el)}>
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => void handleDeleteElement(grupo.value, el)}>
                                         <TrashIcon className="w-3 h-3" />
                                       </Button>
                                     </div>
@@ -745,15 +745,15 @@ export function RequisitionsCatalogManagement() {
               <div className="space-y-4">
                 <h3 className="font-semibold">{t('dashboard.admin.catalogs.transports')} ({transportes.length})</h3>
                 {transportesPorCategoria.map(grupo => (
-                  <div key={grupo.value} className="border dark:border-gray-700 rounded-md p-2">
+                  <div key={grupo.value} className="border border-border rounded-md p-2">
                     <div className="flex items-center justify-between mb-2">
                       <button onClick={() => toggleTransporteGroup(grupo.value)} className="font-medium">{formatCategoryName(grupo.value)} ({grupo.items.length})</button>
-                      <Button variant="ghost" size="icon" className="text-red-500" onClick={() => void handleDeleteCategory(grupo.value, 'TRANSPORTE')}><TrashIcon className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => void handleDeleteCategory(grupo.value, 'TRANSPORTE')}><TrashIcon className="w-4 h-4" /></Button>
                     </div>
                     {openTransporteGroups[grupo.value] && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                         {grupo.items.map(item => (
-                          <div key={item.id} className="p-2 border dark:border-gray-700 rounded-sm bg-gray-50/50 dark:bg-gray-800/50">
+                          <div key={item.id} className="p-2 border border-border rounded-sm bg-muted/40">
                             <div className="flex items-center justify-between">
                               {editingTransporteId === item.id ? (
                                 <div className="space-y-2 w-full">
@@ -768,13 +768,13 @@ export function RequisitionsCatalogManagement() {
                                 <>
                                   <div className="text-sm">
                                     <span className="font-medium">{item.matricula}</span>
-                                    <p className="text-xs text-gray-500">{item.tipo} · {item.marca} {item.modelo}</p>
+                                    <p className="text-xs text-muted-foreground">{item.tipo} · {item.marca} {item.modelo}</p>
                                   </div>
                                   <div className="flex gap-1">
                                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEditTransporte(item)}>
                                       <Pencil className="w-4 h-4" />
                                     </Button>
-                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500" onClick={() => void handleDeleteTransporte(item.id)}>
+                                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => void handleDeleteTransporte(item.id)}>
                                       <TrashIcon className="w-4 h-4" />
                                     </Button>
                                   </div>

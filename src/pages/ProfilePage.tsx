@@ -338,23 +338,23 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
 
   const renderField = (label: string, value: string, field: string, editable: boolean = true, placeholder: string = '', colSpan: string = '') => (
     <div className={colSpan}>
-      <Label className="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{label}</Label>
+      <Label className="text-sm text-foreground mb-1 block">{label}</Label>
       {isEditing ? (
         editable ? (
           <Input
             value={value}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
             placeholder={placeholder}
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+            className="bg-background border border-border text-foreground placeholder:text-muted-foreground"
           />
         ) : (
-          <div className="px-3 py-2 rounded bg-gray-300 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 cursor-not-allowed select-none">
-            {value || <span className="text-gray-400 italic">{placeholder}</span>}
+          <div className="px-3 py-2 rounded bg-muted text-muted-foreground border border-border cursor-not-allowed select-none">
+            {value || <span className="text-muted-foreground italic">{placeholder}</span>}
           </div>
         )
       ) : (
-        <div className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-transparent">
-          {value || <span className="text-gray-400 italic">{placeholder}</span>}
+        <div className="px-3 py-2 rounded bg-muted/60 text-foreground border border-transparent">
+          {value || <span className="text-muted-foreground italic">{placeholder}</span>}
         </div>
       )}
     </div>
@@ -362,22 +362,22 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
 
   const renderSectionHeader = (title: string, sectionKey: keyof typeof expanded) => (
     <div
-      className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-2 rounded-lg transition-colors -ml-2"
+      className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-accent/60 p-2 rounded-lg transition-colors -ml-2"
       onClick={() => toggleSection(sectionKey)}
     >
       {expanded[sectionKey] ? (
-        <ChevronDown className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        <ChevronDown className="w-5 h-5 text-primary" />
       ) : (
-        <ChevronRight className="w-5 h-5 text-gray-500" />
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
       )}
-      <h2 className="text-gray-900 dark:text-gray-100 font-medium text-lg">{title}</h2>
+      <h2 className="text-foreground font-medium text-lg">{title}</h2>
     </div>
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="text-gray-600 dark:text-gray-400">{t('profile.loading')}</div>
+        <div className="text-muted-foreground">{t('profile.loading')}</div>
       </div>
     );
   }
@@ -388,30 +388,30 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         {/* Back Button */}
         <button
           onClick={() => requestLeave(onBack)}
-          className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
+          className="flex items-center gap-2 text-foreground hover:text-primary mb-6 transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
           <span>{t('common.back')}</span>
         </button>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-5 sm:p-8">
+        <div className="bg-card rounded-lg shadow-lg p-5 sm:p-8">
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <UserIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
+                <UserIcon className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl text-gray-900 dark:text-gray-100">{t('profile.title')}</h1>
-                <p className="text-sm text-purple-600 dark:text-purple-400">{formData.email}</p>
+                <h1 className="text-xl text-foreground">{t('profile.title')}</h1>
+                <p className="text-sm text-primary">{formData.email}</p>
               </div>
             </div>
             {!isEditing && (
               <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto justify-center border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="w-full sm:w-auto justify-center border-border text-foreground hover:bg-accent"
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
@@ -419,7 +419,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                 </Button>
                 <Button
                   onClick={() => { setBaseData({ ...formData }); setIsEditing(true); }}
-                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={loading}
                 >
                   {t('common.edit')}
@@ -474,18 +474,18 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             )}
 
             {isEditing && (
-              <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+              <div className={`flex gap-2 pt-4 border-t border-border ${isMobile ? 'flex-col' : 'justify-end'}`}>
                 <Button
                   onClick={handleCancelEdit}
                   variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
+                  className={`border-border ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   {t('appointmentDialog.actions.cancel')}
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  className={`bg-primary hover:bg-primary/90 text-primary-foreground ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   {loading ? t('common.saving') : t('common.save')}
@@ -513,7 +513,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             <AlertDialogCancel onClick={cancelDiscard}>{t('profile.unsaved.stay')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscard}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-white"
             >
               {t('profile.unsaved.discard')}
             </AlertDialogAction>

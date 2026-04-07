@@ -32,7 +32,7 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
                 <button
-                    className="flex items-center justify-center w-9 h-9 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 transition-colors overflow-hidden shrink-0"
+                    className="flex items-center justify-center w-9 h-9 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold select-none cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors overflow-hidden shrink-0"
                     aria-label={`${t('header.language')}: ${displayName}`}
                     title={displayName}
                 >
@@ -48,11 +48,11 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
                 <DropdownMenu.Content
                     align="end"
                     sideOffset={8}
-                    className="z-[10000] min-w-[180px] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1 animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
+                    className="z-[10000] min-w-[180px] rounded-lg border border-border bg-popover shadow-lg py-1 animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2"
                 >
                     {/* User name header */}
-                    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
+                    <div className="px-3 py-2 border-b border-border">
+                        <p className="text-xs font-medium text-muted-foreground truncate">
                             {displayName}
                         </p>
                     </div>
@@ -60,7 +60,7 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
                     <DropdownMenu.Item
                         onSelect={onProfile}
                         aria-label={t('sidebar.profile')}
-                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-popover-foreground hover:bg-accent cursor-pointer select-none outline-none transition-colors"
                     >
                         <UserIcon className="w-4 h-4 shrink-0" />
                         {t('sidebar.profile')}
@@ -69,18 +69,18 @@ export function UserAvatarMenu({ nome, photoUrl, onProfile, onSettings, onLogout
                     <DropdownMenu.Item
                         onSelect={onSettings}
                         aria-label={t('sidebar.settings')}
-                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer select-none outline-none transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-popover-foreground hover:bg-accent cursor-pointer select-none outline-none transition-colors"
                     >
                         <SettingsIcon className="w-4 h-4 shrink-0" />
                         {t('sidebar.settings')}
                     </DropdownMenu.Item>
 
-                    <DropdownMenu.Separator className="my-1 h-px bg-gray-100 dark:bg-gray-800" />
+                    <DropdownMenu.Separator className="my-1 h-px bg-border" />
 
                     <DropdownMenu.Item
                         onSelect={handleLogout}
                         aria-label={t('header.logout')}
-                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer select-none outline-none transition-colors"
+                        className="flex items-center gap-2.5 px-3 py-2 text-sm text-status-error hover:bg-status-error-soft cursor-pointer select-none outline-none transition-colors"
                     >
                         <LogOutIcon className="w-4 h-4 shrink-0" />
                         {t('header.logout')}

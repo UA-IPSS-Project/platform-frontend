@@ -77,7 +77,7 @@ export function FileUpload({
         <div className="space-y-2">
             <label
                 htmlFor={resolvedInputId}
-                className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-sm text-gray-600 dark:text-gray-300 hover:border-purple-600 transition-colors focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2 ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                className={`border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center justify-center text-sm text-muted-foreground hover:border-primary transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background ${isUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
                 <input
                     id={resolvedInputId}
@@ -89,31 +89,31 @@ export function FileUpload({
                     disabled={isUploading}
                     aria-describedby={helperId}
                 />
-                <Upload className="w-8 h-8 mb-2 text-purple-600 dark:text-purple-400" />
-                <p className="font-medium text-gray-900 dark:text-gray-100">{t('fileUpload.selectPrompt')}</p>
-                <p id={helperId} className="text-xs text-gray-500 mt-1">
+                <Upload className="w-8 h-8 mb-2 text-primary" />
+                <p className="font-medium text-foreground">{t('fileUpload.selectPrompt')}</p>
+                <p id={helperId} className="text-xs text-muted-foreground mt-1">
                     {t('fileUpload.maxSizeHint', { maxSizeMB })}
                 </p>
             </label>
 
             {selectedFiles.length > 0 && (
                 <div className="space-y-2 mt-4">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">
+                    <h3 className="font-medium text-sm text-foreground mb-2">
                         {t('fileUpload.selectedFiles', { count: selectedFiles.length })}
                     </h3>
                     <div className="max-h-60 overflow-y-auto space-y-2">
                         {selectedFiles.map((file, index) => (
                             <div
                                 key={`${file.name}-${index}`}
-                                className="flex items-center justify-between p-3 rounded border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                className="flex items-center justify-between p-3 rounded border border-border bg-muted"
                             >
                                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <FileIcon className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                                    <FileIcon className="w-5 h-5 text-primary flex-shrink-0" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                                        <p className="text-sm font-medium text-foreground truncate">
                                             {file.name}
                                         </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        <p className="text-xs text-muted-foreground">
                                             {formatFileSize(file.size)}
                                         </p>
                                     </div>
@@ -122,7 +122,7 @@ export function FileUpload({
                                     <button
                                         type="button"
                                         onClick={(e) => { e.stopPropagation(); removeFile(index); }}
-                                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded flex-shrink-0 text-gray-500 dark:text-gray-400"
+                                        className="p-1 hover:bg-accent rounded flex-shrink-0 text-muted-foreground"
                                         aria-label={t('fileUpload.removeFileAriaLabel')}
                                     >
                                         <X className="w-4 h-4" />

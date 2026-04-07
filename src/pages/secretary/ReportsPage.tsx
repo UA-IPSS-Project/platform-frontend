@@ -68,13 +68,13 @@ function formatTimeStr(iso: string) {
 
 // Color palette for PDF (Fixed to Light Mode)
 const colors: Record<string, [number, number, number]> = {
-  primary: [241, 149, 217], // #f195d9
-  background: [247, 242, 244], // #f7f2f4
+  primary: [241, 149, 217], // brand primary RGB
+  background: [247, 242, 244], // light background RGB
   foreground: [30, 41, 59],
   muted: [252, 231, 243], // pink-100 (softer than before)
   accent: [252, 231, 243], // pink-100 (softer than before)
   border: [251, 207, 232], // pink-200 (softer border)
-  tableBorder: [227, 45, 145], // #e32d91
+  tableBorder: [227, 45, 145], // table border RGB
 };
 
 const getStatusColor = (status?: string): [number, number, number] => {
@@ -83,7 +83,7 @@ const getStatusColor = (status?: string): [number, number, number] => {
   if (['CONCLUIDO', 'ACEITE', 'CONCLUIDA'].includes(s)) return [16, 185, 129]; // Emerald 600
   if (['CANCELADO', 'RECUSADA', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
   if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
-  if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // #f195d9
+  if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // scheduled/medium RGB
   return [107, 114, 128]; // Gray
 };
 
@@ -431,26 +431,26 @@ export function ReportsPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-2">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shadow-lg">
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg">
+          <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Relatórios</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Gere relatórios em PDF com os dados institucionais</p>
+          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">Gere relatórios em PDF com os dados institucionais</p>
         </div>
       </div>
 
       <GlassCard className="p-6">
-        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Período</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Período</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Início</label>
+            <label className="text-sm font-medium text-foreground">Início</label>
             <DatePickerField value={startDate} onChange={setStartDate} />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fim</label>
+            <label className="text-sm font-medium text-foreground">Fim</label>
             <DatePickerField value={endDate} onChange={setEndDate} />
           </div>
         </div>
@@ -471,8 +471,8 @@ export function ReportsPage() {
                 key={label}
                 onClick={() => { setStartDate(sStr); setEndDate(eStr); }}
                 className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${isActive
-                  ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
-                  : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                  ? 'bg-primary border-primary text-primary-foreground shadow-md'
+                  : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
                   }`}
               >
                 {label}
@@ -483,16 +483,16 @@ export function ReportsPage() {
       </GlassCard>
 
       <GlassCard className="p-6">
-        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Dados a Incluir</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Dados a Incluir</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {SECTIONS.map(section => {
             const isChecked = selected.has(section.id);
             return (
-              <button key={section.id} onClick={() => toggle(section.id)} className={`flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${isChecked ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white/50 dark:bg-gray-800/30'}`}>
-                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center ${isChecked ? 'bg-purple-600 border-purple-600' : 'border-gray-300'}`}>
-                  {isChecked && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+              <button key={section.id} onClick={() => toggle(section.id)} className={`flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all ${isChecked ? 'border-primary bg-primary/10' : 'border-border hover:border-border/80 bg-card/50'}`}>
+                <div className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center ${isChecked ? 'bg-primary border-primary' : 'border-border'}`}>
+                  {isChecked && <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
-                <div><div className="font-medium text-sm text-gray-800 dark:text-gray-100">{section.label}</div><div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{section.description}</div></div>
+                <div><div className="font-medium text-sm text-foreground">{section.label}</div><div className="text-xs text-muted-foreground mt-0.5">{section.description}</div></div>
               </button>
             );
           })}
@@ -501,8 +501,8 @@ export function ReportsPage() {
           <button
             onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))}
             className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected
-                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
-                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                ? 'bg-primary border-primary text-primary-foreground shadow-md'
+                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
               }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -514,8 +514,8 @@ export function ReportsPage() {
           <button
             onClick={() => setSelected(new Set())}
             className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected
-                ? 'bg-pink-500 border-pink-500 text-white shadow-md shadow-pink-200 dark:shadow-pink-900/40'
-                : 'border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 bg-white/50 dark:bg-gray-800/20'
+                ? 'bg-primary border-primary text-primary-foreground shadow-md'
+                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
               }`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -527,10 +527,10 @@ export function ReportsPage() {
       </GlassCard>
 
       <div className="flex justify-end gap-3">
-        <Button onClick={handleSendEmail} disabled={isSendingEmail || selected.size === 0} variant="outline" className="border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 px-6 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
+        <Button onClick={handleSendEmail} disabled={isSendingEmail || selected.size === 0} variant="outline" className="border-border text-foreground hover:bg-accent px-6 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
           {isSendingEmail ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A enviar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> Enviar por Email</>}
         </Button>
-        <Button onClick={generatePDF} disabled={isGenerating || selected.size === 0} className="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl shadow-lg shadow-pink-200 dark:shadow-pink-900/30 font-semibold text-sm transition-all flex items-center gap-2">
+        <Button onClick={generatePDF} disabled={isGenerating || selected.size === 0} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xl shadow-lg font-semibold text-sm transition-all flex items-center gap-2">
           {isGenerating ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A gerar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Gerar PDF</>}
         </Button>
       </div>

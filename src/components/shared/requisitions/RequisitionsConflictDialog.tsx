@@ -35,20 +35,20 @@ export function RequisitionsConflictDialog({
 }: Readonly<RequisitionsConflictDialogProps>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
+      <DialogContent className="max-w-lg bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle>Conflitos de transporte detetados</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-muted-foreground">
             {conflitoDialogMode === 'blocked'
               ? `Já existe uma requisição fechada que envolve o(s) veículo(s) ${conflitoTransportesNomes.join(', ')}.`
               : `Existem outras requisições que envolvem o ou os veículos ${conflitoTransportesNomes.join(', ')}.`}
           </p>
 
           {conflitoDialogMode === 'blocked' && (
-            <p className="text-sm text-red-700 dark:text-red-300 rounded-md border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-2">
+            <p className="text-sm text-status-error rounded-md border border-status-error/40 bg-status-error-soft p-2">
               Impossível finalizar esta marcação porque já existe uma marcação fechada com este(s) veículo(s).
             </p>
           )}
@@ -60,8 +60,8 @@ export function RequisitionsConflictDialog({
                 : 'Data indisponível';
 
               return (
-                <div key={conflito.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-gray-700 p-2">
-                  <span className="text-sm text-gray-800 dark:text-gray-200">
+                <div key={conflito.id} className="flex items-center justify-between gap-3 rounded-md border border-border p-2">
+                  <span className="text-sm text-foreground">
                     {conflito.criadoPorNome} - {dataPedido}
                   </span>
                   <Button
@@ -100,7 +100,7 @@ export function RequisitionsConflictDialog({
                   type="button"
                   onClick={onContinueAccept}
                   disabled={updatingEstadoId === openedRequisicaoId}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   {updatingEstadoId === openedRequisicaoId ? savingLabel : 'Continuar com a alteração de estado'}
                 </Button>
