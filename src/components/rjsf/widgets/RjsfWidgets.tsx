@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import {
   Select,
   SelectContent,
@@ -94,11 +95,62 @@ function TextareaWidget(props: RjsfWidgetProps) {
   );
 }
 
+function EmailWidget(props: RjsfWidgetProps) {
+  const {
+    id,
+    value,
+    required,
+    disabled,
+    readonly,
+    autofocus,
+    placeholder,
+    onChange,
+    onBlur,
+    onFocus,
+    options,
+  } = props;
+
+  return (
+    <Input
+      id={id}
+      type="email"
+      value={typeof value === 'string' ? value : ''}
+      required={required}
+      disabled={disabled || readonly}
+      autoFocus={autofocus}
+      placeholder={placeholder}
+      autoComplete={(options.autocomplete as string) || 'email'}
+      onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
+      onBlur={(event: React.FocusEvent<HTMLInputElement>) => onBlur(id, event.target.value)}
+      onFocus={(event: React.FocusEvent<HTMLInputElement>) => onFocus(id, event.target.value)}
+    />
+  );
+}
+
+function DateWidget(props: RjsfWidgetProps) {
+  const { id, value, disabled, readonly, placeholder, onChange, onBlur } = props;
+  const currentValue = typeof value === 'string' ? value : '';
+
+  return (
+    <DatePickerField
+      id={id}
+      value={currentValue}
+      placeholder={placeholder || 'Selecionar data'}
+      buttonClassName="bg-muted border-border text-foreground"
+      disabled={Boolean(disabled || readonly)}
+      onChange={(nextValue: string) => {
+        onChange(nextValue);
+        onBlur(id, nextValue);
+      }}
+    />
+  );
+}
+
 function CheckboxWidget(props: RjsfWidgetProps) {
   const { id, value, required, disabled, readonly, onChange } = props;
 
   return (
-    <div className="flex items-center h-9">
+    <div className="flex items-center">
       <Checkbox
         id={id}
         checked={Boolean(value)}
@@ -137,6 +189,8 @@ function SelectWidget(props: RjsfWidgetProps) {
 
 export const rjsfWidgets = {
   TextWidget,
+  EmailWidget,
+  DateWidget,
   TextareaWidget,
   CheckboxWidget,
   SelectWidget,

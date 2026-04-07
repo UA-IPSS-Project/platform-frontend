@@ -79,13 +79,13 @@ export function CandidaturaStatusChangeDialog({
           </DialogHeader>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="text-sm font-medium text-foreground">
               {t('applications.flow.statusDialog.newStatus')}
             </label>
             <select
               value={nextStatus}
               onChange={(event) => setNextStatus(event.target.value as CandidaturaEstado)}
-              className="w-full h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
             >
               <option value="PENDENTE">{t('applications.flow.status.pending')}</option>
               <option value="APROVADA">{t('applications.flow.status.approved')}</option>
@@ -95,7 +95,7 @@ export function CandidaturaStatusChangeDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('applications.flow.actions.cancel')}</Button>
-            <Button type="button" onClick={handleStartConfirm} className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button type="button" onClick={handleStartConfirm}>
               {t('applications.flow.actions.continue')}
             </Button>
           </DialogFooter>
@@ -116,7 +116,6 @@ export function CandidaturaStatusChangeDialog({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('applications.flow.actions.no')}</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-purple-600 hover:bg-purple-700 text-white"
               onClick={() => void handleConfirm()}
               disabled={saving}
             >

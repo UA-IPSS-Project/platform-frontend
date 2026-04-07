@@ -5,7 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { CandidaturaStatusChangeDialog } from '../../components/candidaturas/CandidaturaStatusChangeDialog';
 import { CandidaturasFilters } from '../../components/candidaturas/CandidaturasFilters';
+import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard';
+import { CandidaturasStatusBadge } from '../../components/candidaturas/CandidaturasStatusBadge';
 import { useAuth } from '../../contexts/AuthContext';
+import { getMockCandidaturasForType, getMockFormularioForType, updateMockCandidatura } from './candidaturaMockData';
 import {
   candidaturasApi,
   type CandidaturaEstado,
@@ -33,20 +36,17 @@ const toUiStatus = (status: CandidaturaEstado, t: (key: string) => string) => {
   if (status === 'APROVADA') {
     return {
       label: t('applications.flow.status.approved'),
-      className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
     };
   }
 
   if (status === 'REJEITADA') {
     return {
       label: t('applications.flow.status.rejected'),
-      className: 'bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300',
     };
   }
 
   return {
     label: t('applications.flow.status.pending'),
-    className: 'bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
   };
 };
 
@@ -65,6 +65,16 @@ const toDayRange = (day: string): { dataInicio: string; dataFim: string } => {
     dataInicio: start.toISOString(),
     dataFim: end.toISOString(),
   };
+};
+
+const isWithinDayRange = (value: string | undefined, day: string): boolean => {
+  if (!value) return false;
+
+  const range = toDayRange(day);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  return date >= new Date(range.dataInicio) && date <= new Date(range.dataFim);
 };
 
 export function CandidaturasByTypePage({
@@ -95,9 +105,14 @@ export function CandidaturasByTypePage({
 
   const loadForms = async () => {
     try {
-      const data = await candidaturasApi.listarFormularios(normalizedType);
-      setForms(Array.isArray(data) ? data : []);
-      setSelectedFormId(data[0]?.id || '');
+      const mockForm = getMockFormularioForType(normalizedType);
+      setForms(mockForm ? [mockForm] : []);
+      setSelectedFormId(mockForm?.id || '');
+
+      // API lookup kept here for reference only while the candidaturas area uses local mocks.
+      // const data = await candidaturasApi.listarFormularios(normalizedType);
+      // setForms(Array.isArray(data) ? data : []);
+      // setSelectedFormId(data[0]?.id || '');
     } catch (error) {
       toast.error(t('applications.flow.messages.loadFormsError'));
     }
@@ -115,32 +130,29 @@ export function CandidaturasByTypePage({
 
     try {
       setLoading(true);
-      const filters: {
-        formId: string;
-        criadoPor?: number;
-        estado?: CandidaturaEstado;
-        dataInicio?: string;
-        dataFim?: string;
-      } = {
-        formId: selectedFormId,
-      };
 
-      if (mode === 'utente' && typeof currentUserId === 'number') {
-        filters.criadoPor = currentUserId;
-      }
+      const mockData = getMockCandidaturasForType(normalizedType, mode === 'utente' ? currentUserId : undefined);
+      let nextCandidaturas = mockData.filter((item) => item.formId === selectedFormId);
 
       if (mode === 'secretaria' && appliedStatusFilter) {
-        filters.estado = appliedStatusFilter as CandidaturaEstado;
+        nextCandidaturas = nextCandidaturas.filter((item) => item.estado === appliedStatusFilter);
       }
 
       if (mode === 'secretaria' && appliedDateFilter) {
-        const range = toDayRange(appliedDateFilter);
-        filters.dataInicio = range.dataInicio;
-        filters.dataFim = range.dataFim;
+        nextCandidaturas = nextCandidaturas.filter((item) => isWithinDayRange(item.criadoEm, appliedDateFilter));
       }
 
-      const data = await candidaturasApi.listarCandidaturas(filters);
-      setCandidaturas(Array.isArray(data) ? data : []);
+      // API search kept here for reference only while the candidaturas area uses local mocks.
+      // const data = await candidaturasApi.listarCandidaturas({
+      //   formId: selectedFormId,
+      //   estado: appliedStatusFilter as CandidaturaEstado,
+      //   dataInicio: appliedDateFilter ? toDayRange(appliedDateFilter).dataInicio : undefined,
+      //   dataFim: appliedDateFilter ? toDayRange(appliedDateFilter).dataFim : undefined,
+      //   criadoPor: mode === 'utente' ? currentUserId : undefined,
+      // });
+      // setCandidaturas(Array.isArray(data) ? data : []);
+
+      setCandidaturas(nextCandidaturas);
     } catch (error) {
       toast.error(t('applications.flow.messages.loadApplicationsError'));
     } finally {
@@ -175,7 +187,16 @@ export function CandidaturasByTypePage({
     if (!selectedCandidatura) return;
 
     try {
-      await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
+      if (mode === 'secretaria') {
+        // API update kept here for reference only while the candidaturas area uses local mocks.
+        // await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
+        const updated = updateMockCandidatura(selectedCandidatura.id, { estado: newStatus });
+        if (!updated) {
+          throw new Error('Candidatura mock não encontrada');
+        }
+      } else {
+        await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
+      }
       toast.success(t('applications.flow.messages.statusUpdatedSuccess'));
       setSelectedCandidatura(null);
       await loadCandidaturas();
@@ -185,14 +206,14 @@ export function CandidaturasByTypePage({
   };
 
   return (
-    <div className="max-w-6xl mx-auto mt-4 p-6 sm:p-8 bg-white/95 dark:bg-gray-900/95 rounded-2xl shadow-lg border border-purple-200 dark:border-purple-800">
+    <CandidaturasCard className="mx-auto mt-4 max-w-6xl p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('applications.flow.labels.titleByType', { type: normalizedType })}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t('applications.flow.labels.titleByType', { type: normalizedType })}</h1>
         {forms.length > 1 ? (
           <select
             value={selectedFormId}
             onChange={(event) => setSelectedFormId(event.target.value)}
-            className="h-10 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-sm text-gray-800 dark:text-gray-100"
+            className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             {forms.map((form) => (
               <option key={form.id} value={form.id}>{form.name}</option>
@@ -216,9 +237,9 @@ export function CandidaturasByTypePage({
         }
       />
 
-      <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-5 bg-white/70 dark:bg-gray-900/40">
+      <div className="border border-border rounded-xl p-4 sm:p-5 bg-muted/30">
         {loading ? (
-          <p className="text-sm text-gray-600 dark:text-gray-300">{t('applications.flow.messages.loadingApplications')}</p>
+          <p className="text-sm text-muted-foreground">{t('applications.flow.messages.loadingApplications')}</p>
         ) : visibleCandidaturas.length > 0 ? (
           <div className="space-y-3">
             {visibleCandidaturas.map((candidatura) => {
@@ -230,22 +251,20 @@ export function CandidaturasByTypePage({
                 <button
                   key={candidatura.id}
                   type="button"
-                  className="w-full text-left rounded-xl border border-purple-200 dark:border-purple-800 bg-gradient-to-br from-white to-purple-50 dark:from-gray-900 dark:to-purple-950/30 p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="w-full text-left rounded-xl border border-border bg-background p-5 shadow-sm hover:bg-accent/40 hover:shadow-md transition-all"
                   onClick={() => navigate(`/dashboard/${candidaturaType.toLowerCase()}/${candidatura.id}`)}
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-1">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('applications.flow.labels.code')}: {code}</p>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{candidateName}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-xs text-muted-foreground">{t('applications.flow.labels.code')}: {code}</p>
+                      <p className="font-medium text-foreground">{candidateName}</p>
+                      <p className="text-sm text-muted-foreground">
                         {t('applications.flow.labels.applicationDate')}: {formatDate(candidatura.criadoEm)}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${status.className}`}>
-                        {status.label}
-                      </span>
+                      <CandidaturasStatusBadge status={candidatura.estado} label={status.label} />
                       {canChangeStatus ? (
                         <Button
                           type="button"
@@ -266,7 +285,7 @@ export function CandidaturasByTypePage({
             })}
           </div>
         ) : (
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-muted-foreground">
             {currentUserName
               ? t('applications.flow.messages.noResultsForUser', { name: currentUserName })
               : t('applications.flow.messages.noResults')}
@@ -285,6 +304,6 @@ export function CandidaturasByTypePage({
           onConfirm={handleChangeStatus}
         />
       ) : null}
-    </div>
+    </CandidaturasCard>
   );
 }

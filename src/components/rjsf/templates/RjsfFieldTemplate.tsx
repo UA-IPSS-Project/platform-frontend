@@ -6,33 +6,50 @@ type RjsfFieldTemplateProps = {
   label?: string;
   required?: boolean;
   hidden?: boolean;
+  schema?: {
+    type?: string;
+  };
   children: ReactNode;
   rawErrors?: string[];
   rawHelp?: ReactNode;
 };
 
 export function RjsfFieldTemplate(props: RjsfFieldTemplateProps) {
-  const { id, label, required, hidden, children, rawErrors = [], rawHelp } = props;
+  const { id, label, required, hidden, schema, children, rawErrors = [], rawHelp } = props;
+  const isBooleanField = schema?.type === 'boolean';
 
   if (hidden) {
     return <>{children}</>;
   }
 
   return (
-    <div className="space-y-2">
-      {label && (
-        <Label htmlFor={id}>
-          {label}
-          {required ? ' *' : ''}
-        </Label>
+    <div className="mb-6 space-y-2">
+      {isBooleanField ? (
+        <div className="flex items-center gap-3">
+          {children}
+          {label ? (
+            <Label htmlFor={id} className="cursor-pointer">
+              {label}
+              {required ? ' *' : ''}
+            </Label>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          {label ? (
+            <Label htmlFor={id}>
+              {label}
+              {required ? ' *' : ''}
+            </Label>
+          ) : null}
+          {children}
+        </>
       )}
 
-      {children}
-
-      {rawHelp ? <p className="text-xs text-slate-500 dark:text-slate-400">{rawHelp}</p> : null}
+      {rawHelp ? <p className="text-xs text-muted-foreground">{rawHelp}</p> : null}
 
       {rawErrors.length > 0 ? (
-        <ul className="space-y-1 text-xs text-red-600 dark:text-red-400">
+        <ul className="space-y-1 text-xs text-status-error">
           {rawErrors.map((error) => (
             <li key={error}>{error}</li>
           ))}

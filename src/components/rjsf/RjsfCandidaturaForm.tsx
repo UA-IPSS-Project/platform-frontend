@@ -4,12 +4,14 @@ import validator from '@rjsf/validator-ajv8';
 import type { RJSFSchema } from '@rjsf/utils';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { GlassCard } from '@/components/ui/glass-card';
 import { candidaturaMockupSchema } from './schemas/candidaturaMockup.schema';
 import { candidaturaMockupUiSchema } from './ui/candidaturaMockup.uiSchema';
 import { rjsfWidgets } from './widgets/RjsfWidgets';
 import { RjsfFieldTemplate } from './templates/RjsfFieldTemplate';
-import { candidaturasApi, FormularioResponse } from '../../services/api';
+import { FormularioResponse } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { createMockCandidaturaForType, getMockFormularioForType } from '../../pages/candidaturas/candidaturaMockData';
 
 const templates = {
   FieldTemplate: RjsfFieldTemplate,
@@ -36,12 +38,16 @@ export function RjsfCandidaturaForm({
   useEffect(() => {
     const loadFormulario = async () => {
       try {
-        const forms = await candidaturasApi.listarFormularios(candidaturaType);
-        if (forms.length > 0) {
-          setFormularioAtivo(forms[0]);
-        } else {
-          setFormularioAtivo(null);
-        }
+        const mockForm = candidaturaType ? getMockFormularioForType(candidaturaType) : null;
+        setFormularioAtivo(mockForm);
+
+        // API lookup kept here for reference only while the candidaturas area uses local mocks.
+        // const forms = await candidaturasApi.listarFormularios(candidaturaType);
+        // if (forms.length > 0) {
+        //   setFormularioAtivo(forms[0]);
+        // } else {
+        //   setFormularioAtivo(null);
+        // }
       } catch (error) {
         toast.error('Não foi possível carregar o formulário, será usado o mock local.');
       }
@@ -70,11 +76,15 @@ export function RjsfCandidaturaForm({
 
     try {
       setIsSubmitting(true);
-      await candidaturasApi.criarCandidatura({
-        formId: formularioAtivo.id,
-        respostas: submittedData,
-        criadoPor: user?.id,
-      });
+
+      createMockCandidaturaForType(candidaturaType || '', submittedData, user?.id);
+
+      // API submission kept here for reference only while the candidaturas area uses local mocks.
+      // await candidaturasApi.criarCandidatura({
+      //   formId: formularioAtivo.id,
+      //   respostas: submittedData,
+      //   criadoPor: user?.id,
+      // });
 
       toast.success('Candidatura enviada com sucesso');
       setFormData(submittedData);
@@ -91,10 +101,10 @@ export function RjsfCandidaturaForm({
     <div className="space-y-6">
       {showTitle && (
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-semibold text-slate-900 dark:text-slate-100">
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground">
             Nova Candidatura
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-300">
+          <p className="text-sm text-muted-foreground">
             Preencha o formulário para submeter uma nova candidatura.
           </p>
         </div>
@@ -108,13 +118,12 @@ export function RjsfCandidaturaForm({
         widgets={rjsfWidgets}
         templates={templates}
         showErrorList={false}
-        liveValidate
         onChange={(event: { formData?: Record<string, unknown> }) =>
           setFormData(event.formData || {})
         }
         onSubmit={handleSubmit}
       >
-        <div className="pt-2">
+        <div className="pt-2 flex justify-end">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'A submeter...' : 'Submeter Candidatura'}
           </Button>
@@ -122,14 +131,14 @@ export function RjsfCandidaturaForm({
       </Form>
 
       {showPreview && (
-        <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/80 p-4">
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+        <GlassCard className="p-4">
+          <p className="mb-2 text-xs text-muted-foreground">
             Preview do formData:
           </p>
-          <pre className="text-xs overflow-auto whitespace-pre-wrap text-slate-700 dark:text-slate-200">
+          <pre className="text-xs overflow-auto whitespace-pre-wrap text-foreground">
             {JSON.stringify(formData, null, 2)}
           </pre>
-        </div>
+        </GlassCard>
       )}
     </div>
   );
