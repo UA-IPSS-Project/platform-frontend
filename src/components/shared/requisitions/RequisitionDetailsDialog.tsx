@@ -98,9 +98,14 @@ export function RequisitionDetailsDialog({
         itens: [],
       };
 
+      const vehicleInfo = item.transporte?.matricula ? ` [${item.transporte.matricula}]` : '';
+      const space = item.manutencaoItem.categoria === 'VEICULOS' || !item.manutencaoItem.espaco
+        ? ''
+        : `${item.manutencaoItem.espaco} - `;
+
       grupoAtual.itens.push({
         id: `${item.id ?? 'sem-id'}-${item.manutencaoItem.id}`,
-        label: `${item.manutencaoItem.espaco ?? '—'} - ${item.manutencaoItem.itemVerificacao ?? '—'}`,
+        label: `${space}${item.manutencaoItem.itemVerificacao}${vehicleInfo}`,
       });
 
       // Observacao e comum a categoria. Guarda apenas uma vez.
@@ -283,10 +288,6 @@ export function RequisitionDetailsDialog({
                 )}
                 {selectedRequisicao.tipo === 'MANUTENCAO' && (
                   <>
-                    <div className="space-y-1.5 md:col-span-2">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.labels.subject')}</p>
-                      <p className="text-sm font-semibold text-foreground bg-card p-3 rounded-xl border border-border">{selectedRequisicao.assunto || '—'}</p>
-                    </div>
 
                     <div className="md:col-span-2 space-y-3">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Itens de manutenção</p>

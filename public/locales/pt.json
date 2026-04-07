@@ -713,6 +713,7 @@
       "maintenanceCategoryRC": "R/C",
       "maintenanceCategoryPreschool": "Pré Escolar",
       "maintenanceCategoryDaycare": "Creche",
+      "maintenanceCategoryVehicles": "Viaturas",
       "noCategory": "Sem categoria",
       "capacityNotDefined": "Lotação não definida",
       "seat": "lugar",
@@ -732,6 +733,8 @@
       "materials": "Materiais",
       "destination": "Destino",
       "vehicles": "Viaturas",
+      "vehicles_one": "Viatura",
+      "vehicles_other": "Viaturas",
       "subject": "Assunto",
       "description": "Descrição",
       "type": "Tipo",
@@ -1244,6 +1247,24 @@
       "Roupa Interior": "Roupa Interior",
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
+    }
+  },
+  "maintenance": {
+    "labels": {
+      "itemsByCategory": "Itens por Categoria",
+      "selectedItems": "{{count}} item(ns) selecionado(s)",
+      "clearSelection": "Limpar seleção",
+      "observations": "Observações por Categoria",
+      "space": "Espaço",
+      "space_one": "Espaço",
+      "space_other": "Espaços",
+      "vehicle": "Viatura",
+      "vehicle_one": "Viatura",
+      "vehicle_other": "Viaturas",
+      "item": "Item de Verificação"
+    },
+    "placeholders": {
+      "observations": "Notas adicionais para esta categoria..."
     }
   }
 }
