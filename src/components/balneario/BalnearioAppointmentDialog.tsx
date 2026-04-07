@@ -221,7 +221,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         let newErrors: Record<string, string> = {};
         
         if (selectedOptions['Sapatos/Sapatilhas'] && !shoeSize) {
-            newErrors.shoeSize = 'Tamanho obrigatório';
+            newErrors.shoeSize = t('balneario.appointmentDetailsDialog.shoeSizeRequired');
         }
         
         if (Object.keys(newErrors).length > 0) {

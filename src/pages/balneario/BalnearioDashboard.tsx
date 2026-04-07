@@ -15,7 +15,6 @@ import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleD
 import { BalnearioAppointmentDialog } from '../../components/balneario/BalnearioAppointmentDialog';
 import { BalnearioAppointmentDetailsDialog } from '../../components/balneario/BalnearioAppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
-import { Loader2 } from 'lucide-react';
 import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
@@ -122,8 +121,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
     const [showQuickAttendance, setShowQuickAttendance] = useState(false);
-    const [statsData, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
-    const [loadingStats, setLoadingStats] = useState(false);
+    const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [, setLoadingStats] = useState(false);
 
     const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
         setProfileIsDirty(isDirty);
@@ -303,14 +302,13 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             <NavDropdown
                 label={t('sidebar.consumption')}
                 items={[
-                    { id: 'consumos', label: 'Armazém' },
-                    { id: 'estatisticas', label: 'Estatísticas' },
+                    { id: 'consumos', label: t('consumos.warehouse') },
+                    { id: 'estatisticas', label: t('consumos.statistics') },
                 ]}
                 isActive={['consumos', 'estatisticas'].includes(currentView)}
                 onSelect={(id) => navigateTo(id as ViewType)}
                 onLabelClick={() => navigateTo('consumos')}
             />
-
             <NavDropdown
                 label={t('sidebar.requisitions')}
                 items={[
