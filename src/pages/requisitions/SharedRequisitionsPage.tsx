@@ -549,7 +549,7 @@ export function SharedRequisitionsPage({
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    if (field === 'dataSaida' || field === 'horaSaida') {
+    if (field === 'dataSaida') {
       const error = validateDataPassada(createForm.dataSaida);
       if (error) return error;
     }

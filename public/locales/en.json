@@ -1251,7 +1251,8 @@
       "clearSelection": "Clear selection",
       "observations": "Observations by Category",
       "space": "Space",
-      "item": "Verification Item"
+      "item": "Verification Item",
+      "vehicle": "Vehicle"
     },
     "placeholders": {
       "observations": "Additional notes for this category..."
