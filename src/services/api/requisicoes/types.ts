@@ -82,6 +82,12 @@ export interface RequisicaoResponse {
       espaco?: string;
       itemVerificacao?: string;
     };
+    transporte?: {
+      id: number;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
+    };
     observacoes?: string;
   }>;
   transporte?: {
@@ -116,7 +122,7 @@ export interface RequisicaoResponse {
   dataHoraRegresso?: string;
   numeroPassageiros?: number;
   condutor?: string | null;
-  assunto?: string;
+  assunto?: string | null;
 }
 
 export interface RequisicaoFilters {
@@ -131,7 +137,6 @@ export interface RequisicaoFilters {
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
-  criadoPorId: number;
   geridoPorId?: number;
 }
 
@@ -153,6 +158,7 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
 
 export interface ManutencaoItemRequestPayload {
   itemId: number;
+  transporteId?: number;
   observacoes?: string;
 }
 
@@ -163,7 +169,6 @@ export interface CriarManutencaoItemCatalogoRequest {
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
-  assunto?: string;
   manutencaoItens?: ManutencaoItemRequestPayload[];
 }
 
