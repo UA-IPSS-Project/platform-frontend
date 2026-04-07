@@ -122,6 +122,7 @@ export interface RequisicaoResponse {
   dataHoraRegresso?: string;
   numeroPassageiros?: number;
   condutor?: string | null;
+  assunto?: string | null;
 }
 
 export interface RequisicaoFilters {
