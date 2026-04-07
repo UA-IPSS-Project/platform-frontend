@@ -160,48 +160,62 @@ export function RequisitionsCreateManutencaoForm({
                         <tbody>
                           {isVehicleCategory ? (
                             // SPECIAL GRID FOR VEHICLES: Rows = Transportes, Columns = Items
-                            transportes.map((transporte) => (
-                              <tr key={transporte.id} className="group border-b border-border/50 last:border-0">
-                                <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
-                                  {formatVehicleTitle(transporte)}
-                                </td>
-                                {items.map(itemName => {
-                                  // For vehicles, we use any available space (e.g. 'Geral') but map it to this vehicle
-                                  const item = Object.values(spaces)[0]?.[itemName];
-                                  if (!item) return (
-                                    <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
-                                  );
+                            (() => {
+                              const vehicleItemsByName = Object.values(spaces).reduce<Record<string, ManutencaoItem>>(
+                                (acc, spaceItems) => {
+                                  Object.entries(spaceItems).forEach(([spaceItemName, spaceItem]) => {
+                                    if (!acc[spaceItemName]) {
+                                      acc[spaceItemName] = spaceItem;
+                                    }
+                                  });
 
-                                  const selected = isSelected(item.id, transporte.id);
+                                  return acc;
+                                },
+                                {}
+                              );
 
-                                  return (
-                                    <td
-                                      key={itemName}
-                                      onClick={() => onToggleItem(item.id, !selected, transporte.id)}
-                                      className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
-                                      style={{
-                                        backgroundColor: selected
-                                          ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
-                                          : undefined,
-                                      }}
-                                      title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
-                                    >
-                                      <div className="flex items-center justify-center h-full w-full py-3">
-                                        {selected ? (
-                                          <div className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
-                                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                          </div>
-                                        ) : (
-                                          <div className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40" style={{ borderColor: 'var(--border)' }} />
-                                        )}
-                                      </div>
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))
+                              return transportes.map((transporte) => (
+                                <tr key={transporte.id} className="group border-b border-border/50 last:border-0">
+                                  <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
+                                    {formatVehicleTitle(transporte)}
+                                  </td>
+                                  {items.map(itemName => {
+                                    const item = vehicleItemsByName[itemName];
+                                    if (!item) return (
+                                      <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
+                                    );
+
+                                    const selected = isSelected(item.id, transporte.id);
+
+                                    return (
+                                      <td
+                                        key={itemName}
+                                        onClick={() => onToggleItem(item.id, !selected, transporte.id)}
+                                        className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
+                                        style={{
+                                          backgroundColor: selected
+                                            ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                                            : undefined,
+                                        }}
+                                        title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
+                                      >
+                                        <div className="flex items-center justify-center h-full w-full py-3">
+                                          {selected ? (
+                                            <div className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
+                                              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                              </svg>
+                                            </div>
+                                          ) : (
+                                            <div className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40" style={{ borderColor: 'var(--border)' }} />
+                                          )}
+                                        </div>
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ));
+                            })()
                           ) : (
                             // STANDARD TABLE: Rows = Spaces, Columns = Items
                             Object.keys(spaces).sort().map((spaceName) => (
