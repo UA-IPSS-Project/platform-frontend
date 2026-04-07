@@ -82,6 +82,12 @@ export interface RequisicaoResponse {
       espaco?: string;
       itemVerificacao?: string;
     };
+    transporte?: {
+      id: number;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
+    };
     observacoes?: string;
   }>;
   transporte?: {
@@ -151,6 +157,7 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
 
 export interface ManutencaoItemRequestPayload {
   itemId: number;
+  transporteId?: number;
   observacoes?: string;
 }
 

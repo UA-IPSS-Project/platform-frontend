@@ -107,15 +107,17 @@ export const MANUTENCAO_CATEGORIA_OPTIONS: Array<{ value: ManutencaoCategoria; l
   { value: 'RC', label: 'requisitions.labels.maintenanceCategoryRC' },
   { value: 'PRE_ESCOLAR', label: 'requisitions.labels.maintenanceCategoryPreschool' },
   { value: 'CRECHE', label: 'requisitions.labels.maintenanceCategoryDaycare' },
+  { value: 'VEICULOS', label: 'requisitions.labels.maintenanceCategoryVehicles' },
 ];
 
-export const MANUTENCAO_CATEGORIA_ORDER: ManutencaoCategoria[] = ['CATL', 'RC', 'PRE_ESCOLAR', 'CRECHE'];
+export const MANUTENCAO_CATEGORIA_ORDER: ManutencaoCategoria[] = ['CATL', 'RC', 'PRE_ESCOLAR', 'CRECHE', 'VEICULOS'];
 
 export const MANUTENCAO_CATEGORIA_DISPLAY_LABELS: Record<ManutencaoCategoria, string> = {
   CATL: 'CATL',
   RC: 'R/C',
   PRE_ESCOLAR: 'Pré Escolar',
   CRECHE: 'Creche',
+  VEICULOS: 'Veículos',
 };
 
 export const MANUTENCAO_ESPACOS_POR_CATEGORIA: Record<ManutencaoCategoria, string[]> = {

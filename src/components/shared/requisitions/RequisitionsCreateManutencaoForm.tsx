@@ -1,16 +1,18 @@
 import { useMemo, useState } from 'react';
-import { Layout, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import { ManutencaoCategoria, ManutencaoItem } from '../../../services/api';
+import { Layout, Trash2, MessageSquare, ChevronDown, ChevronUp, Car } from 'lucide-react';
+import { ManutencaoCategoria, ManutencaoItem, TransporteCatalogo } from '../../../services/api';
 import {
   MANUTENCAO_CATEGORIA_ORDER,
   MANUTENCAO_CATEGORIA_DISPLAY_LABELS,
+  formatVehicleTitle,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface RequisitionsCreateManutencaoFormProps {
   manutencaoItems: ManutencaoItem[];
-  onToggleItem: (itemId: number, checked: boolean) => void;
-  selectedManutencaoItemIds: number[];
+  transportes: TransporteCatalogo[];
+  onToggleItem: (itemId: number, checked: boolean, transporteId?: number) => void;
+  selectedManutencaoItems: Array<{ itemId: number; transporteId?: number }>;
   manutencaoObservacoesPorCategoria: Record<string, string>;
   onUpdateObservacaoCategoria: (categoria: string, observacao: string) => void;
   t: any;
@@ -20,8 +22,9 @@ interface RequisitionsCreateManutencaoFormProps {
 
 export function RequisitionsCreateManutencaoForm({
   manutencaoItems,
+  transportes,
   onToggleItem,
-  selectedManutencaoItemIds,
+  selectedManutencaoItems,
   manutencaoObservacoesPorCategoria,
   onUpdateObservacaoCategoria,
   t,
@@ -43,6 +46,11 @@ export function RequisitionsCreateManutencaoForm({
       ...prev,
       [category]: !prev[category]
     }));
+  };
+
+  // Helper to check if item/vehicle pair is selected
+  const isSelected = (itemId: number, transporteId?: number) => {
+    return selectedManutencaoItems.some(i => i.itemId === itemId && i.transporteId === transporteId);
   };
 
   // Agrupar por Categoria -> Espaço -> Item (Linhas = Espaços, Colunas = Itens)
@@ -88,6 +96,7 @@ export function RequisitionsCreateManutencaoForm({
         const { items, spaces } = groupedData[category];
         const categoryLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category;
         const isCollapsed = collapsedCategories[category];
+        const isVehicleCategory = category === 'VEICULOS';
 
         return (
           <section key={category} className="space-y-3">
@@ -108,8 +117,11 @@ export function RequisitionsCreateManutencaoForm({
               </div>
               <div className="flex items-center gap-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <div className="flex items-center gap-1.5">
-                  <Layout className="w-3 h-3" />
-                  {Object.keys(spaces).length} {t('maintenance.labels.space')}
+                  {isVehicleCategory ? <Car className="w-3 h-3" /> : <Layout className="w-3 h-3" />}
+                  {isVehicleCategory 
+                    ? `${transportes.length} ${t('requisitions.labels.vehicles')}`
+                    : `${Object.keys(spaces).length} ${t('maintenance.labels.space')}`
+                  }
                 </div>
                 {isCollapsed
                   ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -133,7 +145,7 @@ export function RequisitionsCreateManutencaoForm({
                         <thead>
                           <tr className="bg-muted/60">
                             <th className="p-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border min-w-[150px] sticky left-0 bg-muted/80 z-10">
-                              {t('maintenance.labels.space')}
+                              {isVehicleCategory ? t('maintenance.labels.vehicle') : t('maintenance.labels.space')}
                             </th>
                             {items.map(itemName => (
                               <th
@@ -146,63 +158,105 @@ export function RequisitionsCreateManutencaoForm({
                           </tr>
                         </thead>
                         <tbody>
-                          {Object.keys(spaces).sort().map((spaceName) => (
-                            <tr
-                              key={spaceName}
-                              className="group border-b border-border/50 last:border-0"
-                            >
-                              <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
-                                {spaceName}
-                              </td>
-                              {items.map(itemName => {
-                                const item = spaces[spaceName][itemName];
-                                if (!item) return (
-                                  <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
-                                );
+                          {isVehicleCategory ? (
+                            // SPECIAL GRID FOR VEHICLES: Rows = Transportes, Columns = Items
+                            transportes.map((transporte) => (
+                              <tr key={transporte.id} className="group border-b border-border/50 last:border-0">
+                                <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
+                                  {formatVehicleTitle(transporte)}
+                                </td>
+                                {items.map(itemName => {
+                                  // For vehicles, we use any available space (e.g. 'Geral') but map it to this vehicle
+                                  const item = Object.values(spaces)[0]?.[itemName];
+                                  if (!item) return (
+                                    <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
+                                  );
 
-                                const isSelected = selectedManutencaoItemIds.includes(item.id);
+                                  const selected = isSelected(item.id, transporte.id);
 
-                                return (
-                                  <td
-                                    key={itemName}
-                                    onClick={() => onToggleItem(item.id, !isSelected)}
-                                    className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
-                                    style={{
-                                      backgroundColor: isSelected
-                                        ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
-                                        : undefined,
-                                    }}
-                                    title={isSelected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
-                                  >
-                                    <div
-                                      className="flex items-center justify-center h-full w-full py-3 transition-colors duration-150"
+                                  return (
+                                    <td
+                                      key={itemName}
+                                      onClick={() => onToggleItem(item.id, !selected, transporte.id)}
+                                      className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
                                       style={{
-                                        backgroundColor: 'transparent',
+                                        backgroundColor: selected
+                                          ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                                          : undefined,
                                       }}
+                                      title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
                                     >
-                                      {isSelected ? (
-                                        <div
-                                          className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm"
-                                          style={{
-                                            backgroundColor: 'var(--primary)',
-                                          }}
-                                        >
-                                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                          </svg>
-                                        </div>
-                                      ) : (
-                                        <div
-                                          className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40"
-                                          style={{ borderColor: 'var(--border)' }}
-                                        />
-                                      )}
-                                    </div>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
+                                      <div className="flex items-center justify-center h-full w-full py-3">
+                                        {selected ? (
+                                          <div className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
+                                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          </div>
+                                        ) : (
+                                          <div className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40" style={{ borderColor: 'var(--border)' }} />
+                                        )}
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))
+                          ) : (
+                            // STANDARD TABLE: Rows = Spaces, Columns = Items
+                            Object.keys(spaces).sort().map((spaceName) => (
+                              <tr
+                                key={spaceName}
+                                className="group border-b border-border/50 last:border-0"
+                              >
+                                <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
+                                  {spaceName}
+                                </td>
+                                {items.map(itemName => {
+                                  const item = spaces[spaceName][itemName];
+                                  if (!item) return (
+                                    <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
+                                  );
+
+                                  const selected = isSelected(item.id);
+
+                                  return (
+                                    <td
+                                      key={itemName}
+                                      onClick={() => onToggleItem(item.id, !selected)}
+                                      className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
+                                      style={{
+                                        backgroundColor: selected
+                                          ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                                          : undefined,
+                                      }}
+                                      title={selected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
+                                    >
+                                      <div className="flex items-center justify-center h-full w-full py-3">
+                                        {selected ? (
+                                          <div
+                                            className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm"
+                                            style={{
+                                              backgroundColor: 'var(--primary)',
+                                            }}
+                                          >
+                                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          </div>
+                                        ) : (
+                                          <div
+                                            className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40"
+                                            style={{ borderColor: 'var(--border)' }}
+                                          />
+                                        )}
+                                      </div>
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -248,7 +302,7 @@ export function RequisitionsCreateManutencaoForm({
 
       {/* Selection Summary Panel */}
       <AnimatePresence>
-        {selectedManutencaoItemIds.length > 0 && (
+        {selectedManutencaoItems.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -267,7 +321,7 @@ export function RequisitionsCreateManutencaoForm({
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
                 <span className="text-sm font-bold" style={{ color: 'var(--primary)' }}>
-                  {selectedManutencaoItemIds.length} {t('maintenance.labels.selectedItems', { count: selectedManutencaoItemIds.length })}
+                  {selectedManutencaoItems.length} {t('maintenance.labels.selectedItems', { count: selectedManutencaoItems.length })}
                 </span>
               </div>
               <button
@@ -288,17 +342,22 @@ export function RequisitionsCreateManutencaoForm({
             {/* Items grouped by category */}
             <div className="p-4 space-y-4">
               {sortedCategories.map(category => {
-                const { spaces } = groupedData[category];
+                const isVehicleCategory = category === 'VEICULOS';
                 const categoryLabel = MANUTENCAO_CATEGORIA_DISPLAY_LABELS[category as ManutencaoCategoria] ?? category;
 
                 // Collect all selected items for this category
-                const selectedInCategory: { item: ManutencaoItem; spaceName: string }[] = [];
-                Object.entries(spaces).forEach(([spaceName, itemMap]) => {
-                  Object.values(itemMap).forEach(item => {
-                    if (selectedManutencaoItemIds.includes(item.id)) {
-                      selectedInCategory.push({ item, spaceName });
+                const selectedInCategory: Array<{ item: ManutencaoItem; subLabel: string; transporteId?: number }> = [];
+                
+                selectedManutencaoItems.forEach(selection => {
+                  const item = manutencaoItems.find(i => i.id === selection.itemId);
+                  if (item?.categoria === category) {
+                    let subLabel = item.espaco;
+                    if (isVehicleCategory && selection.transporteId) {
+                      const tpt = transportes.find(t => t.id === selection.transporteId);
+                      subLabel = tpt?.matricula || t('maintenance.labels.vehicle');
                     }
-                  });
+                    selectedInCategory.push({ item, subLabel, transporteId: selection.transporteId });
+                  }
                 });
 
                 if (selectedInCategory.length === 0) return null;
@@ -309,9 +368,9 @@ export function RequisitionsCreateManutencaoForm({
                       {categoryLabel} · {selectedInCategory.length}
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {selectedInCategory.map(({ item, spaceName }) => (
+                      {selectedInCategory.map(({ item, subLabel, transporteId }) => (
                         <div
-                          key={item.id}
+                          key={`${item.id}-${transporteId || 'no-tpt'}`}
                           className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium"
                           style={{
                             borderColor: 'color-mix(in srgb, var(--primary) 25%, transparent)',
@@ -319,12 +378,12 @@ export function RequisitionsCreateManutencaoForm({
                             color: 'var(--foreground)',
                           }}
                         >
-                          <span className="text-muted-foreground">{spaceName}</span>
+                          <span className="text-muted-foreground">{subLabel}</span>
                           <span className="text-muted-foreground">·</span>
                           <span style={{ color: 'var(--primary)' }}>{item.itemVerificacao}</span>
                           <button
                             type="button"
-                            onClick={() => onToggleItem(item.id, false)}
+                            onClick={() => onToggleItem(item.id, false, transporteId)}
                             className="ml-1 rounded-full w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
                             title={`Remover ${item.itemVerificacao}`}
                           >

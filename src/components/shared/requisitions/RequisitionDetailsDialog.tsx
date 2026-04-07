@@ -98,9 +98,14 @@ export function RequisitionDetailsDialog({
         itens: [],
       };
 
+      const vehicleInfo = item.transporte?.matricula ? ` [${item.transporte.matricula}]` : '';
+      const space = item.manutencaoItem.categoria === 'VEICULOS' || !item.manutencaoItem.espaco
+        ? ''
+        : `${item.manutencaoItem.espaco} - `;
+
       grupoAtual.itens.push({
         id: `${item.id ?? 'sem-id'}-${item.manutencaoItem.id}`,
-        label: `${item.manutencaoItem.espaco ?? '—'} - ${item.manutencaoItem.itemVerificacao ?? '—'}`,
+        label: `${space}${item.manutencaoItem.itemVerificacao}${vehicleInfo}`,
       });
 
       // Observacao e comum a categoria. Guarda apenas uma vez.

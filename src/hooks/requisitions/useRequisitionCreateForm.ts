@@ -28,7 +28,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
 
   // Maintenance-specific state
-  const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
+  const [selectedManutencaoItems, setSelectedManutencaoItems] = useState<Array<{ itemId: number; transporteId?: number }>>([]);
   const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
   const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
 
@@ -63,7 +63,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
-    setSelectedManutencaoItemIds([]);
+    setSelectedManutencaoItems([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
     setCreateTouched({});
@@ -107,7 +107,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       numeroPassageiros !== '' ||
       condutorTransporte !== '' ||
       selectedTransportIds.length > 0 ||
-      selectedManutencaoItemIds.length > 0 ||
+      selectedManutencaoItems.length > 0 ||
       Object.keys(manutencaoObservacoesPorCategoria).length > 0
     );
   }, [
@@ -125,7 +125,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     numeroPassageiros,
     condutorTransporte,
     selectedTransportIds,
-    selectedManutencaoItemIds,
+    selectedManutencaoItems,
     manutencaoObservacoesPorCategoria,
   ]);
 
@@ -172,8 +172,8 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     transportSelectionMode,
     setTransportSelectionMode,
     // Maintenance state
-    selectedManutencaoItemIds,
-    setSelectedManutencaoItemIds,
+    selectedManutencaoItems,
+    setSelectedManutencaoItems,
     expandedManutencaoCategorias,
     setExpandedManutencaoCategorias,
     manutencaoObservacoesPorCategoria,
@@ -201,10 +201,16 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
         [categoria]: !prev[categoria]
       }));
     },
-    toggleManutencaoItem: (itemId: number, checked: boolean) => {
-      setSelectedManutencaoItemIds(prev =>
-        checked ? [...prev, itemId] : prev.filter(id => id !== itemId)
-      );
+    toggleManutencaoItem: (itemId: number, checked: boolean, transporteId?: number) => {
+      setSelectedManutencaoItems(prev => {
+        if (checked) {
+          // Check if already exists to avoid duplicates
+          const alreadyExists = prev.some(i => i.itemId === itemId && i.transporteId === transporteId);
+          if (alreadyExists) return prev;
+          return [...prev, { itemId, transporteId }];
+        }
+        return prev.filter(i => !(i.itemId === itemId && i.transporteId === transporteId));
+      });
     },
     updateManutencaoObservacaoCategoria: (categoria: string, observation: string) => {
       setManutencaoObservacoesPorCategoria(prev => ({
@@ -213,7 +219,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       }));
     },
     onClearSelection: () => {
-      setSelectedManutencaoItemIds([]);
+      setSelectedManutencaoItems([]);
     },
   };
 }

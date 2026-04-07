@@ -817,12 +817,13 @@ export function SharedRequisitionsPage({
           transporteIds: createForm.selectedTransportIds.map(Number),
         });
       } else {
-        const manutencaoItensPayload = createForm.selectedManutencaoItemIds.map((itemId) => {
+        const manutencaoItensPayload = createForm.selectedManutencaoItems.map(({ itemId, transporteId }) => {
           const item = catalog.manutencaoItems.find((m) => m.id === itemId);
           // Usar a categoria do item para buscar a observação correta no estado do formulário
           const categoria = item?.categoria || '';
           return {
             itemId,
+            transporteId,
             observacoes: createForm.manutencaoObservacoesPorCategoria[categoria] || undefined,
           };
         });
@@ -1435,7 +1436,8 @@ export function SharedRequisitionsPage({
             <div className="space-y-4">
               <RequisitionsCreateManutencaoForm
                 manutencaoItems={catalog.manutencaoItems}
-                selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
+                transportes={catalog.transportes}
+                selectedManutencaoItems={createForm.selectedManutencaoItems}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
                 onToggleItem={createForm.toggleManutencaoItem}
                 onUpdateObservacaoCategoria={createForm.updateManutencaoObservacaoCategoria}
