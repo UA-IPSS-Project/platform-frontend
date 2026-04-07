@@ -158,6 +158,11 @@ export function BalnearioAppointmentDetailsDialog({
     };
 
     const handleSaveDetails = async () => {
+        if (selectedOptions['Sapatos/Sapatilhas'] && !shoeSize) {
+            toast.error('O tamanho dos Sapatos/Sapatilhas é obrigatório.');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const hasHygiene = HYGIENE_OPTIONS.some(opt => selectedOptions[opt.value]);
