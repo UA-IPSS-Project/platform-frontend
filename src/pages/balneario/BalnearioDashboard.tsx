@@ -15,6 +15,7 @@ import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleD
 import { BalnearioAppointmentDialog } from '../../components/balneario/BalnearioAppointmentDialog';
 import { BalnearioAppointmentDetailsDialog } from '../../components/balneario/BalnearioAppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
+import { Loader2 } from 'lucide-react';
 import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
@@ -27,6 +28,9 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
+import { BalnearioCharts } from '../../components/balneario/BalnearioCharts';
+import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -118,6 +122,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+    const [showQuickAttendance, setShowQuickAttendance] = useState(false);
+    const [statsData, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [loadingStats, setLoadingStats] = useState(false);
 
     const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
         setProfileIsDirty(isDirty);
@@ -182,8 +189,21 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         }
     };
 
+    const carregarEstatisticas = async () => {
+        setLoadingStats(true);
+        try {
+            const data = await armazemApi.obterEstatisticas('MES');
+            setStatsData(data);
+        } catch {
+            toast.error('Erro ao carregar estatísticas');
+        } finally {
+            setLoadingStats(false);
+        }
+    };
+
     useEffect(() => {
         if (currentView === 'history') carregarHistorico();
+        if (currentView === 'reports') carregarEstatisticas();
     }, [currentView, historyStartDate, historyEndDate]);
 
     useEffect(() => {
@@ -349,6 +369,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
+                                onQuickAttendance={() => setShowQuickAttendance(true)}
                             />
                         ) : currentView === 'appointments' ? (
                             <>
@@ -463,6 +484,16 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             />
                         ) : currentView === 'consumos' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} />
+                        ) : currentView === 'reports' ? (
+                            <div className="max-w-[1200px] mx-auto">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Relatórios e Estatísticas</h1>
+                                    <Button variant="outline" onClick={carregarEstatisticas} disabled={loadingStats}>
+                                        {loadingStats ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar'}
+                                    </Button>
+                                </div>
+                                <BalnearioCharts isDarkMode={isDarkMode} stats={statsData} />
+                            </div>
                         ) : (
                             renderPlaceholder(currentView)
                         )}
@@ -556,6 +587,19 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {showQuickAttendance && authUser?.id && (
+                <QuickAttendanceModal
+                    isOpen={showQuickAttendance}
+                    onClose={() => setShowQuickAttendance(false)}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        if (currentView === 'reports') carregarEstatisticas();
+                    }}
+                    funcionarioId={authUser.id}
+                    isDarkMode={isDarkMode}
+                />
+            )}
         </>
     );
 }
