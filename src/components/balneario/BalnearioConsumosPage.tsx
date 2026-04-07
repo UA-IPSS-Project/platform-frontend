@@ -22,21 +22,18 @@ import { BalnearioCharts } from './BalnearioCharts';
 
 interface BalnearioConsumosPageProps {
     isDarkMode: boolean;
+    variant?: 'armazem' | 'estatisticas';
 }
 
 type TabType = 'armazem' | 'estatisticas';
 
-export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioConsumosPageProps) {
+export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'armazem' }: BalnearioConsumosPageProps) {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<TabType>('armazem');
     const [items, setItems] = useState<ItemArmazemDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingItems, setEditingItems] = useState<Record<number, { quantidade: number; quantidadeMinima: number }>>({});
     const [savingItems, setSavingItems] = useState<Set<number>>(new Set());
     const [editingMinimos, setEditingMinimos] = useState(false);
-
-    // Unsaved changes warning
-    const [pendingTab, setPendingTab] = useState<TabType | null>(null);
 
     // Estatísticas
     const [stats, setStats] = useState<ConsumoEstatisticaDTO | null>(null);
@@ -74,15 +71,17 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         }
     }, [statsPeriodo, t]);
 
+    const actualTab = variant; // Using the passed variant directly
+
     useEffect(() => {
         carregarItens();
     }, [carregarItens]);
 
     useEffect(() => {
-        if (activeTab === 'estatisticas') {
+        if (actualTab === 'estatisticas') {
             carregarEstatisticas();
         }
-    }, [activeTab, carregarEstatisticas]);
+    }, [actualTab, carregarEstatisticas]);
 
     // Global unsaved changes warning (for browser reload/close)
     useEffect(() => {
@@ -169,25 +168,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (changedItems.length === 0) return;
         for (const item of changedItems) {
             await handleSaveItem(item);
-        }
-    };
-
-    // Tab switching with unsaved changes warning
-    const handleTabSwitch = (newTab: TabType) => {
-        if (newTab === activeTab) return;
-        if (activeTab === 'armazem' && (anyChanges || editingMinimos)) {
-            setPendingTab(newTab);
-        } else {
-            setActiveTab(newTab);
-        }
-    };
-
-    const confirmTabSwitch = () => {
-        if (pendingTab) {
-            setEditingItems({});
-            setEditingMinimos(false);
-            setActiveTab(pendingTab);
-            setPendingTab(null);
         }
     };
 
@@ -540,37 +520,78 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                     ))}
                 </div>{/* Period selector */}
 
-                {/* Presenças Summary */}
-                {attendanceStats && (
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('stats.totalAppointments', 'Total Marcações')}</p>
-                            <p className="text-3xl font-bold text-foreground mt-1">{attendanceStats.totalMarcacoes}</p>
-                        </div>
-                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-success)]">{t('stats.attended', 'Compareceu')}</p>
-                            <p className="text-3xl font-bold text-[color:var(--status-success)] mt-1">{attendanceStats.totalPresencas}</p>
-                        </div>
-                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-error)]">{t('stats.missed', 'Faltou')}</p>
-                            <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltou}</p>
-                        </div>
+                <div className="flex flex-col gap-8 mb-8">
+                    {/* DIV PRESENÇAS */}
+                    <div className="bg-card/50 rounded-2xl p-6 border border-border shadow-sm">
+                        <h2 className="text-2xl font-bold mb-6 text-foreground">Estatísticas de Presenças</h2>
+                        {/* Presenças Summary */}
+                        {attendanceStats && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('stats.totalAppointments', 'Marcações')}</p>
+                                    <p className="text-3xl font-bold text-foreground mt-1">{attendanceStats.totalMarcacoes}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-success)]">{t('stats.attended', 'Compareceu')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-success)] mt-1">{attendanceStats.totalPresencas}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-error)]">{t('stats.missed', 'Faltou')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltou}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-warning)]">{t('stats.invalid', 'Inválido')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-warning)] mt-1">0</p>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* BalnearioCharts for Presenças */}
+                        {attendanceStats && (
+                            <BalnearioCharts 
+                                isDarkMode={_isDarkMode} 
+                                data={[
+                                    { name: 'Compareceu', value: attendanceStats.totalPresencas },
+                                    { name: 'Faltou', value: attendanceStats.totalFaltou },
+                                    { name: 'Inválido', value: 0 }
+                                ]}
+                                barChartTitle="Comparação de Estados"
+                                pieChartTitle="Distribuição de Estados"
+                                customColors={['var(--status-success)', 'var(--status-error)', 'var(--status-warning)']}
+                            />
+                        )}
                     </div>
-                )}
 
-                {/* Summary cards */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                    {/* DIV CONSUMOS */}
+                    <div className="bg-card/50 rounded-2xl p-6 border border-border shadow-sm">
+                        <h2 className="text-2xl font-bold mb-6 text-foreground">Estatísticas de Consumos</h2>
+                        {/* Summary cards consumos */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
                                 <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
                                 <p className="text-3xl font-bold text-primary mt-1">{stats.totalGeral}</p>
                             </div>
-                            {Object.entries(catTotals).map(([cat, total]) => (
-                                <div key={cat} className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Categorias Ativas</p>
+                                <p className="text-3xl font-bold text-foreground mt-1">{Object.keys(stats.totaisPorCategoria).length}</p>
+                            </div>
+                            {Object.entries(catTotals).slice(0, 2).map(([cat, total]) => (
+                                <div key={cat} className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
                                     <p className="text-xs text-muted-foreground uppercase tracking-wider">{catLabels[cat] || cat}</p>
                                     <p className="text-3xl font-bold text-foreground mt-1">{total}</p>
                                 </div>
                             ))}
                         </div>
+
+                        {/* BalnearioCharts for Consumos */}
+                        {stats && (
+                            <BalnearioCharts 
+                                isDarkMode={_isDarkMode} 
+                                data={Object.entries(stats.totaisPorCategoria).map(([name, value]) => ({ name: catLabels[name] || name, value }))}
+                                barChartTitle="Consumo por Categoria"
+                                pieChartTitle="Distribuição de Itens"
+                            />
+                        )}
 
                         {/* Modular Category Bar Charts */}
                         {Object.entries(statsByCategory).length === 0 ? (
@@ -644,12 +665,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 })}
                             </div>
                         )}
+                    </div>
+                </div>
 
                 {/* Additional Charts */}
-                <div className="mt-8">
-                    <h3 className="text-xl font-bold text-foreground mb-4">{t('stats.advancedCharts', 'Gráficos Detalhados')}</h3>
-                    <BalnearioCharts isDarkMode={_isDarkMode} stats={stats} />
-                </div>
             </div>
         );
     };
@@ -660,37 +679,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            {/* Header with Tabs */}
-            <div className="flex justify-start mb-8">
-                <div className="flex bg-muted rounded-xl p-1.5 w-[350px]">
-                    <button
-                        onClick={() => handleTabSwitch('armazem')}
-                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
-                            activeTab === 'armazem'
-                                ? 'bg-card text-primary shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('consumos.warehouse', 'Armazém')}
-                    </button>
-                    <button
-                        onClick={() => handleTabSwitch('estatisticas')}
-                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
-                            activeTab === 'estatisticas'
-                                ? 'bg-card text-primary shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                    >
-                        {t('consumos.statistics', 'Estatísticas')}
-                    </button>
-                </div>
-            </div>
-
             {/* Tab Content */}
-            {activeTab === 'armazem' ? renderArmazem() : renderEstatisticas()}
+            {actualTab === 'armazem' ? renderArmazem() : renderEstatisticas()}
 
             {/* Unsaved changes warning dialog */}
-            <AlertDialog open={pendingTab !== null} onOpenChange={() => setPendingTab(null)}>
+            <AlertDialog open={false}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('consumos.unsavedTitle', 'Modificações por guardar')}</AlertDialogTitle>
@@ -699,10 +692,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setPendingTab(null)}>
+                        <AlertDialogCancel>
                             {t('profile.unsaved.stay', 'Ficar')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-destructive hover:bg-destructive/90 text-white">
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 text-white">
                             {t('profile.unsaved.discard', 'Descartar')}
                         </AlertDialogAction>
                     </AlertDialogFooter>

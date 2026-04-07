@@ -300,13 +300,16 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 {t('sidebar.appointments')}
             </Button>
 
-            <Button
-                variant={currentView === 'consumos' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('consumos')}
-                className={`text-sm ${currentView === 'consumos' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
-            >
-                {t('sidebar.consumption')}
-            </Button>
+            <NavDropdown
+                label={t('sidebar.consumption')}
+                items={[
+                    { id: 'consumos', label: 'Armazém' },
+                    { id: 'estatisticas', label: 'Estatísticas' },
+                ]}
+                isActive={['consumos', 'estatisticas'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('consumos')}
+            />
 
             <NavDropdown
                 label={t('sidebar.requisitions')}
@@ -481,8 +484,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
                                 onDirtyChange={handleRequisitionsDirtyChange}
                             />
-                        ) : currentView === 'consumos' ? (
-                            <BalnearioConsumosPage isDarkMode={isDarkMode} />
+                        ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
+                            <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
                         ) : currentView === 'reports' ? (
                             <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
                                 <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>

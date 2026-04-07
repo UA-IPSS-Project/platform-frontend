@@ -65,7 +65,7 @@
             "lighthouse": "^12.3.0",
             "puppeteer": "^24.39.1",
             "tailwindcss": "^4.1.18",
-            "vite": "6.3.5"
+            "vite": "^6.4.2"
       },
       "scripts": {
             "dev": "vite",

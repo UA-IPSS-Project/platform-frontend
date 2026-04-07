@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     BarChart,
     Bar,
@@ -16,25 +15,18 @@ import { GlassCard } from '../ui/glass-card';
 
 interface BalnearioChartsProps {
     isDarkMode: boolean;
-    stats: {
-        periodo: string;
-        totalGeral: number;
-        totaisPorCategoria: Record<string, number>;
-        itens: Array<{
-            categoria: string;
-            nome: string;
-            quantidade: number;
-            data: string;
-        }>;
-    } | null;
+    data: { name: string; value: number }[];
+    barChartTitle: string;
+    pieChartTitle: string;
+    customColors?: string[];
 }
 
-export function BalnearioCharts({ isDarkMode, stats }: BalnearioChartsProps) {
+export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle, customColors }: BalnearioChartsProps) {
     const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
     const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
     const borderClass = isDarkMode ? 'border-gray-800' : 'border-gray-100';
 
-    if (!stats) {
+    if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
                 <p className={textSecondaryClass}>A carregar estatísticas...</p>
@@ -42,25 +34,20 @@ export function BalnearioCharts({ isDarkMode, stats }: BalnearioChartsProps) {
         );
     }
 
-    // Preparar dados para o gráfico de barras (Consumo por Categoria)
-    const categoryData = Object.entries(stats.totaisPorCategoria).map(([name, value]) => ({
-        name,
-        value
-    }));
-
     // Cores para os gráficos
-    const COLORS = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444'];
+    const defaultColors = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
+    const COLORS = customColors || defaultColors;
 
     return (
         <div className="space-y-6">
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Bar Chart: Consumption by Category */}
+                {/* Bar Chart */}
                 <GlassCard className="p-6">
-                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>Consumo por Categoria</h3>
+                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>{barChartTitle}</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={categoryData}>
+                            <BarChart data={data}>
                                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} vertical={false} />
                                 <XAxis 
                                     dataKey="name" 
@@ -84,7 +71,7 @@ export function BalnearioCharts({ isDarkMode, stats }: BalnearioChartsProps) {
                                     }}
                                 />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {categoryData.map((entry, index) => (
+                                    {data.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Bar>
@@ -93,14 +80,14 @@ export function BalnearioCharts({ isDarkMode, stats }: BalnearioChartsProps) {
                     </div>
                 </GlassCard>
 
-                {/* Pie Chart: Distribution */}
+                {/* Pie Chart */}
                 <GlassCard className="p-6">
-                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>Distribuição de Itens</h3>
+                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>{pieChartTitle}</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
-                                    data={categoryData}
+                                    data={data}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
@@ -108,7 +95,7 @@ export function BalnearioCharts({ isDarkMode, stats }: BalnearioChartsProps) {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {categoryData.map((entry, index) => (
+                                    {data.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
