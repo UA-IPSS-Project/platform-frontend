@@ -788,7 +788,6 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        criadoPorId: currentUserId,
       };
 
       if (createForm.tipo === 'MATERIAL') {

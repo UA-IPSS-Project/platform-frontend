@@ -130,7 +130,6 @@ export interface RequisicaoFilters {
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
-  criadoPorId: number;
   geridoPorId?: number;
 }
 
