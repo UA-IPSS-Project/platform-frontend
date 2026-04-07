@@ -29,7 +29,6 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
-import { BalnearioCharts } from '../../components/balneario/BalnearioCharts';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
@@ -485,14 +484,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                         ) : currentView === 'consumos' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} />
                         ) : currentView === 'reports' ? (
-                            <div className="max-w-[1200px] mx-auto">
-                                <div className="flex items-center justify-between mb-8">
-                                    <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Relatórios e Estatísticas</h1>
-                                    <Button variant="outline" onClick={carregarEstatisticas} disabled={loadingStats}>
-                                        {loadingStats ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Atualizar'}
-                                    </Button>
-                                </div>
-                                <BalnearioCharts isDarkMode={isDarkMode} stats={statsData} />
+                            <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
+                                <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
                             </div>
                         ) : (
                             renderPlaceholder(currentView)

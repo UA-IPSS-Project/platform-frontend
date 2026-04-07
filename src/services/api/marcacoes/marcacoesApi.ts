@@ -2,7 +2,8 @@ import { apiRequest, Page } from '../core/client';
 import {
     MarcacaoPresencialRequest,
     MarcacaoRemotaRequest,
-    MarcacaoResponse
+    MarcacaoResponse,
+    BalnearioAttendanceStats
 } from './types';
 
 export const marcacoesApi = {
@@ -149,5 +150,11 @@ export const marcacoesApi = {
         apiRequest<MarcacaoResponse>('/api/marcacoes/balneario/presenca-rapida', {
             method: 'POST',
             body: JSON.stringify(data),
+        }),
+
+    // Obter presenças e estatísticas do balneário
+    obterEstatisticasFrequenciaBalneario: (periodo: 'DIA' | 'SEMANA' | 'MES' = 'MES') =>
+        apiRequest<BalnearioAttendanceStats>(`/api/marcacoes/balneario/estatisticas?periodo=${periodo}`, {
+            method: 'GET',
         }),
 };

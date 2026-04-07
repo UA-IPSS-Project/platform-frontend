@@ -16,7 +16,9 @@ import {
     AlertDialogAction,
 } from '../ui/alert-dialog';
 import { armazemApi, ItemArmazemDTO, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
+import { marcacoesApi } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BalnearioCharts } from './BalnearioCharts';
 
 interface BalnearioConsumosPageProps {
     isDarkMode: boolean;
@@ -38,6 +40,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     // Estatísticas
     const [stats, setStats] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [attendanceStats, setAttendanceStats] = useState<any>(null);
     const [statsPeriodo, setStatsPeriodo] = useState<'DIA' | 'SEMANA' | 'MES'>('MES');
     const [statsLoading, setStatsLoading] = useState(false);
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -57,9 +60,14 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     const carregarEstatisticas = useCallback(async () => {
         try {
             setStatsLoading(true);
-            const data = await armazemApi.obterEstatisticas(statsPeriodo);
+            const [data, attendanceData] = await Promise.all([
+                armazemApi.obterEstatisticas(statsPeriodo),
+                marcacoesApi.obterEstatisticasFrequenciaBalneario(statsPeriodo)
+            ]);
             setStats(data);
-        } catch {
+            setAttendanceStats(attendanceData);
+        } catch (e) {
+            console.error(e);
             toast.error(t('consumos.statsError', 'Erro ao carregar estatísticas'));
         } finally {
             setStatsLoading(false);
@@ -530,7 +538,25 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             {periodo === 'DIA' ? t('consumos.day', 'Hoje') : periodo === 'SEMANA' ? t('consumos.week', 'Semana') : t('consumos.month', 'Mês')}
                         </Button>
                     ))}
-                </div>
+                </div>{/* Period selector */}
+
+                {/* Presenças Summary */}
+                {attendanceStats && (
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('stats.totalAppointments', 'Total Marcações')}</p>
+                            <p className="text-3xl font-bold text-foreground mt-1">{attendanceStats.totalMarcacoes}</p>
+                        </div>
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-success)]">{t('stats.attended', 'Compareceu')}</p>
+                            <p className="text-3xl font-bold text-[color:var(--status-success)] mt-1">{attendanceStats.totalPresencas}</p>
+                        </div>
+                        <div className="bg-card rounded-xl border border-border p-4 shadow-sm">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-error)]">{t('stats.missed', 'Faltou')}</p>
+                            <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltou}</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Summary cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -618,6 +644,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 })}
                             </div>
                         )}
+
+                {/* Additional Charts */}
+                <div className="mt-8">
+                    <h3 className="text-xl font-bold text-foreground mb-4">{t('stats.advancedCharts', 'Gráficos Detalhados')}</h3>
+                    <BalnearioCharts isDarkMode={_isDarkMode} stats={stats} />
+                </div>
             </div>
         );
     };
