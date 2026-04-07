@@ -321,7 +321,7 @@ export function RequisitionsCreateManutencaoForm({
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'var(--primary)' }} />
                 <span className="text-sm font-bold" style={{ color: 'var(--primary)' }}>
-                  {selectedManutencaoItems.length} {t('maintenance.labels.selectedItems', { count: selectedManutencaoItems.length })}
+                  {t('maintenance.labels.selectedItems', { count: selectedManutencaoItems.length })}
                 </span>
               </div>
               <button
