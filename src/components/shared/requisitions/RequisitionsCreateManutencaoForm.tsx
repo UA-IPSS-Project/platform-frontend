@@ -6,7 +6,6 @@ import {
   MANUTENCAO_CATEGORIA_DISPLAY_LABELS,
 } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Checkbox } from '../../ui/checkbox';
 
 interface RequisitionsCreateManutencaoFormProps {
   manutencaoItems: ManutencaoItem[];
@@ -150,29 +149,54 @@ export function RequisitionsCreateManutencaoForm({
                           {Object.keys(spaces).sort().map((spaceName) => (
                             <tr
                               key={spaceName}
-                              className="group border-b border-border/50 last:border-0 transition-colors hover:bg-[color:var(--status-info-soft)]/40"
+                              className="group border-b border-border/50 last:border-0"
                             >
-                              <td className="p-3 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30">
+                              <td className="px-3 py-2.5 text-sm font-medium text-foreground group-hover:text-[color:var(--primary)] transition-colors sticky left-0 bg-card z-10 border-r border-border/30 whitespace-nowrap">
                                 {spaceName}
                               </td>
                               {items.map(itemName => {
                                 const item = spaces[spaceName][itemName];
                                 if (!item) return (
-                                  <td key={itemName} className="p-3 text-center text-muted-foreground/20 select-none cursor-default">
-                                    <span>—</span>
-                                  </td>
+                                  <td key={itemName} className="border-r border-border/20 last:border-r-0 bg-muted/20 select-none" />
                                 );
 
                                 const isSelected = selectedManutencaoItemIds.includes(item.id);
 
                                 return (
-                                  <td key={itemName} className="p-3 text-center">
-                                    <div className="flex justify-center items-center">
-                                      <Checkbox
-                                        id={`item-${item.id}`}
-                                        checked={isSelected}
-                                        onCheckedChange={(checked) => onToggleItem(item.id, checked as boolean)}
-                                      />
+                                  <td
+                                    key={itemName}
+                                    onClick={() => onToggleItem(item.id, !isSelected)}
+                                    className="border-r border-border/20 last:border-r-0 cursor-pointer select-none transition-all duration-150"
+                                    style={{
+                                      backgroundColor: isSelected
+                                        ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                                        : undefined,
+                                    }}
+                                    title={isSelected ? `Desselecionar: ${itemName}` : `Selecionar: ${itemName}`}
+                                  >
+                                    <div
+                                      className="flex items-center justify-center h-full w-full py-3 transition-colors duration-150"
+                                      style={{
+                                        backgroundColor: 'transparent',
+                                      }}
+                                    >
+                                      {isSelected ? (
+                                        <div
+                                          className="w-6 h-6 rounded-md flex items-center justify-center shadow-sm"
+                                          style={{
+                                            backgroundColor: 'var(--primary)',
+                                          }}
+                                        >
+                                          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className="w-6 h-6 rounded-md border-2 transition-all duration-150 group-hover:border-[color:var(--primary)]/40"
+                                          style={{ borderColor: 'var(--border)' }}
+                                        />
+                                      )}
                                     </div>
                                   </td>
                                 );
