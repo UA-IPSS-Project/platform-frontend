@@ -1,4 +1,5 @@
 import { parseDateInput } from '../../components/ui/date-picker-field';
+import i18n from '../../i18n';
 
 export const MATERIAL_QUANTITY_MIN = 1;
 export const MATERIAL_QUANTITY_MAX = 200;
@@ -29,22 +30,45 @@ export const finalizeMaterialQuantity = (value: string): string => {
  * Common Requisition Field Validations
  */
 export const validateDescricao = (valor: string): string | undefined => {
-  if (!valor.trim()) return 'A descrição é obrigatória.';
+  if (!valor.trim()) return i18n.t('requisitions.errors.requiredField', { defaultValue: 'Campo obrigatório' });
   if (valor.length < 5) return 'A descrição deve ter pelo menos 5 caracteres.';
   return undefined;
 };
 
 export const validateMaterialLinhas = (linhas: Array<{ materialId: string; quantidade: string }>): string | undefined => {
-  if (linhas.length === 0) return 'Selecione pelo menos um material.';
+  if (linhas.length === 0) return i18n.t('requisitions.errors.addOneMaterial', { defaultValue: 'Selecione pelo menos um material.' });
+  return undefined;
+};
+
+export const validateManutencaoItens = (selectedIds: number[]): string | undefined => {
+  if (selectedIds.length === 0) return i18n.t('requisitions.errors.addOneMaintenanceItem');
   return undefined;
 };
 
 export const validateTransporteDestino = (_valor: string): string | undefined => {
-  return undefined; // Destination is now optional
+  return undefined; // Destination is optional
+};
+
+export const validateCondutor = (condutor: string): string | undefined => {
+  if (!condutor.trim()) return i18n.t('requisitions.errors.requiredField');
+  return undefined;
+};
+
+export const validateNumeroPassageiros = (valor: string | number): string | undefined => {
+  const valStr = String(valor).trim();
+  if (!valStr && valStr !== '0') return i18n.t('requisitions.errors.requiredField');
+  const num = Number(valStr);
+  if (isNaN(num) || num < 0) return i18n.t('requisitions.errors.invalidPassengers');
+  return undefined;
+};
+
+export const validateTransporteIds = (selectedIds: string[]): string | undefined => {
+  if (selectedIds.length === 0) return i18n.t('requisitions.errors.selectOneVehicle');
+  return undefined;
 };
 
 /**
- * Date/Time Utils moved for central validation logic
+ * Date/Time Utils
  */
 export const isDateInPast = (dateInput?: string): boolean => {
   const parsed = parseDateInput(dateInput);
@@ -52,6 +76,12 @@ export const isDateInPast = (dateInput?: string): boolean => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return parsed < today;
+};
+
+export const validateDataPassada = (dataInput?: string): string | undefined => {
+  if (!dataInput) return i18n.t('requisitions.errors.requiredField');
+  if (isDateInPast(dataInput)) return i18n.t('requisitions.errors.dateCannotBePast');
+  return undefined;
 };
 
 export const composeDateTimeStr = (date?: string, time?: string): string | undefined => {
@@ -64,4 +94,14 @@ export const composeDateTimeStr = (date?: string, time?: string): string | undef
 
   const normalized = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate(), hours, minutes, 0, 0);
   return normalized.toISOString().split('.')[0].slice(0, 16); // YYYY-MM-DDTHH:mm
+};
+
+export const validateCruzamentoDatas = (dataSaida?: string, horaSaida?: string, dataRegresso?: string, horaRegresso?: string): string | undefined => {
+  const saidaStr = composeDateTimeStr(dataSaida, horaSaida);
+  const regressoStr = composeDateTimeStr(dataRegresso, horaRegresso);
+  
+  if (saidaStr && regressoStr && new Date(regressoStr) <= new Date(saidaStr)) {
+    return i18n.t('requisitions.errors.returnAfterDeparture');
+  }
+  return undefined;
 };

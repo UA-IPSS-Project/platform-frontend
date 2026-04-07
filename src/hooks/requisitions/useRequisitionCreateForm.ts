@@ -194,20 +194,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     // Actions
     resetForm,
     resetMaterialDialog,
-    validateAndSetField: (field: CreateField) => {
-      setFieldTouched(field);
-      if (field === 'descricao' && !descricao.trim()) {
-        setFieldError('descricao', 'Campo obrigatório');
-      } else if (field === 'descricao') {
-        setFieldError('descricao', undefined);
-      }
 
-      if (field === 'manutencaoItens' && selectedManutencaoItemIds.length === 0) {
-        setFieldError('manutencaoItens', 'Selecione pelo menos um item');
-      } else if (field === 'manutencaoItens') {
-        setFieldError('manutencaoItens', undefined);
-      }
-    },
     toggleManutencaoCategoriaExpansion: (categoria: string) => {
       setExpandedManutencaoCategorias(prev => ({
         ...prev,

@@ -25,9 +25,13 @@ import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitio
 import {
   validateDescricao,
   validateMaterialLinhas,
+  validateManutencaoItens,
   validateTransporteDestino,
-  isDateInPast,
-  composeDateTimeStr,
+  validateCondutor,
+  validateNumeroPassageiros,
+  validateTransporteIds,
+  validateDataPassada,
+  validateCruzamentoDatas,
 } from '../../utils/validations/requisition.validation';
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
@@ -504,10 +508,10 @@ export function SharedRequisitionsPage({
   const validateCreateField = useCallback((field: CreateField, manualValue?: string | number): string | undefined => {
     if (!createForm.tipo) return undefined;
     
-    // Descricao can be manual or from state
-    const currentDescricao = field === 'descricao' && manualValue !== undefined ? String(manualValue) : createForm.descricao;
-
-    if (field === 'descricao') return validateDescricao(currentDescricao);
+    if (field === 'descricao') {
+      const val = manualValue !== undefined ? String(manualValue) : createForm.descricao;
+      return validateDescricao(val);
+    }
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
@@ -515,53 +519,52 @@ export function SharedRequisitionsPage({
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
-      if (createForm.selectedManutencaoItemIds.length === 0) return t('requisitions.errors.addOneMaintenanceItem');
-      return undefined;
+      return validateManutencaoItens(createForm.selectedManutencaoItemIds);
     }
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino') return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
-    if (field === 'condutor') {
-      const val = manualValue !== undefined ? String(manualValue).trim() : createForm.condutorTransporte.trim();
-      if (!val) return t('requisitions.errors.requiredField');
+    if (field === 'destino') {
+      return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
     }
     
+    if (field === 'condutor') {
+      const val = manualValue !== undefined ? String(manualValue) : createForm.condutorTransporte;
+      return validateCondutor(val);
+    }
+
+    if (field === 'numeroPassageiros') {
+      const val = manualValue !== undefined ? manualValue : createForm.numeroPassageiros;
+      return validateNumeroPassageiros(val);
+    }
+
+    if (field === 'transporteIds') {
+      return validateTransporteIds(createForm.selectedTransportIds);
+    }
+
     // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    // Logic validations using helpers
-    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInPast(createForm.dataSaida)) {
-      return t('requisitions.errors.dateCannotBePast');
+    if (field === 'dataSaida' || field === 'horaSaida') {
+      const error = validateDataPassada(createForm.dataSaida);
+      if (error) return error;
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInPast(createForm.dataRegresso)) {
-      return t('requisitions.errors.dateCannotBePast');
-    }
-
-    if (field === 'numeroPassageiros') {
-      const val = String(manualValue !== undefined ? manualValue : createForm.numeroPassageiros).trim();
-      if (!val && val !== '0') return t('requisitions.errors.requiredField');
-      const num = Number(val);
-      if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
-      return undefined;
-    }
-
-    if (field === 'transporteIds' && createForm.selectedTransportIds.length === 0) {
-      return t('requisitions.errors.selectOneVehicle');
-    }
-
-    const saidaStr = composeDateTimeStr(createForm.dataSaida, createForm.horaSaida);
-    const regressoStr = composeDateTimeStr(createForm.dataRegresso, createForm.horaRegresso);
-    
-    if ((field === 'horaRegresso' || field === 'dataRegresso') && saidaStr && regressoStr) {
-      if (new Date(regressoStr) <= new Date(saidaStr)) {
-        return t('requisitions.errors.returnAfterDeparture');
+    if (field === 'dataRegresso' || field === 'horaRegresso') {
+        // Only validate if data exists. If it exists but is invalid, error it.
+      if (createForm.dataRegresso) {
+          const error = validateDataPassada(createForm.dataRegresso);
+          if (error) return error;
       }
     }
+    
+    if (field === 'horaRegresso' || field === 'dataRegresso') {
+      return validateCruzamentoDatas(createForm.dataSaida, createForm.horaSaida, createForm.dataRegresso, createForm.horaRegresso);
+    }
+
     return undefined;
   }, [createForm, t]);
 
