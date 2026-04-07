@@ -263,7 +263,6 @@ export type CreateField =
   | 'numeroPassageiros'
   | 'transporteIds'
   | 'condutor'
-  | 'assunto'
   | 'manutencaoItens';
 
 // Fields available in requisition creation form
