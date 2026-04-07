@@ -22,7 +22,7 @@ interface QuickAttendanceModalProps {
     isDarkMode: boolean;
 }
 
-export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId, isDarkMode }: QuickAttendanceModalProps) {
+export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId }: QuickAttendanceModalProps) {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         nomeUtente: '',
