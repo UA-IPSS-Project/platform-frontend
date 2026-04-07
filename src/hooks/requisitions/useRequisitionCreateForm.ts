@@ -79,6 +79,36 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setNovoMaterialValorAtributo('');
   }, []);
 
+  const toggleManutencaoCategoriaExpansion = useCallback((categoria: string) => {
+    setExpandedManutencaoCategorias(prev => ({
+      ...prev,
+      [categoria]: !prev[categoria]
+    }));
+  }, []);
+
+  const toggleManutencaoItem = useCallback((itemId: number, checked: boolean, transporteId?: number) => {
+    setSelectedManutencaoItems(prev => {
+      if (checked) {
+        // Check if already exists to avoid duplicates
+        const alreadyExists = prev.some(i => i.itemId === itemId && i.transporteId === transporteId);
+        if (alreadyExists) return prev;
+        return [...prev, { itemId, transporteId }];
+      }
+      return prev.filter(i => !(i.itemId === itemId && i.transporteId === transporteId));
+    });
+  }, []);
+
+  const updateManutencaoObservacaoCategoria = useCallback((categoria: string, observation: string) => {
+    setManutencaoObservacoesPorCategoria(prev => ({
+      ...prev,
+      [categoria]: observation
+    }));
+  }, []);
+
+  const onClearSelection = useCallback(() => {
+    setSelectedManutencaoItems([]);
+  }, []);
+
   const setFieldTouched = useCallback((field: CreateField) => {
     setCreateTouched((prev) => ({ ...prev, [field]: true }));
   }, []);
@@ -195,31 +225,9 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     resetForm,
     resetMaterialDialog,
 
-    toggleManutencaoCategoriaExpansion: (categoria: string) => {
-      setExpandedManutencaoCategorias(prev => ({
-        ...prev,
-        [categoria]: !prev[categoria]
-      }));
-    },
-    toggleManutencaoItem: (itemId: number, checked: boolean, transporteId?: number) => {
-      setSelectedManutencaoItems(prev => {
-        if (checked) {
-          // Check if already exists to avoid duplicates
-          const alreadyExists = prev.some(i => i.itemId === itemId && i.transporteId === transporteId);
-          if (alreadyExists) return prev;
-          return [...prev, { itemId, transporteId }];
-        }
-        return prev.filter(i => !(i.itemId === itemId && i.transporteId === transporteId));
-      });
-    },
-    updateManutencaoObservacaoCategoria: (categoria: string, observation: string) => {
-      setManutencaoObservacoesPorCategoria(prev => ({
-        ...prev,
-        [categoria]: observation
-      }));
-    },
-    onClearSelection: () => {
-      setSelectedManutencaoItems([]);
-    },
+    toggleManutencaoCategoriaExpansion,
+    toggleManutencaoItem,
+    updateManutencaoObservacaoCategoria,
+    onClearSelection,
   };
 }
