@@ -10,7 +10,7 @@ import {
   ArrowRight,
   UserPlus,
 } from 'lucide-react';
-import { marcacoesApi, utilizadoresApi, Notificacao } from '../../services/api';
+import { marcacoesApi, utilizadoresApi, requisicoesApi, Notificacao } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import { pt } from 'date-fns/locale';
@@ -31,20 +31,24 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
   void isDarkMode;
   const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
   const [utentesAtivos, setUtentesAtivos] = useState<string>('...');
+  const [requisicoesPendentes, setRequisicoesPendentes] = useState<string>('...');
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [marcacoes, utentes] = await Promise.all([
+        const [marcacoes, utentes, requisicoes] = await Promise.all([
           marcacoesApi.contarHoje(),
           utilizadoresApi.contarUtentesAtivos(),
+          requisicoesApi.listar('ABERTO')
         ]);
         setMarcacoesHoje(marcacoes.toString());
         setUtentesAtivos(utentes.toString());
+        setRequisicoesPendentes(requisicoes.length.toString());
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
         setMarcacoesHoje('0');
         setUtentesAtivos('0');
+        setRequisicoesPendentes('0');
       }
     };
 
@@ -54,7 +58,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
   const stats = [
     { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
     { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'var(--primary)', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições', value: '5', color: 'var(--status-warning)', view: 'requisitions' },
+    { icon: ClipboardList, label: 'Requisições Abertas', value: requisicoesPendentes, color: 'var(--status-warning)', view: 'requisitions' },
     { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--status-success)', view: 'management' },
   ];
 

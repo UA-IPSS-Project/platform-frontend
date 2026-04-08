@@ -384,6 +384,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
                                 onQuickAttendance={() => setShowQuickAttendance(true)}
+                                notifications={notifications}
                             />
                         ) : currentView === 'appointments' ? (
                             <>

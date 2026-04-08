@@ -267,7 +267,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                         </div>
                         <div className="space-y-0.5">
                           <span className="text-xs text-muted-foreground">{t('settings.systemStatus.version')}</span>
-                          <p className="font-semibold text-foreground">v0.1 - em desenvolvimento</p>
+                          <p className="font-semibold text-foreground">v0.1</p>
                         </div>
                       </div>
                       <div className="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] font-bold rounded uppercase tracking-wider">
