@@ -10,22 +10,23 @@ import {
   ArrowRight,
   UserPlus,
 } from 'lucide-react';
-import { marcacoesApi, utilizadoresApi } from '../../services/api';
+import { marcacoesApi, utilizadoresApi, Notificacao } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
+import { formatDistanceToNow } from 'date-fns';
+import { pt } from 'date-fns/locale';
 
 interface SecretaryHomeProps {
   isDarkMode: boolean;
   onNavigate: (view: string) => void;
+  notifications?: Notificacao[];
 }
 
-const recentActivity = [
-  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-[color:var(--status-info)]' },
-  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-primary' },
-  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-[color:var(--status-warning)]' },
-  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-[color:var(--status-success)]' },
+// Fallback activity if no notifications exist
+const fallbackActivity = [
+  { type: 'marcacao', text: 'Sem atividades recentes', time: '-', color: 'bg-muted' },
 ];
 
-export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
+export default function SecretaryHome({ isDarkMode, onNavigate, notifications = [] }: SecretaryHomeProps) {
   const isMobile = useIsMobile();
   void isDarkMode;
   const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
@@ -130,29 +131,56 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
               </button>
             </div>
             <div className="p-4 space-y-3">
-              {recentActivity.map((activity, index) => {
+              {(notifications.length > 0 
+                ? [...notifications].sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime()).slice(0, 4) 
+                : []).map((notification, index) => {
                 const iconMap: Record<string, React.ReactNode> = {
-                  marcacao: <Calendar className="w-5 h-5" />,
-                  candidatura: <FileText className="w-5 h-5" />,
-                  requisicao: <ClipboardList className="w-5 h-5" />,
-                  utente: <Users className="w-5 h-5" />,
+                  LEMBRETE: <Calendar className="w-5 h-5" />,
+                  CANCELAMENTO: <Clock className="w-5 h-5" />,
+                  FICHEIRO: <FileText className="w-5 h-5" />,
+                  SISTEMA: <TrendingUp className="w-5 h-5" />,
                 };
+
+                const colorMap: Record<string, string> = {
+                  LEMBRETE: 'bg-[color:var(--status-info)]',
+                  CANCELAMENTO: 'bg-destructive',
+                  FICHEIRO: 'bg-primary',
+                  SISTEMA: 'bg-[color:var(--status-success)]',
+                };
+
+                const timeAgo = formatDistanceToNow(new Date(notification.dataCriacao), { 
+                  addSuffix: true, 
+                  locale: pt 
+                });
+
                 return (
-                  <div key={index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
-                      {iconMap[activity.type] ?? <Calendar className="w-5 h-5" />}
+                  <div key={notification.id || index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${colorMap[notification.tipo] || 'bg-primary'}`}>
+                      {iconMap[notification.tipo] ?? <Calendar className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{activity.text}</p>
+                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{notification.titulo}</p>
                       <div className="flex items-center gap-1.5">
                         <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
-                        <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
+                        <p className={`text-xs ${textSecondaryClass} capitalize`}>{timeAgo}</p>
                       </div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors transform group-hover:translate-x-1" />
                   </div>
                 );
               })}
+
+              {notifications.length === 0 && fallbackActivity.map((activity, index) => (
+                <div key={index} className="group p-4 rounded-xl border border-border bg-muted/10 flex items-center gap-4 opacity-50">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold ${textClass} text-sm mb-0.5`}>{activity.text}</p>
+                    <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </GlassCard>
         </div>

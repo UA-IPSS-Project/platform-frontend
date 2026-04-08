@@ -391,6 +391,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               <SecretaryHome
                 isDarkMode={isDarkMode}
                 onNavigate={navigateTo}
+                notifications={notifications}
               />
             ) : currentView === 'appointments' ? (
               <>
