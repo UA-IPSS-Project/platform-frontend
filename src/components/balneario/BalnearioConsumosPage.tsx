@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
@@ -24,6 +24,13 @@ interface BalnearioConsumosPageProps {
     isDarkMode: boolean;
     variant?: 'armazem' | 'estatisticas';
 }
+
+const BASE_CATEGORIES = [
+    { id: 'HIGIENE', labelKey: 'consumos.categories.higiene' },
+    { id: 'DETERGENTES', labelKey: 'consumos.categories.detergentes' },
+    { id: 'VESTUARIO', labelKey: 'consumos.categories.vestuario' },
+    { id: 'CALCADO', labelKey: 'consumos.categories.calcado' },
+];
 
 export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'armazem' }: BalnearioConsumosPageProps) {
     const { t } = useTranslation();
@@ -173,29 +180,35 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
         setCollapsedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
     };
 
-    // =====================================================================
-    // GROUPING
-    // =====================================================================
+    const categories = useMemo(() => {
+        const itemCategories = Array.from(new Set(items.map(i => i.categoria.toUpperCase())));
+        const baseIds = BASE_CATEGORIES.map(bc => bc.id);
 
-    const groupedItems = items.reduce<Record<string, ItemArmazemDTO[]>>((acc, item) => {
-        if (!acc[item.categoria]) acc[item.categoria] = [];
-        acc[item.categoria].push(item);
-        return acc;
-    }, {
-        'HIGIENE': [],
-        'DETERGENTES': [],
-        'VESTUARIO': [],
-        'CALCADO': []
-    });
+        const allCategories = [...BASE_CATEGORIES];
+        itemCategories.forEach(cat => {
+            if (!baseIds.includes(cat)) {
+                allCategories.push({ id: cat, labelKey: '' });
+            }
+        });
+        // Only return categories that actually have items, or are base ones
+        return allCategories.filter(cat => 
+            itemCategories.includes(cat.id) || baseIds.includes(cat.id)
+        );
+    }, [items]);
 
-    const getCategoryLabel = (cat: string) => {
-        switch (cat) {
-            case 'DETERGENTES': return t('consumos.categories.detergentes', 'Detergentes');
-            case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
-            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
-            case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
-            default: return cat;
-        }
+    const groupedItems = useMemo(() => {
+        return items.reduce<Record<string, ItemArmazemDTO[]>>((acc, item) => {
+            const cat = item.categoria.toUpperCase();
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(item);
+            return acc;
+        }, {});
+    }, [items]);
+
+    const getCategoryLabel = (catId: string) => {
+        const cat = categories.find(c => c.id === catId.toUpperCase());
+        if (cat?.labelKey) return t(cat.labelKey);
+        return catId;
     };
 
     // =====================================================================
@@ -274,10 +287,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                             {isSaving ? '...' : t('consumos.save', 'Guardar')}
                         </Button>
                     ) : (
-                        <Badge className={`text-xs px-3 py-1 ${
+                        <Badge className={`text-xs px-3 py-1 font-bold rounded-md border-none ${
                             estado === 'OK'
-                                ? 'bg-[color:var(--status-success-soft)] text-[color:var(--status-success)] border-[color:var(--status-success)]/40'
-                                : 'bg-[color:var(--status-error-soft)] text-[color:var(--status-error)] border-[color:var(--status-error)]/40'
+                                ? 'bg-emerald-600/90 text-white hover:bg-emerald-600'
+                                : 'bg-red-800/90 text-white hover:bg-red-800'
                         }`}>
                             {estado === 'OK' ? (
                                 <span>OK</span>
@@ -337,12 +350,9 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                 </div>
 
                 {/* All categories rendered as white cards with table layout */}
-                {Object.keys(groupedItems).sort((a, b) => {
-                    if (a === 'CALCADO') return 1;
-                    if (b === 'CALCADO') return -1;
-                    return a.localeCompare(b);
-                }).map(categoria => {
-                    const catItems = groupedItems[categoria];
+                {categories.map(catData => {
+                    const categoria = catData.id;
+                    const catItems = groupedItems[categoria] || [];
                     const isCollapsed = collapsedCategories[categoria];
 
                     return (
@@ -447,25 +457,16 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
 
         if (!stats) return null;
 
-        // Aggregate by category for summary cards
-        const catLabels: Record<string, string> = {
-            'HIGIENE': getCategoryLabel('HIGIENE'),
-            'DETERGENTES': getCategoryLabel('DETERGENTES'),
-            'VESTUARIO': getCategoryLabel('VESTUARIO'),
-            'CALCADO': getCategoryLabel('CALCADO'),
-        };
+        const catLabels: Record<string, string> = categories.reduce((acc, cat) => ({
+            ...acc,
+            [cat.id]: getCategoryLabel(cat.id)
+        }), {});
 
 
-        // Aggregate by category for category summary
-        const catTotals = {
-            'HIGIENE': stats.totaisPorCategoria['HIGIENE'] || 0,
-            'DETERGENTES': stats.totaisPorCategoria['DETERGENTES'] || 0,
-            'VESTUARIO': stats.totaisPorCategoria['VESTUARIO'] || 0,
-            'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0,
-            ...Object.entries(stats.totaisPorCategoria)
-                .filter(([cat]) => !['HIGIENE', 'DETERGENTES', 'CALCADO', 'VESTUARIO'].includes(cat))
-                .reduce((acc, [cat, val]) => ({ ...acc, [cat]: val }), {})
-        } as Record<string, number>;
+        const catTotals = categories.reduce((acc, cat) => ({
+            ...acc,
+            [cat.id]: stats.totaisPorCategoria[cat.id] || 0
+        }), {} as Record<string, number>);
 
         const getCatBarColorHex = (cat: string) => {
             switch (cat) {
@@ -479,13 +480,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
 
         // Initialize with all items from the inventory to show 0 for unconsumed items
         const statsByCategory = items.reduce((acc, item) => {
-            if (!acc[item.categoria]) acc[item.categoria] = [];
-            acc[item.categoria].push({ nome: item.nome, quantidade: 0 });
+            const cat = item.categoria.toUpperCase();
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push({ nome: item.nome, quantidade: 0 });
             return acc;
-        }, {
-            'HIGIENE': [],
-            'DETERGENTES': [],
-        } as Record<string, { nome: string; quantidade: number }[]>);
+        }, {} as Record<string, { nome: string; quantidade: number }[]>);
 
         if (stats && stats.itens) {
             for (const statItem of stats.itens) {
@@ -598,11 +597,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                                {Object.keys(statsByCategory).sort((a, b) => {
-                                    if (a === 'CALCADO') return 1;
-                                    if (b === 'CALCADO') return -1;
-                                    return a.localeCompare(b);
-                                }).map(cat => {
+                                {categories.map(catData => {
+                                    const cat = catData.id;
                                     const items = statsByCategory[cat].sort((a,b) => b.quantidade - a.quantidade);
                                     return (
                                         <div key={cat} className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col">

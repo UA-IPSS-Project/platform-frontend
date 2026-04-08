@@ -8,8 +8,6 @@ import {
     AlertTriangle,
     Package,
     TrendingDown,
-    Filter,
-    ArrowUpDown,
     Check
 } from 'lucide-react';
 import { Button } from '../ui/button';
