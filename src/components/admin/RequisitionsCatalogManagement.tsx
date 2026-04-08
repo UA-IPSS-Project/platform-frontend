@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Package, Truck, Wrench, Settings2 } from 'lucide-react';
+import { Package, Truck, Wrench } from 'lucide-react';
 import { 
   requisicoesApi, 
   type MaterialCatalogo, 
@@ -68,11 +68,6 @@ export function RequisitionsCatalogManagement() {
                     <span className="hidden sm:inline">Manutenção</span>
                 </TabsTrigger>
             </TabsList>
-
-            <div className="flex items-center gap-2 text-muted-foreground bg-muted/30 px-4 py-2 rounded-xl border border-border/40">
-                <Settings2 className="w-4 h-4" />
-                <span className="text-sm font-medium">Configuração Local</span>
-            </div>
         </div>
 
         {loading ? (
