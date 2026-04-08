@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { documentosApi } from '../../services/api';
 import { FileUpload } from '../shared/FileUpload';
+import { InformativeNotice } from '../shared/InformativeNotice';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
@@ -25,9 +26,11 @@ interface ClientAppointmentDialogProps {
 import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
 import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -41,6 +44,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   }, [subject, description, selectedFiles]);
 
   const blocker = useUnsavedChangesWarning(isDirty);
+  const showNoEmailWarning = Boolean(user && !user.email?.trim());
 
   // Reservar slot ao abrir o dialog
   useEffect(() => {
@@ -208,6 +212,16 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
         </DialogPrimitive.Description>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {showNoEmailWarning && (
+            <InformativeNotice
+              variant="warning"
+              message={t(
+                'appointmentDialog.warnings.noEmailNoNotifications',
+                'Sem email, não irá receber comprovativos nem notificações das marcações.',
+              )}
+            />
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="client-subject" className="text-foreground">{t('appointmentDialog.fields.subject')}</Label>
             <Select value={subject} onValueChange={(value) => setSubject(value)}>

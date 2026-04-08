@@ -4,11 +4,22 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
-import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Check, X, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { DatePickerField } from '../ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { GlassCard } from '../ui/glass-card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
 import { LightSwitch } from '../shared/light-switch';
+import { InformativeNotice } from '../shared/InformativeNotice';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -43,6 +54,7 @@ const toDisplayDate = (value: string): string => {
 
 export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }: RegisterFormProps) {
   const { t } = useTranslation();
+  const userEmailLabel = t('auth.emailLabel', 'Email');
   const [formData, setFormData] = useState({
     name: '',
     nif: '',
@@ -60,6 +72,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [showPasswordValidation, setShowPasswordValidation] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsRead, setTermsRead] = useState(false);
+  const [showNoEmailConfirmModal, setShowNoEmailConfirmModal] = useState(false);
 
   const [accountType, setAccountType] = useState<'user' | 'employee'>(initialAccountType ?? 'user');
   const [employeeRole, setEmployeeRole] = useState('');
@@ -81,19 +94,23 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
       newErrors.nif = t('auth.nifMustHave9Digits');
     }
 
-    if (formData.contact && !validateContact(formData.contact)) {
+    if (!formData.contact) {
+      newErrors.contact = t('auth.contactRequired');
+    } else if (!validateContact(formData.contact)) {
       newErrors.contact = t('auth.contactMustHave9Digits');
     }
 
-    if (!formData.email) {
-      newErrors.email = t('auth.emailRequired');
-    } else if (!validateEmail(formData.email)) {
+    if (formData.email && !validateEmail(formData.email)) {
       newErrors.email = t('auth.emailInvalid');
     }
 
     if (accountType === 'employee') {
+      if (!formData.email) {
+        newErrors.email = t('auth.emailRequired');
+      }
+
       // require institutional email
-      if (!formData.email.endsWith('@florinhasdovouga.pt')) {
+      if (formData.email && !formData.email.endsWith('@florinhasdovouga.pt')) {
         newErrors.email = t('auth.useInstitutionalEmail');
       }
     }
@@ -170,14 +187,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     }
   }, [formData.name, accountType, emailSelection]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error(t('auth.fixFormErrors'));
-      return;
-    }
-
+  const submitRegistration = async () => {
     try {
       // Convert date from dd/mm/yyyy to yyyy-mm-dd
       const [day, month, year] = formData.birthDate.split('/');
@@ -187,8 +197,8 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerUtente({
           nome: formData.name,
           nif: formData.nif,
-          telefone: formData.contact || undefined,
-          email: formData.email,
+          telefone: formData.contact,
+          email: formData.email.trim() || undefined,
           dataNasc: isoDate,
           password: formData.password,
           termsAccepted: formData.termsAccepted,
@@ -199,7 +209,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         await registerFuncionario({
           nome: formData.name,
           nif: formData.nif,
-          contacto: formData.contact || undefined,
+          contacto: formData.contact,
           email: formData.email,
           dataNasc: isoDate,
           funcao: employeeRole,
@@ -214,6 +224,22 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     } catch (error: any) {
       toast.error(error.message || t('auth.errorCreatingAccount'));
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error(t('auth.fixFormErrors'));
+      return;
+    }
+
+    if (accountType === 'user' && !formData.email.trim()) {
+      setShowNoEmailConfirmModal(true);
+      return;
+    }
+
+    await submitRegistration();
   };
 
   const handleChange = (field: string, value: string) => {
@@ -320,7 +346,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
           <div className="space-y-2">
             <Label htmlFor="contact" className="text-foreground/85">
-              {t('auth.contact')} <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
+              {t('auth.contact')} *
             </Label>
             <Input
               id="contact"
@@ -405,7 +431,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
         ) : (
           <div className="space-y-2">
             <Label htmlFor="email" className="text-foreground/85">
-              Email *
+              {userEmailLabel} <span className="text-xs font-normal text-muted-foreground">{t('common.optional')}</span>
             </Label>
             <Input
               id="email"
@@ -417,6 +443,16 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
                 }`}
             />
             {errors.email && <p className="text-status-error text-sm">{errors.email}</p>}
+            {!formData.email.trim() && (
+              <InformativeNotice
+                variant="warning"
+                className="text-xs"
+                message={t(
+                  'auth.noEmailWarningRegister',
+                  'Sem email, não irá receber comprovativos nem notificações das marcações.',
+                )}
+              />
+            )}
           </div>
         )}
 
@@ -573,6 +609,32 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           }
         }}
       />
+
+      <AlertDialog open={showNoEmailConfirmModal} onOpenChange={setShowNoEmailConfirmModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-status-warning" />
+              {t('auth.noEmailConfirmTitle')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <p>{t('auth.noEmailConfirmQuestion', 'Tem a certeza que pretende criar a conta sem email?')}</p>
+              <p className="mt-1">{t('auth.noEmailWarningRegister', 'Sem email, não irá receber comprovativos nem notificações das marcações.')}</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('appointmentDialog.actions.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowNoEmailConfirmModal(false);
+                await submitRegistration();
+              }}
+            >
+              {t('auth.noEmailConfirmAction')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </GlassCard>
   );
 }
