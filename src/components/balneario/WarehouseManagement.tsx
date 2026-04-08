@@ -52,7 +52,7 @@ const BASE_CATEGORIES = [
     { id: 'CALCADO', labelKey: 'consumos.categories.calcado' },
 ];
 
-const UNIDADES = ['un', 'L', 'pk', 'rolos', 'pares', 'caixa', 'Saco'];
+const UNIDADES = ['un', 'L', 'pk', 'rolos', 'pares', 'caixa', 'saco'];
 
 export function WarehouseManagement() {
     const { t } = useTranslation();
@@ -106,7 +106,7 @@ export function WarehouseManagement() {
         return items.filter(item => {
             const matchesSearch = item.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.categoria.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCategory = activeCategory === 'ALL' || item.categoria === activeCategory;
+            const matchesCategory = activeCategory === 'ALL' || item.categoria.toUpperCase() === activeCategory;
             return matchesSearch && matchesCategory;
         });
     }, [items, searchQuery, activeCategory]);
@@ -285,12 +285,12 @@ export function WarehouseManagement() {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="font-bold text-foreground">{item.quantidade} <span className="text-xs font-normal text-muted-foreground">{item.unidade}</span></span>
+                                                    <span className="font-bold text-foreground">{item.quantidade} <span className="text-xs font-normal text-muted-foreground">{t(`consumos.units.${item.unidade}`, item.unidade)}</span></span>
                                                     <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 justify-center">
                                                         <span>{t('consumos.inventory.table.min')}: {item.quantidadeMinima}</span>
                                                         {item.marca && <span>{t('consumos.inventory.table.marca')}: {item.marca}</span>}
                                                         {item.tamanho && <span>{t('consumos.inventory.table.tam')}: {item.tamanho}</span>}
-                                                        {item.volume && <span>{t('consumos.inventory.table.vol')}: {item.volume}{item.unidade}</span>}
+                                                        {item.volume && <span>{t('consumos.inventory.table.vol')}: {item.volume}{t(`consumos.units.${item.unidade}`, item.unidade)}</span>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -473,7 +473,7 @@ export function WarehouseManagement() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {UNIDADES.map(u => (
-                                                <SelectItem key={u} value={u}>{u}</SelectItem>
+                                                <SelectItem key={u} value={u}>{t(`consumos.units.${u.toLowerCase()}`, u)}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

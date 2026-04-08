@@ -1231,6 +1231,15 @@
       "vestuario": "Vestuário",
       "calcado": "Calçado"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolos",
+      "pares": "pares",
+      "caixa": "caixa",
+      "saco": "saco"
+    },
     "products": {
       "Lavar Roupa Seca": "Lavar Roupa Seca",
       "Lavar Roupa Molhada": "Lavar Roupa Molhada",

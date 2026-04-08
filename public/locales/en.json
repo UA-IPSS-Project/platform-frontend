@@ -1224,6 +1224,15 @@
       "vestuario": "Clothing",
       "calcado": "Footwear"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolls",
+      "pares": "pairs",
+      "caixa": "box",
+      "saco": "bag"
+    },
     "products": {
       "Detergente Roupa": "Laundry Detergent",
       "Amaciador": "Fabric Softener",
