@@ -189,7 +189,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.type')}</label>
-              <Input className="h-11 rounded-xl" value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder="Ex: Furgão, Autocarro..." value={novoTipo} onChange={(e) => setNovoTipo(e.target.value)} />
             </div>
 
             <div className="space-y-2">
@@ -210,17 +210,17 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.brand')}</label>
-              <Input className="h-11 rounded-xl" value={novaMarca} onChange={(e) => setNovaMarca(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder="Ex: Renault, Mercedes..." value={novaMarca} onChange={(e) => setNovaMarca(e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.model')}</label>
-              <Input className="h-11 rounded-xl" value={novoModelo} onChange={(e) => setNovoModelo(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder="Ex: Kangoo, Sprinter..." value={novoModelo} onChange={(e) => setNovoModelo(e.target.value)} />
             </div>
 
             <div className="space-y-2 text-center md:text-left">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.capacity')}</label>
-              <Input type="number" className="h-11 rounded-xl" value={novaLotacao} onChange={(e) => setNovaLotacao(e.target.value)} />
+              <Input type="number" className="h-11 rounded-xl" placeholder="Ex: 5, 9, 50..." value={novaLotacao} onChange={(e) => setNovaLotacao(e.target.value)} />
             </div>
 
             <div className="space-y-2">

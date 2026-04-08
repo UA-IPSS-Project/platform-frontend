@@ -13,6 +13,8 @@ import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
 import { cn } from '../../ui/utils';
 
+const DEFAULT_ATTRIBUTES = ['Formato', 'Cor', 'Dureza', 'Espessura', 'Tipo', 'Largura', 'Comprimento', 'Concentração', 'Capacidade', 'Aroma'];
+
 interface MaterialCatalogProps {
   materiais: MaterialCatalogo[];
   onRefresh: () => Promise<void>;
@@ -221,18 +223,21 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.materialName')}</label>
-              <Input className="h-11 rounded-xl" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder="Ex: Cadernos, Tesoura..." value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.attribute')}</label>
-              <Input className="h-11 rounded-xl" value={novoAtributo} onChange={(e) => setNovoAtributo(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder="Ex: Formato, Cor..." list="default-attributes" value={novoAtributo} onChange={(e) => setNovoAtributo(e.target.value)} />
+              <datalist id="default-attributes">
+                {DEFAULT_ATTRIBUTES.map(attr => <option key={attr} value={attr} />)}
+              </datalist>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.value')}</label>
               <div className="flex gap-2">
-                <Input className="h-11 rounded-xl flex-1" value={novoValorAtributo} onChange={(e) => setNovoValorAtributo(e.target.value)} />
+                <Input className="h-11 rounded-xl flex-1" placeholder="Ex: A4, Azul..." value={novoValorAtributo} onChange={(e) => setNovoValorAtributo(e.target.value)} />
                 <Button 
                   onClick={() => void handleCreate()} 
                   disabled={saving} 
@@ -287,6 +292,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
                               onChange={(e) => setEditAtributo(e.target.value)} 
                               className="h-9" 
                               placeholder="Atributo"
+                              list="default-attributes"
                             />
                             <Input 
                               value={editValorAtributo} 
