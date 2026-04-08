@@ -195,7 +195,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
       setCategoryMode('SELECT');
       setOpenGroups(prev => ({ ...prev, [targetCategory]: true }));
       await onRefresh();
-      toast.success("Categoria criada com sucesso!");
+      toast.success(t('dashboard.admin.catalogs.success.categoryCreated'));
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -216,34 +216,34 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
          <div className="flex gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2 px-4 py-2 border rounded-xl border-primary/20 bg-primary/5">
                 <Layers className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-primary">{uniqueCategorias.length} Categorias</span>
+                <span className="text-sm font-bold text-primary">{t('dashboard.admin.catalogs.categoriesCount', { count: uniqueCategorias.length })}</span>
             </div>
             <Button 
                 onClick={() => setCategoryMode(categoryMode === 'NEW' ? 'SELECT' : 'NEW')} 
                 variant={categoryMode === 'NEW' ? 'default' : 'outline'}
                 className="gap-2"
             >
-              <Plus className="h-4 w-4" /> {categoryMode === 'NEW' ? 'Cancelar' : 'Nova Categoria'}
+              <Plus className="h-4 w-4" /> {categoryMode === 'NEW' ? t('common.cancel') : t('dashboard.admin.catalogs.newCategory')}
             </Button>
          </div>
       </div>
 
       {categoryMode === 'NEW' && (
         <CatalogSection
-            title="Criar Nova Categoria"
+            title={t('dashboard.admin.catalogs.createCategory')}
             isOpen={true}
             onToggle={() => setCategoryMode('SELECT')}
         >
             <div className="max-w-md mx-auto space-y-4 text-center py-4">
-                <p className="text-sm text-muted-foreground">Isso criará uma nova categoria com itens 'GERAL' por padrão.</p>
+                <p className="text-sm text-muted-foreground">{t('dashboard.admin.catalogs.newCategoryDescription')}</p>
                 <div className="flex gap-2">
                     <Input 
-                        placeholder="Nome da categoria (ex: ELETRICIDADE)" 
+                        placeholder={t('dashboard.admin.catalogs.categoryPlaceholder')} 
                         value={customCategory} 
                         onChange={(e) => setCustomCategory(e.target.value.toUpperCase())}
                         className="h-11"
                     />
-                    <Button onClick={handleCreateNewCategory} disabled={saving} className="h-11 px-8">Confirmar</Button>
+                    <Button onClick={handleCreateNewCategory} disabled={saving} className="h-11 px-8">{t('common.ok')}</Button>
                 </div>
             </div>
         </CatalogSection>
@@ -281,12 +281,12 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
                    <div className="space-y-3">
                       {isVehicleCategory ? (
                           <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 text-xs text-primary font-medium text-center">
-                              ⚠️ Os veículos dependem do Catálogo de Transportes.
+                              {t('dashboard.admin.catalogs.vehiclesDependencyHint')}
                           </div>
                       ) : (
                           <div className="flex gap-2">
                              <Input 
-                                placeholder="Adicionar novo espaço..." 
+                                placeholder={t('dashboard.admin.catalogs.addSpacePlaceholder')} 
                                 value={novoEspaco} 
                                 onChange={(e) => setNovoEspaco(e.target.value)}
                                 className="h-10 text-sm bg-background/50"
@@ -337,13 +337,13 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
                          <CheckSquare className="w-5 h-5 text-primary" />
                          <h4 className="font-bold text-base uppercase tracking-wider">{t('dashboard.admin.catalogs.elements')}</h4>
                       </div>
-                      <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Total: {elements.length}</span>
+                      <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">{t('dashboard.admin.catalogs.total', { count: elements.length })}</span>
                    </div>
 
                    <div className="space-y-3">
                       <div className="flex gap-2">
                          <Input 
-                            placeholder="Adicionar novo elemento..." 
+                            placeholder={t('dashboard.admin.catalogs.addElementPlaceholder')} 
                             value={novoElemento} 
                             onChange={(e) => setNovoElemento(e.target.value)}
                             className="h-10 text-sm bg-background/50"

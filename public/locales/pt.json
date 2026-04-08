@@ -380,11 +380,19 @@
         "addElement": "2. Adicionar Elemento",
         "verificationElement": "Elemento de Verificação",
         "createElement": "Criar Elemento",
+        "categoriesCount": "{{count}} Categorias",
+        "createCategory": "Criar Nova Categoria",
+        "newCategoryDescription": "Isto criará uma nova categoria com itens 'GERAL' por padrão.",
+        "categoryPlaceholder": "Ex: ELETRICIDADE",
+        "vehiclesDependencyHint": "⚠️ Os veículos dependem do Catálogo de Transportes.",
+        "addSpacePlaceholder": "Adicionar novo espaço...",
+        "addElementPlaceholder": "Adicionar novo elemento...",
         "materials": "Materiais",
         "transports": "Transportes",
         "maintenance": "Manutenção",
         "spaces": "Espaços",
         "elements": "Elementos",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material criado com sucesso.",
           "transportCreated": "Transporte criado com sucesso.",
@@ -398,6 +406,7 @@
           "elementUpdated": "Elemento atualizado.",
           "spaceDeleted": "Espaço eliminado.",
           "elementDeleted": "Elemento eliminado.",
+          "categoryCreated": "Categoria criada com sucesso!",
           "categoryRemoved": "Categoria removida."
         },
         "errors": {

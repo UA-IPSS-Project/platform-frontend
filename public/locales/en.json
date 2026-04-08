@@ -380,11 +380,19 @@
         "addElement": "2. Add Element",
         "verificationElement": "Verification Element",
         "createElement": "Create Element",
+        "categoriesCount": "{{count}} Categories",
+        "createCategory": "Create New Category",
+        "newCategoryDescription": "This will create a new category with 'GENERAL' items by default.",
+        "categoryPlaceholder": "Ex: ELECTRICITY",
+        "vehiclesDependencyHint": "⚠️ Vehicles depend on the Transport Catalog.",
+        "addSpacePlaceholder": "Add new space...",
+        "addElementPlaceholder": "Add new element...",
         "materials": "Materials",
         "transports": "Transports",
         "maintenance": "Maintenance",
         "spaces": "Spaces",
         "elements": "Elements",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material created successfully.",
           "transportCreated": "Transport created successfully.",
@@ -398,6 +406,7 @@
           "elementUpdated": "Element updated.",
           "spaceDeleted": "Space deleted.",
           "elementDeleted": "Element deleted.",
+          "categoryCreated": "Category created successfully!",
           "categoryRemoved": "Category removed."
         },
         "errors": {
