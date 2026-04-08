@@ -7,6 +7,12 @@ import {
   requisicoesApi, 
   type TransporteCatalogo 
 } from '../../../services/api';
+
+const AVAILABLE_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
+  'LIGEIRO_DE_PASSAGEIROS', 'LIGEIRO_DE_MERCADORIAS', 'LIGEIRO_MISTO', 'LIGEIRO_ESPECIAL',
+  'PESADO_DE_PASSAGEIROS', 'PESADO_DE_MERCADORIAS', 'PESADO_MISTO',
+  'ADAPTADO', 'ESCOLAR', 'AMBULANCIA', 'TRACTOR', 'OUTRO'
+];
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
@@ -28,16 +34,12 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   
   // New Item State
   const [novoTipo, setNovoTipo] = useState('');
-  const [novaCategoria, setNovaCategoria] = useState<TransporteCategoria>('LIGEIRO');
+  const [novaCategoria, setNovaCategoria] = useState<TransporteCategoria>('LIGEIRO_DE_PASSAGEIROS');
   const [novaMatricula, setNovaMatricula] = useState('');
   const [novaMarca, setNovaMarca] = useState('');
   const [novoModelo, setNovoModelo] = useState('');
   const [novaLotacao, setNovaLotacao] = useState('');
   const [novaDataMatricula, setNovaDataMatricula] = useState('');
-  const [categoryMode, setCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
-  const [customCategory, setCustomCategory] = useState('');
-
-  // Edit State
   const [editTipo, setEditTipo] = useState('');
   const [editMatricula, setEditMatricula] = useState('');
   const [editMarca, setEditMarca] = useState('');
@@ -45,7 +47,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [editLotacao, setEditLotacao] = useState('');
   const [editDataMatricula, setEditDataMatricula] = useState('');
 
-  const uniqueCategorias = Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is string => !!c)));
+  const uniqueCategorias = Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
 
   const nextCode = useMemo(() => {
     const codigosExistentes = transportes.map(t => t.codigo).filter((c): c is string => !!c);
@@ -73,7 +75,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     }
 
     try {
-      const categoriaFinal = (categoryMode === 'NEW' ? customCategory : novaCategoria).trim();
+      const categoriaFinal = novaCategoria;
       if (!categoriaFinal) {
         toast.error(t('dashboard.admin.catalogs.errors.categoryRequired'));
         return;
@@ -92,8 +94,6 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
       });
 
       setNovoTipo('');
-      setCustomCategory('');
-      setCategoryMode('SELECT');
       setNovaMatricula('');
       setNovaMarca('');
       setNovoModelo('');
@@ -108,7 +108,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     }
   };
 
-  const handleUpdate = async (id: number, categoria: string, codigo: string) => {
+  const handleUpdate = async (id: number, categoria: TransporteCategoria, codigo: string) => {
     try {
       await requisicoesApi.atualizarTransporteCatalogo(id, {
         codigo,
@@ -139,7 +139,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     }
   };
 
-  const handleDeleteCategory = async (category: string) => {
+  const handleDeleteCategory = async (category: TransporteCategoria) => {
     if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteCategory', { name: formatCategoryName(category) }))) return;
     try {
       const itemsToDelete = transportes.filter(t => t.categoria === category);
@@ -151,7 +151,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     }
   };
 
-  const toggleGroup = (categoria: string) => {
+  const toggleGroup = (categoria: TransporteCategoria) => {
     setOpenGroups(prev => ({ ...prev, [categoria]: !prev[categoria] }));
   };
 
@@ -195,17 +195,12 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.category')}</label>
               <select 
-                value={categoryMode === 'NEW' ? 'NEW' : novaCategoria} 
-                onChange={(e) => {
-                  if (e.target.value === 'NEW') setCategoryMode('NEW');
-                  else { setCategoryMode('SELECT'); setNovaCategoria(e.target.value as TransporteCategoria); }
-                }} 
+                value={novaCategoria} 
+                onChange={(e) => setNovaCategoria(e.target.value as TransporteCategoria)} 
                 className="w-full h-11 rounded-xl border border-border/40 bg-background px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               >
-                {uniqueCategorias.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
-                <option value="NEW" className="font-bold text-primary">-- {t('dashboard.admin.catalogs.newCategory')} --</option>
+                {AVAILABLE_TRANSPORT_CATEGORIES.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
               </select>
-              {categoryMode === 'NEW' && <Input placeholder="Nova categoria" className="mt-2 h-11 rounded-xl" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} />}
             </div>
 
             <div className="space-y-2">
