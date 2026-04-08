@@ -18,6 +18,7 @@ import { Sidebar } from '../../components/layout/Sidebar';
 import { BlockedScheduleDialog } from '../../components/dialogs/BlockedScheduleDialog';
 import { UserManagement } from '../../components/secretary/UserManagement';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
+import { SettingsPage } from '../SettingsPage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { ReportsPage } from './ReportsPage';
 import { toast } from 'sonner';
@@ -536,6 +537,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
               />
             ) : currentView === 'reports' ? (
               <ReportsPage />
+            ) : currentView === 'settings' ? (
+              <SettingsPage 
+                isDarkMode={isDarkMode}
+                onToggleDarkMode={onToggleDarkMode}
+              />
             ) : (
               renderPlaceholder(currentView)
             )}

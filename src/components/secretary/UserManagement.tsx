@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { utilizadoresApi } from '../../services/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, Eye, ShieldCheck, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, User, ChevronDown, ChevronUp, Lock, RefreshCw, Check, Eye, ShieldCheck, Loader2, MapPin, Briefcase, Mail, Phone, Calendar, Building2, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
 import { DatePickerField } from '../ui/date-picker-field';
+import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
+import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -29,9 +31,6 @@ import { useTranslation } from 'react-i18next';
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
     DialogFooter,
 } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
@@ -110,6 +109,67 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         moradaEmprego: '',
         telefoneEmprego: ''
     });
+
+    const [pendingClose, setPendingClose] = useState(false);
+
+    const isDirty = useMemo(() => {
+        if (!selectedUser || !isDetailsOpen) return false;
+
+        return (
+            editForm.nome !== (selectedUser.nome || '') ||
+            editForm.email !== (selectedUser.email || '') ||
+            editForm.telefone !== (selectedUser.telefone || '') ||
+            editForm.dataNascimento !== (selectedUser.dataNascimento || '') ||
+            editForm.morada !== (selectedUser.morada || '') ||
+            editForm.codigoPostal !== (selectedUser.codigoPostal || '') ||
+            editForm.freguesia !== (selectedUser.freguesia || '') ||
+            editForm.profissao !== (selectedUser.profissao || '') ||
+            editForm.localEmprego !== (selectedUser.localEmprego || '') ||
+            editForm.moradaEmprego !== (selectedUser.moradaEmprego || '') ||
+            editForm.telefoneEmprego !== (selectedUser.telefoneEmprego || '')
+        );
+    }, [editForm, selectedUser, isDetailsOpen]);
+
+    const [expandedSections, setExpandedSections] = useState({
+        personal: true,
+        address: false,
+        professional: false
+    });
+
+    const toggleSection = (section: keyof typeof expandedSections) => {
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+    };
+
+    const renderSectionHeader = (title: string, icon: React.ReactNode, sectionKey: keyof typeof expandedSections) => (
+        <div
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 group"
+            onClick={() => toggleSection(sectionKey)}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg transition-colors ${expandedSections[sectionKey] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}>
+                    {icon}
+                </div>
+                <h4 className="text-sm font-bold text-foreground">{title}</h4>
+            </div>
+            {expandedSections[sectionKey] ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </div>
+    );
+
+    const blocker = useUnsavedChangesWarning(isDirty);
+
+    const handleClose = () => {
+        setIsDetailsOpen(false);
+        setIsEditing(false);
+        setPendingClose(false);
+    };
+
+    const requestClose = () => {
+        if (isDirty) {
+            setPendingClose(true);
+        } else {
+            handleClose();
+        }
+    };
 
     useEffect(() => {
         setCurrentPage(1);
@@ -1121,170 +1181,235 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             </div>
 
             {/* User Details & Edit Dialog */}
-            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden border-border/40 gap-0">
-                    <DialogHeader className="p-6 pb-4 border-b border-border/40">
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <Users className="w-5 h-5 text-primary" />
-                            {t('userManagement.details.title')}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {t('userManagement.details.description')}
-                        </DialogDescription>
-                    </DialogHeader>
+            <Dialog open={isDetailsOpen} onOpenChange={(open) => !open && requestClose()}>
+                <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden border-border/40 gap-0 shadow-2xl">
+                    {/* Premium Header Banner */}
+                    <div className="bg-primary/5 border-b border-border/40 p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full -ml-12 -mb-12 blur-2xl" />
 
-                    <ScrollArea className="flex-1 p-6 max-h-[60vh]">
-                        <div className="space-y-6">
-                            {/* Actions Banner for Pending Employees */}
-                            {selectedUser?.funcao && !selectedUser?.active && (
-                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-4 animate-in fade-in zoom-in duration-300">
-                                    <div className="p-2 bg-amber-500/20 rounded-lg text-amber-600">
-                                        <ShieldCheck className="w-5 h-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="text-sm font-bold text-amber-700">{t('userManagement.details.approveTitle')}</h4>
-                                        <p className="text-xs text-amber-600/80 mb-3">{t('userManagement.details.approveDescription')}</p>
-                                        <Button 
-                                            size="sm" 
-                                            className="h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs"
-                                            onClick={handleApproveDetail}
-                                            disabled={isApproving}
-                                        >
-                                            {isApproving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Check className="w-3 h-3 mr-2" />}
-                                            {t('userManagement.details.approveAction')}
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Main Info Form */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">{t('requisitions.ui.name')}</Label>
-                                    <Input 
-                                        value={editForm.nome} 
-                                        onChange={e => setEditForm({...editForm, nome: e.target.value})}
-                                        className="h-9 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">NIF</Label>
-                                    <Input 
-                                        value={editForm.nif} 
-                                        readOnly
-                                        className="h-9 text-sm bg-muted/30 cursor-not-allowed"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">Email</Label>
-                                    <Input 
-                                        value={editForm.email} 
-                                        onChange={e => setEditForm({...editForm, email: e.target.value})}
-                                        className="h-9 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">{t('auth.contact')}</Label>
-                                    <Input 
-                                        value={editForm.telefone} 
-                                        onChange={e => setEditForm({...editForm, telefone: e.target.value.replace(/\D/g, '')})}
-                                        className="h-9 text-sm"
-                                        maxLength={9}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">{t('auth.birthDate')}</Label>
-                                    <Input 
-                                        type="date"
-                                        value={editForm.dataNascimento} 
-                                        onChange={e => setEditForm({...editForm, dataNascimento: e.target.value})}
-                                        className="h-9 text-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-semibold">{t('profile.profession')}</Label>
-                                    <Input 
-                                        value={editForm.profissao} 
-                                        onChange={e => setEditForm({...editForm, profissao: e.target.value})}
-                                        className="h-9 text-sm"
-                                    />
-                                </div>
+                        <div className="flex flex-col md:flex-row gap-6 items-center relative z-10">
+                            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
+                                <UserCircle className="w-12 h-12" />
                             </div>
-
-                            <div className="space-y-4 pt-4 border-t border-border/40">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('profile.sections.address')}</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.address')}</Label>
-                                        <Input 
-                                            value={editForm.morada} 
-                                            onChange={e => setEditForm({...editForm, morada: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.postalCode')}</Label>
-                                        <Input 
-                                            value={editForm.codigoPostal} 
-                                            onChange={e => setEditForm({...editForm, codigoPostal: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.parish')}</Label>
-                                        <Input 
-                                            value={editForm.freguesia} 
-                                            onChange={e => setEditForm({...editForm, freguesia: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
-                                    </div>
+                            <div className="text-center md:text-left flex-1">
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
+                                    <h2 className="text-2xl font-bold text-foreground">{editForm.nome}</h2>
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedUser?.active
+                                        ? 'bg-status-success/10 text-status-success'
+                                        : 'bg-amber-500/10 text-amber-500'
+                                        }`}>
+                                        {selectedUser?.active ? t('userManagement.active') : t('userManagement.pending')}
+                                    </span>
                                 </div>
-                            </div>
-
-                            <div className="space-y-4 pt-4 border-t border-border/40">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('profile.sections.professional')}</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.workLocation')}</Label>
-                                        <Input 
-                                            value={editForm.localEmprego} 
-                                            onChange={e => setEditForm({...editForm, localEmprego: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1.5">
+                                        <Mail className="w-3.5 h-3.5" />
+                                        {editForm.email}
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.workPhone')}</Label>
-                                        <Input 
-                                            value={editForm.telefoneEmprego} 
-                                            onChange={e => setEditForm({...editForm, telefoneEmprego: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
-                                    </div>
-                                    <div className="md:col-span-2 space-y-2">
-                                        <Label className="text-xs font-semibold">{t('profile.workAddress')}</Label>
-                                        <Input 
-                                            value={editForm.moradaEmprego} 
-                                            onChange={e => setEditForm({...editForm, moradaEmprego: e.target.value})}
-                                            className="h-9 text-sm"
-                                        />
+                                    <div className="flex items-center gap-1.5">
+                                        <Lock className="w-3.5 h-3.5" />
+                                        {editForm.nif}
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <ScrollArea className="flex-1 max-h-[60vh] bg-card">
+                        <div className="p-6 space-y-6">
+                            {/* Actions Banner for Pending Employees - Integrated */}
+                            {selectedUser?.funcao && !selectedUser?.active && (
+                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-300">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-600">
+                                            <ShieldCheck className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-bold text-amber-700">{t('userManagement.details.approveTitle')}</h4>
+                                            <p className="text-[11px] text-amber-600/80">{t('userManagement.details.approveDescription')}</p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4"
+                                        onClick={handleApproveDetail}
+                                        disabled={isApproving}
+                                    >
+                                        {isApproving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Check className="w-3 h-3 mr-2" />}
+                                        {t('userManagement.details.approveAction')}
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Section: Personal Information */}
+                            <div className="space-y-4 border border-border/40 rounded-xl p-1 bg-muted/10">
+                                {renderSectionHeader(t('profile.sections.personal'), <User className="w-4 h-4" />, 'personal')}
+
+                                {expandedSections.personal && (
+                                    <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                                        <div className="md:col-span-2 space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.ui.name')}</Label>
+                                            <div className="relative">
+                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
+                                                <Input
+                                                    value={editForm.nome}
+                                                    onChange={e => setEditForm({ ...editForm, nome: e.target.value })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60 focus:border-primary/50 transition-all font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">NIF</Label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+                                                <Input
+                                                    value={editForm.nif}
+                                                    readOnly
+                                                    className="h-9 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('auth.birthDate')}</Label>
+                                            <div className="relative">
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
+                                                <Input
+                                                    type="date"
+                                                    value={editForm.dataNascimento}
+                                                    onChange={e => setEditForm({ ...editForm, dataNascimento: e.target.value })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="md:col-span-2 space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Email</Label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
+                                                <Input
+                                                    value={editForm.email}
+                                                    onChange={e => setEditForm({ ...editForm, email: e.target.value })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('auth.contact')}</Label>
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
+                                                <Input
+                                                    value={editForm.telefone}
+                                                    onChange={e => setEditForm({ ...editForm, telefone: e.target.value.replace(/\D/g, '') })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    maxLength={9}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.profession')}</Label>
+                                            <div className="relative">
+                                                <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
+                                                <Input
+                                                    value={editForm.profissao}
+                                                    onChange={e => setEditForm({ ...editForm, profissao: e.target.value })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Section: Address Information */}
+                            <div className="space-y-4 border border-border/40 rounded-xl p-1 bg-muted/10">
+                                {renderSectionHeader(t('profile.sections.address'), <MapPin className="w-4 h-4" />, 'address')}
+
+                                {expandedSections.address && (
+                                    <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-300">
+                                        <div className="md:col-span-3 space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.address')}</Label>
+                                            <Input
+                                                value={editForm.morada}
+                                                onChange={e => setEditForm({ ...editForm, morada: e.target.value })}
+                                                className="h-9 text-sm bg-background border-border/60"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.postalCode')}</Label>
+                                            <Input
+                                                value={editForm.codigoPostal}
+                                                onChange={e => setEditForm({ ...editForm, codigoPostal: e.target.value })}
+                                                className="h-9 text-sm bg-background border-border/60"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-2 space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.parish')}</Label>
+                                            <Input
+                                                value={editForm.freguesia}
+                                                onChange={e => setEditForm({ ...editForm, freguesia: e.target.value })}
+                                                className="h-9 text-sm bg-background border-border/60"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Section: Professional Information */}
+                            <div className="space-y-4 border border-border/40 rounded-xl p-1 bg-muted/10">
+                                {renderSectionHeader(t('profile.sections.professional'), <Building2 className="w-4 h-4" />, 'professional')}
+
+                                {expandedSections.professional && (
+                                    <div className="p-3 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.workLocation')}</Label>
+                                            <Input
+                                                value={editForm.localEmprego}
+                                                onChange={e => setEditForm({ ...editForm, localEmprego: e.target.value })}
+                                                className="h-9 text-sm bg-background border-border/60"
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.workPhone')}</Label>
+                                            <div className="relative">
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+                                                <Input
+                                                    value={editForm.telefoneEmprego}
+                                                    onChange={e => setEditForm({ ...editForm, telefoneEmprego: e.target.value })}
+                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="md:col-span-2 space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('profile.workAddress')}</Label>
+                                            <Input
+                                                value={editForm.moradaEmprego}
+                                                onChange={e => setEditForm({ ...editForm, moradaEmprego: e.target.value })}
+                                                className="h-9 text-sm bg-background border-border/60"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </ScrollArea>
 
-                    <DialogFooter className="p-6 bg-muted/30 border-t border-border/40 gap-2">
+                    <DialogFooter className="p-4 bg-muted/30 border-t border-border/40 flex flex-row justify-end items-center gap-2">
                         <Button
-                            variant="outline"
-                            onClick={() => setIsDetailsOpen(false)}
-                            className="h-9 px-4 text-xs font-semibold"
+                            variant="ghost"
+                            onClick={requestClose}
+                            className="h-9 px-4 text-xs font-semibold text-muted-foreground hover:bg-muted"
                         >
                             {t('common.cancel')}
                         </Button>
                         <Button
                             onClick={handleEditSave}
                             disabled={isSaving}
-                            className="h-9 px-6 text-xs font-bold gap-2"
+                            className="h-9 px-6 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-2 shadow-lg shadow-primary/20"
                         >
                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-4 h-4" />}
                             {t('userManagement.details.saveChanges')}
@@ -1342,6 +1467,20 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <UnsavedChangesModal
+                isOpen={blocker.state === 'blocked' || pendingClose}
+                onConfirm={() => {
+                    if (blocker.state === 'blocked') blocker.proceed?.();
+                    if (pendingClose) {
+                        handleClose();
+                    }
+                }}
+                onCancel={() => {
+                    if (blocker.state === 'blocked') blocker.reset?.();
+                    if (pendingClose) setPendingClose(false);
+                }}
+            />
         </div>
     );
 }

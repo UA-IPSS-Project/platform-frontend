@@ -1357,5 +1357,52 @@
     "placeholders": {
       "observations": "Notas adicionais para esta categoria..."
     }
+  },
+  "settings": {
+    "title": "Definições",
+    "description": "Personalize a sua experiência e gira as configurações do sistema.",
+    "sections": {
+      "interface": "Interface e Preferências",
+      "notifications": "Sistema de Notificações",
+      "system": "Estado do Sistema",
+      "data": "Dados e Privacidade"
+    },
+    "theme": {
+      "title": "Tema da Interface",
+      "description": "Alterne entre o modo claro e escuro para melhor conforto visual.",
+      "dark": "Modo Escuro",
+      "light": "Modo Claro"
+    },
+    "language": {
+      "title": "Idioma do Sistema",
+      "description": "Selecione o idioma em que a plataforma deve ser exibida.",
+      "pt": "Português",
+      "en": "Inglês (English)"
+    },
+    "sounds": {
+      "title": "Alertas Sonoros",
+      "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
+      "enabled": "Sons ativados",
+      "disabled": "Sons desativados"
+    },
+    "clearCache": {
+      "title": "Limpeza de Cache",
+      "description": "Limpa os dados locais guardados no navegador para resolver problemas de visualização.",
+      "action": "Limpar Cache e Recarregar",
+      "success": "Cache limpa com sucesso!"
+    },
+    "messages": {
+      "languageChanged": "Idioma alterado com sucesso!",
+      "themeChanged": "Tema atualizado!"
+    },
+    "systemStatus": {
+      "title": "Conectividade do Servidor",
+      "description": "Estado em tempo real da ligação aos serviços principais.",
+      "online": "Serviços Online",
+      "offline": "Serviços Offline / Erro de Rede",
+      "version": "Versão da Aplicação",
+      "lastChecked": "Última verificação há segundos"
+    }
   }
 }
+

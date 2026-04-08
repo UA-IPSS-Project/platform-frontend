@@ -19,6 +19,7 @@ import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
 import { BalnearioAdminArea } from './BalnearioAdminArea';
+import { SettingsPage } from '../SettingsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -509,6 +510,11 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <div className="py-8">
                                 <BalnearioAdminArea mode="inventory" />
                             </div>
+                        ) : currentView === 'settings' ? (
+                            <SettingsPage
+                                isDarkMode={isDarkMode}
+                                onToggleDarkMode={onToggleDarkMode}
+                            />
                         ) : (
                             renderPlaceholder(currentView)
                         )}
