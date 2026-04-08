@@ -45,7 +45,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
   const uniqueCategorias = Array.from(new Set(materiais.map(m => m.categoria).filter((c): c is string => !!c)));
 
   const handleCreate = async () => {
-    if (!novoNome.trim() || !novoAtributo.trim() || !novoValorAtributo.trim()) {
+    if (!novoNome.trim()) {
       toast.error(t('dashboard.admin.catalogs.errors.requiredFields'));
       return;
     }
@@ -304,9 +304,11 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
                         <div className="flex items-center justify-between">
                           <div className="space-y-1">
                             <span className="font-bold text-base text-foreground block">{item.nome}</span>
-                            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
-                              {item.atributo}: {item.valorAtributo}
-                            </div>
+                            {(item.atributo || item.valorAtributo) && (
+                              <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
+                                {item.atributo ? item.atributo + ': ' : ''}{item.valorAtributo || ''}
+                              </div>
+                            )}
                           </div>
                           <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
                             <Button 
