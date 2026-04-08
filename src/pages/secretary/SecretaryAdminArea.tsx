@@ -136,17 +136,17 @@ export function SecretaryAdminArea() {
     useEffect(() => {
         const loadCatalogCounts = async () => {
             try {
-                const [materiais, transportes, tiposManutencao] = await Promise.all([
+                const [materiais, transportes, manutencaoItems] = await Promise.all([
                     requisicoesApi.listarMateriais(),
                     requisicoesApi.listarTransportes(),
-                    requisicoesApi.listarTiposManutencao(),
+                    requisicoesApi.listarManutencaoItems(),
                 ]);
 
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(tiposManutencao) 
-                        ? new Set(tiposManutencao.map((i: any) => i.categoria)).size 
+                    tiposManutencao: Array.isArray(manutencaoItems) 
+                        ? new Set(manutencaoItems.map((i: any) => i.categoria)).size 
                         : 0,
                 });
             } catch (error) {
