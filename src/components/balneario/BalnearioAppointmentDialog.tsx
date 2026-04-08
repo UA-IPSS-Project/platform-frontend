@@ -34,13 +34,19 @@ interface BalnearioAppointmentDialogProps {
     funcionarioId: number;
 }
 
-// Will be fetched from armazemApi
 interface DynamicOption {
-    id: number;
+    id?: number;
     value: string;
     label: string;
     category: string;
 }
+
+const BASE_CATEGORIES = [
+    { id: 'HIGIENE', labelKey: 'balnearioAppointment.hygiene' },
+    { id: 'DETERGENTES', labelKey: 'balnearioAppointment.laundry' },
+    { id: 'VESTUARIO', labelKey: 'balnearioAppointment.clothing' },
+    { id: 'CALCADO', labelKey: 'consumos.categories.calcado' },
+];
 
 export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: BalnearioAppointmentDialogProps) {
     const { t, i18n } = useTranslation();
@@ -59,6 +65,19 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     const [isLoading, setIsLoading] = useState(false);
     const [tempReservaId, setTempReservaId] = useState<number | null>(null);
     const tempReservaRef = useRef<number | null>(null);
+
+    const categories = useMemo(() => {
+        const uniqueCatIds = Array.from(new Set(dynamicOptions.map(o => o.category.toUpperCase())));
+        
+        // Map to labels, keeping the order they appear or custom order if we want
+        return uniqueCatIds.map(id => {
+            const base = BASE_CATEGORIES.find(bc => bc.id === id);
+            return {
+                id: id,
+                label: base?.labelKey ? t(base.labelKey) : id
+            };
+        });
+    }, [dynamicOptions, t]);
 
     const isDirty = useMemo(() => {
         return name.trim() !== '' || Object.values(selectedOptions).some(Boolean) || notes.trim() !== '' || shoeSize !== '';
@@ -160,7 +179,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     useEffect(() => {
         if (open) {
             armazemApi.listarTodos().then(items => {
-                const options = items
+                const options: DynamicOption[] = items
                     .filter(i => i.categoria !== 'CALCADO') // Special handling for shoes
                     .map(i => ({
                         id: i.id!,
@@ -174,7 +193,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                     options.push({
                         value: 'Sapatos/Sapatilhas',
                         label: t('balnearioAppointment.options.shoesSneakers'),
-                        category: 'VESTUARIO' // Map to clothing group
+                        category: 'CALCADO'
                     });
                 }
                 
@@ -266,7 +285,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             // Map checklist options to specific booleans and clothing/items array
             let hasHygiene = false;
             let hasLaundry = false;
-            const roupasVal: { categoria: string; tamanho?: string; quantidade: number }[] = [];
+            const roupasVal: { categoria: string; tamanho?: string; quantidade: number; itemId?: number }[] = [];
 
             Object.entries(selectedOptions).forEach(([option, isSelected]) => {
                 if (!isSelected) return;
@@ -276,18 +295,14 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
 
                 if (category === 'HIGIENE') {
                     hasHygiene = true;
+                } else if (category === 'DETERGENTES' && option.startsWith('Lavar Roupa')) {
+                    hasLaundry = true;
+                }
+
+                if (option === 'Sapatos/Sapatilhas' && shoeSize) {
+                    roupasVal.push({ categoria: option, tamanho: shoeSize, quantidade: 1, itemId: optDetail?.id });
+                } else {
                     roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
-                } else if (category === 'DETERGENTES') {
-                    if (option.startsWith('Lavar Roupa')) {
-                        hasLaundry = true;
-                    }
-                    roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
-                } else if (category === 'VESTUARIO' || category === 'CALCADO') {
-                    if (option === 'Sapatos/Sapatilhas' && shoeSize) {
-                        roupasVal.push({ categoria: option, tamanho: shoeSize, quantidade: 1, itemId: optDetail?.id });
-                    } else {
-                        roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
-                    }
                 }
             });
 
@@ -362,119 +377,81 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                         <h3 className="font-semibold text-primary border-b border-primary/20 pb-2">{t('balnearioAppointment.patientNeeds')}</h3>
 
                         <div className="space-y-4">
-                            {/* Hygiene */}
-                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
-                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {dynamicOptions.filter(o => o.category === 'HIGIENE').map((opt) => (
-                                        <div key={opt.value} className="flex flex-col">
-                                            <div className="flex items-center space-x-3">
-                                                <Checkbox
-                                                    id={optionId('higiene', opt.value)}
-                                                    checked={selectedOptions[opt.value] || false}
-                                                    onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
-                                                />
-                                                <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
-                                            </div>
-                                            {selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    {getStockWarning(opt.value)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Detergents & Laundry */}
-                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
-                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.laundry')}</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {dynamicOptions.filter(o => o.category === 'DETERGENTES').map((opt) => (
-                                        <div key={opt.value} className="flex flex-col">
-                                            <div className="flex items-center space-x-3">
-                                                <Checkbox
-                                                    id={optionId('detergentes', opt.value)}
-                                                    checked={selectedOptions[opt.value] || false}
-                                                    onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
-                                                />
-                                                <label htmlFor={optionId('detergentes', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
-                                            </div>
-                                            {selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    {getStockWarning(opt.value)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Clothing */}
-                            <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
-                                <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.clothing')}</Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {dynamicOptions.filter(o => o.category === 'VESTUARIO').map((opt) => (
-                                        <div key={opt.value} className="flex flex-col">
-                                            <div className="flex items-center space-x-3">
-                                                <Checkbox
-                                                    id={optionId('vestuario', opt.value)}
-                                                    checked={selectedOptions[opt.value] || false}
-                                                    onCheckedChange={() => toggleOption(opt.value)}
-                                                    className="data-[state=checked]:bg-primary border-border flex-shrink-0"
-                                                />
-                                                <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
-                                            </div>
-                                            {/* Shoe size input */}
-                                            {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (
-                                                <div className="ml-8 mt-2 space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <Label className="text-xs text-muted-foreground">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
-                                                        <Input
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            value={shoeSize}
-                                                            onChange={(e) => {
-                                                                handleShoeSizeChange(e.target.value);
-                                                                if (errors.shoeSize) setErrors({ ...errors, shoeSize: '' });
-                                                            }}
-                                                            placeholder="35-46"
-                                                            className={`w-20 h-7 text-sm text-center bg-background ${errors.shoeSize ? 'border-status-error' : 'border-border'}`}
-                                                            maxLength={2}
+                        <div className="space-y-4">
+                            {categories.map((cat) => (
+                                <div key={cat.id} className="bg-muted/40 p-4 rounded-lg border border-border/60">
+                                    <Label className="font-medium text-foreground/80 block mb-3">
+                                        {cat.label}
+                                    </Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {dynamicOptions
+                                            .filter((o) => o.category === cat.id)
+                                            .map((opt) => (
+                                                <div key={opt.value} className="flex flex-col">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Checkbox
+                                                            id={optionId(cat.id.toLowerCase(), opt.value)}
+                                                            checked={selectedOptions[opt.value] || false}
+                                                            onCheckedChange={() => toggleOption(opt.value)}
+                                                            className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                         />
+                                                        <label 
+                                                            htmlFor={optionId(cat.id.toLowerCase(), opt.value)} 
+                                                            className="text-sm cursor-pointer select-none leading-tight"
+                                                        >
+                                                            {opt.label}
+                                                        </label>
                                                     </div>
-                                                    {errors.shoeSize && (
-                                                        <p className="text-xs text-status-error">{errors.shoeSize}</p>
+
+                                                    {/* Special handling for Shoe Size */}
+                                                    {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (
+                                                        <div className="ml-8 mt-2 space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <Label className="text-xs text-muted-foreground">{t('consumos.shoeSize', 'Nº calçado')}:</Label>
+                                                                <Input
+                                                                    type="text"
+                                                                    inputMode="numeric"
+                                                                    value={shoeSize}
+                                                                    onChange={(e) => {
+                                                                        handleShoeSizeChange(e.target.value);
+                                                                        if (errors.shoeSize) setErrors({ ...errors, shoeSize: '' });
+                                                                    }}
+                                                                    placeholder="35-46"
+                                                                    className={`w-20 h-7 text-sm text-center bg-background ${errors.shoeSize ? 'border-status-error' : 'border-border'}`}
+                                                                    maxLength={2}
+                                                                />
+                                                            </div>
+                                                            {errors.shoeSize && (
+                                                                <p className="text-xs text-status-error">{errors.shoeSize}</p>
+                                                            )}
+                                                            {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
+                                                                <p className="text-xs text-status-error flex items-center gap-1">
+                                                                    <AlertTriangle className="w-3 h-3" />
+                                                                    {t('consumos.outOfStock', 'Esgotado no armazém')}
+                                                                </p>
+                                                            )}
+                                                            {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
+                                                                <p className="text-xs text-status-warning flex items-center gap-1">
+                                                                    <AlertTriangle className="w-3 h-3" />
+                                                                    {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     )}
-                                                    {shoeSizeStock && shoeSizeStock.tracked && shoeSizeStock.esgotado && (
-                                                        <p className="text-xs text-status-error flex items-center gap-1">
+
+                                                    {/* Stock warning for all selected items */}
+                                                    {opt.value !== 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && getStockWarning(opt.value) && (
+                                                        <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
                                                             <AlertTriangle className="w-3 h-3" />
-                                                            {t('consumos.outOfStock', 'Esgotado no armazém')}
-                                                        </p>
-                                                    )}
-                                                    {shoeSizeStock && shoeSizeStock.tracked && !shoeSizeStock.esgotado && shoeSizeStock.estado === 'BAIXO' && (
-                                                        <p className="text-xs text-status-warning flex items-center gap-1">
-                                                            <AlertTriangle className="w-3 h-3" />
-                                                            {t('consumos.lowStock', 'Baixo no armazém')} ({shoeSizeStock.quantidade} {t('consumos.pairs', 'pares')})
+                                                            {getStockWarning(opt.value)}
                                                         </p>
                                                     )}
                                                 </div>
-                                            )}
-                                            {/* Stock warning for non-shoe items */}
-                                            {opt.value !== 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && getStockWarning(opt.value) && (
-                                                <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
-                                                    <AlertTriangle className="w-3 h-3" />
-                                                    {getStockWarning(opt.value)}
-                                                </p>
-                                            )}
-                                        </div>
-                                    ))}
+                                            ))}
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
+                        </div>
                         </div>
                     </div>
 

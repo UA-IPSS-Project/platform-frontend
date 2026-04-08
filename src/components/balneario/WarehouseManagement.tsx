@@ -301,7 +301,7 @@ export function WarehouseManagement() {
                                                 ) : (
                                                     <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20 gap-1">
                                                         <Check className="w-3 h-3" />
-                                                        {t('history.status.completed', 'OK')}
+                                                        {t('common.ok', 'Ok')}
                                                     </Badge>
                                                 )}
                                             </td>

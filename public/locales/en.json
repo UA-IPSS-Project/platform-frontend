@@ -588,7 +588,7 @@
     "title": "Appointment History",
     "backToAppointments": "Back to Appointments",
     "status": {
-      "completed": "Completed",
+      "completed": "Ok",
       "warning": "Warning",
       "noShow": "No-show",
       "cancelled": "Cancelled"
@@ -1011,7 +1011,7 @@
     "rescheduledSuccess": "Appointment rescheduled successfully",
     "rescheduledFailed": "Failed to save reschedule.",
     "scheduled": "Scheduled",
-    "completed": "Completed",
+    "completed": "Ok",
     "noShow": "No-show",
     "cancelled": "Cancelled",
     "viewAppointment": "View Appointment",
@@ -1064,7 +1064,7 @@
     "inProgress": "In Progress",
     "scheduled": "Scheduled",
     "warning": "Warning",
-    "completed": "Completed",
+    "completed": "Ok",
     "cancelled": "Cancelled",
     "noShow": "No-show",
     "reserved": "Reserved"

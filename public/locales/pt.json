@@ -588,7 +588,7 @@
     "title": "Histórico de Marcações",
     "backToAppointments": "Voltar para Marcações",
     "status": {
-      "completed": "Concluído",
+      "completed": "Ok",
       "warning": "Aviso",
       "noShow": "Não compareceu",
       "cancelled": "Cancelado"
@@ -1016,7 +1016,7 @@
     "rescheduledSuccess": "Marcação reagendada com sucesso",
     "rescheduledFailed": "Falha ao guardar o reagendamento.",
     "scheduled": "Agendado",
-    "completed": "Concluído",
+    "completed": "Ok",
     "noShow": "Não compareceu",
     "cancelled": "Cancelado",
     "viewAppointment": "Consultar Agendamento",
@@ -1069,7 +1069,7 @@
     "inProgress": "Em Curso",
     "scheduled": "Agendado",
     "warning": "Aviso",
-    "completed": "Concluído",
+    "completed": "Ok",
     "cancelled": "Cancelado",
     "noShow": "Não compareceu",
     "reserved": "Reservado"
