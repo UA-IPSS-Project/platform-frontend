@@ -79,7 +79,11 @@ export function WarehouseManagement() {
                 allCategories.push({ id: cat, labelKey: '' });
             }
         });
-        return allCategories;
+        return allCategories.sort((a, b) => {
+            if (a.id === 'CALCADO') return 1;
+            if (b.id === 'CALCADO') return -1;
+            return a.id.localeCompare(b.id);
+        });
     }, [items]);
 
     const loadItems = async () => {

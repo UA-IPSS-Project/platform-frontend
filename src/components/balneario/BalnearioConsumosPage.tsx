@@ -190,10 +190,14 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                 allCategories.push({ id: cat, labelKey: '' });
             }
         });
-        // Only return categories that actually have items, or are base ones
-        return allCategories.filter(cat => 
-            itemCategories.includes(cat.id) || baseIds.includes(cat.id)
-        );
+        // Only return categories that actually have items, or are base ones, and sort CALCADO last
+        return allCategories
+            .filter(cat => itemCategories.includes(cat.id) || baseIds.includes(cat.id))
+            .sort((a, b) => {
+                if (a.id === 'CALCADO') return 1;
+                if (b.id === 'CALCADO') return -1;
+                return a.id.localeCompare(b.id);
+            });
     }, [items]);
 
     const groupedItems = useMemo(() => {
@@ -226,7 +230,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
         return (
             <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-border last:border-b-0">
                 <span className="font-medium text-foreground">
-                    {isCalcado ? `${t('consumos.size', 'Tamanho')} ${item.nome}` : t(`consumos.products.${item.nome}`, item.nome)}
+                    {isCalcado ? item.nome : t(`consumos.products.${item.nome}`, item.nome)}
                 </span>
 
                 {/* Quantity controls */}
@@ -638,7 +642,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                                             cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
                                                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: 'var(--foreground)', backgroundColor: 'var(--card)' }}
                                                             formatter={(value: number) => [<span className="font-bold text-primary">{value}</span>, t('consumos.quantity', 'Quantidade')]}
-                                                            labelFormatter={(nome) => cat === 'CALCADO' ? `Tamanho ${nome}` : t(`consumos.products.${nome}`, nome as string)}
+                                                            labelFormatter={(nome) => cat === 'CALCADO' ? `${nome}` : t(`consumos.products.${nome}`, nome as string)}
                                                             labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--foreground)' }}
                                                         />
                                                         <Bar 
