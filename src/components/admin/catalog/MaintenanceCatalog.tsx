@@ -182,13 +182,15 @@ export function MaintenanceCatalog({ items, onRefresh, formatCategoryName }: Mai
     if (!customCategory.trim()) return;
     try {
       setSaving(true);
+      const targetCategory = customCategory.trim();
       await requisicoesApi.criarManutencaoItem({
-        categoria: customCategory.trim(),
+        categoria: targetCategory,
         espaco: 'GERAL',
         itemVerificacao: 'GERAL'
       });
       setCustomCategory('');
       setCategoryMode('SELECT');
+      setOpenGroups(prev => ({ ...prev, [targetCategory]: true }));
       await onRefresh();
       toast.success("Categoria criada com sucesso!");
     } catch (err: any) {
