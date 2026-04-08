@@ -69,9 +69,15 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
     const [activeSection, setActiveSection] = useState<'create' | 'recover'>('create');
 
     const [users, setUsers] = useState<any[]>([]);
+    const [utentes, setUtentes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingUtentes, setIsLoadingUtentes] = useState(false);
+
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchQueryUtentes, setSearchQueryUtentes] = useState('');
+
     const [currentPage, setCurrentPage] = useState(1);
+    const [currentPageUtentes, setCurrentPageUtentes] = useState(1);
     const itemsPerPage = 5;
 
     useEffect(() => {
@@ -80,6 +86,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     useEffect(() => {
         fetchUsers();
+        fetchUtentes();
     }, []);
 
     const fetchUsers = async () => {
@@ -95,6 +102,22 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             console.error("Failed to fetch users", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchUtentes = async () => {
+        setIsLoadingUtentes(true);
+        try {
+            const data = await utilizadoresApi.listarUtentes();
+            const sorted = [...data].sort((a, b) => {
+                if (a.active !== b.active) return a.active ? 1 : -1;
+                return (b.id || 0) - (a.id || 0);
+            });
+            setUtentes(sorted);
+        } catch (error) {
+            console.error("Failed to fetch utentes", error);
+        } finally {
+            setIsLoadingUtentes(false);
         }
     };
 
@@ -378,18 +401,29 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         }
     };
 
-    // Filter users
+    // Filter users (Employees)
     const filteredUsers = users.filter(user =>
         user.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.nif.includes(searchQuery)
     );
 
+    // Filter utentes
+    const filteredUtentesList = utentes.filter(u =>
+        u.nome.toLowerCase().includes(searchQueryUtentes.toLowerCase()) ||
+        u.nif.includes(searchQueryUtentes)
+    );
+
     const pendingCount = users.filter(u => u.active === false).length;
 
-    // Pagination
+    // Pagination Employees
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+    // Pagination Utentes
+    const totalPagesUtentes = Math.ceil(filteredUtentesList.length / itemsPerPage);
+    const startIndexUtentes = (currentPageUtentes - 1) * itemsPerPage;
+    const currentUtentes = filteredUtentesList.slice(startIndexUtentes, startIndexUtentes + itemsPerPage);
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
@@ -723,144 +757,259 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 </div>
 
                 {/* Right Panel: Registered Users List */}
-                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-border/40">
+                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-border/40 overflow-auto">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-4">
-                            {/* Icon color follows semantic primary token */}
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 <Users className="w-6 h-6" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">{t('userManagement.registeredUsers')}</h2>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
-                                    <span className="w-5 h-5 rounded-full bg-primary/15 text-primary text-[10px] flex items-center justify-center font-bold">{pendingCount}</span>
-                                </div>
+                                <h2 className="text-xl font-bold text-foreground">{t('userManagement.title')}</h2>
+                                <p className="text-xs text-muted-foreground">{t('userManagement.subtitle')}</p>
                             </div>
                         </div>
                         <Button
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={fetchUsers}
+                            onClick={() => { fetchUsers(); fetchUtentes(); }}
                         >
-                            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                            <RefreshCw className={`w-4 h-4 ${(isLoading || isLoadingUtentes) ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
 
-                    {/* Search */}
-                    <div className="relative mb-6">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                            placeholder={t('userManagement.searchByNameOrNif')}
-                            className="h-10 pl-9 bg-card border-border text-sm"
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-
-                    {/* Users Table */}
-                    <div className="flex-1 overflow-auto">
-                        <table className="w-full">
-                            <thead className="text-sm font-medium text-muted-foreground border-b border-border/60">
-                                <tr>
-                                    <th className="text-left pb-3 pl-2 font-medium">{t('requisitions.ui.name')}</th>
-                                    <th className="text-left pb-3 font-medium">NIF</th>
-                                    <th className="text-left pb-3 font-medium">{t('userManagement.role')}</th>
-                                    <th className="text-left pb-3 font-medium">{t('requisitions.ui.status')}</th>
-                                    <th className="text-left pb-3 font-medium">{t('userManagement.action')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm">
-                                {isLoading ? (
-                                    <tr>
-                                        <td colSpan={5} className="py-20 text-center text-muted-foreground">
-                                            {t('documents.actions.searching')}
-                                        </td>
-                                    </tr>
-                                ) : filteredUsers.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="py-20 text-center text-muted-foreground">
-                                            {t('userManagement.noUsersFound')}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    currentUsers.map((user: any, index) => (
-                                        <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
-                                            <td className="py-3 pl-2 font-medium text-foreground">{user.nome}</td>
-                                            <td className="py-3 text-muted-foreground">{user.nif}</td>
-                                            <td className="py-3 text-muted-foreground">
-                                                {user.funcao ? (
-                                                    ({
-                                                        'SECRETARIA': t('userManagement.roles.secretary'),
-                                                        'BALNEARIO': t('userManagement.roles.balneario'),
-                                                        'ESCOLA': t('userManagement.roles.school'),
-                                                        'INTERNO': t('userManagement.roles.internals'),
-                                                        'OUTRO': t('userManagement.roles.other')
-                                                    } as Record<string, string>)[user.funcao] || user.funcao
-                                                ) : '-'}
-                                            </td>
-                                            <td className="py-3 text-left">
-                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.active
-                                                    ? 'bg-status-success-soft text-status-success'
-                                                    : 'bg-status-warning-soft text-status-warning'
-                                                    }`}>
-                                                    {user.active ? t('userManagement.active') : t('userManagement.pending')}
-                                                </span>
-                                            </td>
-                                            <td className="py-3 text-left">
-                                                {!user.active && !user.createdBySecretaria && (
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-primary hover:bg-primary/90 text-primary-foreground h-7 text-xs"
-                                                        onClick={() => handleApprove(user.id)}
-                                                    >
-                                                        {t('userManagement.approve')}
-                                                    </Button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-between pt-4 border-t border-border/60 mt-auto">
-                            <p className="text-xs text-muted-foreground">
-                                {t('userManagement.showingUsers', {
-                                    start: startIndex + 1,
-                                    end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
-                                    total: filteredUsers.length,
-                                })}
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </Button>
-                                <span className="text-sm text-muted-foreground min-w-[3rem] text-center">
-                                    {currentPage} / {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
+                    {/* Section 1: Employees Management */}
+                    <div className="mb-12">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <Lock className="w-4 h-4" />
+                                </div>
+                                <h3 className="text-lg font-bold text-foreground">{t('userManagement.employeesTitle')}</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
+                                    <span className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[8px] flex items-center justify-center font-bold">{pendingCount}</span>
+                                </div>
                             </div>
                         </div>
-                    )}
+
+                        {/* Search Employees */}
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <Input
+                                placeholder={t('userManagement.searchByNameOrNif')}
+                                className="h-9 pl-9 bg-card border-border text-xs"
+                                value={searchQuery}
+                                onChange={e => {
+                                    setSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
+
+                        {/* Employees Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
+                                    <tr>
+                                        <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
+                                        <th className="text-left pb-2 font-medium">NIF</th>
+                                        <th className="text-left pb-2 font-medium">{t('userManagement.role')}</th>
+                                        <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
+                                        <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-xs">
+                                    {isLoading ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                                                {t('documents.actions.searching')}
+                                            </td>
+                                        </tr>
+                                    ) : filteredUsers.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                                                {t('userManagement.noUsersFound')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentUsers.map((user: any, index) => (
+                                            <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
+                                                <td className="py-2.5 pl-2 font-medium text-foreground">{user.nome}</td>
+                                                <td className="py-2.5 text-muted-foreground">{user.nif}</td>
+                                                <td className="py-2.5 text-muted-foreground">
+                                                    {user.funcao ? (
+                                                        ({
+                                                            'SECRETARIA': t('userManagement.roles.secretary'),
+                                                            'BALNEARIO': t('userManagement.roles.balneario'),
+                                                            'ESCOLA': t('userManagement.roles.school'),
+                                                            'INTERNO': t('userManagement.roles.internals'),
+                                                            'OUTRO': t('userManagement.roles.other'),
+                                                            'UTENTE': t('userManagement.roles.userCommon')
+                                                        } as Record<string, string>)[user.funcao] || user.funcao
+                                                    ) : '-'}
+                                                </td>
+                                                <td className="py-2.5">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${user.active
+                                                        ? 'bg-status-success/10 text-status-success'
+                                                        : 'bg-amber-500/10 text-amber-500'
+                                                        }`}>
+                                                        {user.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 pr-2 text-right">
+                                                    {!user.active && (
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-7 w-7 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                                                            onClick={() => handleApprove(user.id)}
+                                                            title={t('userManagement.approve')}
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </Button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Employees */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-4">
+                                <p className="text-[10px] text-muted-foreground">
+                                    {t('userManagement.showingUsers', {
+                                        start: startIndex + 1,
+                                        end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
+                                        total: filteredUsers.length
+                                    })}
+                                </p>
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
+                                    >
+                                        <ChevronLeft className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
+                                    >
+                                        <ChevronRight className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Section 2: Utentes Management */}
+                    <div>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                <Users className="w-4 h-4" />
+                            </div>
+                            <h3 className="text-lg font-bold text-foreground">{t('userManagement.usersTitle')}</h3>
+                        </div>
+
+                        {/* Search Utentes */}
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <Input
+                                placeholder={t('userManagement.searchByNameOrNif')}
+                                className="h-9 pl-9 bg-card border-border text-xs"
+                                value={searchQueryUtentes}
+                                onChange={e => {
+                                    setSearchQueryUtentes(e.target.value);
+                                    setCurrentPageUtentes(1);
+                                }}
+                            />
+                        </div>
+
+                        {/* Utentes Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
+                                    <tr>
+                                        <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
+                                        <th className="text-left pb-2 font-medium">NIF</th>
+                                        <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-xs">
+                                    {isLoadingUtentes ? (
+                                        <tr>
+                                            <td colSpan={3} className="py-12 text-center text-muted-foreground">
+                                                {t('documents.actions.searching')}
+                                            </td>
+                                        </tr>
+                                    ) : filteredUtentesList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={3} className="py-12 text-center text-muted-foreground">
+                                                {t('userManagement.noUsersFound')}
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentUtentes.map((utente: any, index) => (
+                                            <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
+                                                <td className="py-2.5 pl-2 font-medium text-foreground">{utente.nome}</td>
+                                                <td className="py-2.5 text-muted-foreground">{utente.nif}</td>
+                                                <td className="py-2.5">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${utente.active
+                                                        ? 'bg-status-success/10 text-status-success'
+                                                        : 'bg-muted/20 text-muted-foreground'
+                                                        }`}>
+                                                        {utente.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Utentes */}
+                        {totalPagesUtentes > 1 && (
+                            <div className="flex items-center justify-between mt-4">
+                                <p className="text-[10px] text-muted-foreground">
+                                    {t('userManagement.showingUsers', {
+                                        start: startIndexUtentes + 1,
+                                        end: Math.min(startIndexUtentes + itemsPerPage, filteredUtentesList.length),
+                                        total: filteredUtentesList.length
+                                    })}
+                                </p>
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        disabled={currentPageUtentes === 1}
+                                        onClick={() => setCurrentPageUtentes(prev => prev - 1)}
+                                    >
+                                        <ChevronLeft className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 w-7 p-0"
+                                        disabled={currentPageUtentes === totalPagesUtentes}
+                                        onClick={() => setCurrentPageUtentes(prev => prev + 1)}
+                                    >
+                                        <ChevronRight className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </GlassCard>
             </div>
 

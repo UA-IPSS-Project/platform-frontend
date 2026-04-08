@@ -919,9 +919,13 @@
     }
   },
   "userManagement": {
-    "title": "Gestão de Utilizadores",
+    "title": "Gestão de Contas",
     "title2": "Gestão da Plataforma",
-    "subtitle": "Criação e recuperação de contas",
+    "subtitle": "Registe novos utilizadores ou recupere contas existentes.",
+    "employeesTitle": "Gestão de Funcionários",
+    "usersTitle": "Gestão de Utentes",
+    "registeredEmployees": "Funcionários Registados",
+    "registeredUtentes": "Utentes Registados",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
     "secretarySlotsLabel": "Secretaria (marcações por slot)",

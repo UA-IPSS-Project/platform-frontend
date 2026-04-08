@@ -914,9 +914,13 @@
     }
   },
   "userManagement": {
-    "title": "User Management",
+    "title": "Account Management",
     "title2": "Platform Management",
-    "subtitle": "Account creation and recovery",
+    "subtitle": "Register new users or recover existing accounts.",
+    "employeesTitle": "Employee Management",
+    "usersTitle": "User Management",
+    "registeredEmployees": "Registered Employees",
+    "registeredUtentes": "Registered Users",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
     "secretarySlotsLabel": "Secretary (appointments per slot)",
