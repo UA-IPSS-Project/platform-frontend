@@ -1127,7 +1127,7 @@
     "patientNamePlaceholder": "Ex: João da Silva",
     "patientNeeds": "Necessidades do Utente",
     "hygiene": "Higiene",
-    "laundry": "Lavandaria",
+    "laundry": "Detergentes",
     "clothing": "Vestuário",
     "additionalNotes": "Notas Adicionais",
     "notesPlaceholder": "Ex: Alergias, cuidados especiais, tamanho de roupa...",
@@ -1227,7 +1227,6 @@
     "stockWarningContinue": "Sim, continuar",
     "categories": {
       "detergentes": "Detergentes",
-      "lavandaria": "Lavandaria",
       "higiene": "Higiene",
       "vestuario": "Vestuário",
       "calcado": "Calçado"
@@ -1253,7 +1252,7 @@
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
     },
-    "warehouse": {
+    "inventory": {
       "managementTitle": "Gestão de Inventário",
       "newItem": "Novo Item",
       "editItem": "Editar Item",

@@ -238,7 +238,9 @@
     "management": "Management",
     "consumption": "Consumption",
     "administrativeArea": "Administrative Area",
-    "general": "General"
+    "general": "General",
+    "slots": "Slot Management",
+    "inventory": "Inventory Management"
   },
   "dashboard": {
     "secretary": "Secretary",
@@ -1118,9 +1120,7 @@
     "description": "Form for scheduling quick baths.",
     "patientName": "User Name",
     "patientNamePlaceholder": "Ex: John Smith",
-    "patientNeeds": "User Needs",
-    "hygiene": "Hygiene",
-    "laundry": "Laundry",
+    "laundry": "Detergents",
     "clothing": "Clothing",
     "additionalNotes": "Additional Notes",
     "notesPlaceholder": "Ex: Allergies, special care, clothing size...",
@@ -1242,6 +1242,59 @@
       "Roupa Interior": "Underwear",
       "Meias": "Socks",
       "Agasalho/Casaco": "Coat/Jacket"
+    },
+    "inventory": {
+      "managementTitle": "Inventory Management",
+      "newItem": "New Item",
+      "editItem": "Edit Item",
+      "createItem": "New Warehouse Item",
+      "searchPlaceholder": "Search items...",
+      "noItemsFound": "No items found",
+      "tryChangingFilters": "Try changing filters or search.",
+      "totalItems": "Total Items",
+      "lowStock": "Low Stock",
+      "all": "All",
+      "form": {
+        "detailsDescription": "Configure product details and stock limits.",
+        "productName": "Product Name",
+        "currentStock": "Current Stock",
+        "minAlert": "Minimum Alert",
+        "specificAttributes": "Specific Attributes",
+        "brand": "Brand",
+        "size": "Size",
+        "volume": "Volume / Weight",
+        "unit": "Unit",
+        "description": "Description",
+        "detailsPlaceholder": "Additional details...",
+        "saveChanges": "Save Changes",
+        "saving": "Saving...",
+        "requiredFields": "Name and Category are required"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Category",
+        "stock": "Stock",
+        "status": "Status",
+        "actions": "Actions",
+        "min": "Min",
+        "marca": "Brand",
+        "tam": "Size",
+        "vol": "Vol",
+        "empty": "No items found in warehouse"
+      },
+      "deleteConfirm": {
+        "title": "Delete Product",
+        "description": "Are you sure you want to delete the product <strong class='text-foreground'>{{name}}</strong>? This action is permanent and will remove all records of this item from inventory.",
+        "action": "Delete Product",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "loadError": "Error loading warehouse items",
+        "deleteSuccess": "Item removed successfully",
+        "deleteError": "Error removing item",
+        "saveSuccess": "Item saved successfully",
+        "saveError": "Error saving item"
+      }
     }
   },
   "maintenance": {

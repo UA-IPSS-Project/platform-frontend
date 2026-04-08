@@ -277,8 +277,10 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                 if (category === 'HIGIENE') {
                     hasHygiene = true;
                     roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
-                } else if (category === 'LAVANDARIA') {
-                    hasLaundry = true;
+                } else if (category === 'DETERGENTES') {
+                    if (option.startsWith('Lavar Roupa')) {
+                        hasLaundry = true;
+                    }
                     roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
                 } else if (category === 'VESTUARIO' || category === 'CALCADO') {
                     if (option === 'Sapatos/Sapatilhas' && shoeSize) {
@@ -386,20 +388,20 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                 </div>
                             </div>
 
-                            {/* Laundry / Detergents */}
+                            {/* Detergents & Laundry */}
                             <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
                                 <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {dynamicOptions.filter(o => o.category === 'LAVANDARIA').map((opt) => (
+                                    {dynamicOptions.filter(o => o.category === 'DETERGENTES').map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
                                             <div className="flex items-center space-x-3">
                                                 <Checkbox
-                                                    id={optionId('lavandaria', opt.value)}
+                                                    id={optionId('detergentes', opt.value)}
                                                     checked={selectedOptions[opt.value] || false}
                                                     onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
+                                                <label htmlFor={optionId('detergentes', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
                                             </div>
                                             {selectedOptions[opt.value] && getStockWarning(opt.value) && (
                                                 <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
