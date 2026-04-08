@@ -17,11 +17,6 @@ function getSlotTypes(t: (k: string) => string) {
             titulo: t('dashboard.admin.slots.secretaryScheduleTitle'),
             descricao: t('dashboard.admin.slots.secretaryScheduleDescription'),
         },
-        {
-            tipo: 'BALNEARIO' as const,
-            titulo: t('dashboard.admin.slots.balnearioScheduleTitle'),
-            descricao: t('dashboard.admin.slots.balnearioScheduleDescription'),
-        },
     ];
 }
 
@@ -58,8 +53,8 @@ function SlotsManagement({
 }: Readonly<{
     isLoadingSlots: boolean;
     isSavingSlots: boolean;
-    slotCapacities: { SECRETARIA: number; BALNEARIO: number };
-    onChange: (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => void;
+    slotCapacities: { SECRETARIA: number };
+    onChange: (tipo: 'SECRETARIA', value: string) => void;
     onSave: () => void;
     t: (k: string) => string;
 }>) {
@@ -127,7 +122,6 @@ export function SecretaryAdminArea() {
     const { t } = useTranslation();
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
-        BALNEARIO: 2,
     });
     const [catalogCounts, setCatalogCounts] = useState({
         materiais: 0,
@@ -143,7 +137,6 @@ export function SecretaryAdminArea() {
             const config = await calendarioApi.listarConfiguracaoSlots();
             setSlotCapacities({
                 SECRETARIA: config.find(item => item.tipo === 'SECRETARIA')?.capacidadePorSlot ?? 1,
-                BALNEARIO: config.find(item => item.tipo === 'BALNEARIO')?.capacidadePorSlot ?? 2,
             });
         } catch (error) {
             toast.error(t('dashboard.admin.errors.loadSlotConfig'));
@@ -178,7 +171,7 @@ export function SecretaryAdminArea() {
         loadCatalogCounts();
     }, [t]);
 
-    const handleSlotCapacityChange = (tipo: 'SECRETARIA' | 'BALNEARIO', value: string) => {
+    const handleSlotCapacityChange = (tipo: 'SECRETARIA', value: string) => {
         const parsed = Number.parseInt(value, 10);
         const safeValue = Number.isFinite(parsed) ? Math.min(20, Math.max(1, parsed)) : 1;
         setSlotCapacities(prev => ({ ...prev, [tipo]: safeValue }));
@@ -187,10 +180,7 @@ export function SecretaryAdminArea() {
     const handleSaveSlotCapacities = async () => {
         setIsSavingSlots(true);
         try {
-            await Promise.all([
-                calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA),
-                calendarioApi.atualizarConfiguracaoSlot('BALNEARIO', slotCapacities.BALNEARIO),
-            ]);
+            await calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA);
             toast.success(t('dashboard.admin.messages.slotConfigUpdated'));
             await loadSlotCapacities();
         } catch (error) {
@@ -203,7 +193,7 @@ export function SecretaryAdminArea() {
     const summaryCards = useMemo(() => [
         {
             title: t('dashboard.admin.summary.slots.title'),
-            value: `${slotCapacities.SECRETARIA} / ${slotCapacities.BALNEARIO}`,
+            value: slotCapacities.SECRETARIA,
             description: t('dashboard.admin.summary.slots.description'),
             icon: CalendarDays,
             iconClassName: 'bg-primary/15 text-primary',
