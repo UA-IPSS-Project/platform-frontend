@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Package, Truck, Wrench, Settings2, Save, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Package, Truck, Wrench, Settings2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -10,43 +10,11 @@ import { RequisitionsCatalogManagement } from '../../components/admin/Requisitio
 import { calendarioApi, requisicoesApi } from '../../services/api';
 
 
-function getSlotTypes(t: (k: string) => string) {
-    return [
-        {
-            tipo: 'SECRETARIA' as const,
-            titulo: t('dashboard.admin.slots.secretaryScheduleTitle'),
-            descricao: t('dashboard.admin.slots.secretaryScheduleDescription'),
-        },
-    ];
-}
-
-function AdminOverview({ summaryCards }: Readonly<{
-    summaryCards: Array<{ title: string; value: number | string; description: string; icon: LucideIcon; iconClassName: string }>;
-    onOpenSlots: () => void;
-    onOpenCatalogs: () => void;
-}>) {
-    return (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {summaryCards.map((card) => (
-                <GlassCard key={card.title} className="p-6 flex items-start justify-between">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.08em] font-medium text-muted-foreground">{card.title}</p>
-                        <p className="mt-2 text-4xl leading-none font-semibold text-foreground">{card.value}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{card.description}</p>
-                    </div>
-                    <div className={`flex-shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.iconClassName}`}>
-                        <card.icon className="w-5 h-5" />
-                    </div>
-                </GlassCard>
-            ))}
-        </div>
-    );
-}
-
 function SlotsManagement({
     isLoadingSlots,
     isSavingSlots,
     slotCapacities,
+    savedCapacities,
     onChange,
     onSave,
     t,
@@ -54,11 +22,11 @@ function SlotsManagement({
     isLoadingSlots: boolean;
     isSavingSlots: boolean;
     slotCapacities: { SECRETARIA: number };
+    savedCapacities: { SECRETARIA: number };
     onChange: (tipo: 'SECRETARIA', value: string) => void;
     onSave: () => void;
     t: (k: string) => string;
 }>) {
-    const slotTypes = getSlotTypes(t);
     return (
         <GlassCard className="p-6">
             <div className="flex flex-col gap-6">
@@ -73,33 +41,46 @@ function SlotsManagement({
                     </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    {slotTypes.map((slotType) => (
-                        <div
-                            key={slotType.tipo}
-                            className="rounded-2xl border border-border bg-card p-5 shadow-sm"
-                        >
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-semibold text-foreground">{slotType.titulo}</h3>
-                                <p className="text-sm text-muted-foreground">{slotType.descricao}</p>
+                {/* Single slot — horizontal card with prominent value display */}
+                <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="flex flex-col sm:flex-row items-stretch">
+                        {/* Left: icon + title + description */}
+                        <div className="flex items-center gap-4 p-6 sm:flex-1">
+                            <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                                <CalendarDays className="w-6 h-6" />
                             </div>
+                            <div>
+                                <h3 className="text-base font-semibold text-foreground">{t('dashboard.admin.slots.secretaryScheduleTitle')}</h3>
+                                <p className="text-sm text-muted-foreground mt-0.5">{t('dashboard.admin.slots.secretaryScheduleDescription')}</p>
+                            </div>
+                        </div>
 
-                            <div className="mt-5 space-y-2">
-                                <Label htmlFor={`slot-${slotType.tipo}`} className="text-sm font-medium text-foreground">
+                        {/* Divider */}
+                        <div className="hidden sm:block w-px bg-border my-4" />
+                        <div className="block sm:hidden h-px bg-border mx-6" />
+
+                        {/* Right: current value display + input */}
+                        <div className="flex items-center gap-6 p-6 sm:w-72">
+                            <div className="text-center min-w-[3rem]">
+                                <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
+                                <p className="text-xs text-muted-foreground mt-1.5">atual</p>
+                            </div>
+                            <div className="flex-1 space-y-1.5">
+                                <Label htmlFor="slot-SECRETARIA" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                                     {t('dashboard.admin.slots.maxPerSlot')}
                                 </Label>
                                 <Input
-                                    id={`slot-${slotType.tipo}`}
+                                    id="slot-SECRETARIA"
                                     type="number"
                                     min={1}
                                     max={20}
-                                    value={slotCapacities[slotType.tipo]}
-                                    onChange={(event) => onChange(slotType.tipo, event.target.value)}
-                                    className="bg-background"
+                                    value={slotCapacities.SECRETARIA}
+                                    onChange={(event) => onChange('SECRETARIA', event.target.value)}
+                                    className="bg-background text-center text-lg font-semibold"
                                 />
                             </div>
                         </div>
-                    ))}
+                    </div>
                 </div>
 
                 <div className="flex justify-end">
@@ -123,6 +104,9 @@ export function SecretaryAdminArea() {
     const [slotCapacities, setSlotCapacities] = useState({
         SECRETARIA: 1,
     });
+    const [savedCapacities, setSavedCapacities] = useState({
+        SECRETARIA: 1,
+    });
     const [catalogCounts, setCatalogCounts] = useState({
         materiais: 0,
         transportes: 0,
@@ -135,9 +119,9 @@ export function SecretaryAdminArea() {
         setIsLoadingSlots(true);
         try {
             const config = await calendarioApi.listarConfiguracaoSlots();
-            setSlotCapacities({
-                SECRETARIA: config.find(item => item.tipo === 'SECRETARIA')?.capacidadePorSlot ?? 1,
-            });
+            const value = config.find(item => item.tipo === 'SECRETARIA')?.capacidadePorSlot ?? 1;
+            setSlotCapacities({ SECRETARIA: value });
+            setSavedCapacities({ SECRETARIA: value });
         } catch (error) {
             toast.error(t('dashboard.admin.errors.loadSlotConfig'));
         } finally {
@@ -193,7 +177,7 @@ export function SecretaryAdminArea() {
     const summaryCards = useMemo(() => [
         {
             title: t('dashboard.admin.summary.slots.title'),
-            value: slotCapacities.SECRETARIA,
+            value: savedCapacities.SECRETARIA,
             description: t('dashboard.admin.summary.slots.description'),
             icon: CalendarDays,
             iconClassName: 'bg-primary/15 text-primary',
@@ -219,7 +203,7 @@ export function SecretaryAdminArea() {
             icon: Wrench,
             iconClassName: 'bg-primary/15 text-primary',
         },
-    ], [slotCapacities, catalogCounts, t]);
+    ], [savedCapacities, catalogCounts, t]);
 
     return (
         <div className="space-y-10 max-w-6xl mx-auto">
@@ -229,17 +213,25 @@ export function SecretaryAdminArea() {
                     {t('dashboard.admin.mainDescription')}
                 </p>
             </div>
-            <GlassCard className="p-6">
-                <AdminOverview
-                    summaryCards={summaryCards}
-                    onOpenSlots={() => { }}
-                    onOpenCatalogs={() => { }}
-                />
-            </GlassCard>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {summaryCards.map((card) => (
+                    <GlassCard key={card.title} className="p-6 flex items-start justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-[0.08em] font-medium text-muted-foreground">{card.title}</p>
+                            <p className="mt-2 text-4xl leading-none font-semibold text-foreground">{card.value}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">{card.description}</p>
+                        </div>
+                        <div className={`flex-shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.iconClassName}`}>
+                            <card.icon className="w-5 h-5" />
+                        </div>
+                    </GlassCard>
+                ))}
+            </div>
             <SlotsManagement
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
                 slotCapacities={slotCapacities}
+                savedCapacities={savedCapacities}
                 onChange={handleSlotCapacityChange}
                 onSave={handleSaveSlotCapacities}
                 t={t}

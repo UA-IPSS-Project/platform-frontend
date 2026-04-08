@@ -12,6 +12,7 @@ function SlotsManagement({
     isLoadingSlots,
     isSavingSlots,
     slotCapacities,
+    savedCapacities,
     onChange,
     onSave,
     t,
@@ -19,6 +20,7 @@ function SlotsManagement({
     isLoadingSlots: boolean;
     isSavingSlots: boolean;
     slotCapacities: { BALNEARIO: number };
+    savedCapacities: { BALNEARIO: number };
     onChange: (value: string) => void;
     onSave: () => void;
     t: (k: string) => string;
@@ -37,26 +39,44 @@ function SlotsManagement({
                     </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-semibold text-foreground">{t('dashboard.admin.slots.balnearioScheduleTitle')}</h3>
-                            <p className="text-sm text-muted-foreground">{t('dashboard.admin.slots.balnearioScheduleDescription')}</p>
+                {/* Single slot — horizontal card with prominent value display */}
+                <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+                    <div className="flex flex-col sm:flex-row items-stretch">
+                        {/* Left: icon + label + description */}
+                        <div className="flex items-center gap-4 p-6 sm:flex-1">
+                            <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
+                                <CalendarDays className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-semibold text-foreground">{t('dashboard.admin.slots.balnearioScheduleTitle')}</h3>
+                                <p className="text-sm text-muted-foreground mt-0.5">{t('dashboard.admin.slots.balnearioScheduleDescription')}</p>
+                            </div>
                         </div>
 
-                        <div className="mt-5 space-y-2">
-                            <Label htmlFor="slot-BALNEARIO" className="text-sm font-medium text-foreground">
-                                {t('dashboard.admin.slots.maxPerSlot')}
-                            </Label>
-                            <Input
-                                id="slot-BALNEARIO"
-                                type="number"
-                                min={1}
-                                max={20}
-                                value={slotCapacities.BALNEARIO}
-                                onChange={(event) => onChange(event.target.value)}
-                                className="bg-background"
-                            />
+                        {/* Divider */}
+                        <div className="hidden sm:block w-px bg-border my-4" />
+                        <div className="block sm:hidden h-px bg-border mx-6" />
+
+                        {/* Right: current value display + input */}
+                        <div className="flex items-center gap-6 p-6 sm:w-72">
+                            <div className="text-center min-w-[3rem]">
+                                <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.BALNEARIO}</p>
+                                <p className="text-xs text-muted-foreground mt-1.5">atual</p>
+                            </div>
+                            <div className="flex-1 space-y-1.5">
+                                <Label htmlFor="slot-BALNEARIO" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                    {t('dashboard.admin.slots.maxPerSlot')}
+                                </Label>
+                                <Input
+                                    id="slot-BALNEARIO"
+                                    type="number"
+                                    min={1}
+                                    max={20}
+                                    value={slotCapacities.BALNEARIO}
+                                    onChange={(event) => onChange(event.target.value)}
+                                    className="bg-background text-center text-lg font-semibold"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -82,6 +102,9 @@ export function BalnearioAdminArea() {
     const [slotCapacities, setSlotCapacities] = useState({
         BALNEARIO: 2,
     });
+    const [savedCapacities, setSavedCapacities] = useState({
+        BALNEARIO: 2,
+    });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
 
@@ -89,9 +112,9 @@ export function BalnearioAdminArea() {
         setIsLoadingSlots(true);
         try {
             const config = await calendarioApi.listarConfiguracaoSlots();
-            setSlotCapacities({
-                BALNEARIO: config.find(item => item.tipo === 'BALNEARIO')?.capacidadePorSlot ?? 2,
-            });
+            const value = config.find(item => item.tipo === 'BALNEARIO')?.capacidadePorSlot ?? 2;
+            setSlotCapacities({ BALNEARIO: value });
+            setSavedCapacities({ BALNEARIO: value });
         } catch (error) {
             toast.error(t('dashboard.admin.errors.loadSlotConfig'));
         } finally {
@@ -134,6 +157,7 @@ export function BalnearioAdminArea() {
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
                 slotCapacities={slotCapacities}
+                savedCapacities={savedCapacities}
                 onChange={handleSlotCapacityChange}
                 onSave={handleSaveSlotCapacities}
                 t={t}
