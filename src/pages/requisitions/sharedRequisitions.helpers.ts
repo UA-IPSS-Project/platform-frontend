@@ -258,6 +258,7 @@ export type CreateField =
   | 'descricao'
   | 'materialItens'
   | 'destino'
+  | 'quilometros'
   | 'dataSaida'
   | 'horaSaida'
   | 'dataRegresso'

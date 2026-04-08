@@ -2,6 +2,7 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { DatePickerField } from '../../ui/date-picker-field';
 import { AlertCircle } from 'lucide-react';
+import { TRANSPORTE_DESTINOS_PERMITIDOS } from '../../../utils/validations/requisition.validation';
 import {
   formatLotacao,
   formatVehicleTitle,
@@ -13,6 +14,8 @@ import { TransporteCatalogo, TransporteCategoria } from '../../../services/api';
 interface RequisitionsCreateTransportFormProps {
   destinoTransporte: string;
   onChangeDestino: (value: string) => void;
+  quilometrosTransporte: string;
+  onChangeQuilometros: (value: string) => void;
   dataSaida: string;
   onChangeDataSaida: (value: string) => void;
   horaSaida: string;
@@ -42,6 +45,7 @@ interface RequisitionsCreateTransportFormProps {
   loadingCatalogo: boolean;
   createErrors?: Partial<{
     destino: string;
+    quilometros: string;
     dataSaida: string;
     horaSaida: string;
     dataRegresso: string;
@@ -58,6 +62,8 @@ interface RequisitionsCreateTransportFormProps {
 export function RequisitionsCreateTransportForm({
   destinoTransporte,
   onChangeDestino,
+  quilometrosTransporte,
+  onChangeQuilometros,
   dataSaida,
   onChangeDataSaida,
   horaSaida,
@@ -103,15 +109,15 @@ export function RequisitionsCreateTransportForm({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label htmlFor="req-create-transporte-destino" className="text-sm text-muted-foreground">
-              {t('requisitions.ui.destination')} {t('common.optional', { defaultValue: '(opcional)' })}
+              {t('requisitions.ui.destination')} *
             </label>
             <div className="relative group">
               <Input
                 id="req-create-transporte-destino"
-                className={`${inputFieldClassName} pr-10`}
+                className={`${inputFieldClassName} pr-10 ${createErrors?.destino ? '!border-status-error !ring-status-error' : ''}`}
                 value={destinoTransporte}
                 onChange={(e) => onChangeDestino(e.target.value)}
                 placeholder={t('requisitions.ui.destinationPlaceholder')}
@@ -124,11 +130,26 @@ export function RequisitionsCreateTransportForm({
               </div>
             </div>
             <datalist id="destinations-list">
-              <option value={t('requisitions.ui.destinations.school')} />
-              <option value={t('requisitions.ui.destinations.user')} />
-              <option value={t('requisitions.ui.destinations.exterior')} />
-              <option value={t('requisitions.ui.destinations.stateVisit')} />
+              {TRANSPORTE_DESTINOS_PERMITIDOS.map((destino) => (
+                <option key={destino} value={destino} />
+              ))}
             </datalist>
+            {createErrors?.destino && <p className="text-status-error text-xs mt-1">{createErrors.destino}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="req-create-transporte-quilometros" className="text-sm text-muted-foreground">{t('requisitions.ui.kilometers')} *</label>
+            <Input
+              id="req-create-transporte-quilometros"
+              type="number"
+              min="0.01"
+              step="0.01"
+              className={`${inputFieldClassName} ${createErrors?.quilometros ? '!border-status-error !ring-status-error' : ''}`}
+              value={quilometrosTransporte}
+              onChange={(e) => onChangeQuilometros(e.target.value)}
+              placeholder={t('requisitions.ui.kilometersPlaceholder')}
+            />
+            {createErrors?.quilometros && <p className="text-status-error text-xs mt-1">{createErrors.quilometros}</p>}
           </div>
 
           <div>

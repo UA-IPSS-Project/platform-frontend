@@ -1,6 +1,15 @@
 import { parseDateInput } from '../../components/ui/date-picker-field';
 import i18n from '../../i18n';
 
+export const TRANSPORTE_DESTINOS_PERMITIDOS = [
+  'Visita Domiciliário',
+  'Visita de Estudo',
+  'Escola',
+  'Centro de Saúde',
+  'Hospital',
+  'Segurança social',
+] as const;
+
 export const MATERIAL_QUANTITY_MIN = 1;
 export const MATERIAL_QUANTITY_MAX = 200;
 
@@ -49,8 +58,32 @@ export const validateManutencaoItens = (items: Array<{ itemId: number; transport
   return undefined;
 };
 
-export const validateTransporteDestino = (_valor: string): string | undefined => {
-  return undefined; // Destination is optional
+export const validateTransporteDestino = (valor: string): string | undefined => {
+  const normalized = valor.trim();
+  if (!normalized) return i18n.t('requisitions.errors.requiredField');
+  return undefined;
+};
+
+export const validateQuilometros = (valor: string | number): string | undefined => {
+  const valStr = String(valor ?? '').trim();
+  if (!valStr) return i18n.t('requisitions.errors.requiredField');
+
+  const normalized = valStr.replace(',', '.');
+
+  if (!/^\d+(\.\d+)?$/.test(normalized)) {
+    return i18n.t('requisitions.errors.invalidKilometers', {
+      defaultValue: 'Os quilómetros devem ser um número positivo.',
+    });
+  }
+
+  const km = Number(normalized);
+  if (Number.isNaN(km) || km <= 0) {
+    return i18n.t('requisitions.errors.invalidKilometers', {
+      defaultValue: 'Os quilómetros devem ser um número positivo.',
+    });
+  }
+
+  return undefined;
 };
 
 export const validateCondutor = (condutor: string): string | undefined => {

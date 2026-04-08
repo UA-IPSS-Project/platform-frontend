@@ -27,6 +27,7 @@ import {
   validateMaterialLinhas,
   validateManutencaoItens,
   validateTransporteDestino,
+  validateQuilometros,
   validateCondutor,
   validateNumeroPassageiros,
   validateTransporteIds,
@@ -528,6 +529,11 @@ export function SharedRequisitionsPage({
     if (field === 'destino') {
       return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
     }
+
+    if (field === 'quilometros') {
+      const val = manualValue !== undefined ? manualValue : createForm.quilometrosTransporte;
+      return validateQuilometros(val);
+    }
     
     if (field === 'condutor') {
       const val = manualValue !== undefined ? String(manualValue) : createForm.condutorTransporte;
@@ -587,6 +593,7 @@ export function SharedRequisitionsPage({
       if (key === 'itens' && createForm.tipo === 'MATERIAL') mapped.materialItens = value;
       if (key === 'manutencaoItens') mapped.manutencaoItens = value;
       if (key === 'destino') mapped.destino = value;
+      if (key === 'quilometros') mapped.quilometros = value;
       if (key === 'dataHoraSaida') {
         mapped.dataSaida = value;
         mapped.horaSaida = value;
@@ -755,6 +762,7 @@ export function SharedRequisitionsPage({
     if (createForm.tipo === 'TRANSPORTE') {
       fieldsToValidate.push(
         'destino',
+        'quilometros',
         'dataSaida',
         'horaSaida',
         'dataRegresso',
@@ -811,6 +819,7 @@ export function SharedRequisitionsPage({
         await requisicoesApi.criarTransporte({
           ...payloadBase,
           destino: createForm.destinoTransporte.trim(),
+          quilometros: Number(createForm.quilometrosTransporte.replace(',', '.')),
           dataHoraSaida: dataHoraSaida!,
           dataHoraRegresso: dataHoraRegresso!,
           numeroPassageiros: passageirosSolicitados,
@@ -1369,6 +1378,11 @@ export function SharedRequisitionsPage({
                   createForm.setDestinoTransporte(value);
                   if (createForm.createTouched.destino) validateAndSetField('destino');
                 }}
+                quilometrosTransporte={createForm.quilometrosTransporte}
+                onChangeQuilometros={(value) => {
+                  createForm.setQuilometrosTransporte(value);
+                  if (createForm.createTouched.quilometros) validateAndSetField('quilometros', false, value);
+                }}
                 dataSaida={createForm.dataSaida}
                 onChangeDataSaida={(value) => {
                   createForm.setDataSaida(value);
@@ -1677,6 +1691,10 @@ export function SharedRequisitionsPage({
                 <div className="flex flex-col border-b pb-2 border-border">
                   <span className="text-muted-foreground font-medium">{t('requisitions.ui.destination')}:</span>
                   <span className="text-foreground">{createForm.destinoTransporte}</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-2 border-border">
+                  <span className="text-muted-foreground font-medium">{t('requisitions.ui.kilometers')}:</span>
+                  <span className="text-foreground">{createForm.quilometrosTransporte}</span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2 border-border">
                   <span className="text-muted-foreground font-medium">{t('requisitions.ui.passengersCount')}:</span>

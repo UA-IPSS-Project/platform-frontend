@@ -18,6 +18,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   // Transport-specific state
   const [destinoTransporte, setDestinoTransporte] = useState('');
+  const [quilometrosTransporte, setQuilometrosTransporte] = useState('');
   const [dataSaida, setDataSaida] = useState('');
   const [horaSaida, setHoraSaida] = useState('');
   const [dataRegresso, setDataRegresso] = useState('');
@@ -53,6 +54,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setDescricao('');
     setMaterialLinhas([]);
     setDestinoTransporte('');
+    setQuilometrosTransporte('');
     setDataSaida('');
     setHoraSaida('');
     setDataRegresso('');
@@ -130,6 +132,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       descricao !== '' ||
       materialLinhas.length > 0 ||
       destinoTransporte !== '' ||
+      quilometrosTransporte !== '' ||
       dataSaida !== '' ||
       horaSaida !== '' ||
       dataRegresso !== '' ||
@@ -148,6 +151,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     descricao,
     materialLinhas,
     destinoTransporte,
+    quilometrosTransporte,
     dataSaida,
     horaSaida,
     dataRegresso,
@@ -185,6 +189,8 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     // Transport state
     destinoTransporte,
     setDestinoTransporte,
+    quilometrosTransporte,
+    setQuilometrosTransporte,
     dataSaida,
     setDataSaida,
     horaSaida,

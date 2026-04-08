@@ -118,6 +118,7 @@ export interface RequisicaoResponse {
     };
   }>;
   destino?: string;
+  quilometros?: number;
   dataHoraSaida?: string;
   dataHoraRegresso?: string;
   numeroPassageiros?: number;
@@ -149,6 +150,7 @@ export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseReque
 
 export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseRequest {
   destino: string;
+  quilometros: number;
   dataHoraSaida: string;
   dataHoraRegresso: string;
   numeroPassageiros: number;
