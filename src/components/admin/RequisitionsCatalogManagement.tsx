@@ -8,6 +8,7 @@ import {
   type ManutencaoItem 
 } from '../../services/api';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
+import { formatarCategoria } from '../../utils/formatters';
 import { MaterialCatalog } from './catalog/MaterialCatalog';
 import { TransportCatalog } from './catalog/TransportCatalog';
 import { MaintenanceCatalog } from './catalog/MaintenanceCatalog';
@@ -23,7 +24,7 @@ export function RequisitionsCatalogManagement() {
   const [transportes, setTransportes] = useState<TransporteCatalogo[]>([]);
   const [manutencaoItems, setManutencaoItems] = useState<ManutencaoItem[]>([]);
 
-  const formatCategoryName = (name: string) => name.toUpperCase();
+  const formatCategoryName = (name: string) => formatarCategoria(name);
 
   const loadCatalogo = async (retryCount = 0) => {
     try {
