@@ -35,9 +35,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
   const [categoryMode, setCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
   const [customCategory, setCustomCategory] = useState('');
   
-  // Quick Category Add
-  const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newQuickCategory, setNewQuickCategory] = useState('');
+
 
   // Edit State
   const [editNome, setEditNome] = useState('');
@@ -83,26 +81,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
     }
   };
 
-  const handleQuickCategoryCreate = async () => {
-    if (!newQuickCategory.trim()) return;
-    try {
-      setSaving(true);
-      await requisicoesApi.criarMaterialCatalogo({
-        nome: 'GERAL',
-        categoria: newQuickCategory.trim().toUpperCase(),
-        atributo: 'TIPO',
-        valorAtributo: 'GERAL'
-      });
-      setNewQuickCategory('');
-      setShowAddCategory(false);
-      await onRefresh();
-      toast.success("Categoria de material criada com sucesso!");
-    } catch (error: any) {
-      toast.error(error?.message || "Erro ao criar categoria");
-    } finally {
-      setSaving(false);
-    }
-  };
+
 
   const handleUpdate = async (id: number, categoria: string) => {
     try {
@@ -159,36 +138,11 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
             />
          </div>
          <div className="flex gap-2 w-full md:w-auto">
-            <Button 
-              variant={showAddCategory ? "default" : "outline"} 
-              className="flex-1 md:flex-none gap-2"
-              onClick={() => setShowAddCategory(!showAddCategory)}
-            >
-              <Plus className="h-4 w-4" /> {showAddCategory ? "Cancelar" : "Nova Categoria"}
-            </Button>
+            {/* Action buttons can go here in the future */}
          </div>
       </div>
 
-      {showAddCategory && (
-        <CatalogSection
-            title="Adicionar Nova Categoria de Material"
-            isOpen={true}
-            onToggle={() => setShowAddCategory(false)}
-        >
-            <div className="max-w-md mx-auto space-y-4 text-center py-4">
-                <p className="text-sm text-muted-foreground">Será criado um item 'GERAL' predefinido nesta categoria.</p>
-                <div className="flex gap-2">
-                    <Input 
-                        placeholder="Nome da categoria (ex: PAPELARIA)" 
-                        value={newQuickCategory} 
-                        onChange={(e) => setNewQuickCategory(e.target.value.toUpperCase())}
-                        className="h-11"
-                    />
-                    <Button onClick={handleQuickCategoryCreate} disabled={saving} className="h-11 px-8">Criar</Button>
-                </div>
-            </div>
-        </CatalogSection>
-      )}
+
 
       {/* Main Content Flow: Vertical (Cima e Baixo) */}
       <div className="flex flex-col gap-8">
