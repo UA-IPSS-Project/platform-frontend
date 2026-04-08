@@ -4,8 +4,10 @@ import { toast } from 'sonner';
 import { Pencil, Plus, Search, MapPin, CheckSquare, Layers } from 'lucide-react';
 import { 
   requisicoesApi, 
-  type ManutencaoItem 
+  type ManutencaoItem,
+  type TransporteCatalogo
 } from '../../../services/api';
+import { formatVehicleTitle } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
@@ -13,11 +15,12 @@ import { CatalogSection } from './CatalogSection';
 
 interface MaintenanceCatalogProps {
   items: ManutencaoItem[];
+  transportes: TransporteCatalogo[];
   onRefresh: () => Promise<void>;
   formatCategoryName: (name: string) => string;
 }
 
-export function MaintenanceCatalog({ items, onRefresh, formatCategoryName }: MaintenanceCatalogProps) {
+export function MaintenanceCatalog({ items, transportes, onRefresh, formatCategoryName }: MaintenanceCatalogProps) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -249,7 +252,11 @@ export function MaintenanceCatalog({ items, onRefresh, formatCategoryName }: Mai
       <div className="space-y-6">
         {uniqueCategorias.map(cat => {
           const categoryItems = items.filter(m => m.categoria === cat);
-          const spaces = Array.from(new Set(categoryItems.map(i => i.espaco))).sort();
+          const isVehicleCategory = cat === 'VEICULOS';
+          const dbSpaces = Array.from(new Set(categoryItems.map(i => i.espaco))).sort();
+          const displaySpaces = isVehicleCategory 
+              ? transportes.map(t => formatVehicleTitle(t)).sort()
+              : dbSpaces;
           const elements = Array.from(new Set(categoryItems.map(i => i.itemVerificacao))).sort();
           
           return (
@@ -268,26 +275,32 @@ export function MaintenanceCatalog({ items, onRefresh, formatCategoryName }: Mai
                          <MapPin className="w-5 h-5 text-primary" />
                          <h4 className="font-bold text-base uppercase tracking-wider">{t('dashboard.admin.catalogs.spaces')}</h4>
                       </div>
-                      <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Total: {spaces.length}</span>
+                       <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Total: {displaySpaces.length}</span>
                    </div>
 
                    <div className="space-y-3">
-                      <div className="flex gap-2">
-                         <Input 
-                            placeholder="Adicionar novo espaço..." 
-                            value={novoEspaco} 
-                            onChange={(e) => setNovoEspaco(e.target.value)}
-                            className="h-10 text-sm bg-background/50"
-                         />
-                         <Button size="icon" className="h-10 w-10 shrink-0" onClick={() => handleCreateSpace(cat)}>
-                            <Plus className="w-5 h-5" />
-                         </Button>
-                      </div>
+                      {isVehicleCategory ? (
+                          <div className="p-3 rounded-lg border border-primary/20 bg-primary/5 text-xs text-primary font-medium text-center">
+                              ⚠️ Os veículos dependem do Catálogo de Transportes.
+                          </div>
+                      ) : (
+                          <div className="flex gap-2">
+                             <Input 
+                                placeholder="Adicionar novo espaço..." 
+                                value={novoEspaco} 
+                                onChange={(e) => setNovoEspaco(e.target.value)}
+                                className="h-10 text-sm bg-background/50"
+                             />
+                             <Button size="icon" className="h-10 w-10 shrink-0" onClick={() => handleCreateSpace(cat)}>
+                                <Plus className="w-5 h-5" />
+                             </Button>
+                          </div>
+                      )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                         {spaces.map(space => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-1">
+                         {displaySpaces.map(space => (
                             <div key={space} className="group relative flex items-center justify-between p-3 rounded-xl border border-border/40 bg-background/20 hover:bg-background/40 hover:border-primary/20 transition-all">
-                               {editingSpace?.category === cat && editingSpace.name === space ? (
+                               {editingSpace?.category === cat && editingSpace.name === space && !isVehicleCategory ? (
                                  <Input 
                                     value={editSpaceName} 
                                     onChange={(e) => setEditSpaceName(e.target.value)} 
@@ -299,14 +312,16 @@ export function MaintenanceCatalog({ items, onRefresh, formatCategoryName }: Mai
                                ) : (
                                  <>
                                     <span className="text-sm font-medium">{space}</span>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                       <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => { setEditingSpace({category: cat, name: space}); setEditSpaceName(space); }}>
-                                          <Pencil className="w-3 h-3" />
-                                       </Button>
-                                       <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-destructive" onClick={() => void handleDeleteSpace(cat, space)}>
-                                          <TrashIcon className="w-3 h-3" />
-                                       </Button>
-                                    </div>
+                                    {!isVehicleCategory && (
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                           <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => { setEditingSpace({category: cat, name: space}); setEditSpaceName(space); }}>
+                                              <Pencil className="w-3 h-3" />
+                                           </Button>
+                                           <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg text-destructive" onClick={() => void handleDeleteSpace(cat, space)}>
+                                              <TrashIcon className="w-3 h-3" />
+                                           </Button>
+                                        </div>
+                                    )}
                                  </>
                                )}
                             </div>

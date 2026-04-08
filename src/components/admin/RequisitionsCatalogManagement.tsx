@@ -96,6 +96,7 @@ export function RequisitionsCatalogManagement() {
                 <TabsContent value="maintenance" className="mt-0 focus-visible:ring-0">
                     <MaintenanceCatalog 
                         items={manutencaoItems} 
+                        transportes={transportes}
                         onRefresh={() => loadCatalogo()} 
                         formatCategoryName={formatCategoryName}
                     />
