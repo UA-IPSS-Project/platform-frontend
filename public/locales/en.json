@@ -54,6 +54,9 @@
       "documentsUploaded": "{{count}} file(s) uploaded successfully!",
       "documentsUploadError": "Appointment created, but file upload failed"
     },
+    "warnings": {
+      "noEmailNoNotifications": "Without an email, you will not receive appointment receipts or notifications."
+    },
     "confirm": {
       "title": "Changes detected",
       "body": "User data has changed. Do you want to update the user record with the new information before creating the appointment?",
@@ -487,6 +490,11 @@
     "contactMustHave9Digits": "Contact must have 9 digits",
     "emailRequired": "Email is required",
     "emailInvalid": "Invalid email",
+    "emailLabel": "Email",
+    "noEmailWarningRegister": "Without an email, you will not receive appointment receipts or notifications.",
+    "noEmailConfirmQuestion": "Are you sure you want to create the account without an email?",
+    "noEmailConfirmTitle": "Create account without email?",
+    "noEmailConfirmAction": "Confirm",
     "useInstitutionalEmail": "Use an institutional email (@florinhasdovouga.pt)",
     "roleRequiredEmployee": "Role is required for employees",
     "passwordRequired": "Password is required",

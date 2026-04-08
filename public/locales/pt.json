@@ -54,6 +54,9 @@
       "documentsUploaded": "{{count}} documento(s) enviado(s) com sucesso!",
       "documentsUploadError": "Marcação criada, mas houve erro ao enviar documentos"
     },
+    "warnings": {
+      "noEmailNoNotifications": "Sem email, não irá receber comprovativos nem notificações das marcações."
+    },
     "confirm": {
       "title": "Alterações detetadas",
       "body": "Os dados do utente foram alterados. Deseja atualizar a ficha do utente com as novas informações antes de criar a marcação?",
@@ -487,6 +490,11 @@
     "contactMustHave9Digits": "Contacto deve ter 9 dígitos",
     "emailRequired": "Email é obrigatório",
     "emailInvalid": "Email inválido",
+    "emailLabel": "Email",
+    "noEmailWarningRegister": "Sem email, não irá receber comprovativos nem notificações das marcações.",
+    "noEmailConfirmQuestion": "Tem a certeza que pretende criar a conta sem email?",
+    "noEmailConfirmTitle": "Criar conta sem email?",
+    "noEmailConfirmAction": "Confirmar",
     "useInstitutionalEmail": "Use um email institucional (@florinhasdovouga.pt)",
     "roleRequiredEmployee": "Role é obrigatória para funcionários",
     "passwordRequired": "Palavra-passe é obrigatória",
