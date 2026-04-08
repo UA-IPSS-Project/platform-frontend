@@ -442,6 +442,7 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
@@ -951,7 +952,7 @@
     "emailEditable": "Email (Atualizável)",
     "notifyRecovery": "Notificar Recuperação",
     "registeredUsers": "Utilizadores Registados",
-    "pending": "Pendentes",
+    "pending": "Pendente",
     "active": "Ativo",
     "searchByNameOrNif": "Pesquisar por nome ou NIF...",
     "role": "Função",
@@ -993,6 +994,26 @@
       "admin": "Administrador",
       "school": "Escola",
       "other": "Outro"
+    },
+    "details": {
+      "title": "Gerir Utilizador",
+      "description": "Visualize e edite as informações do utilizador ou realize ações administrativas.",
+      "editTitle": "Editar Informações",
+      "approveTitle": "Aprovar Conta",
+      "approveDescription": "Este funcionário está aguardando aprovação para aceder à plataforma.",
+      "approveAction": "Aprovar Funcionário",
+      "saveChanges": "Guardar Alterações",
+      "deleting": "A eliminar...",
+      "approving": "A aprovar...",
+      "success": {
+        "updated": "Utilizador atualizado com sucesso",
+        "approved": "Funcionário aprovado com sucesso"
+      },
+      "errors": {
+        "load": "Erro ao carregar detalhes do utilizador",
+        "update": "Erro ao atualizar utilizador",
+        "approve": "Erro ao aprovar funcionário"
+      }
     }
   },
   "appointmentDetails": {

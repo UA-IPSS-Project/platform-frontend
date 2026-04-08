@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check } from 'lucide-react';
+import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, ChevronDown, ChevronUp, Lock, RefreshCw, Check, Eye, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
 import { DatePickerField } from '../ui/date-picker-field';
@@ -26,6 +26,15 @@ import {
     validateEmail
 } from '../../lib/validations';
 import { useTranslation } from 'react-i18next';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "../ui/dialog";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface UserManagementProps {
     isDarkMode?: boolean;
@@ -78,7 +87,29 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [currentPageUtentes, setCurrentPageUtentes] = useState(1);
+    const [activeTable, setActiveTable] = useState<'employees' | 'utentes'>('employees');
     const itemsPerPage = 5;
+
+    // State for User Details Popup
+    const [selectedUser, setSelectedUser] = useState<any | null>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
+    const [editForm, setEditForm] = useState({
+        nome: '',
+        email: '',
+        telefone: '',
+        nif: '',
+        dataNascimento: '',
+        morada: '',
+        codigoPostal: '',
+        freguesia: '',
+        profissao: '',
+        localEmprego: '',
+        moradaEmprego: '',
+        telefoneEmprego: ''
+    });
 
     useEffect(() => {
         setCurrentPage(1);
@@ -159,13 +190,56 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
     }, [formData.name, formData.role, emailSelection]);
 
 
-    const handleApprove = async (id: number) => {
+
+    const handleOpenDetails = (user: any) => {
+        setSelectedUser(user);
+        setEditForm({
+            nome: user.nome || '',
+            email: user.email || '',
+            telefone: user.telefone || '',
+            nif: user.nif || '',
+            dataNascimento: user.dataNascimento || '',
+            morada: user.morada || '',
+            codigoPostal: user.codigoPostal || '',
+            freguesia: user.freguesia || '',
+            profissao: user.profissao || '',
+            localEmprego: user.localEmprego || '',
+            moradaEmprego: user.moradaEmprego || '',
+            telefoneEmprego: user.telefoneEmprego || ''
+        });
+        setIsEditing(false);
+        setIsDetailsOpen(true);
+    };
+
+    const handleEditSave = async () => {
+        if (!selectedUser) return;
+        setIsSaving(true);
         try {
-            await utilizadoresApi.aprovarFuncionario(id);
-            toast.success(t('userManagement.messages.employeeApproved'));
+            await utilizadoresApi.atualizar(selectedUser.id, editForm);
+            toast.success(t('userManagement.details.success.updated'));
             fetchUsers();
+            fetchUtentes();
+            setIsDetailsOpen(false);
         } catch (error) {
-            toast.error(t('userManagement.errors.employeeApprove'));
+            toast.error(t('userManagement.details.errors.update'));
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleApproveDetail = async () => {
+        if (!selectedUser) return;
+        setIsApproving(true);
+        try {
+            await utilizadoresApi.aprovarFuncionario(selectedUser.id);
+            toast.success(t('userManagement.details.success.approved'));
+            fetchUsers();
+            fetchUtentes();
+            setIsDetailsOpen(false);
+        } catch (error) {
+            toast.error(t('userManagement.details.errors.approve'));
+        } finally {
+            setIsApproving(false);
         }
     };
 
@@ -757,8 +831,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                 </div>
 
                 {/* Right Panel: Registered Users List */}
-                <GlassCard className="flex-1 w-full min-w-0 p-8 flex flex-col h-full border border-border/40 overflow-auto">
-                    <div className="flex items-center justify-between mb-8">
+                <div className="flex-1 flex flex-col gap-4">
+                    {/* Header with Global Refresh - Integrated for top alignment */}
+                    <GlassCard className="p-6 flex items-center justify-between border border-border/40">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 <Users className="w-6 h-6" />
@@ -776,242 +851,447 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         >
                             <RefreshCw className={`w-4 h-4 ${(isLoading || isLoadingUtentes) ? 'animate-spin' : ''}`} />
                         </Button>
-                    </div>
+                    </GlassCard>
 
                     {/* Section 1: Employees Management */}
-                    <div className="mb-12">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                    <Lock className="w-4 h-4" />
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeTable === 'employees' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
+                        <button
+                            onClick={() => setActiveTable('employees')}
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeTable === 'employees' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
+                                    <Lock className="w-5 h-5" />
                                 </div>
-                                <h3 className="text-lg font-bold text-foreground">{t('userManagement.employeesTitle')}</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
-                                    <span className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[8px] flex items-center justify-center font-bold">{pendingCount}</span>
+                                <div className="text-left">
+                                    <h3 className="text-lg font-bold text-foreground">{t('userManagement.employeesTitle')}</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
+                                        <span className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[8px] flex items-center justify-center font-bold">{pendingCount}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                            {activeTable === 'employees' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+                        </button>
 
-                        {/* Search Employees */}
-                        <div className="relative mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                            <Input
-                                placeholder={t('userManagement.searchByNameOrNif')}
-                                className="h-9 pl-9 bg-card border-border text-xs"
-                                value={searchQuery}
-                                onChange={e => {
-                                    setSearchQuery(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
-                        </div>
-
-                        {/* Employees Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
-                                    <tr>
-                                        <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
-                                        <th className="text-left pb-2 font-medium">NIF</th>
-                                        <th className="text-left pb-2 font-medium">{t('userManagement.role')}</th>
-                                        <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
-                                        <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-xs">
-                                    {isLoading ? (
-                                        <tr>
-                                            <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                                                {t('documents.actions.searching')}
-                                            </td>
-                                        </tr>
-                                    ) : filteredUsers.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                                                {t('userManagement.noUsersFound')}
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        currentUsers.map((user: any, index) => (
-                                            <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
-                                                <td className="py-2.5 pl-2 font-medium text-foreground">{user.nome}</td>
-                                                <td className="py-2.5 text-muted-foreground">{user.nif}</td>
-                                                <td className="py-2.5 text-muted-foreground">
-                                                    {user.funcao ? (
-                                                        ({
-                                                            'SECRETARIA': t('userManagement.roles.secretary'),
-                                                            'BALNEARIO': t('userManagement.roles.balneario'),
-                                                            'ESCOLA': t('userManagement.roles.school'),
-                                                            'INTERNO': t('userManagement.roles.internals'),
-                                                            'OUTRO': t('userManagement.roles.other'),
-                                                            'UTENTE': t('userManagement.roles.userCommon')
-                                                        } as Record<string, string>)[user.funcao] || user.funcao
-                                                    ) : '-'}
-                                                </td>
-                                                <td className="py-2.5">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${user.active
-                                                        ? 'bg-status-success/10 text-status-success'
-                                                        : 'bg-amber-500/10 text-amber-500'
-                                                        }`}>
-                                                        {user.active ? t('userManagement.active') : t('userManagement.pending')}
-                                                    </span>
-                                                </td>
-                                                <td className="py-2.5 pr-2 text-right">
-                                                    {!user.active && (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            className="h-7 w-7 p-0 text-primary hover:text-primary hover:bg-primary/10"
-                                                            onClick={() => handleApprove(user.id)}
-                                                            title={t('userManagement.approve')}
-                                                        >
-                                                            <Check className="w-4 h-4" />
-                                                        </Button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pagination Employees */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-4">
-                                <p className="text-[10px] text-muted-foreground">
-                                    {t('userManagement.showingUsers', {
-                                        start: startIndex + 1,
-                                        end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
-                                        total: filteredUsers.length
-                                    })}
-                                </p>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 w-7 p-0"
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(prev => prev - 1)}
-                                    >
-                                        <ChevronLeft className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 w-7 p-0"
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(prev => prev + 1)}
-                                    >
-                                        <ChevronRight className="w-3 h-3" />
-                                    </Button>
+                        {activeTable === 'employees' && (
+                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                {/* Search Employees */}
+                                <div className="relative mb-4">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                    <Input
+                                        placeholder={t('userManagement.searchByNameOrNif')}
+                                        className="h-9 pl-9 bg-card border-border text-xs"
+                                        value={searchQuery}
+                                        onChange={e => {
+                                            setSearchQuery(e.target.value);
+                                            setCurrentPage(1);
+                                        }}
+                                    />
                                 </div>
+
+                                {/* Employees Table */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
+                                            <tr>
+                                                <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
+                                                <th className="text-left pb-2 font-medium">NIF</th>
+                                                <th className="text-left pb-2 font-medium">{t('userManagement.role')}</th>
+                                                <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
+                                                <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-xs">
+                                            {isLoading ? (
+                                                <tr>
+                                                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                                                        {t('documents.actions.searching')}
+                                                    </td>
+                                                </tr>
+                                            ) : filteredUsers.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                                                        {t('userManagement.noUsersFound')}
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                currentUsers.map((user: any, index) => (
+                                                    <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
+                                                        <td className="py-2.5 pl-2 font-medium text-foreground">{user.nome}</td>
+                                                        <td className="py-2.5 text-muted-foreground">{user.nif}</td>
+                                                        <td className="py-2.5 text-muted-foreground">
+                                                            {user.funcao ? (
+                                                                ({
+                                                                    'SECRETARIA': t('userManagement.roles.secretary'),
+                                                                    'BALNEARIO': t('userManagement.roles.balneario'),
+                                                                    'ESCOLA': t('userManagement.roles.school'),
+                                                                    'INTERNO': t('userManagement.roles.internals'),
+                                                                    'OUTRO': t('userManagement.roles.other'),
+                                                                    'UTENTE': t('userManagement.roles.userCommon')
+                                                                } as Record<string, string>)[user.funcao] || user.funcao
+                                                            ) : '-'}
+                                                        </td>
+                                                        <td className="py-2.5">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${user.active
+                                                                ? 'bg-status-success/10 text-status-success'
+                                                                : 'bg-amber-500/10 text-amber-500'
+                                                                }`}>
+                                                                {user.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-2.5 pr-2 text-right">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                                                onClick={() => handleOpenDetails(user)}
+                                                                title={t('common.view')}
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pagination Employees */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-between mt-4">
+                                        <p className="text-[10px] text-muted-foreground">
+                                            {t('userManagement.showingUsers', {
+                                                start: startIndex + 1,
+                                                end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
+                                                total: filteredUsers.length
+                                            })}
+                                        </p>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 w-7 p-0"
+                                                disabled={currentPage === 1}
+                                                onClick={() => setCurrentPage(prev => prev - 1)}
+                                            >
+                                                <ChevronLeft className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 w-7 p-0"
+                                                disabled={currentPage === totalPages}
+                                                onClick={() => setCurrentPage(prev => prev + 1)}
+                                            >
+                                                <ChevronRight className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </div>
+                    </GlassCard>
 
                     {/* Section 2: Utentes Management */}
-                    <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                                <Users className="w-4 h-4" />
-                            </div>
-                            <h3 className="text-lg font-bold text-foreground">{t('userManagement.usersTitle')}</h3>
-                        </div>
-
-                        {/* Search Utentes */}
-                        <div className="relative mb-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                            <Input
-                                placeholder={t('userManagement.searchByNameOrNif')}
-                                className="h-9 pl-9 bg-card border-border text-xs"
-                                value={searchQueryUtentes}
-                                onChange={e => {
-                                    setSearchQueryUtentes(e.target.value);
-                                    setCurrentPageUtentes(1);
-                                }}
-                            />
-                        </div>
-
-                        {/* Utentes Table */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
-                                    <tr>
-                                        <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
-                                        <th className="text-left pb-2 font-medium">NIF</th>
-                                        <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="text-xs">
-                                    {isLoadingUtentes ? (
-                                        <tr>
-                                            <td colSpan={3} className="py-12 text-center text-muted-foreground">
-                                                {t('documents.actions.searching')}
-                                            </td>
-                                        </tr>
-                                    ) : filteredUtentesList.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={3} className="py-12 text-center text-muted-foreground">
-                                                {t('userManagement.noUsersFound')}
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        currentUtentes.map((utente: any, index) => (
-                                            <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
-                                                <td className="py-2.5 pl-2 font-medium text-foreground">{utente.nome}</td>
-                                                <td className="py-2.5 text-muted-foreground">{utente.nif}</td>
-                                                <td className="py-2.5">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${utente.active
-                                                        ? 'bg-status-success/10 text-status-success'
-                                                        : 'bg-muted/20 text-muted-foreground'
-                                                        }`}>
-                                                        {utente.active ? t('userManagement.active') : t('userManagement.pending')}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pagination Utentes */}
-                        {totalPagesUtentes > 1 && (
-                            <div className="flex items-center justify-between mt-4">
-                                <p className="text-[10px] text-muted-foreground">
-                                    {t('userManagement.showingUsers', {
-                                        start: startIndexUtentes + 1,
-                                        end: Math.min(startIndexUtentes + itemsPerPage, filteredUtentesList.length),
-                                        total: filteredUtentesList.length
-                                    })}
-                                </p>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 w-7 p-0"
-                                        disabled={currentPageUtentes === 1}
-                                        onClick={() => setCurrentPageUtentes(prev => prev - 1)}
-                                    >
-                                        <ChevronLeft className="w-3 h-3" />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-7 w-7 p-0"
-                                        disabled={currentPageUtentes === totalPagesUtentes}
-                                        onClick={() => setCurrentPageUtentes(prev => prev + 1)}
-                                    >
-                                        <ChevronRight className="w-3 h-3" />
-                                    </Button>
+                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeTable === 'utentes' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
+                        <button
+                            onClick={() => setActiveTable('utentes')}
+                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeTable === 'utentes' ? 'bg-blue-500 shadow-blue-500/20' : 'bg-muted-foreground'}`}>
+                                    <Users className="w-5 h-5" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="text-lg font-bold text-foreground">{t('userManagement.usersTitle')}</h3>
                                 </div>
                             </div>
+                            {activeTable === 'utentes' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+                        </button>
+
+                        {activeTable === 'utentes' && (
+                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
+                                {/* Search Utentes */}
+                                <div className="relative mb-4">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                                    <Input
+                                        placeholder={t('userManagement.searchByNameOrNif')}
+                                        className="h-9 pl-9 bg-card border-border text-xs"
+                                        value={searchQueryUtentes}
+                                        onChange={e => {
+                                            setSearchQueryUtentes(e.target.value);
+                                            setCurrentPageUtentes(1);
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Utentes Table */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
+                                            <tr>
+                                                <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
+                                                <th className="text-left pb-2 font-medium">NIF</th>
+                                                <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
+                                                <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-xs">
+                                            {isLoadingUtentes ? (
+                                                <tr>
+                                                    <td colSpan={3} className="py-12 text-center text-muted-foreground">
+                                                        {t('documents.actions.searching')}
+                                                    </td>
+                                                </tr>
+                                            ) : filteredUtentesList.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={3} className="py-12 text-center text-muted-foreground">
+                                                        {t('userManagement.noUsersFound')}
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                currentUtentes.map((utente: any, index) => (
+                                                    <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
+                                                        <td className="py-2.5 pl-2 font-medium text-foreground">{utente.nome}</td>
+                                                        <td className="py-2.5 text-muted-foreground">{utente.nif}</td>
+                                                        <td className="py-2.5">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${utente.active
+                                                                ? 'bg-status-success/10 text-status-success'
+                                                                : 'bg-muted/20 text-muted-foreground'
+                                                                }`}>
+                                                                {utente.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-2.5 pr-2 text-right">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                                                                onClick={() => handleOpenDetails(utente)}
+                                                                title={t('common.view')}
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pagination Utentes */}
+                                {totalPagesUtentes > 1 && (
+                                    <div className="flex items-center justify-between mt-4">
+                                        <p className="text-[10px] text-muted-foreground">
+                                            {t('userManagement.showingUsers', {
+                                                start: startIndexUtentes + 1,
+                                                end: Math.min(startIndexUtentes + itemsPerPage, filteredUtentesList.length),
+                                                total: filteredUtentesList.length
+                                            })}
+                                        </p>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 w-7 p-0"
+                                                disabled={currentPageUtentes === 1}
+                                                onClick={() => setCurrentPageUtentes(prev => prev - 1)}
+                                            >
+                                                <ChevronLeft className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-7 w-7 p-0"
+                                                disabled={currentPageUtentes === totalPagesUtentes}
+                                                onClick={() => setCurrentPageUtentes(prev => prev + 1)}
+                                            >
+                                                <ChevronRight className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         )}
-                    </div>
-                </GlassCard>
+                    </GlassCard>
+                </div>
             </div>
+
+            {/* User Details & Edit Dialog */}
+            <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden border-border/40 gap-0">
+                    <DialogHeader className="p-6 pb-4 border-b border-border/40">
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <Users className="w-5 h-5 text-primary" />
+                            {t('userManagement.details.title')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t('userManagement.details.description')}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <ScrollArea className="flex-1 p-6 max-h-[60vh]">
+                        <div className="space-y-6">
+                            {/* Actions Banner for Pending Employees */}
+                            {selectedUser?.funcao && !selectedUser?.active && (
+                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-4 animate-in fade-in zoom-in duration-300">
+                                    <div className="p-2 bg-amber-500/20 rounded-lg text-amber-600">
+                                        <ShieldCheck className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="text-sm font-bold text-amber-700">{t('userManagement.details.approveTitle')}</h4>
+                                        <p className="text-xs text-amber-600/80 mb-3">{t('userManagement.details.approveDescription')}</p>
+                                        <Button 
+                                            size="sm" 
+                                            className="h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                                            onClick={handleApproveDetail}
+                                            disabled={isApproving}
+                                        >
+                                            {isApproving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Check className="w-3 h-3 mr-2" />}
+                                            {t('userManagement.details.approveAction')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Main Info Form */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">{t('requisitions.ui.name')}</Label>
+                                    <Input 
+                                        value={editForm.nome} 
+                                        onChange={e => setEditForm({...editForm, nome: e.target.value})}
+                                        className="h-9 text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">NIF</Label>
+                                    <Input 
+                                        value={editForm.nif} 
+                                        readOnly
+                                        className="h-9 text-sm bg-muted/30 cursor-not-allowed"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">Email</Label>
+                                    <Input 
+                                        value={editForm.email} 
+                                        onChange={e => setEditForm({...editForm, email: e.target.value})}
+                                        className="h-9 text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">{t('auth.contact')}</Label>
+                                    <Input 
+                                        value={editForm.telefone} 
+                                        onChange={e => setEditForm({...editForm, telefone: e.target.value.replace(/\D/g, '')})}
+                                        className="h-9 text-sm"
+                                        maxLength={9}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">{t('auth.birthDate')}</Label>
+                                    <Input 
+                                        type="date"
+                                        value={editForm.dataNascimento} 
+                                        onChange={e => setEditForm({...editForm, dataNascimento: e.target.value})}
+                                        className="h-9 text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">{t('profile.profession')}</Label>
+                                    <Input 
+                                        value={editForm.profissao} 
+                                        onChange={e => setEditForm({...editForm, profissao: e.target.value})}
+                                        className="h-9 text-sm"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-border/40">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('profile.sections.address')}</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.address')}</Label>
+                                        <Input 
+                                            value={editForm.morada} 
+                                            onChange={e => setEditForm({...editForm, morada: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.postalCode')}</Label>
+                                        <Input 
+                                            value={editForm.codigoPostal} 
+                                            onChange={e => setEditForm({...editForm, codigoPostal: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.parish')}</Label>
+                                        <Input 
+                                            value={editForm.freguesia} 
+                                            onChange={e => setEditForm({...editForm, freguesia: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-border/40">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{t('profile.sections.professional')}</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.workLocation')}</Label>
+                                        <Input 
+                                            value={editForm.localEmprego} 
+                                            onChange={e => setEditForm({...editForm, localEmprego: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.workPhone')}</Label>
+                                        <Input 
+                                            value={editForm.telefoneEmprego} 
+                                            onChange={e => setEditForm({...editForm, telefoneEmprego: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label className="text-xs font-semibold">{t('profile.workAddress')}</Label>
+                                        <Input 
+                                            value={editForm.moradaEmprego} 
+                                            onChange={e => setEditForm({...editForm, moradaEmprego: e.target.value})}
+                                            className="h-9 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </ScrollArea>
+
+                    <DialogFooter className="p-6 bg-muted/30 border-t border-border/40 gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDetailsOpen(false)}
+                            className="h-9 px-4 text-xs font-semibold"
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={handleEditSave}
+                            disabled={isSaving}
+                            className="h-9 px-6 text-xs font-bold gap-2"
+                        >
+                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-4 h-4" />}
+                            {t('userManagement.details.saveChanges')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Existing User Dialog */}
             <AlertDialog open={showUserExistsDialog} onOpenChange={setShowUserExistsDialog}>

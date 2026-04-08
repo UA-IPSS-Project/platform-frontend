@@ -443,6 +443,7 @@
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",
+    "view": "Visualize",
     "edit": "Edit",
     "save": "Save",
     "saving": "Saving...",
@@ -988,6 +989,26 @@
       "admin": "Administrator",
       "school": "School",
       "other": "Other"
+    },
+    "details": {
+      "title": "Manage User",
+      "description": "View and edit user information or perform administrative actions.",
+      "editTitle": "Edit Information",
+      "approveTitle": "Approve Account",
+      "approveDescription": "This employee is waiting for approval to access the platform.",
+      "approveAction": "Approve Employee",
+      "saveChanges": "Save Changes",
+      "deleting": "Deleting...",
+      "approving": "Approving...",
+      "success": {
+        "updated": "User updated successfully",
+        "approved": "Employee approved successfully"
+      },
+      "errors": {
+        "load": "Error loading user details",
+        "update": "Error updating user",
+        "approve": "Error approving employee"
+      }
     }
   },
   "appointmentDetails": {
