@@ -238,7 +238,9 @@
     "management": "Gestão",
     "consumption": "Consumos",
     "administrativeArea": "Área Administrativa",
-    "general": "Geral"
+    "general": "Geral",
+    "slots": "Gestão de Slots",
+    "inventory": "Gestão de Inventário"
   },
   "dashboard": {
     "secretary": "Secretaria",
@@ -586,7 +588,7 @@
     "title": "Histórico de Marcações",
     "backToAppointments": "Voltar para Marcações",
     "status": {
-      "completed": "Concluído",
+      "completed": "Ok",
       "warning": "Aviso",
       "noShow": "Não compareceu",
       "cancelled": "Cancelado"
@@ -1014,7 +1016,7 @@
     "rescheduledSuccess": "Marcação reagendada com sucesso",
     "rescheduledFailed": "Falha ao guardar o reagendamento.",
     "scheduled": "Agendado",
-    "completed": "Concluído",
+    "completed": "Ok",
     "noShow": "Não compareceu",
     "cancelled": "Cancelado",
     "viewAppointment": "Consultar Agendamento",
@@ -1067,7 +1069,7 @@
     "inProgress": "Em Curso",
     "scheduled": "Agendado",
     "warning": "Aviso",
-    "completed": "Concluído",
+    "completed": "Ok",
     "cancelled": "Cancelado",
     "noShow": "Não compareceu",
     "reserved": "Reservado"
@@ -1125,7 +1127,7 @@
     "patientNamePlaceholder": "Ex: João da Silva",
     "patientNeeds": "Necessidades do Utente",
     "hygiene": "Higiene",
-    "laundry": "Lavandaria",
+    "laundry": "Detergentes",
     "clothing": "Vestuário",
     "additionalNotes": "Notas Adicionais",
     "notesPlaceholder": "Ex: Alergias, cuidados especiais, tamanho de roupa...",
@@ -1229,7 +1231,18 @@
       "vestuario": "Vestuário",
       "calcado": "Calçado"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolos",
+      "pares": "pares",
+      "caixa": "caixa",
+      "saco": "saco"
+    },
     "products": {
+      "Lavar Roupa Seca": "Lavar Roupa Seca",
+      "Lavar Roupa Molhada": "Lavar Roupa Molhada",
       "Detergente Roupa": "Detergente Roupa",
       "Amaciador": "Amaciador",
       "Lixívia": "Lixívia",
@@ -1247,6 +1260,59 @@
       "Roupa Interior": "Roupa Interior",
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
+    },
+    "inventory": {
+      "managementTitle": "Gestão de Inventário",
+      "newItem": "Novo Item",
+      "editItem": "Editar Item",
+      "createItem": "Novo Item do Armazém",
+      "searchPlaceholder": "Pesquisar itens...",
+      "noItemsFound": "Nenhum item encontrado",
+      "tryChangingFilters": "Experimente mudar os filtros ou a pesquisa.",
+      "totalItems": "Total Itens",
+      "lowStock": "Stock Baixo",
+      "all": "Todos",
+      "form": {
+        "detailsDescription": "Configure os detalhes do produto e limites de stock.",
+        "productName": "Nome do Produto",
+        "currentStock": "Stock Atual",
+        "minAlert": "Mínimo Alerta",
+        "specificAttributes": "Atributos Específicos",
+        "brand": "Marca",
+        "size": "Tamanho",
+        "volume": "Volume / Peso",
+        "unit": "Unidade",
+        "description": "Descrição",
+        "detailsPlaceholder": "Detalhes adicionais...",
+        "saveChanges": "Guardar Alterações",
+        "saving": "A guardar...",
+        "requiredFields": "Nome e Categoria são obrigatórios"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Categoria",
+        "stock": "Stock",
+        "status": "Estado",
+        "actions": "Ações",
+        "min": "Min",
+        "marca": "Marca",
+        "tam": "Tam",
+        "vol": "Vol",
+        "empty": "Nenhum item encontrado no armazém"
+      },
+      "deleteConfirm": {
+        "title": "Eliminar Produto",
+        "description": "Tem a certeza que deseja eliminar o produto <strong class='text-foreground'>{{name}}</strong>? Esta ação é permanente e removerá todos os registos deste item do inventário.",
+        "action": "Eliminar Produto",
+        "cancel": "Cancelar"
+      },
+      "toasts": {
+        "loadError": "Erro ao carregar itens do armazém",
+        "deleteSuccess": "Item removido com sucesso",
+        "deleteError": "Erro ao remover o item",
+        "saveSuccess": "Item guardado com sucesso",
+        "saveError": "Erro ao guardar o item"
+      }
     }
   },
   "maintenance": {
