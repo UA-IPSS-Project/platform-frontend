@@ -19,10 +19,10 @@ interface SecretaryHomeProps {
 }
 
 const recentActivity = [
-  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-[color:var(--status-info)]' },
+  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-primary' },
   { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-primary' },
-  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-[color:var(--status-warning)]' },
-  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-[color:var(--status-success)]' },
+  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-primary' },
+  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-primary' },
 ];
 
 export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
@@ -51,10 +51,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
   }, []);
 
   const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
+    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--primary)', view: 'appointments' },
     { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'var(--primary)', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições', value: '5', color: 'var(--status-warning)', view: 'requisitions' },
-    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--status-success)', view: 'management' },
+    { icon: ClipboardList, label: 'Requisições', value: '5', color: 'var(--primary)', view: 'requisitions' },
+    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--primary)', view: 'management' },
   ];
 
   const textClass = 'text-foreground';
@@ -167,10 +167,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
                 <button
                   onClick={() => onNavigate('appointments')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-info)]/30 bg-[color:var(--status-info-soft)] transition-all duration-200 text-left group"
+                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-info)' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                     <Calendar className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Nova Marcação</p>
@@ -191,10 +191,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
 
                 <button
                   onClick={() => onNavigate('management')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-warning)]/30 bg-[color:var(--status-warning-soft)] transition-all duration-200 text-left group"
+                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-warning)' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                     <UserPlus className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Criar Conta</p>
@@ -203,10 +203,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
 
                 <button
                   onClick={() => onNavigate('reports')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-success)]/30 bg-[color:var(--status-success-soft)] transition-all duration-200 text-left group"
+                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                 >
                   <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-success)' }}>
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                     <TrendingUp className="w-6 h-6" />
                   </div>
                   <p className={`font-semibold ${textClass} text-lg mb-1`}>Relatórios</p>
