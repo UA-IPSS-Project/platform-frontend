@@ -145,7 +145,9 @@ export function SecretaryAdminArea() {
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(tiposManutencao) ? tiposManutencao.length : 0,
+                    tiposManutencao: Array.isArray(tiposManutencao) 
+                        ? new Set(tiposManutencao.map((i: any) => i.categoria)).size 
+                        : 0,
                 });
             } catch (error) {
                 toast.error(t('dashboard.admin.errors.loadCatalogCounts', 'Erro ao carregar métricas de catálogos'));

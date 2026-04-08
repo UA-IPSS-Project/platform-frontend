@@ -347,7 +347,7 @@
         },
         "maintenanceTypes": {
           "title": "Tipos de manutenção",
-          "description": "tipos disponíveis"
+          "description": "categorias no catálogo"
         }
       },
       "messages": {
