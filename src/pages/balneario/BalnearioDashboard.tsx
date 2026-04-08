@@ -333,8 +333,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             <NavDropdown
                 label={t('sidebar.management')}
                 items={[
-                    { id: 'admin-area-slots', label: 'Gestão de Slots' },
-                    { id: 'admin-area-inventory', label: 'Gestão de Inventário' },
+                    { id: 'admin-area-slots', label: t('sidebar.slots') },
+                    { id: 'admin-area-inventory', label: t('sidebar.inventory') },
                 ]}
                 isActive={['management', 'admin-area', 'admin-area-slots', 'admin-area-inventory'].includes(currentView)}
                 onSelect={(id) => navigateTo(id as ViewType)}

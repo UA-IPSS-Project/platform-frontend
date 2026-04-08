@@ -145,8 +145,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: t('sidebar.management'),
       icon: DatabaseIcon,
       subitems: [
-        { id: 'admin-area-slots', label: 'Gestão de Slots', icon: SlidersIcon },
-        { id: 'admin-area-inventory', label: 'Gestão de Inventário', icon: PackageIcon },
+        { id: 'admin-area-slots', label: t('sidebar.slots'), icon: SlidersIcon },
+        { id: 'admin-area-inventory', label: t('sidebar.inventory'), icon: PackageIcon },
       ]
     },
   ];

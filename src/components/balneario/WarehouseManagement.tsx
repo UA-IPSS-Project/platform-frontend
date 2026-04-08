@@ -100,17 +100,17 @@ export function WarehouseManagement() {
         if (!itemToDelete) return;
         try {
             await armazemApi.eliminarItem(itemToDelete.id);
-            toast.success('Item removido com sucesso');
+            toast.success(t('consumos.warehouse.toasts.deleteSuccess'));
             setItems(prev => prev.filter(i => i.id !== itemToDelete.id));
             setIsDeleteDialogOpen(false);
         } catch (error) {
-            toast.error('Erro ao remover o item');
+            toast.error(t('consumos.warehouse.toasts.deleteError'));
         }
     };
 
     const handleSave = async () => {
         if (!editingItem?.nome || !editingItem?.categoria) {
-            toast.error('Nome e Categoria são obrigatórios');
+            toast.error(t('consumos.warehouse.form.requiredFields'));
             return;
         }
 
@@ -119,16 +119,16 @@ export function WarehouseManagement() {
             if (editingItem.id) {
                 const updated = await armazemApi.atualizarItem(editingItem.id, editingItem);
                 setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-                toast.success('Item atualizado com sucesso');
+                toast.success(t('consumos.warehouse.toasts.saveSuccess'));
             } else {
                 const created = await armazemApi.criarItem(editingItem);
                 setItems(prev => [...prev, created]);
-                toast.success('Item criado com sucesso');
+                toast.success(t('consumos.warehouse.toasts.saveSuccess'));
             }
             setIsEditOpen(false);
             setEditingItem(null);
         } catch (error) {
-            toast.error('Erro ao guardar o item');
+            toast.error(t('consumos.warehouse.toasts.saveError'));
         } finally {
             setIsSaving(false);
         }
@@ -155,7 +155,7 @@ export function WarehouseManagement() {
                 <div className="relative w-full sm:max-w-xs">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Pesquisar itens..."
+                        placeholder={t('consumos.warehouse.searchPlaceholder')}
                         className="pl-9 bg-background border-border"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -168,7 +168,7 @@ export function WarehouseManagement() {
                         className="flex-1 sm:flex-none gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                         <Plus className="w-4 h-4" />
-                        Novo Item
+                        {t('consumos.warehouse.newItem')}
                     </Button>
                 </div>
             </div>
@@ -180,7 +180,7 @@ export function WarehouseManagement() {
                         <Package className="w-5 h-5" />
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total Itens</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t('consumos.warehouse.totalItems')}</p>
                         <p className="text-xl font-bold text-foreground">{items.length}</p>
                     </div>
                 </GlassCard>
@@ -189,7 +189,7 @@ export function WarehouseManagement() {
                         <TrendingDown className="w-5 h-5" />
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Stock Baixo</p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">{t('consumos.warehouse.lowStock')}</p>
                         <p className="text-xl font-bold text-foreground">{lowStockItems.length}</p>
                     </div>
                 </GlassCard>
@@ -203,7 +203,7 @@ export function WarehouseManagement() {
                     onClick={() => setActiveCategory('ALL')}
                     className="rounded-full"
                 >
-                    Todos
+                    {t('consumos.warehouse.all')}
                 </Button>
                 {CATEGORIES.map(cat => (
                     <Button
@@ -227,19 +227,19 @@ export function WarehouseManagement() {
                 ) : filteredItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-64 text-center p-6">
                         <Package className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                        <h3 className="text-lg font-medium text-foreground">Nenhum item encontrado</h3>
-                        <p className="text-sm text-muted-foreground">Experimente mudar os filtros ou a pesquisa.</p>
+                        <h3 className="text-lg font-medium text-foreground">{t('consumos.warehouse.noItemsFound')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('consumos.warehouse.tryChangingFilters')}</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-border/50 bg-muted/30">
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Item</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Categoria</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Stock</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">Estado</th>
-                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-24">Ações</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('consumos.warehouse.table.item')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('consumos.warehouse.table.category')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('consumos.warehouse.table.stock')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">{t('consumos.warehouse.table.status')}</th>
+                                    <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right w-24">{t('consumos.warehouse.table.actions')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -268,10 +268,10 @@ export function WarehouseManagement() {
                                                 <div className="flex flex-col items-center">
                                                     <span className="font-bold text-foreground">{item.quantidade} <span className="text-xs font-normal text-muted-foreground">{item.unidade}</span></span>
                                                     <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 justify-center">
-                                                        <span>Min: {item.quantidadeMinima}</span>
-                                                        {item.marca && <span>Marca: {item.marca}</span>}
-                                                        {item.tamanho && <span>Tam: {item.tamanho}</span>}
-                                                        {item.volume && <span>Vol: {item.volume}{item.unidade}</span>}
+                                                        <span>{t('consumos.warehouse.table.min')}: {item.quantidadeMinima}</span>
+                                                        {item.marca && <span>{t('consumos.warehouse.table.marca')}: {item.marca}</span>}
+                                                        {item.tamanho && <span>{t('consumos.warehouse.table.tam')}: {item.tamanho}</span>}
+                                                        {item.volume && <span>{t('consumos.warehouse.table.vol')}: {item.volume}{item.unidade}</span>}
                                                     </div>
                                                 </div>
                                             </td>
@@ -279,12 +279,12 @@ export function WarehouseManagement() {
                                                 {item.estado === 'BAIXO' ? (
                                                     <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20 gap-1">
                                                         <AlertTriangle className="w-3 h-3" />
-                                                        Baixo
+                                                        {t('consumos.warehouse.lowStock')}
                                                     </Badge>
                                                 ) : (
                                                     <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20 gap-1">
                                                         <Check className="w-3 h-3" />
-                                                        OK
+                                                        {t('history.status.completed', 'OK')}
                                                     </Badge>
                                                 )}
                                             </td>
@@ -324,20 +324,20 @@ export function WarehouseManagement() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="sm:max-w-[425px] bg-card border-border max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>{editingItem?.id ? 'Editar Item' : 'Novo Item do Armazém'}</DialogTitle>
+                        <DialogTitle>{editingItem?.id ? t('consumos.warehouse.editItem') : t('consumos.warehouse.createItem')}</DialogTitle>
                         <DialogDescription>
-                            Configure os detalhes do produto e limites de stock.
+                            {t('consumos.warehouse.form.detailsDescription')}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="categoria">Categoria</Label>
+                            <Label htmlFor="categoria">{t('consumos.warehouse.table.category')}</Label>
                             <Select 
                                 value={editingItem?.categoria} 
                                 onValueChange={(v) => setEditingItem(prev => ({...prev!, categoria: v}))}
                             >
                                 <SelectTrigger id="categoria" className="bg-background border-border">
-                                    <SelectValue placeholder="Selecione uma categoria" />
+                                    <SelectValue placeholder={t('dashboard.admin.catalogs.selectCategory')} />
                                 </SelectTrigger>
                                 <SelectContent className="bg-card border-border">
                                     {CATEGORIES.map(cat => (
@@ -347,7 +347,7 @@ export function WarehouseManagement() {
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="nome">Nome do Produto</Label>
+                            <Label htmlFor="nome">{t('consumos.warehouse.form.productName')}</Label>
                             <Input
                                 id="nome"
                                 value={editingItem?.nome || ''}
@@ -358,7 +358,7 @@ export function WarehouseManagement() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="quantidade">Stock Atual</Label>
+                                <Label htmlFor="quantidade">{t('consumos.warehouse.form.currentStock')}</Label>
                                 <Input
                                     id="quantidade"
                                     type="number"
@@ -368,7 +368,7 @@ export function WarehouseManagement() {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="minimo">Mínimo Alerta</Label>
+                                <Label htmlFor="minimo">{t('consumos.warehouse.form.minAlert')}</Label>
                                 <Input
                                     id="minimo"
                                     type="number"
@@ -380,11 +380,11 @@ export function WarehouseManagement() {
                         </div>
 
                         <div className="space-y-4 pt-4 border-t border-border/40">
-                            <h4 className="text-sm font-medium text-foreground/70">Atributos Específicos</h4>
+                            <h4 className="text-sm font-medium text-foreground/70">{t('consumos.warehouse.form.specificAttributes')}</h4>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="marca">Marca</Label>
+                                    <Label htmlFor="marca">{t('consumos.warehouse.form.brand')}</Label>
                                     <Input
                                         id="marca"
                                         value={editingItem?.marca || ''}
@@ -393,7 +393,7 @@ export function WarehouseManagement() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tamanho">Tamanho</Label>
+                                    <Label htmlFor="tamanho">{t('consumos.warehouse.form.size')}</Label>
                                     <Input
                                         id="tamanho"
                                         value={editingItem?.tamanho || ''}
@@ -405,7 +405,7 @@ export function WarehouseManagement() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="volume">Volume / Peso</Label>
+                                    <Label htmlFor="volume">{t('consumos.warehouse.form.volume')}</Label>
                                     <Input
                                         id="volume"
                                         type="number"
@@ -415,13 +415,13 @@ export function WarehouseManagement() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="unidade">Unidade</Label>
+                                    <Label htmlFor="unidade">{t('consumos.warehouse.form.unit')}</Label>
                                     <Select 
                                         value={editingItem?.unidade} 
                                         onValueChange={(v) => setEditingItem(prev => ({...prev!, unidade: v}))}
                                     >
                                         <SelectTrigger id="unidade">
-                                            <SelectValue placeholder="Selecione" />
+                                            <SelectValue placeholder={t('common.optional')} />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {UNIDADES.map(u => (
@@ -433,12 +433,12 @@ export function WarehouseManagement() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="descricao">Descrição</Label>
+                                <Label htmlFor="descricao">{t('consumos.warehouse.form.description')}</Label>
                                 <Textarea
                                     id="descricao"
                                     value={editingItem?.descricao || ''}
                                     onChange={(e) => setEditingItem(prev => ({...prev!, descricao: e.target.value}))}
-                                    placeholder="Detalhes adicionais..."
+                                    placeholder={t('consumos.warehouse.form.detailsPlaceholder')}
                                     className="resize-none"
                                     rows={2}
                                 />
@@ -447,10 +447,10 @@ export function WarehouseManagement() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsEditOpen(false)} disabled={isSaving}>
-                            Cancelar
+                            {t('common.cancel')}
                         </Button>
                         <Button onClick={handleSave} disabled={isSaving} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                            {isSaving ? 'A guardar...' : 'Guardar Alterações'}
+                            {isSaving ? t('consumos.warehouse.form.saving') : t('consumos.warehouse.form.saveChanges')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -458,17 +458,25 @@ export function WarehouseManagement() {
 
             {/* Delete Alert */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent className="bg-card border-border">
+                <AlertDialogContent className="bg-card border-border shadow-2xl backdrop-blur-md">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Tem a certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. O item <strong>{itemToDelete?.nome}</strong> será removido permanentemente do inventário.
+                        <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-destructive" />
+                            {t('consumos.warehouse.deleteConfirm.title')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground pt-2">
+                            {t('consumos.warehouse.deleteConfirm.description', { name: itemToDelete?.nome })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Remover Item
+                    <AlertDialogFooter className="pt-4">
+                        <AlertDialogCancel className="bg-muted hover:bg-muted/80 border-none">
+                            {t('consumos.warehouse.deleteConfirm.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleDelete} 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20"
+                        >
+                            {t('consumos.warehouse.deleteConfirm.action')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
