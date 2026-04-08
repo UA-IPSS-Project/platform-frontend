@@ -7,7 +7,6 @@ import { RegisterForm } from './components/auth/RegisterForm';
 import NewPasswordForm from './components/auth/NewPasswordForm';
 import { UserDashboard } from './pages/utente/UserDashboard';
 import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
 import { InternoDashboard } from './pages/interno/InternoDashboard';
 import { EscolaDashboard } from './pages/escola/EscolaDashboard';
@@ -81,7 +80,7 @@ function App() {
         return <Navigate to="/set-password" replace />;
       }
 
-      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA', 'ADMIN'].includes(user.role)) {
+      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA'].includes(user.role)) {
         return (
           <div className="min-h-screen flex items-center justify-center p-4">
             <div className="bg-card/95 backdrop-blur-md p-8 rounded-lg shadow-xl border border-border max-w-md w-full text-center">
@@ -228,12 +227,6 @@ function App() {
                               contact: user.telefone || '',
                               email: user.email || ''
                             }}
-                            onLogout={handleLogout}
-                            isDarkMode={isDarkMode}
-                            onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                          />
-                        ) : user.role === 'ADMIN' ? (
-                          <AdminDashboard
                             onLogout={handleLogout}
                             isDarkMode={isDarkMode}
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
