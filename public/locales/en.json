@@ -781,6 +781,7 @@
       "maintenanceCategoryRC": "Ground Floor",
       "maintenanceCategoryPreschool": "Preschool",
       "maintenanceCategoryDaycare": "Daycare",
+      "maintenanceCategoryVehicles": "Vehicles",
       "noCategory": "No category",
       "capacityNotDefined": "Capacity not defined",
       "seat": "seat",
@@ -1309,6 +1310,20 @@
       "Roupa Interior": "Underwear",
       "Meias": "Socks",
       "Agasalho/Casaco": "Coat/Jacket"
+    }
+  },
+  "maintenance": {
+    "labels": {
+      "itemsByCategory": "Items by Category",
+      "selectedItems": "{{count}} item(s) selected",
+      "clearSelection": "Clear selection",
+      "observations": "Observations by Category",
+      "space": "Space",
+      "item": "Verification Item",
+      "vehicle": "Vehicle"
+    },
+    "placeholders": {
+      "observations": "Additional notes for this category..."
     }
   }
 }

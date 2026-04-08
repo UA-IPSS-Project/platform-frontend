@@ -7,12 +7,14 @@ import {
     TrendingUp,
     Clock,
     ArrowRight,
+    UserPlus,
 } from 'lucide-react';
 import { useIsMobile } from '../ui/use-mobile';
 
 interface BalnearioHomeProps {
     isDarkMode: boolean;
     onNavigate: (view: string) => void;
+    onQuickAttendance: () => void;
 }
 
 const recentActivity = [
@@ -20,7 +22,7 @@ const recentActivity = [
     { type: 'consumo', text: 'Registo de Consumo - Banho', time: 'Há 45 min', color: 'bg-[color:var(--status-warning)]' },
 ];
 
-export default function BalnearioHome({ isDarkMode: _isDarkMode, onNavigate }: BalnearioHomeProps) {
+export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendance }: BalnearioHomeProps) {
     const isMobile = useIsMobile();
     const [marcacoesHoje, setMarcacoesHoje] = useState<string>('0');
     const [consumosHoje, setConsumosHoje] = useState<string>('0');
@@ -138,15 +140,19 @@ export default function BalnearioHome({ isDarkMode: _isDarkMode, onNavigate }: B
                         <div className="p-4 flex-1 flex items-center">
                             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
                                 <button
-                                    onClick={() => onNavigate('appointments')}
-                                    className="p-6 rounded-2xl border border-[color:var(--status-info)]/30 bg-[color:var(--status-info-soft)] transition-all duration-200 text-left group"
+                                    onClick={onQuickAttendance}
+                                    className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
+                                    style={{
+                                        backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff', // purple-50
+                                        borderColor: isDarkMode ? '#a855f7' : '#e9d5ff'
+                                    }}
                                 >
                                     <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                                        style={{ backgroundColor: 'var(--background)', color: 'var(--status-info)' }}>
-                                        <Calendar className="w-6 h-6" />
+                                        style={{ backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.5)' : '#ffffff', color: '#a855f7' }}>
+                                        <UserPlus className="w-6 h-6" />
                                     </div>
-                                    <p className={`font-semibold ${textClass} text-lg mb-1`}>Marcações</p>
-                                    <p className={`text-sm ${textSecondaryClass}`}>Ver agenda</p>
+                                    <p className={`font-semibold ${textClass} text-lg mb-1`}>Registar Presença</p>
+                                    <p className={`text-sm ${textSecondaryClass}`}>Checkout rápido (Walk-in)</p>
                                 </button>
 
                                 <button

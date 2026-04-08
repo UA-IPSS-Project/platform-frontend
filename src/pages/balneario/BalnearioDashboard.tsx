@@ -27,6 +27,8 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
+import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -118,6 +120,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+    const [showQuickAttendance, setShowQuickAttendance] = useState(false);
+    const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [, setLoadingStats] = useState(false);
 
     const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
         setProfileIsDirty(isDirty);
@@ -182,8 +187,21 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         }
     };
 
+    const carregarEstatisticas = async () => {
+        setLoadingStats(true);
+        try {
+            const data = await armazemApi.obterEstatisticas('MES');
+            setStatsData(data);
+        } catch {
+            toast.error('Erro ao carregar estatísticas');
+        } finally {
+            setLoadingStats(false);
+        }
+    };
+
     useEffect(() => {
         if (currentView === 'history') carregarHistorico();
+        if (currentView === 'reports') carregarEstatisticas();
     }, [currentView, historyStartDate, historyEndDate]);
 
     useEffect(() => {
@@ -281,14 +299,16 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 {t('sidebar.appointments')}
             </Button>
 
-            <Button
-                variant={currentView === 'consumos' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('consumos')}
-                className={`text-sm ${currentView === 'consumos' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
-            >
-                {t('sidebar.consumption')}
-            </Button>
-
+            <NavDropdown
+                label={t('sidebar.consumption')}
+                items={[
+                    { id: 'consumos', label: t('consumos.warehouse') },
+                    { id: 'estatisticas', label: t('consumos.statistics') },
+                ]}
+                isActive={['consumos', 'estatisticas'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('consumos')}
+            />
             <NavDropdown
                 label={t('sidebar.requisitions')}
                 items={[
@@ -349,6 +369,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
+                                onQuickAttendance={() => setShowQuickAttendance(true)}
                             />
                         ) : currentView === 'appointments' ? (
                             <>
@@ -461,8 +482,12 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
                                 onDirtyChange={handleRequisitionsDirtyChange}
                             />
-                        ) : currentView === 'consumos' ? (
-                            <BalnearioConsumosPage isDarkMode={isDarkMode} />
+                        ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
+                            <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
+                        ) : currentView === 'reports' ? (
+                            <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
+                                <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
+                            </div>
                         ) : (
                             renderPlaceholder(currentView)
                         )}
@@ -556,6 +581,19 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {showQuickAttendance && authUser?.id && (
+                <QuickAttendanceModal
+                    isOpen={showQuickAttendance}
+                    onClose={() => setShowQuickAttendance(false)}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        if (currentView === 'reports') carregarEstatisticas();
+                    }}
+                    funcionarioId={authUser.id}
+                    isDarkMode={isDarkMode}
+                />
+            )}
         </>
     );
 }

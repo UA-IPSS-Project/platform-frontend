@@ -2,7 +2,8 @@ import { apiRequest, Page } from '../core/client';
 import {
     MarcacaoPresencialRequest,
     MarcacaoRemotaRequest,
-    MarcacaoResponse
+    MarcacaoResponse,
+    BalnearioAttendanceStats
 } from './types';
 
 export const marcacoesApi = {
@@ -135,5 +136,25 @@ export const marcacoesApi = {
         apiRequest<MarcacaoResponse>(`/api/marcacoes/balneario/${marcacaoId}/detalhes`, {
             method: 'PUT',
             body: JSON.stringify(data),
+        }),
+
+    // Registo de presença rápida para balneário (Walk-in)
+    registarPresencaRapidaBalneario: (data: {
+        nomeUtente: string;
+        produtosHigiene: boolean;
+        lavagemRoupa: boolean;
+        observacoes?: string;
+        data: string;
+        responsavelId: number;
+    }) =>
+        apiRequest<MarcacaoResponse>('/api/marcacoes/balneario/presenca-rapida', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    // Obter presenças e estatísticas do balneário
+    obterEstatisticasFrequenciaBalneario: (periodo: 'DIA' | 'SEMANA' | 'MES' = 'MES') =>
+        apiRequest<BalnearioAttendanceStats>(`/api/marcacoes/balneario/estatisticas?periodo=${periodo}`, {
+            method: 'GET',
         }),
 };

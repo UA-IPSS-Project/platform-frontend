@@ -25,13 +25,18 @@ import { useRequisitionCreateForm } from '../../hooks/requisitions/useRequisitio
 import {
   validateDescricao,
   validateMaterialLinhas,
+  validateManutencaoItens,
   validateTransporteDestino,
-  isDateInPast,
-  composeDateTimeStr,
+  validateCondutor,
+  validateNumeroPassageiros,
+  validateTransporteIds,
+  validateDataPassada,
+  validateCruzamentoDatas,
 } from '../../utils/validations/requisition.validation';
 import { useRequisitionCatalog } from '../../hooks/requisitions/useRequisitionCatalog';
 import {
   ManutencaoCategoria,
+  ManutencaoItem,
   MaterialCategoria,
   MaterialCatalogo,
   RequisicaoEstado,
@@ -504,10 +509,10 @@ export function SharedRequisitionsPage({
   const validateCreateField = useCallback((field: CreateField, manualValue?: string | number): string | undefined => {
     if (!createForm.tipo) return undefined;
     
-    // Descricao can be manual or from state
-    const currentDescricao = field === 'descricao' && manualValue !== undefined ? String(manualValue) : createForm.descricao;
-
-    if (field === 'descricao') return validateDescricao(currentDescricao);
+    if (field === 'descricao') {
+      const val = manualValue !== undefined ? String(manualValue) : createForm.descricao;
+      return validateDescricao(val);
+    }
 
     if (createForm.tipo === 'MATERIAL' && field === 'materialItens') {
       const linhasValidas = createForm.materialLinhas.filter((linha) => linha.materialId && Number(linha.quantidade) > 0);
@@ -515,53 +520,52 @@ export function SharedRequisitionsPage({
     }
 
     if (createForm.tipo === 'MANUTENCAO' && field === 'manutencaoItens') {
-      if (createForm.selectedManutencaoItemIds.length === 0) return t('requisitions.errors.addOneMaintenanceItem');
-      return undefined;
+      return validateManutencaoItens(createForm.selectedManutencaoItems);
     }
 
     if (createForm.tipo !== 'TRANSPORTE') return undefined;
 
-    if (field === 'destino') return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
-    if (field === 'condutor') {
-      const val = manualValue !== undefined ? String(manualValue).trim() : createForm.condutorTransporte.trim();
-      if (!val) return t('requisitions.errors.requiredField');
+    if (field === 'destino') {
+      return validateTransporteDestino(manualValue !== undefined ? String(manualValue) : createForm.destinoTransporte);
     }
     
+    if (field === 'condutor') {
+      const val = manualValue !== undefined ? String(manualValue) : createForm.condutorTransporte;
+      return validateCondutor(val);
+    }
+
+    if (field === 'numeroPassageiros') {
+      const val = manualValue !== undefined ? manualValue : createForm.numeroPassageiros;
+      return validateNumeroPassageiros(val);
+    }
+
+    if (field === 'transporteIds') {
+      return validateTransporteIds(createForm.selectedTransportIds);
+    }
+
     // Date and time existence checks
     if (field === 'dataSaida' && !createForm.dataSaida) return t('requisitions.errors.requiredField');
     if (field === 'horaSaida' && !createForm.horaSaida) return t('requisitions.errors.requiredField');
     if (field === 'dataRegresso' && !createForm.dataRegresso) return t('requisitions.errors.requiredField');
     if (field === 'horaRegresso' && !createForm.horaRegresso) return t('requisitions.errors.requiredField');
 
-    // Logic validations using helpers
-    if ((field === 'dataSaida' || field === 'horaSaida') && createForm.dataSaida && isDateInPast(createForm.dataSaida)) {
-      return t('requisitions.errors.dateCannotBePast');
+    if (field === 'dataSaida') {
+      const error = validateDataPassada(createForm.dataSaida);
+      if (error) return error;
     }
 
-    if ((field === 'dataRegresso' || field === 'horaRegresso') && createForm.dataRegresso && isDateInPast(createForm.dataRegresso)) {
-      return t('requisitions.errors.dateCannotBePast');
-    }
-
-    if (field === 'numeroPassageiros') {
-      const val = String(manualValue !== undefined ? manualValue : createForm.numeroPassageiros).trim();
-      if (!val && val !== '0') return t('requisitions.errors.requiredField');
-      const num = Number(val);
-      if (isNaN(num) || num < 0) return t('requisitions.errors.invalidPassengers');
-      return undefined;
-    }
-
-    if (field === 'transporteIds' && createForm.selectedTransportIds.length === 0) {
-      return t('requisitions.errors.selectOneVehicle');
-    }
-
-    const saidaStr = composeDateTimeStr(createForm.dataSaida, createForm.horaSaida);
-    const regressoStr = composeDateTimeStr(createForm.dataRegresso, createForm.horaRegresso);
-    
-    if ((field === 'horaRegresso' || field === 'dataRegresso') && saidaStr && regressoStr) {
-      if (new Date(regressoStr) <= new Date(saidaStr)) {
-        return t('requisitions.errors.returnAfterDeparture');
+    if (field === 'dataRegresso' || field === 'horaRegresso') {
+        // Only validate if data exists. If it exists but is invalid, error it.
+      if (createForm.dataRegresso) {
+          const error = validateDataPassada(createForm.dataRegresso);
+          if (error) return error;
       }
     }
+    
+    if (field === 'horaRegresso' || field === 'dataRegresso') {
+      return validateCruzamentoDatas(createForm.dataSaida, createForm.horaSaida, createForm.dataRegresso, createForm.horaRegresso);
+    }
+
     return undefined;
   }, [createForm, t]);
 
@@ -654,24 +658,6 @@ export function SharedRequisitionsPage({
 
 
 
-  const toggleManutencaoCategoriaExpansion = useCallback((categoria: ManutencaoCategoria) => {
-    createForm.setExpandedManutencaoCategorias((prev) => ({ ...prev, [categoria]: !prev[categoria] }));
-  }, [createForm]);
-
-  const toggleManutencaoItem = useCallback((itemId: number, checked: boolean) => {
-    if (checked) {
-      createForm.setSelectedManutencaoItemIds((prev) => [...new Set([...prev, itemId])]);
-    } else {
-      createForm.setSelectedManutencaoItemIds((prev) => prev.filter((id) => id !== itemId));
-    }
-  }, [createForm]);
-
-  const updateManutencaoObservacaoCategoria = useCallback((categoria: string, observacao: string) => {
-    createForm.setManutencaoObservacoesPorCategoria((prev) => ({
-      ...prev,
-      [categoria]: observacao,
-    }));
-  }, [createForm]);
 
   const toggleVariante = useCallback((materialId: number, checked: boolean) => {
     createForm.setMaterialLinhas((prev) => {
@@ -803,7 +789,6 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        criadoPorId: currentUserId,
       };
 
       if (createForm.tipo === 'MATERIAL') {
@@ -833,18 +818,20 @@ export function SharedRequisitionsPage({
           transporteIds: createForm.selectedTransportIds.map(Number),
         });
       } else {
-        const manutencaoItensPayload = createForm.selectedManutencaoItemIds.map((itemId) => {
+        const manutencaoItensPayload = createForm.selectedManutencaoItems.map(({ itemId, transporteId }) => {
           const item = catalog.manutencaoItems.find((m) => m.id === itemId);
-          const observacaoCategoria = item ? item.categoria : '';
+          // Usar a categoria do item para buscar a observação correta no estado do formulário
+          const categoria = item?.categoria || '';
           return {
             itemId,
-            observacoes: createForm.manutencaoObservacoesPorCategoria[observacaoCategoria] || undefined,
+            transporteId,
+            observacoes: createForm.manutencaoObservacoesPorCategoria[categoria] || undefined,
           };
         });
 
         await requisicoesApi.criarManutencao({
           ...payloadBase,
-          manutencaoItens: manutencaoItensPayload.length > 0 ? manutencaoItensPayload : undefined,
+          manutencaoItens: manutencaoItensPayload,
         });
       }
 
@@ -1450,21 +1437,14 @@ export function SharedRequisitionsPage({
             <div className="space-y-4">
               <RequisitionsCreateManutencaoForm
                 manutencaoItems={catalog.manutencaoItems}
-                expandedManutencaoCategorias={createForm.expandedManutencaoCategorias}
-                selectedManutencaoItemIds={createForm.selectedManutencaoItemIds}
+                transportes={catalog.transportes}
+                selectedManutencaoItems={createForm.selectedManutencaoItems}
                 manutencaoObservacoesPorCategoria={createForm.manutencaoObservacoesPorCategoria}
-                onToggleCategoriaExpansion={toggleManutencaoCategoriaExpansion}
-                onToggleItem={(id, checked) => {
-                  toggleManutencaoItem(id, checked);
-                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
-                }}
-                onUpdateObservacaoCategoria={updateManutencaoObservacaoCategoria}
+                onToggleItem={createForm.toggleManutencaoItem}
+                onUpdateObservacaoCategoria={createForm.updateManutencaoObservacaoCategoria}
                 t={t}
                 manutencaoError={createForm.createErrors.manutencaoItens}
-                onClearSelection={() => {
-                  createForm.setSelectedManutencaoItemIds([]);
-                  if (createForm.createTouched.manutencaoItens) validateAndSetField('manutencaoItens');
-                }}
+                onClearSelection={createForm.onClearSelection}
               />
             </div>
           )}
@@ -1714,30 +1694,31 @@ export function SharedRequisitionsPage({
               </>
             )}
 
-            {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItemIds.length > 0 && (
+            {createForm.tipo === 'MANUTENCAO' && createForm.selectedManutencaoItems.length > 0 && (
               <div>
                 <span className="text-muted-foreground font-medium mb-2 block">{t('requisitions.ui.maintenance')}:</span>
                 {(() => {
-                  const grouped = createForm.selectedManutencaoItemIds.reduce((acc, id) => {
-                    const mInfo = catalog.manutencaoItems.find((m) => m.id === id);
+                  const grouped = createForm.selectedManutencaoItems.reduce((acc, { itemId, transporteId }) => {
+                    const mInfo = catalog.manutencaoItems.find((m) => m.id === itemId);
                     if (mInfo) {
                       if (!acc[mInfo.categoria]) acc[mInfo.categoria] = [];
-                      acc[mInfo.categoria].push(mInfo);
+                      acc[mInfo.categoria].push({ ...mInfo, transporteId });
                     }
                     return acc;
-                  }, {} as Record<string, typeof catalog.manutencaoItems>);
+                  }, {} as Record<string, Array<ManutencaoItem & { transporteId?: number }>>);
                   
                   const labelMap: Record<string, string> = {
                     CATL: t('requisitions.labels.maintenanceCategoryCATL'),
                     RC: t('requisitions.labels.maintenanceCategoryRC'),
                     PRE_ESCOLAR: t('requisitions.labels.maintenanceCategoryPreschool'),
-                    CRECHE: t('requisitions.labels.maintenanceCategoryDaycare')
+                    CRECHE: t('requisitions.labels.maintenanceCategoryDaycare'),
+                    VEICULOS: t('requisitions.labels.maintenanceCategoryVehicles')
                   };
 
                   return Object.entries(grouped).map(([categoria, items]) => (
                     <div key={categoria} className="mb-2 last:mb-0 ml-2">
                       <p className="font-medium text-sm text-foreground">
-                        {labelMap[categoria] || categoria}:
+                        {labelMap[categoria] || (categoria === 'VEICULOS' ? t('requisitions.labels.maintenanceCategoryVehicles') : categoria)}:
                       </p>
                       {createForm.manutencaoObservacoesPorCategoria[categoria as ManutencaoCategoria] && (
                         <p className="text-xs text-muted-foreground mt-0.5 mb-1 italic">
@@ -1745,9 +1726,16 @@ export function SharedRequisitionsPage({
                         </p>
                       )}
                       <ul className="list-disc pl-5 mt-1 text-muted-foreground">
-                        {items.map((item, idx) => (
-                          <li key={idx} className="text-sm">{item.espaco} - {item.itemVerificacao}</li>
-                        ))}
+                        {items.map((item, idx) => {
+                          let label = `${item.espaco} - ${item.itemVerificacao}`;
+                          if (categoria === 'VEICULOS' && item.transporteId) {
+                            const tpt = catalog.transportes.find(t => t.id === item.transporteId);
+                            label = `${item.itemVerificacao} [${tpt?.matricula || '?'}]`;
+                          } else if (categoria === 'VEICULOS') {
+                            label = item.itemVerificacao;
+                          }
+                          return <li key={idx} className="text-sm">{label}</li>;
+                        })}
                       </ul>
                     </div>
                   ));
