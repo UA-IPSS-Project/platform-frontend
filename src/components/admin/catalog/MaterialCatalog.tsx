@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Pencil, Plus, Search } from 'lucide-react';
+import { Pencil, Plus, Search, ChevronDown } from 'lucide-react';
 import { 
   MaterialCategoria, 
   requisicoesApi, 
@@ -43,6 +43,8 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
   const [editNome, setEditNome] = useState('');
   const [editAtributo, setEditAtributo] = useState('');
   const [editValorAtributo, setEditValorAtributo] = useState('');
+  const [showAttrList, setShowAttrList] = useState(false);
+  const [showAttrEditList, setShowAttrEditList] = useState(false);
 
   const uniqueCategorias = Array.from(new Set(materiais.map(m => m.categoria).filter((c): c is string => !!c)));
 
@@ -228,10 +230,36 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.attribute')}</label>
-              <Input className="h-11 rounded-xl" placeholder="Ex: Formato, Cor..." list="default-attributes" value={novoAtributo} onChange={(e) => setNovoAtributo(e.target.value)} />
-              <datalist id="default-attributes">
-                {DEFAULT_ATTRIBUTES.map(attr => <option key={attr} value={attr} />)}
-              </datalist>
+              <div className="relative">
+                <Input 
+                  className="h-11 rounded-xl pr-10" 
+                  placeholder="Ex: Formato, Cor..." 
+                  value={novoAtributo} 
+                  onChange={(e) => setNovoAtributo(e.target.value)} 
+                  onFocus={() => setShowAttrList(true)}
+                  onBlur={() => setTimeout(() => setShowAttrList(false), 150)}
+                />
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                
+                {showAttrList && (
+                  <div className="absolute top-12 left-0 right-0 z-50 bg-background border border-border/40 rounded-xl shadow-xl overflow-hidden py-1 max-h-48 overflow-y-auto">
+                    {DEFAULT_ATTRIBUTES.filter(a => a.toLowerCase().includes(novoAtributo.toLowerCase())).map(attr => (
+                      <div 
+                         key={attr} 
+                         className="px-4 py-2 hover:bg-primary/5 cursor-pointer text-sm font-medium transition-colors"
+                         onMouseDown={(e) => { e.preventDefault(); setNovoAtributo(attr); setShowAttrList(false); }}
+                      >
+                        {attr}
+                      </div>
+                    ))}
+                    {DEFAULT_ATTRIBUTES.filter(a => a.toLowerCase().includes(novoAtributo.toLowerCase())).length === 0 && (
+                      <div className="px-4 py-2 text-muted-foreground text-sm italic">
+                        Escreva livremente
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -287,13 +315,30 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
                             placeholder="Nome"
                           />
                           <div className="grid grid-cols-2 gap-2">
-                            <Input 
-                              value={editAtributo} 
-                              onChange={(e) => setEditAtributo(e.target.value)} 
-                              className="h-9" 
-                              placeholder="Atributo"
-                              list="default-attributes"
-                            />
+                            <div className="relative">
+                              <Input 
+                                value={editAtributo} 
+                                onChange={(e) => setEditAtributo(e.target.value)} 
+                                className="h-9 pr-8" 
+                                placeholder="Atributo"
+                                onFocus={() => setShowAttrEditList(true)}
+                                onBlur={() => setTimeout(() => setShowAttrEditList(false), 150)}
+                              />
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                              {showAttrEditList && (
+                                <div className="absolute top-10 left-0 right-0 z-[60] bg-background border border-border/40 rounded-xl shadow-xl overflow-hidden py-1 max-h-48 overflow-y-auto">
+                                  {DEFAULT_ATTRIBUTES.filter(a => a.toLowerCase().includes(editAtributo.toLowerCase())).map(attr => (
+                                    <div 
+                                      key={attr} 
+                                      className="px-3 py-1.5 hover:bg-primary/5 cursor-pointer text-sm font-medium transition-colors"
+                                      onMouseDown={(e) => { e.preventDefault(); setEditAtributo(attr); setShowAttrEditList(false); }}
+                                    >
+                                      {attr}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                             <Input 
                               value={editValorAtributo} 
                               onChange={(e) => setEditValorAtributo(e.target.value)} 

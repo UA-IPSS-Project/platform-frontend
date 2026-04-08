@@ -24,8 +24,8 @@ export function CatalogSection({
 }: CatalogSectionProps) {
   return (
     <GlassCard className={cn(
-      "overflow-hidden border-border/40 transition-all duration-500",
-      isOpen ? "shadow-2xl ring-1 ring-primary/10" : "shadow-sm opacity-90"
+      "border-border/40 transition-all duration-500 relative focus-within:z-50",
+      isOpen ? "shadow-2xl ring-1 ring-primary/10 overflow-visible z-10" : "shadow-sm opacity-90 overflow-hidden z-0"
     )}>
       <div 
         className={cn(
@@ -69,7 +69,7 @@ export function CatalogSection({
         "grid transition-all duration-500 ease-in-out",
         isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
       )}>
-        <div className="overflow-hidden">
+        <div className={cn("transition-[overflow] duration-500", isOpen ? "overflow-visible" : "overflow-hidden")}>
           <div className="p-6 space-y-6 bg-gradient-to-b from-transparent to-accent/5">
             {children}
           </div>
