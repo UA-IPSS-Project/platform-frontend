@@ -25,7 +25,7 @@ interface AuthContextType {
 
 interface UtenteRegisterData {
   nome: string;
-  email: string;
+  email?: string;
   password: string;
   nif: string;
   telefone?: string;
