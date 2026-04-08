@@ -311,6 +311,7 @@ export function DatePickerField({
           }
         }}
         placeholder={placeholder || EMPTY_DATE_DISPLAY}
+        className="border-2 border-border bg-background shadow-sm focus-visible:border-primary focus-visible:ring-primary/30 cursor-text"
         maxLength={10}
         disabled={disabled}
       />
