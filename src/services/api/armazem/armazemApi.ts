@@ -8,6 +8,10 @@ export interface ItemArmazemDTO {
     quantidadeMinima: number;
     unidade: string;
     estado: 'OK' | 'BAIXO';
+    marca?: string;
+    tamanho?: string;
+    volume?: number;
+    descricao?: string;
 }
 
 export interface ConsumoEstatisticaDTO {
@@ -39,12 +43,23 @@ export const armazemApi = {
     listarPorCategoria: (categoria: string) =>
         apiRequest<ItemArmazemDTO[]>(`/api/armazem/categoria/${categoria}`, { method: 'GET' }),
 
-    /** Atualiza quantidade e/ou quantidade mínima de um item */
-    atualizarItem: (id: number, data: { quantidade?: number; quantidadeMinima?: number }) =>
+    /** Cria um novo item no armazém */
+    criarItem: (data: Partial<ItemArmazemDTO>) =>
+        apiRequest<ItemArmazemDTO>('/api/armazem', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    /** Atualiza um item do armazém (quantidade, mínimios, nome, etc) */
+    atualizarItem: (id: number, data: Partial<ItemArmazemDTO>) =>
         apiRequest<ItemArmazemDTO>(`/api/armazem/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         }),
+
+    /** Elimina um item do armazém */
+    eliminarItem: (id: number) =>
+        apiRequest<void>(`/api/armazem/${id}`, { method: 'DELETE' }),
 
     /** Verifica stock para itens do formulário */
     verificarStock: (formItems: string[]) =>

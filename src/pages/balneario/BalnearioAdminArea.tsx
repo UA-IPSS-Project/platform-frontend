@@ -7,6 +7,9 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { calendarioApi } from '../../services/api';
+import { WarehouseManagement } from '../../components/balneario/WarehouseManagement';
+import { Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function SlotsManagement({
     isLoadingSlots,
@@ -97,7 +100,7 @@ function SlotsManagement({
     );
 }
 
-export function BalnearioAdminArea() {
+export function BalnearioAdminArea({ mode = 'slots' }: { mode?: 'slots' | 'inventory' }) {
     const { t } = useTranslation();
     const [slotCapacities, setSlotCapacities] = useState({
         BALNEARIO: 2,
@@ -146,22 +149,43 @@ export function BalnearioAdminArea() {
     };
 
     return (
-        <div className="space-y-10 max-w-6xl mx-auto">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold text-foreground">Gestão da Plataforma</h1>
-                <p className="text-muted-foreground max-w-2xl">
-                    Configure os parâmetros operacionais do Balneário.
-                </p>
+        <div className="space-y-8 max-w-6xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6">
+                <div className="flex flex-col gap-1">
+                    <h1 className="text-3xl font-bold text-foreground">
+                        {mode === 'slots' ? 'Gestão de Slots' : 'Gestão de Inventário'}
+                    </h1>
+                    <p className="text-muted-foreground max-w-2xl">
+                        {mode === 'slots' 
+                            ? 'Configure os parâmetros operacionais de marcações e capacidade do balneário.' 
+                            : 'Gestão de stock, categorias e detalhes dos produtos do armazém.'}
+                    </p>
+                </div>
             </div>
-            <SlotsManagement
-                isLoadingSlots={isLoadingSlots}
-                isSavingSlots={isSavingSlots}
-                slotCapacities={slotCapacities}
-                savedCapacities={savedCapacities}
-                onChange={handleSlotCapacityChange}
-                onSave={handleSaveSlotCapacities}
-                t={t}
-            />
+
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={mode}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    {mode === 'slots' ? (
+                        <SlotsManagement
+                            isLoadingSlots={isLoadingSlots}
+                            isSavingSlots={isSavingSlots}
+                            slotCapacities={slotCapacities}
+                            savedCapacities={savedCapacities}
+                            onChange={handleSlotCapacityChange}
+                            onSave={handleSaveSlotCapacities}
+                            t={t}
+                        />
+                    ) : (
+                        <WarehouseManagement />
+                    )}
+                </motion.div>
+            </AnimatePresence>
         </div>
     );
 }

@@ -1225,11 +1225,14 @@
     "stockWarningContinue": "Sim, continuar",
     "categories": {
       "detergentes": "Detergentes",
+      "lavandaria": "Lavandaria",
       "higiene": "Higiene",
       "vestuario": "Vestuário",
       "calcado": "Calçado"
     },
     "products": {
+      "Lavar Roupa Seca": "Lavar Roupa Seca",
+      "Lavar Roupa Molhada": "Lavar Roupa Molhada",
       "Detergente Roupa": "Detergente Roupa",
       "Amaciador": "Amaciador",
       "Lixívia": "Lixívia",

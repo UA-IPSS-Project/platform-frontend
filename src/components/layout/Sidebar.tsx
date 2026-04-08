@@ -18,7 +18,8 @@ import {
   UsersIcon,
   HeartIcon,
   ShieldCheckIcon,
-  FileTextIcon
+  FileTextIcon,
+  PackageIcon
 } from '../shared/CustomIcons';
 import { useTranslation } from 'react-i18next';
 
@@ -144,7 +145,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: t('sidebar.management'),
       icon: DatabaseIcon,
       subitems: [
-        { id: 'admin-area', label: t('userManagement.title2', 'Gestão da Plataforma'), icon: SlidersIcon },
+        { id: 'admin-area-slots', label: 'Gestão de Slots', icon: SlidersIcon },
+        { id: 'admin-area-inventory', label: 'Gestão de Inventário', icon: PackageIcon },
       ]
     },
   ];

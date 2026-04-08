@@ -22,7 +22,7 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         /* Silence deprecation warning for baseUrl */
-        "ignoreDeprecations": "6.0",
+        "ignoreDeprecations": "5.0",
         /* Path aliases - matching your vite.config.ts */
         "baseUrl": ".",
         "paths": {

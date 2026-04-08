@@ -34,24 +34,13 @@ interface BalnearioAppointmentDialogProps {
     funcionarioId: number;
 }
 
-const HYGIENE_OPTIONS = [
-    { value: 'Champô', labelKey: 'balnearioAppointment.options.shampoo' },
-    { value: 'Gel de Banho', labelKey: 'balnearioAppointment.options.showerGel' },
-    { value: 'Toalha', labelKey: 'balnearioAppointment.options.towel' },
-    { value: 'Sabonete/Creme', labelKey: 'balnearioAppointment.options.soapCream' },
-];
-const LAUNDRY_OPTIONS = [
-    { value: 'Lavar Roupa Seca', labelKey: 'balnearioAppointment.options.washDryClothes' },
-    { value: 'Lavar Roupa Molhada', labelKey: 'balnearioAppointment.options.washWetClothes' },
-];
-const CLOTHING_OPTIONS = [
-    { value: 'T-shirt/Camisola', labelKey: 'balnearioAppointment.options.shirtSweater' },
-    { value: 'Calças', labelKey: 'balnearioAppointment.options.pants' },
-    { value: 'Sapatos/Sapatilhas', labelKey: 'balnearioAppointment.options.shoesSneakers' },
-    { value: 'Roupa Interior', labelKey: 'balnearioAppointment.options.underwear' },
-    { value: 'Meias', labelKey: 'balnearioAppointment.options.socks' },
-    { value: 'Agasalho/Casaco', labelKey: 'balnearioAppointment.options.coatJacket' },
-];
+// Will be fetched from armazemApi
+interface DynamicOption {
+    id: number;
+    value: string;
+    label: string;
+    category: string;
+}
 
 export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, time, funcionarioId }: BalnearioAppointmentDialogProps) {
     const { t, i18n } = useTranslation();
@@ -63,6 +52,8 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
     const [shoeSizeStock, setShoeSizeStock] = useState<StockCheckResult | null>(null);
     const [showStockWarning, setShowStockWarning] = useState(false);
     const [pendingClose, setPendingClose] = useState(false);
+
+    const [dynamicOptions, setDynamicOptions] = useState<DynamicOption[]>([]);
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -165,13 +156,40 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
         }
     };
 
-    // Fetch stock levels when dialog opens
+    // Fetch inventory items to build dynamic options
     useEffect(() => {
         if (open) {
-            const allItems = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].map(o => o.value);
-            armazemApi.verificarStock(allItems).then(setStockLevels).catch(() => {});
+            armazemApi.listarTodos().then(items => {
+                const options = items
+                    .filter(i => i.categoria !== 'CALCADO') // Special handling for shoes
+                    .map(i => ({
+                        id: i.id!,
+                        value: i.nome,
+                        label: t(`consumos.products.${i.nome}`, i.nome),
+                        category: i.categoria
+                    }));
+                
+                // Add generic Shoe option if any shoe item exist
+                if (items.some(i => i.categoria === 'CALCADO')) {
+                    options.push({
+                        value: 'Sapatos/Sapatilhas',
+                        label: t('balnearioAppointment.options.shoesSneakers'),
+                        category: 'VESTUARIO' // Map to clothing group
+                    });
+                }
+                
+                setDynamicOptions(options);
+
+                // Initialize stock levels
+                const allNames = items.map(i => i.nome);
+                allNames.push('Sapatos/Sapatilhas'); // Track generic shoe if needed
+                armazemApi.verificarStock(allNames).then(setStockLevels).catch(() => {});
+            }).catch(err => {
+                console.error('Erro ao carregar itens do armazém:', err);
+                toast.error('Não foi possível carregar os itens do armazém.');
+            });
         }
-    }, [open]);
+    }, [open, t]);
 
     // Check shoe size stock
     useEffect(() => {
@@ -253,17 +271,20 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
             Object.entries(selectedOptions).forEach(([option, isSelected]) => {
                 if (!isSelected) return;
 
-                if (HYGIENE_OPTIONS.some(item => item.value === option)) {
+                const optDetail = dynamicOptions.find(o => o.value === option);
+                const category = optDetail?.category || (option === 'Sapatos/Sapatilhas' ? 'VESTUARIO' : 'UNKNOWN');
+
+                if (category === 'HIGIENE') {
                     hasHygiene = true;
-                    roupasVal.push({ categoria: option, quantidade: 1 });
-                } else if (LAUNDRY_OPTIONS.some(item => item.value === option)) {
+                    roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
+                } else if (category === 'LAVANDARIA') {
                     hasLaundry = true;
-                    roupasVal.push({ categoria: option, quantidade: 1 });
-                } else if (CLOTHING_OPTIONS.some(item => item.value === option)) {
+                    roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
+                } else if (category === 'VESTUARIO' || category === 'CALCADO') {
                     if (option === 'Sapatos/Sapatilhas' && shoeSize) {
-                        roupasVal.push({ categoria: option, tamanho: shoeSize, quantidade: 1 });
+                        roupasVal.push({ categoria: option, tamanho: shoeSize, quantidade: 1, itemId: optDetail?.id });
                     } else {
-                        roupasVal.push({ categoria: option, quantidade: 1 });
+                        roupasVal.push({ categoria: option, quantidade: 1, itemId: optDetail?.id });
                     }
                 }
             });
@@ -343,7 +364,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                             <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
                                 <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.hygiene')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {HYGIENE_OPTIONS.map((opt) => (
+                                    {dynamicOptions.filter(o => o.category === 'HIGIENE').map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
                                             <div className="flex items-center space-x-3">
                                                 <Checkbox
@@ -352,7 +373,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                                <label htmlFor={optionId('higiene', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
                                             </div>
                                             {selectedOptions[opt.value] && getStockWarning(opt.value) && (
                                                 <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
@@ -365,11 +386,11 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                 </div>
                             </div>
 
-                            {/* Laundry */}
+                            {/* Laundry / Detergents */}
                             <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
                                 <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.laundry')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {LAUNDRY_OPTIONS.map((opt) => (
+                                    {dynamicOptions.filter(o => o.category === 'LAVANDARIA').map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
                                             <div className="flex items-center space-x-3">
                                                 <Checkbox
@@ -378,7 +399,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                                <label htmlFor={optionId('lavandaria', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
                                             </div>
                                             {selectedOptions[opt.value] && getStockWarning(opt.value) && (
                                                 <p className="ml-8 mt-1 text-xs text-status-error flex items-center gap-1">
@@ -395,7 +416,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                             <div className="bg-muted/40 p-4 rounded-lg border border-border/60">
                                 <Label className="font-medium text-foreground/80 block mb-3">{t('balnearioAppointment.clothing')}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {CLOTHING_OPTIONS.map((opt) => (
+                                {dynamicOptions.filter(o => o.category === 'VESTUARIO').map((opt) => (
                                         <div key={opt.value} className="flex flex-col">
                                             <div className="flex items-center space-x-3">
                                                 <Checkbox
@@ -404,7 +425,7 @@ export function BalnearioAppointmentDialog({ open, onClose, onSuccess, date, tim
                                                     onCheckedChange={() => toggleOption(opt.value)}
                                                     className="data-[state=checked]:bg-primary border-border flex-shrink-0"
                                                 />
-                                                <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{t(opt.labelKey)}</label>
+                                                <label htmlFor={optionId('vestuario', opt.value)} className="text-sm cursor-pointer select-none leading-tight">{opt.label}</label>
                                             </div>
                                             {/* Shoe size input */}
                                             {opt.value === 'Sapatos/Sapatilhas' && selectedOptions[opt.value] && (

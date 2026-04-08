@@ -333,11 +333,12 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             <NavDropdown
                 label={t('sidebar.management')}
                 items={[
-                    { id: 'admin-area', label: t('userManagement.title2', 'Gestão da Plataforma') },
+                    { id: 'admin-area-slots', label: 'Gestão de Slots' },
+                    { id: 'admin-area-inventory', label: 'Gestão de Inventário' },
                 ]}
-                isActive={['management', 'admin-area'].includes(currentView)}
+                isActive={['management', 'admin-area', 'admin-area-slots', 'admin-area-inventory'].includes(currentView)}
                 onSelect={(id) => navigateTo(id as ViewType)}
-                onLabelClick={() => navigateTo('admin-area')}
+                onLabelClick={() => navigateTo('admin-area-slots')}
             />
         </>
     );
@@ -500,9 +501,13 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
                                 <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
                             </div>
-                        ) : currentView === 'admin-area' ? (
+                        ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (
                             <div className="py-8">
-                                <BalnearioAdminArea />
+                                <BalnearioAdminArea mode="slots" />
+                            </div>
+                        ) : currentView === 'admin-area-inventory' ? (
+                            <div className="py-8">
+                                <BalnearioAdminArea mode="inventory" />
                             </div>
                         ) : (
                             renderPlaceholder(currentView)
