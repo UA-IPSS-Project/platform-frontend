@@ -139,6 +139,14 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     { id: 'consumos', label: t('sidebar.consumption'), icon: HistoryIcon },
     { id: 'requisitions', label: t('sidebar.requisitions'), icon: ClipboardListIcon },
     { id: 'reports', label: t('sidebar.reports'), icon: FileTextIcon },
+    {
+      id: 'management',
+      label: t('sidebar.management'),
+      icon: DatabaseIcon,
+      subitems: [
+        { id: 'admin-area', label: t('userManagement.title2', 'Gestão da Plataforma'), icon: SlidersIcon },
+      ]
+    },
   ];
 
   return (
