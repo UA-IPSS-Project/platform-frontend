@@ -348,6 +348,10 @@
         "maintenanceTypes": {
           "title": "Tipos de manutenção",
           "description": "categorias no catálogo"
+        },
+        "assuntos": {
+          "title": "Assuntos Ativos",
+          "description": "tipos de marcação disponíveis"
         }
       },
       "messages": {
@@ -428,6 +432,25 @@
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
         "saveSlotConfig": "Não foi possível guardar a configuração de slots"
+      },
+      "assuntos": {
+        "sectionTitle": "Assuntos de Marcação",
+        "sectionDescription": "Configure os tipos de agendamento disponíveis para os utentes e funcionários na secretaria.",
+        "confirmDeactivateTitle": "Desativar Assunto?",
+        "confirmDeactivateDescription": "Ao desativar este assunto, ele deixará de estar disponível para novos agendamentos tanto para utentes como para a secretaria. Agendamentos existentes não serão afetados.",
+        "confirmDeactivateAction": "Desativar",
+        "activateSuccess": "Assunto ativado",
+        "deactivateSuccess": "Assunto desativado",
+        "activateError": "Erro ao ativar assunto",
+        "deactivateError": "Erro ao desativar assunto",
+        "loadError": "Erro ao carregar assuntos",
+        "createSuccess": "Assunto criado com sucesso",
+        "createError": "Erro ao criar assunto",
+        "updateSuccess": "Assunto atualizado",
+        "updateError": "Erro ao atualizar assunto",
+        "deleteConfirm": "Tem a certeza que deseja eliminar permanentemente este assunto?",
+        "deleteSuccess": "Assunto eliminado",
+        "deleteError": "Erro ao eliminar assunto"
       }
     },
     "userHome": {

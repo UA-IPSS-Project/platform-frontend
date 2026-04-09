@@ -64,7 +64,7 @@ function SlotsManagement({
                         <div className="flex items-center gap-6 p-6 sm:w-72">
                             <div className="text-center min-w-[3rem]">
                                 <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
-                                <p className="text-xs text-muted-foreground mt-1.5">atual</p>
+                                <p className="text-xs text-muted-foreground mt-1.5">{t('dashboard.admin.slots.current')}</p>
                             </div>
                             <div className="flex-1 space-y-1.5">
                                 <Label htmlFor="slot-SECRETARIA" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -189,9 +189,9 @@ export function SecretaryAdminArea() {
             iconClassName: 'bg-primary/15 text-primary',
         },
         {
-            title: 'Assuntos Ativos',
+            title: t('dashboard.admin.summary.assuntos.title'),
             value: catalogCounts.assuntosAtivos,
-            description: 'Tipos de marcação disponíveis',
+            description: t('dashboard.admin.summary.assuntos.description'),
             icon: Settings2,
             iconClassName: 'bg-primary/15 text-primary',
         },
@@ -253,10 +253,10 @@ export function SecretaryAdminArea() {
             <GlassCard className="p-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
-                    Assuntos de Marcação
+                    {t('dashboard.admin.assuntos.sectionTitle')}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
-                    Configure os tipos de agendamento disponíveis para os utentes e funcionários na secretaria.
+                    {t('dashboard.admin.assuntos.sectionDescription')}
                 </p>
                 
                 <SubjectManagement />

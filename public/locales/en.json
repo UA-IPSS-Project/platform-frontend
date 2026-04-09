@@ -348,6 +348,10 @@
         "maintenanceTypes": {
           "title": "Maintenance types",
           "description": "categories in catalog"
+        },
+        "assuntos": {
+          "title": "Active Subjects",
+          "description": "available appointment types"
         }
       },
       "messages": {
@@ -428,6 +432,25 @@
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",
         "saveSlotConfig": "Could not save slot configuration"
+      },
+      "assuntos": {
+        "sectionTitle": "Appointment Subjects",
+        "sectionDescription": "Configure the types of appointments available for users and staff at the front desk.",
+        "confirmDeactivateTitle": "Deactivate Subject?",
+        "confirmDeactivateDescription": "By deactivating this subject, it will no longer be available for new appointments for both users and staff. Existing appointments will not be affected.",
+        "confirmDeactivateAction": "Deactivate",
+        "activateSuccess": "Subject activated",
+        "deactivateSuccess": "Subject deactivated",
+        "activateError": "Error activating subject",
+        "deactivateError": "Error deactivating subject",
+        "loadError": "Error loading subjects",
+        "createSuccess": "Subject created successfully",
+        "createError": "Error creating subject",
+        "updateSuccess": "Subject updated",
+        "updateError": "Error updating subject",
+        "deleteConfirm": "Are you sure you want to permanently delete this subject?",
+        "deleteSuccess": "Subject deleted",
+        "deleteError": "Error deleting subject"
       }
     },
     "userHome": {

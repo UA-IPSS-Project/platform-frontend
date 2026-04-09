@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search } from 'lucide-react';
 import { marcacoesApi, type Assunto } from '../../../services/api';
@@ -19,6 +20,7 @@ import {
 import { cn } from '../../ui/utils';
 
 export function SubjectManagement() {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [assuntos, setAssuntos] = useState<Assunto[]>([]);
@@ -44,7 +46,7 @@ export function SubjectManagement() {
             const res = await marcacoesApi.listarAssuntosAdmin();
             setAssuntos(Array.isArray(res) ? res : []);
         } catch (error) {
-            toast.error('Erro ao carregar assuntos');
+            toast.error(t('dashboard.admin.assuntos.loadError'));
         } finally {
             setLoading(false);
         }
@@ -71,9 +73,9 @@ export function SubjectManagement() {
             setNovoNome('');
             setNovaDescricao('');
             await loadAssuntos();
-            toast.success('Assunto criado com sucesso');
+            toast.success(t('dashboard.admin.assuntos.createSuccess'));
         } catch (error) {
-            toast.error('Erro ao criar assunto');
+            toast.error(t('dashboard.admin.assuntos.createError'));
         } finally {
             setSaving(false);
         }
@@ -94,20 +96,20 @@ export function SubjectManagement() {
             });
             setEditingId(null);
             await loadAssuntos();
-            toast.success('Assunto atualizado');
+            toast.success(t('dashboard.admin.assuntos.updateSuccess'));
         } catch (error) {
-            toast.error('Erro ao atualizar assunto');
+            toast.error(t('dashboard.admin.assuntos.updateError'));
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Tem a certeza que deseja eliminar permanentemente este assunto?')) return;
+        if (!window.confirm(t('dashboard.admin.assuntos.deleteConfirm'))) return;
         try {
             await marcacoesApi.apagarAssunto(id);
             await loadAssuntos();
-            toast.success('Assunto eliminado');
+            toast.success(t('dashboard.admin.assuntos.deleteSuccess'));
         } catch (error) {
-            toast.error('Erro ao eliminar assunto');
+            toast.error(t('dashboard.admin.assuntos.deleteError'));
         }
     };
 
@@ -121,9 +123,9 @@ export function SubjectManagement() {
         try {
             await marcacoesApi.atualizarEstadoAssunto(id, novoEstado);
             await loadAssuntos();
-            toast.success('Assunto ativado');
+            toast.success(t('dashboard.admin.assuntos.activateSuccess'));
         } catch (error) {
-            toast.error('Erro ao ativar assunto');
+            toast.error(t('dashboard.admin.assuntos.activateError'));
         }
     };
 
@@ -132,9 +134,9 @@ export function SubjectManagement() {
         try {
             await marcacoesApi.atualizarEstadoAssunto(itemToToggle.id, itemToToggle.novoEstado);
             await loadAssuntos();
-            toast.success('Assunto desativado');
+            toast.success(t('dashboard.admin.assuntos.deactivateSuccess'));
         } catch (error) {
-            toast.error('Erro ao desativar assunto');
+            toast.error(t('dashboard.admin.assuntos.deactivateError'));
         } finally {
             setShowConfirmToggle(false);
             setItemToToggle(null);
@@ -150,7 +152,7 @@ export function SubjectManagement() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-muted-foreground animate-pulse">A carregar assuntos...</p>
+                <p className="text-muted-foreground animate-pulse">{t('profile.loading')}</p>
             </div>
         );
     }
@@ -162,7 +164,7 @@ export function SubjectManagement() {
                 <div className="relative w-full md:max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Pesquisar assuntos..." 
+                        placeholder={t('history.filters.searchPlaceholder')} 
                         className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -204,7 +206,7 @@ export function SubjectManagement() {
                                 disabled={saving} 
                                 className="h-11 px-8 bg-primary rounded-xl shadow-lg shadow-primary/20 gap-2 w-full lg:w-auto"
                             >
-                                {saving ? 'A guardar...' : <><Plus className="w-5 h-5" /> Adicionar Assunto</>}
+                                {saving ? t('common.saving') : <><Plus className="w-5 h-5" /> Adicionar Assunto</>}
                             </Button>
                         </div>
                     </div>
@@ -223,7 +225,7 @@ export function SubjectManagement() {
                                 key={assunto.id} 
                                 className={cn(
                                     "group/item relative p-6 rounded-2xl border transition-all duration-300",
-                                    !assunto.ativo && "bg-muted/30 opacity-80grayscale opacity-60",
+                                    !assunto.ativo && "bg-muted/30 opacity-80",
                                     editingId === assunto.id 
                                         ? "bg-primary/5 border-primary shadow-inner" 
                                         : "bg-background/40 border-border/40 hover:border-primary/40 hover:bg-muted/30"
@@ -248,8 +250,8 @@ export function SubjectManagement() {
                                             />
                                         </div>
                                         <div className="flex gap-2 justify-end pt-2">
-                                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancelar</Button>
-                                            <Button size="sm" onClick={() => void handleUpdate(assunto.id)}>Guardar</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button>
+                                            <Button size="sm" onClick={() => void handleUpdate(assunto.id)}>{t('common.save')}</Button>
                                         </div>
                                     </div>
                                 ) : (
@@ -316,7 +318,7 @@ export function SubjectManagement() {
 
                     {filteredAssuntos.length === 0 && (
                         <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-3xl bg-muted/5">
-                            <p className="text-muted-foreground font-medium">Nenhum assunto encontrado.</p>
+                            <p className="text-muted-foreground font-medium">{t('history.table.noResults')}</p>
                         </div>
                     )}
                 </div>
@@ -325,16 +327,18 @@ export function SubjectManagement() {
             <AlertDialog open={showConfirmToggle} onOpenChange={setShowConfirmToggle}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Desativar Assunto?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('dashboard.admin.assuntos.confirmDeactivateTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Ao desativar este assunto, ele deixará de estar disponível para novos agendamentos tanto para utentes como para a secretaria. 
-                            Agendamentos existentes não serão afetados.
+                            {t('dashboard.admin.assuntos.confirmDeactivateDescription')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setItemToToggle(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => void confirmToggle()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Desativar
+                        <AlertDialogCancel onClick={() => setItemToToggle(null)}>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={() => void confirmToggle()} 
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                        >
+                            {t('dashboard.admin.assuntos.confirmDeactivateAction')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
