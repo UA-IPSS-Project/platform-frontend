@@ -28,7 +28,6 @@ export function SubjectManagement() {
     
     // New Subject State
     const [novoNome, setNovoNome] = useState('');
-    const [novaDescricao, setNovaDescricao] = useState('');
     const [isAddFormOpen, setIsAddFormOpen] = useState(true);
 
     // Toggle State
@@ -38,7 +37,6 @@ export function SubjectManagement() {
     // Edit State
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editNome, setEditNome] = useState('');
-    const [editDescricao, setEditDescricao] = useState('');
 
     const loadAssuntos = async () => {
         try {
@@ -66,12 +64,10 @@ export function SubjectManagement() {
             setSaving(true);
             await marcacoesApi.criarAssunto({
                 nome: novoNome.trim(),
-                descricao: novaDescricao.trim(),
                 ativo: true
             });
 
             setNovoNome('');
-            setNovaDescricao('');
             await loadAssuntos();
             toast.success(t('dashboard.admin.assuntos.createSuccess'));
         } catch (error) {
@@ -91,7 +87,6 @@ export function SubjectManagement() {
             const currentItem = assuntos.find(a => a.id === id);
             await marcacoesApi.atualizarAssunto(id, {
                 nome: editNome.trim(),
-                descricao: editDescricao.trim(),
                 ativo: currentItem?.ativo ?? true
             });
             setEditingId(null);
@@ -144,8 +139,7 @@ export function SubjectManagement() {
     };
 
     const filteredAssuntos = assuntos.filter(a => 
-        a.nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (a.descricao && a.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
+        a.nome.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading && assuntos.length === 0) {
@@ -180,23 +174,13 @@ export function SubjectManagement() {
                     onToggle={() => setIsAddFormOpen(!isAddFormOpen)}
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-                        <div className="space-y-2">
+                        <div className="space-y-2 lg:col-span-2">
                             <label className="text-sm font-semibold text-muted-foreground ml-1">Nome do Assunto</label>
                             <Input 
                                 className="h-11 rounded-xl" 
                                 placeholder="Ex: Pagar mensalidade" 
                                 value={novoNome} 
                                 onChange={(e) => setNovoNome(e.target.value)} 
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-semibold text-muted-foreground ml-1">Descrição (opcional)</label>
-                            <Input 
-                                className="h-11 rounded-xl" 
-                                placeholder="Pequena descrição informativa" 
-                                value={novaDescricao} 
-                                onChange={(e) => setNovaDescricao(e.target.value)} 
                             />
                         </div>
 
@@ -241,14 +225,6 @@ export function SubjectManagement() {
                                                 className="h-10 bg-background" 
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Descrição</label>
-                                            <Input 
-                                                value={editDescricao} 
-                                                onChange={(e) => setEditDescricao(e.target.value)} 
-                                                className="h-10 bg-background" 
-                                            />
-                                        </div>
                                         <div className="flex gap-2 justify-end pt-2">
                                             <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button>
                                             <Button size="sm" onClick={() => void handleUpdate(assunto.id)}>{t('common.save')}</Button>
@@ -265,9 +241,6 @@ export function SubjectManagement() {
                                                     {assunto.nome}
                                                 </span>
                                             </div>
-                                            {assunto.descricao && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2">{assunto.descricao}</p>
-                                            )}
                                         </div>
                                         
                                         <div className="flex items-center gap-3 absolute top-4 right-4">
@@ -295,7 +268,6 @@ export function SubjectManagement() {
                                                     onClick={() => {
                                                         setEditingId(assunto.id);
                                                         setEditNome(assunto.nome);
-                                                        setEditDescricao(assunto.descricao || '');
                                                     }}
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />

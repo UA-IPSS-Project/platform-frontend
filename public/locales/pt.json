@@ -322,19 +322,18 @@
       },
       "slots": {
         "operationalConfiguration": "Configuração operacional",
-        "title": "Capacidade de marcações por slot",
-        "description": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
+        "title": "Capacidade da Secretaria por Slot",
+        "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
         "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
-        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
-        "secretaryScheduleDescription": "Define quantas marcações da secretaria podem coexistir no mesmo horário.",
-        "balnearioScheduleDescription": "Controla a lotação operacional dos slots de marcação do balneário.",
+        "current": "atual",
+        "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
         "maxPerSlot": "Máximo por slot",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretaria/Balneário)",
+          "title": "Slots da Secretaria",
           "description": "capacidade por horário"
         },
         "materials": {

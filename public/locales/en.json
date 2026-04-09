@@ -322,19 +322,18 @@
       },
       "slots": {
         "operationalConfiguration": "Operational configuration",
-        "title": "Appointments capacity per slot",
-        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
-        "secretaryScheduleTitle": "Secretary schedule",
-        "balnearioScheduleTitle": "Bathhouse schedule",
-        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot. Each appointment lasts 15 min.",
-        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots. Each appointment lasts 30 min.",
+        "title": "Secretary Slot Capacity",
+        "description": "Configure the maximum number of users the secretary can attend to simultaneously per time slot.",
+        "secretaryScheduleTitle": "Secretary Schedule (15 min)",
+        "current": "current",
+        "secretaryScheduleDescription": "Defines how many appointments can coexist in the same 15-minute time slot.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretary/Bathhouse)",
+          "title": "Secretary Slots",
           "description": "capacity per time slot"
         },
         "materials": {
