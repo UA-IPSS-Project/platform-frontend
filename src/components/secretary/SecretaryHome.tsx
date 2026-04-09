@@ -56,10 +56,10 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
   }, []);
 
   const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
-    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'var(--primary)', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições Abertas', value: requisicoesPendentes, color: 'var(--status-warning)', view: 'requisitions' },
-    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--status-success)', view: 'management' },
+    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, colorClass: 'bg-status-rose-1', view: 'appointments' },
+    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', colorClass: 'bg-status-rose-2', view: 'candidaturas' },
+    { icon: ClipboardList, label: 'Requisições Abertas', value: requisicoesPendentes, colorClass: 'bg-status-rose-3', view: 'requisitions' },
+    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, colorClass: 'bg-status-rose-4', view: 'management' },
   ];
 
   const textClass = 'text-foreground';
@@ -109,10 +109,9 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
                   <p className={`text-3xl font-bold ${textClass} tracking-tight`}>{stat.value}</p>
                 </div>
                 <div
-                  className="p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3"
-                  style={{ backgroundColor: stat.color }}
+                  className={`p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3 ${stat.colorClass}`}
                 >
-                  <stat.icon className="w-6 h-6 text-primary-foreground" />
+                  <stat.icon className="w-6 h-6 text-status-rose-foreground" />
                 </div>
               </div>
             </GlassCard>
