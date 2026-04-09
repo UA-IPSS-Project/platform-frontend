@@ -452,6 +452,7 @@
     "add": "Adicionar",
     "delete": "Eliminar",
     "optional": "(opcional)",
+    "refresh": "Atualizar",
     "error": "Erro"
   },
   "notifications": {

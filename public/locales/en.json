@@ -449,7 +449,8 @@
     "saving": "Saving...",
     "cancel": "Cancel",
     "ok": "OK",
-    "optional": "(optional)"
+    "optional": "(optional)",
+    "refresh": "Refresh"
   },
   "notifications": {
     "title": "Notifications",
