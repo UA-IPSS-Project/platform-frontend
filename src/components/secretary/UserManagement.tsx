@@ -1168,6 +1168,18 @@ export function UserManagement() {
                                         </div>
 
                                         <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.ui.status')}</Label>
+                                            <div className="relative">
+                                                <ShieldCheck className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${selectedUser?.active ? 'text-status-success' : 'text-amber-500'}`} />
+                                                <Input
+                                                    value={selectedUser?.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                    readOnly
+                                                    className={`h-8 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed font-bold ${selectedUser?.active ? 'text-status-success' : 'text-amber-500'}`}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
                                             <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('auth.birthDate')}</Label>
                                             <div className="relative">
                                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-primary/50" />
