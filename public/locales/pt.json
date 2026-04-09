@@ -418,7 +418,8 @@
           "capacityPositive": "A lotação deve ser um número maior que zero.",
           "loadMaterials": "Erro ao carregar materiais.",
           "loadTransports": "Erro ao carregar transportes.",
-          "loadMaintenance": "Erro ao carregar itens de manutenção."
+          "loadMaintenance": "Erro ao carregar itens de manutenção.",
+          "codeRequired": "O código interno é obrigatório."
         },
         "confirm": {
           "deleteMaterial": "Tem a certeza que deseja eliminar este material?",

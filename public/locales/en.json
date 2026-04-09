@@ -418,7 +418,8 @@
           "capacityPositive": "Capacity must be a number greater than zero.",
           "loadMaterials": "Error loading materials.",
           "loadTransports": "Error loading transports.",
-          "loadMaintenance": "Error loading maintenance items."
+          "loadMaintenance": "Error loading maintenance items.",
+          "codeRequired": "The internal code is required."
         },
         "confirm": {
           "deleteMaterial": "Are you sure you want to delete this material?",

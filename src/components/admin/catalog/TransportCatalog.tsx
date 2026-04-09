@@ -48,6 +48,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [editModelo, setEditModelo] = useState('');
   const [editLotacao, setEditLotacao] = useState('');
   const [editDataMatricula, setEditDataMatricula] = useState('');
+  const [editCodigo, setEditCodigo] = useState('');
 
   const uniqueCategorias = useMemo(() => {
     return Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
@@ -144,9 +145,13 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   };
 
   const handleUpdate = async (id: number, categoria: TransporteCategoria, codigo: string) => {
+    if (!codigo || !codigo.trim()) {
+      toast.error(t('dashboard.admin.catalogs.errors.codeRequired'));
+      return;
+    }
     try {
       await requisicoesApi.atualizarTransporteCatalogo(id, {
-        codigo,
+        codigo: codigo.trim().toUpperCase(),
         tipo: editTipo,
         categoria,
         matricula: editMatricula,
@@ -310,20 +315,44 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                       {editingId === item.id ? (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-2">
-                            <Input value={editMatricula} onChange={(e) => setEditMatricula(e.target.value.toUpperCase())} className="h-10 font-mono" placeholder="Matrícula" />
-                            <Input value={editTipo} onChange={(e) => setEditTipo(e.target.value)} className="h-10" placeholder="Tipo" />
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Código Interno</label>
+                              <Input value={editCodigo} onChange={(e) => setEditCodigo(e.target.value.toUpperCase())} className="h-10 font-mono" placeholder="Ex: V01" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.plate')}</label>
+                              <Input value={editMatricula} onChange={(e) => setEditMatricula(e.target.value.toUpperCase())} className="h-10 font-mono" placeholder="Matrícula" />
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <Input value={editMarca} onChange={(e) => setEditMarca(e.target.value)} className="h-10" placeholder="Marca" />
-                            <Input value={editModelo} onChange={(e) => setEditModelo(e.target.value)} className="h-10" placeholder="Modelo" />
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.type')}</label>
+                              <Input value={editTipo} onChange={(e) => setEditTipo(e.target.value)} className="h-10" placeholder="Tipo" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.brand')}</label>
+                              <Input value={editMarca} onChange={(e) => setEditMarca(e.target.value)} className="h-10" placeholder="Marca" />
+                            </div>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <Input value={editLotacao} onChange={(e) => setEditLotacao(e.target.value)} className="h-10" placeholder="Lotação" type="number" />
-                            <DatePickerField value={editDataMatricula} onChange={setEditDataMatricula} />
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.model')}</label>
+                              <Input value={editModelo} onChange={(e) => setEditModelo(e.target.value)} className="h-10" placeholder="Modelo" />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.capacity')}</label>
+                              <Input value={editLotacao} onChange={(e) => setEditLotacao(e.target.value)} className="h-10" placeholder="Lotação" type="number" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.regDate')}</label>
+                              <DatePickerField value={editDataMatricula} onChange={setEditDataMatricula} />
+                            </div>
                           </div>
                           <div className="flex gap-2 justify-end pt-2">
                             <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button>
-                            <Button size="sm" onClick={() => void handleUpdate(item.id, cat, item.codigo!)}>{t('common.ok')}</Button>
+                            <Button size="sm" onClick={() => void handleUpdate(item.id, cat, editCodigo)}>{t('common.ok')}</Button>
                           </div>
                         </div>
                       ) : (
@@ -365,6 +394,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                                 setEditModelo(item.modelo || '');
                                 setEditLotacao(item.lotacao ? String(item.lotacao) : '');
                                 setEditDataMatricula(item.dataMatricula || '');
+                                setEditCodigo(item.codigo || '');
                               }}
                             >
                               <Pencil className="w-4 h-4" />
