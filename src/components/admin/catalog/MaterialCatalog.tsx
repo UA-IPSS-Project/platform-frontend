@@ -95,8 +95,8 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
       await requisicoesApi.criarMaterialCatalogo({
         nome: novoNome.trim(),
         categoria: categoriaFinal,
-        atributo: novoAtributo.trim(),
-        valorAtributo: novoValorAtributo.trim(),
+        atributo: novoAtributo.trim() || null,
+        valorAtributo: novoValorAtributo.trim() || null,
       });
 
       setNovoNome('');
@@ -120,8 +120,8 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
       await requisicoesApi.atualizarMaterialCatalogo(id, {
         nome: editNome,
         categoria: categoria,
-        atributo: editAtributo,
-        valorAtributo: editValorAtributo,
+        atributo: editAtributo.trim() || null,
+        valorAtributo: editValorAtributo.trim() || null,
       });
       setEditingId(null);
       await onRefresh();

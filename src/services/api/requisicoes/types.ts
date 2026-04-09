@@ -21,8 +21,8 @@ export interface MaterialCatalogo {
   nome: string;
   descricao?: string | null;
   categoria: MaterialCategoria;
-  atributo: string;
-  valorAtributo: string;
+  atributo: string | null;
+  valorAtributo: string | null;
 }
 
 export interface TransporteCatalogo {
@@ -183,8 +183,8 @@ export interface CriarMaterialCatalogoRequest {
   nome: string;
   descricao?: string;
   categoria: MaterialCategoria;
-  atributo: string;
-  valorAtributo: string;
+  atributo: string | null;
+  valorAtributo: string | null;
 }
 
 export interface CriarTransporteCatalogoRequest {
