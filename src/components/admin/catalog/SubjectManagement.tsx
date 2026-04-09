@@ -64,7 +64,7 @@ export function SubjectManagement() {
         try {
             setSaving(true);
             await marcacoesApi.criarAssunto({
-                nome: novoNome.trim(),
+                nome: novoNome.trim().toLowerCase(),
                 ativo: true
             });
 
@@ -87,7 +87,7 @@ export function SubjectManagement() {
         try {
             const currentItem = assuntos.find(a => a.id === id);
             await marcacoesApi.atualizarAssunto(id, {
-                nome: editNome.trim(),
+                nome: editNome.trim().toLowerCase(),
                 ativo: currentItem?.ativo ?? true
             });
             setEditingId(null);

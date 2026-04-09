@@ -12,6 +12,7 @@ import { DatePickerField } from '../ui/date-picker-field';
 import { utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest, marcacoesApi, type Assunto } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateNIF, validateEmail, validateContact, validateName, validateBirthDate } from '../../lib/validations';
+import { capitalizeFirstLetter } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
@@ -458,7 +459,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 <SelectContent className="bg-popover border-border">
                   {subjects.map((s) => (
                     <SelectItem key={s.id} value={s.nome} className="text-popover-foreground">
-                      {s.nome}
+                      {capitalizeFirstLetter(s.nome)}
                     </SelectItem>
                   ))}
                 </SelectContent>
