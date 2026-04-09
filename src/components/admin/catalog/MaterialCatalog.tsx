@@ -192,7 +192,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
               </select>
               {categoryMode === 'NEW' && (
                 <Input 
-                  placeholder="Nome da nova categoria" 
+                  placeholder={t('dashboard.admin.catalogs.newCategoryNamePlaceholder')} 
                   className="mt-2 h-11 rounded-xl" 
                   value={customCategory} 
                   onChange={(e) => setCustomCategory(e.target.value)} 
@@ -202,7 +202,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.materialName')}</label>
-              <Input className="h-11 rounded-xl" placeholder="Ex: Cadernos, Tesoura..." value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
+              <Input className="h-11 rounded-xl" placeholder={t('dashboard.admin.catalogs.materialNamePlaceholder')} value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
             </div>
 
             <div className="space-y-2">
@@ -210,7 +210,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
               <div className="relative">
                 <Input 
                   className="h-11 rounded-xl pr-10" 
-                  placeholder="Ex: Formato, Cor..." 
+                  placeholder={t('dashboard.admin.catalogs.attributePlaceholder')} 
                   value={novoAtributo} 
                   onChange={(e) => setNovoAtributo(e.target.value)} 
                   onFocus={() => setShowAttrList(true)}
@@ -231,7 +231,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
                     ))}
                     {DEFAULT_ATTRIBUTES.filter(a => a.toLowerCase().includes(novoAtributo.toLowerCase())).length === 0 && (
                       <div className="px-4 py-2 text-muted-foreground text-sm italic">
-                        Escreva livremente
+                        {t('dashboard.admin.catalogs.freeWrite')}
                       </div>
                     )}
                   </div>
@@ -242,7 +242,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.value')}</label>
               <div className="flex gap-2">
-                <Input className="h-11 rounded-xl flex-1" placeholder="Ex: A4, Azul..." value={novoValorAtributo} onChange={(e) => setNovoValorAtributo(e.target.value)} />
+                <Input className="h-11 rounded-xl flex-1" placeholder={t('dashboard.admin.catalogs.valuePlaceholder')} value={novoValorAtributo} onChange={(e) => setNovoValorAtributo(e.target.value)} />
                 <Button 
                   onClick={() => void handleCreate()} 
                   disabled={saving} 
@@ -260,7 +260,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Pesquisar materiais..." 
+              placeholder={t('dashboard.admin.catalogs.searchMaterials')} 
               className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20 rounded-xl"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -271,7 +271,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
         {/* Categories List */}
         <div className="space-y-6">
           <div className="flex items-center gap-4 px-2">
-            <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Categorias Existentes</h4>
+            <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">{t('dashboard.admin.catalogs.existingCategoriesList')}</h4>
             <div className="h-px flex-1 bg-border/40" />
           </div>
           {displayedCategorias.map(cat => {
@@ -384,7 +384,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
           })}
           {displayedCategorias.length === 0 && (
             <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-3xl bg-muted/5">
-              <p className="text-muted-foreground font-medium">{searchTerm.trim() ? "Nenhum material encontrado." : "Nenhum material cadastrado."}</p>
+              <p className="text-muted-foreground font-medium">{searchTerm.trim() ? t('dashboard.admin.catalogs.noMaterialsFound') : t('dashboard.admin.catalogs.noMaterialsRegistered')}</p>
             </div>
           )}
         </div>

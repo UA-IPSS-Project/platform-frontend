@@ -444,7 +444,8 @@
         "spaceNameRequired": "Space name is required.",
         "elementNameRequired": "Element name is required.",
         "noVerificationsFound": "No verifications found.",
-        "noVerificationsRegistered": "No verifications registered."
+        "noVerificationsRegistered": "No verifications registered.",
+        "loadingCatalog": "Loading catalog..."
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",

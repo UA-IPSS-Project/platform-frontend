@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Package, Truck, Wrench } from 'lucide-react';
 import { 
   requisicoesApi, 
@@ -15,6 +16,7 @@ import { MaintenanceCatalog } from './catalog/MaintenanceCatalog';
 const MAX_LOAD_CATALOGO_RETRIES = 4;
 
 export function RequisitionsCatalogManagement() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
@@ -54,15 +56,15 @@ export function RequisitionsCatalogManagement() {
             <TabsList className="grid w-full md:w-auto grid-cols-3 md:min-w-[450px]">
                 <TabsTrigger value="materials" className="gap-2">
                     <Package className="w-4 h-4" />
-                    <span className="hidden sm:inline">Materiais</span>
+                    <span className="hidden sm:inline">{t('dashboard.admin.catalogs.materials')}</span>
                 </TabsTrigger>
                 <TabsTrigger value="transports" className="gap-2">
                     <Truck className="w-4 h-4" />
-                    <span className="hidden sm:inline">Transportes</span>
+                    <span className="hidden sm:inline">{t('dashboard.admin.catalogs.transports')}</span>
                 </TabsTrigger>
                 <TabsTrigger value="maintenance" className="gap-2">
                     <Wrench className="w-4 h-4" />
-                    <span className="hidden sm:inline">Manutenção</span>
+                    <span className="hidden sm:inline">{t('dashboard.admin.catalogs.maintenance')}</span>
                 </TabsTrigger>
             </TabsList>
         </div>
@@ -70,7 +72,7 @@ export function RequisitionsCatalogManagement() {
         {loading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-muted-foreground animate-pulse">A carregar catálogo...</p>
+                <p className="text-muted-foreground animate-pulse">{t('dashboard.admin.catalogs.loadingCatalog')}</p>
             </div>
         ) : (
             <>

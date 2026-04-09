@@ -73,7 +73,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
 
   const handleCreateSpace = async (categoria: string) => {
     if (!novoEspaco.trim()) {
-      toast.error("O nome do espaço é obrigatório.");
+      toast.error(t('dashboard.admin.catalogs.spaceNameRequired'));
       return;
     }
 
@@ -102,7 +102,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
 
   const handleCreateElement = async (categoria: string) => {
     if (!novoElemento.trim()) {
-      toast.error("O nome do elemento é obrigatório.");
+      toast.error(t('dashboard.admin.catalogs.elementNameRequired'));
       return;
     }
 
@@ -279,7 +279,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Pesquisar verificações..." 
+              placeholder={t('dashboard.admin.catalogs.searchVerificationsPlaceholder')} 
               className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20 rounded-xl"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -427,7 +427,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
         })}
         {displayedUniqueCategorias.length === 0 && (
             <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-3xl bg-muted/5">
-                <p className="text-muted-foreground font-medium">{searchTerm.trim() ? "Nenhuma verificação encontrada." : "Nenhuma verificação cadastrada."}</p>
+                <p className="text-muted-foreground font-medium">{searchTerm.trim() ? t('dashboard.admin.catalogs.noVerificationsFound') : t('dashboard.admin.catalogs.noVerificationsRegistered')}</p>
             </div>
         )}
       </div>

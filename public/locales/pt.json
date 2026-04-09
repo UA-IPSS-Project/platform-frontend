@@ -444,7 +444,8 @@
         "spaceNameRequired": "O nome do espaço é obrigatório.",
         "elementNameRequired": "O nome do elemento é obrigatório.",
         "noVerificationsFound": "Nenhuma verificação encontrada.",
-        "noVerificationsRegistered": "Nenhuma verificação cadastrada."
+        "noVerificationsRegistered": "Nenhuma verificação cadastrada.",
+        "loadingCatalog": "A carregar catálogo..."
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
