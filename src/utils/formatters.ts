@@ -10,3 +10,9 @@ export const normalizeString = (str: string): string => {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 };
+
+export const capitalizeFirstLetter = (str: string): string => {
+  if (!str) return '';
+  const lower = str.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+};

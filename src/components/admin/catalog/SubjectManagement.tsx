@@ -18,7 +18,7 @@ import {
     AlertDialogTitle 
 } from '../../ui/alert-dialog';
 import { cn } from '../../ui/utils';
-import { normalizeString } from '../../../utils/formatters';
+import { normalizeString, capitalizeFirstLetter } from '../../../utils/formatters';
 
 export function SubjectManagement() {
     const { t } = useTranslation();
@@ -175,7 +175,7 @@ export function SubjectManagement() {
                                 className="h-11 rounded-xl" 
                                 placeholder="Ex: Pagar mensalidade" 
                                 value={novoNome} 
-                                onChange={(e) => setNovoNome(e.target.value)} 
+                                onChange={(e) => setNovoNome(e.target.value.toUpperCase())} 
                             />
                         </div>
 
@@ -229,7 +229,7 @@ export function SubjectManagement() {
                                             <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nome</label>
                                             <Input 
                                                 value={editNome} 
-                                                onChange={(e) => setEditNome(e.target.value)} 
+                                                onChange={(e) => setEditNome(e.target.value.toUpperCase())} 
                                                 className="h-10 bg-background" 
                                             />
                                         </div>
@@ -246,7 +246,7 @@ export function SubjectManagement() {
                                                     "font-bold text-base block transition-colors",
                                                     assunto.ativo ? "text-foreground" : "text-muted-foreground"
                                                 )}>
-                                                    {assunto.nome}
+                                                    {capitalizeFirstLetter(assunto.nome)}
                                                 </span>
                                             </div>
                                         </div>
