@@ -29,12 +29,16 @@ export function CatalogSection({
     )}>
       <div 
         className={cn(
-          "flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors",
-          isOpen && "bg-muted/40 border-b border-border/40"
+          "flex items-center justify-between transition-colors",
+          isOpen && "border-b border-border/40"
         )}
-        onClick={onToggle}
       >
-        <div className="flex items-center gap-3">
+        <button 
+          type="button"
+          aria-expanded={isOpen}
+          onClick={onToggle}
+          className="flex-1 flex items-center gap-3 p-4 cursor-pointer hover:bg-muted/30 transition-colors text-left"
+        >
           <div className={cn(
             "p-2 rounded-xl transition-all duration-300",
             isOpen ? "bg-primary text-primary-foreground scale-110" : "bg-muted text-muted-foreground"
@@ -49,9 +53,9 @@ export function CatalogSection({
               </p>
             )}
           </div>
-        </div>
+        </button>
         
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 pr-4 pl-2">
           {actions}
           {onDeleteCategory && (
             <button
