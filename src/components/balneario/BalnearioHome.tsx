@@ -18,7 +18,6 @@ import { pt } from 'date-fns/locale';
 interface BalnearioHomeProps {
     isDarkMode: boolean;
     onNavigate: (view: string) => void;
-    onQuickAttendance: () => void;
     notifications?: Notificacao[];
 }
 
@@ -27,7 +26,7 @@ const fallbackActivity = [
     { type: 'marcacao', text: 'Sem atividades recentes', time: '-', color: 'bg-muted' },
 ];
 
-export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendance, notifications = [] }: BalnearioHomeProps) {
+export default function BalnearioHome({ onNavigate, notifications = [] }: BalnearioHomeProps) {
     const isMobile = useIsMobile();
     const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
     const [consumosHoje, setConsumosHoje] = useState<string>('...');
@@ -202,19 +201,15 @@ export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendanc
                         <div className="p-4 flex-1 flex items-center">
                             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
                                 <button
-                                    onClick={onQuickAttendance}
-                                    className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                                    style={{
-                                        backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff', // purple-50
-                                        borderColor: isDarkMode ? '#a855f7' : '#e9d5ff'
-                                    }}
+                                    onClick={() => onNavigate('appointments')}
+                                    className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                                 >
                                     <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                                        style={{ backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.5)' : '#ffffff', color: '#a855f7' }}>
+                                        style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                                         <UserPlus className="w-6 h-6" />
                                     </div>
                                     <p className={`font-semibold ${textClass} text-lg mb-1`}>Registar Presença</p>
-                                    <p className={`text-sm ${textSecondaryClass}`}>Checkout rápido (Walk-in)</p>
+                                    <p className={`text-sm ${textSecondaryClass}`}>Marcações de banho</p>
                                 </button>
 
                                 <button

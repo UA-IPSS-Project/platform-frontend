@@ -30,7 +30,6 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
-import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
@@ -123,7 +122,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
-    const [showQuickAttendance, setShowQuickAttendance] = useState(false);
     const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
     const [, setLoadingStats] = useState(false);
 
@@ -384,7 +382,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
-                                onQuickAttendance={() => setShowQuickAttendance(true)}
                                 notifications={notifications}
                             />
                         ) : currentView === 'appointments' ? (
@@ -609,18 +606,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 </AlertDialogContent>
             </AlertDialog>
 
-            {showQuickAttendance && authUser?.id && (
-                <QuickAttendanceModal
-                    isOpen={showQuickAttendance}
-                    onClose={() => setShowQuickAttendance(false)}
-                    onSuccess={() => {
-                        refreshCurrentWeek(currentDate);
-                        if (currentView === 'reports') carregarEstatisticas();
-                    }}
-                    funcionarioId={authUser.id}
-                    isDarkMode={isDarkMode}
-                />
-            )}
         </>
     );
 }
