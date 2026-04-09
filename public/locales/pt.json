@@ -449,7 +449,13 @@
         "updateError": "Erro ao atualizar assunto",
         "deleteConfirm": "Tem a certeza que deseja eliminar permanentemente este assunto?",
         "deleteSuccess": "Assunto eliminado",
-        "deleteError": "Erro ao eliminar assunto"
+        "deleteError": "Erro ao eliminar assunto",
+        "addTitle": "Novo Assunto de Marcação",
+        "fieldName": "Nome do Assunto",
+        "addAction": "Adicionar Assunto",
+        "listTitle": "Assuntos Geridos",
+        "nameLabel": "Nome",
+        "nameRequired": "O nome do assunto é obrigatório"
       }
     },
     "userHome": {

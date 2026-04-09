@@ -449,7 +449,13 @@
         "updateError": "Error updating subject",
         "deleteConfirm": "Are you sure you want to permanently delete this subject?",
         "deleteSuccess": "Subject deleted",
-        "deleteError": "Error deleting subject"
+        "deleteError": "Error deleting subject",
+        "addTitle": "New Appointment Subject",
+        "fieldName": "Subject Name",
+        "addAction": "Add Subject",
+        "listTitle": "Managed Subjects",
+        "nameLabel": "Name",
+        "nameRequired": "Subject name is required"
       }
     },
     "userHome": {

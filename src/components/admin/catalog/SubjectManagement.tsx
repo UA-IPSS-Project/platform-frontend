@@ -57,7 +57,7 @@ export function SubjectManagement() {
 
     const handleCreate = async () => {
         if (!novoNome.trim()) {
-            toast.error('O nome do assunto é obrigatório');
+            toast.error(t('dashboard.admin.assuntos.nameRequired'));
             return;
         }
 
@@ -80,7 +80,7 @@ export function SubjectManagement() {
 
     const handleUpdate = async (id: number) => {
         if (!editNome.trim()) {
-            toast.error('O nome do assunto é obrigatório');
+            toast.error(t('dashboard.admin.assuntos.nameRequired'));
             return;
         }
 
@@ -164,13 +164,13 @@ export function SubjectManagement() {
             <div className="flex flex-col gap-8">
                 {/* Add Section */}
                 <CatalogSection
-                    title="Novo Assunto de Marcação"
+                    title={t('dashboard.admin.assuntos.addTitle')}
                     isOpen={isAddFormOpen}
                     onToggle={() => setIsAddFormOpen(!isAddFormOpen)}
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
                         <div className="space-y-2 lg:col-span-2">
-                            <label className="text-sm font-semibold text-muted-foreground ml-1">Nome do Assunto</label>
+                            <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.assuntos.fieldName')}</label>
                             <Input 
                                 className="h-11 rounded-xl" 
                                 placeholder="Ex: Pagar mensalidade" 
@@ -185,7 +185,7 @@ export function SubjectManagement() {
                                 disabled={saving} 
                                 className="h-11 px-8 bg-primary rounded-xl shadow-lg shadow-primary/20 gap-2 w-full lg:w-auto"
                             >
-                                {saving ? t('common.saving') : <><Plus className="w-5 h-5" /> Adicionar Assunto</>}
+                                {saving ? t('common.saving') : <><Plus className="w-5 h-5" /> {t('dashboard.admin.assuntos.addAction')}</>}
                             </Button>
                         </div>
                     </div>
@@ -207,7 +207,7 @@ export function SubjectManagement() {
                 {/* List Section */}
                 <div className="space-y-6">
                     <div className="flex items-center gap-4 px-2">
-                        <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Assuntos Geridos</h4>
+                        <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">{t('dashboard.admin.assuntos.listTitle')}</h4>
                         <div className="h-px flex-1 bg-border/40" />
                     </div>
 
@@ -226,7 +226,7 @@ export function SubjectManagement() {
                                 {editingId === assunto.id ? (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nome</label>
+                                            <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.assuntos.nameLabel')}</label>
                                             <Input 
                                                 value={editNome} 
                                                 onChange={(e) => setEditNome(e.target.value)} 
