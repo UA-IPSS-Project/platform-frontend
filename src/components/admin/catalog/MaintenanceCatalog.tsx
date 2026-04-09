@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search, MapPin, CheckSquare, Layers } from 'lucide-react';
@@ -12,6 +12,7 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
+import { normalizeString } from '../../../utils/formatters';
 
 interface MaintenanceCatalogProps {
   items: ManutencaoItem[];
@@ -24,6 +25,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Category Mode for adding new categories
   const [categoryMode, setCategoryMode] = useState<'SELECT' | 'NEW'>('SELECT');
@@ -37,7 +39,24 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
   const [editingElement, setEditingElement] = useState<{ category: string; name: string } | null>(null);
   const [editElementName, setEditElementName] = useState('');
 
-  const uniqueCategorias = Array.from(new Set(items.map(m => m.categoria).filter((c): c is string => !!c)));
+  const uniqueCategorias = useMemo(() => {
+    return Array.from(new Set(items.map(m => m.categoria).filter((c): c is string => !!c)));
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    if (!searchTerm.trim()) return items;
+    const normalizedSearch = normalizeString(searchTerm);
+    return items.filter(item => 
+      normalizeString(item.categoria || '').includes(normalizedSearch) || 
+      normalizeString(item.espaco || '').includes(normalizedSearch) ||
+      normalizeString(item.itemVerificacao || '').includes(normalizedSearch)
+    );
+  }, [items, searchTerm]);
+
+  const displayedUniqueCategorias = useMemo(() => {
+    if (!searchTerm.trim()) return uniqueCategorias;
+    return Array.from(new Set(filteredItems.map(m => m.categoria).filter((c): c is string => !!c)));
+  }, [filteredItems, uniqueCategorias, searchTerm]);
 
   const handleCreateSpace = async (categoria: string) => {
     if (!novoEspaco.trim()) {
@@ -211,6 +230,8 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
             <Input 
               placeholder="Pesquisar verificações..." 
               className="pl-10 bg-background/50 backdrop-blur-sm border-border/40"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
          <div className="flex gap-2 w-full md:w-auto">
@@ -250,8 +271,8 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
       )}
 
       <div className="space-y-6">
-        {uniqueCategorias.map(cat => {
-          const categoryItems = items.filter(m => m.categoria === cat);
+        {displayedUniqueCategorias.map(cat => {
+          const categoryItems = filteredItems.filter(m => m.categoria === cat);
           const isVehicleCategory = cat === 'VEICULOS';
           const dbSpaces = Array.from(new Set(categoryItems.map(i => i.espaco))).sort();
           const displaySpaces = isVehicleCategory 
@@ -387,6 +408,11 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
             </CatalogSection>
           );
         })}
+        {displayedUniqueCategorias.length === 0 && (
+            <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-3xl bg-muted/5">
+                <p className="text-muted-foreground font-medium">{searchTerm.trim() ? "Nenhuma verificação encontrada." : "Nenhuma verificação cadastrada."}</p>
+            </div>
+        )}
       </div>
     </div>
   );

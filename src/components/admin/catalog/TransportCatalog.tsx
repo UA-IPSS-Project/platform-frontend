@@ -19,6 +19,7 @@ import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
 import { cn } from '../../ui/utils';
 import { DatePickerField } from '../../ui/date-picker-field';
+import { normalizeString } from '../../../utils/formatters';
 
 interface TransportCatalogProps {
   transportes: TransporteCatalogo[];
@@ -31,6 +32,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [saving, setSaving] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ '__ADD_FORM__': true });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // New Item State
   const [novoTipo, setNovoTipo] = useState('');
@@ -47,7 +49,27 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [editLotacao, setEditLotacao] = useState('');
   const [editDataMatricula, setEditDataMatricula] = useState('');
 
-  const uniqueCategorias = Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
+  const uniqueCategorias = useMemo(() => {
+    return Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
+  }, [transportes]);
+
+  const filteredTransportes = useMemo(() => {
+    if (!searchTerm.trim()) return transportes;
+    const normalizedSearch = normalizeString(searchTerm);
+    return transportes.filter(item => 
+      normalizeString(item.tipo || '').includes(normalizedSearch) || 
+      normalizeString(item.marca || '').includes(normalizedSearch) ||
+      normalizeString(item.matricula || '').includes(normalizedSearch) ||
+      normalizeString(item.modelo || '').includes(normalizedSearch) ||
+      normalizeString(item.categoria || '').includes(normalizedSearch) ||
+      (item.codigo && normalizeString(item.codigo).includes(normalizedSearch))
+    );
+  }, [transportes, searchTerm]);
+
+  const displayedCategorias = useMemo(() => {
+    if (!searchTerm.trim()) return uniqueCategorias;
+    return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
+  }, [filteredTransportes, uniqueCategorias, searchTerm]);
 
   const nextCode = useMemo(() => {
     const codigosExistentes = transportes.map(t => t.codigo).filter((c): c is string => !!c);
@@ -164,6 +186,8 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             <Input 
               placeholder="Pesquisar veículos (matrícula, marca...)" 
               className="pl-10 bg-background/50 backdrop-blur-sm border-border/40"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
          <div className="flex gap-2 w-full md:w-auto">
@@ -244,8 +268,8 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Frotas por Categoria</h4>
             <div className="h-px flex-1 bg-border/40" />
           </div>
-          {uniqueCategorias.map(cat => {
-            const items = transportes.filter(t => t.categoria === cat);
+          {displayedCategorias.map(cat => {
+            const items = filteredTransportes.filter(t => t.categoria === cat);
             return (
               <CatalogSection
                 key={cat}

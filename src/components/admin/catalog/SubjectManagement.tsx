@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search } from 'lucide-react';
@@ -18,6 +18,7 @@ import {
     AlertDialogTitle 
 } from '../../ui/alert-dialog';
 import { cn } from '../../ui/utils';
+import { normalizeString } from '../../../utils/formatters';
 
 export function SubjectManagement() {
     const { t } = useTranslation();
@@ -138,9 +139,13 @@ export function SubjectManagement() {
         }
     };
 
-    const filteredAssuntos = assuntos.filter(a => 
-        a.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredAssuntos = useMemo(() => {
+        if (!searchTerm.trim()) return assuntos;
+        const normalizedSearch = normalizeString(searchTerm);
+        return assuntos.filter(a => 
+            normalizeString(a.nome || '').includes(normalizedSearch)
+        );
+    }, [assuntos, searchTerm]);
 
     if (loading && assuntos.length === 0) {
         return (

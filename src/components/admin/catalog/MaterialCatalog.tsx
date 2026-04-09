@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search, ChevronDown } from 'lucide-react';
@@ -12,6 +12,7 @@ import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
 import { cn } from '../../ui/utils';
+import { normalizeString } from '../../../utils/formatters';
 
 const DEFAULT_ATTRIBUTES = ['Formato', 'Cor', 'Dureza', 'Espessura', 'Tipo', 'Largura', 'Comprimento', 'Concentração', 'Capacidade', 'Aroma'];
 
@@ -26,6 +27,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
   const [saving, setSaving] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ '__ADD_FORM__': true });
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   
   // New Item State
   const [novoNome, setNovoNome] = useState('');
@@ -44,7 +46,24 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
   const [showAttrList, setShowAttrList] = useState(false);
   const [showAttrEditList, setShowAttrEditList] = useState(false);
 
-  const uniqueCategorias = Array.from(new Set(materiais.map(m => m.categoria).filter((c): c is string => !!c)));
+  const uniqueCategorias = useMemo(() => {
+    return Array.from(new Set(materiais.map(m => m.categoria).filter((c): c is string => !!c)));
+  }, [materiais]);
+
+  const filteredMateriais = useMemo(() => {
+    if (!searchTerm.trim()) return materiais;
+    const normalizedSearch = normalizeString(searchTerm);
+    return materiais.filter(m => 
+      normalizeString(m.nome || '').includes(normalizedSearch) || 
+      normalizeString(m.categoria || '').includes(normalizedSearch) ||
+      normalizeString(m.valorAtributo || '').includes(normalizedSearch)
+    );
+  }, [materiais, searchTerm]);
+
+  const displayedCategorias = useMemo(() => {
+    if (!searchTerm.trim()) return uniqueCategorias;
+    return Array.from(new Set(filteredMateriais.map(m => m.categoria).filter((c): c is string => !!c)));
+  }, [filteredMateriais, uniqueCategorias, searchTerm]);
 
   const handleCreate = async () => {
     if (!novoNome.trim()) {
@@ -135,6 +154,8 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
             <Input 
               placeholder="Pesquisar materiais..." 
               className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
          </div>
          <div className="flex gap-2 w-full md:w-auto">
@@ -238,8 +259,8 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
             <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Categorias Existentes</h4>
             <div className="h-px flex-1 bg-border/40" />
           </div>
-          {uniqueCategorias.map(cat => {
-            const items = materiais.filter(m => m.categoria === cat);
+          {displayedCategorias.map(cat => {
+            const items = filteredMateriais.filter(m => m.categoria === cat);
             return (
               <CatalogSection
                 key={cat}
@@ -346,9 +367,9 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
               </CatalogSection>
             );
           })}
-          {uniqueCategorias.length === 0 && (
+          {displayedCategorias.length === 0 && (
             <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-3xl bg-muted/5">
-              <p className="text-muted-foreground font-medium">Nenhum material cadastrado.</p>
+              <p className="text-muted-foreground font-medium">{searchTerm.trim() ? "Nenhum material encontrado." : "Nenhum material cadastrado."}</p>
             </div>
           )}
         </div>
