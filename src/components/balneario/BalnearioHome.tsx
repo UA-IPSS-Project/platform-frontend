@@ -1,42 +1,65 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { GlassCard } from '../ui/glass-card';
 import {
     Calendar,
     ClipboardList,
-    Coffee, // assuming a generic icon for consumos until tailored
+    Coffee,
     TrendingUp,
     Clock,
     ArrowRight,
     UserPlus,
+    FileText,
 } from 'lucide-react';
 import { useIsMobile } from '../ui/use-mobile';
+import { marcacoesApi, armazemApi, requisicoesApi, Notificacao } from '../../services/api';
+import { formatDistanceToNow } from 'date-fns';
+import { pt } from 'date-fns/locale';
 
 interface BalnearioHomeProps {
     isDarkMode: boolean;
     onNavigate: (view: string) => void;
-    onQuickAttendance: () => void;
+    notifications?: Notificacao[];
 }
 
-const recentActivity = [
-    { type: 'marcacao', text: 'Nova marcação para Balneário - João Santos', time: 'Há 10 min', color: 'bg-[color:var(--status-info)]' },
-    { type: 'consumo', text: 'Registo de Consumo - Banho', time: 'Há 45 min', color: 'bg-[color:var(--status-warning)]' },
+// Fallback if no notifications
+const fallbackActivity = [
+    { type: 'marcacao', text: 'Sem atividades recentes', time: '-', color: 'bg-muted' },
 ];
 
-export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendance }: BalnearioHomeProps) {
+export default function BalnearioHome({ onNavigate, notifications = [] }: BalnearioHomeProps) {
     const isMobile = useIsMobile();
-    const [marcacoesHoje, setMarcacoesHoje] = useState<string>('0');
-    const [consumosHoje, setConsumosHoje] = useState<string>('0');
+    const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
+    const [consumosHoje, setConsumosHoje] = useState<string>('...');
+    const [requisicoesPendentes, setRequisicoesPendentes] = useState<string>('...');
 
     useEffect(() => {
-        // Simulando chamada à API
-        setMarcacoesHoje('5');
-        setConsumosHoje('12');
+        const fetchStats = async () => {
+            try {
+                // Fetch stats in parallel
+                const [estatisticasBalneario, estatisticasConsumo, todasRequisicoes] = await Promise.all([
+                    marcacoesApi.obterEstatisticasFrequenciaBalneario('DIA'),
+                    armazemApi.obterEstatisticas('DIA'),
+                    requisicoesApi.listar('ABERTO')
+                ]);
+
+                setMarcacoesHoje(estatisticasBalneario.totalMarcacoes?.toString() || '0');
+                setConsumosHoje(estatisticasConsumo.totalGeral?.toString() || '0');
+                setRequisicoesPendentes(todasRequisicoes.length.toString());
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas do balneário:', error);
+                setMarcacoesHoje('0');
+                setConsumosHoje('0');
+                setRequisicoesPendentes('0');
+            }
+        };
+
+        fetchStats();
     }, []);
 
     const stats = [
         { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
-        { icon: Coffee, label: 'Consumos Registo', value: consumosHoje, color: 'var(--primary)', view: 'consumos' },
-        { icon: ClipboardList, label: 'Requisições Pendentes', value: '2', color: 'var(--status-warning)', view: 'requisitions' },
+        { icon: Coffee, label: 'Consumos Hoje', value: consumosHoje, color: 'var(--primary)', view: 'consumos' },
+        { icon: ClipboardList, label: 'Requisições Abertas', value: requisicoesPendentes, color: 'var(--status-warning)', view: 'requisitions' },
     ];
 
     const textClass = 'text-foreground';
@@ -112,19 +135,57 @@ export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendanc
                             </button>
                         </div>
                         <div className="p-4 space-y-3">
-                            {recentActivity.map((activity, index) => (
-                                <div key={index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                            {(notifications.length > 0
+                                ? [...notifications].sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime()).slice(0, 4)
+                                : []).map((notification, index) => {
+
+                                    const iconMap: Record<string, ReactNode> = {
+                                        LEMBRETE: <Calendar className="w-5 h-5" />,
+                                        CANCELAMENTO: <Clock className="w-5 h-5" />,
+                                        FICHEIRO: <FileText className="w-5 h-5" />,
+                                        SISTEMA: <TrendingUp className="w-5 h-5" />,
+                                    };
+
+                                    const colorMap: Record<string, string> = {
+                                        LEMBRETE: 'bg-[color:var(--status-info)]',
+                                        CANCELAMENTO: 'bg-destructive',
+                                        FICHEIRO: 'bg-primary',
+                                        SISTEMA: 'bg-[color:var(--status-success)]',
+                                    };
+
+                                    const timeAgo = formatDistanceToNow(new Date(notification.dataCriacao), {
+                                        addSuffix: true,
+                                        locale: pt
+                                    });
+
+                                    return (
+                                        <div key={notification.id || index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${colorMap[notification.tipo] || 'bg-primary'}`}>
+                                                {iconMap[notification.tipo] ?? <Calendar className="w-5 h-5" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>
+                                                    {notification.titulo}
+                                                </p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
+                                                    <p className={`text-xs ${textSecondaryClass} capitalize`}>{timeAgo}</p>
+                                                </div>
+                                            </div>
+                                            <ArrowRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors transform group-hover:translate-x-1" />
+                                        </div>
+                                    );
+                                })}
+
+                            {notifications.length === 0 && fallbackActivity.map((activity, index) => (
+                                <div key={index} className="group p-4 rounded-xl border border-border bg-muted/10 flex items-center gap-4 opacity-50">
                                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
-                                        {activity.type === 'marcacao' ? <Calendar className="w-5 h-5" /> : <Coffee className="w-5 h-5" />}
+                                        <Calendar className="w-5 h-5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{activity.text}</p>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
-                                            <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
-                                        </div>
+                                        <p className={`font-semibold ${textClass} text-sm mb-0.5`}>{activity.text}</p>
+                                        <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors transform group-hover:translate-x-1" />
                                 </div>
                             ))}
                         </div>
@@ -140,19 +201,15 @@ export default function BalnearioHome({ isDarkMode, onNavigate, onQuickAttendanc
                         <div className="p-4 flex-1 flex items-center">
                             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
                                 <button
-                                    onClick={onQuickAttendance}
-                                    className={`p-6 rounded-2xl border transition-all duration-200 text-left group`}
-                                    style={{
-                                        backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff', // purple-50
-                                        borderColor: isDarkMode ? '#a855f7' : '#e9d5ff'
-                                    }}
+                                    onClick={() => onNavigate('appointments')}
+                                    className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
                                 >
                                     <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                                        style={{ backgroundColor: isDarkMode ? 'rgba(168, 85, 247, 0.5)' : '#ffffff', color: '#a855f7' }}>
+                                        style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
                                         <UserPlus className="w-6 h-6" />
                                     </div>
                                     <p className={`font-semibold ${textClass} text-lg mb-1`}>Registar Presença</p>
-                                    <p className={`text-sm ${textSecondaryClass}`}>Checkout rápido (Walk-in)</p>
+                                    <p className={`text-sm ${textSecondaryClass}`}>Marcações de banho</p>
                                 </button>
 
                                 <button
