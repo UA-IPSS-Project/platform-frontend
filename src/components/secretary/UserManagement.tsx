@@ -35,12 +35,7 @@ import {
 } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
 
-interface UserManagementProps {
-    isDarkMode?: boolean;
-}
-
-export function UserManagement({ isDarkMode }: UserManagementProps) {
-    void isDarkMode;
+export function UserManagement() {
     const { t } = useTranslation();
 
     // State for Create Account Form
@@ -74,7 +69,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         email: ''
     });
 
-    const [activeSection, setActiveSection] = useState<'create' | 'recover'>('create');
+    const [managerView, setManagerView] = useState<'utentes' | 'employees' | 'create' | 'recover'>('employees');
 
     const [users, setUsers] = useState<any[]>([]);
     const [utentes, setUtentes] = useState<any[]>([]);
@@ -86,13 +81,11 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [currentPageUtentes, setCurrentPageUtentes] = useState(1);
-    const [activeTable, setActiveTable] = useState<'employees' | 'utentes'>('employees');
     const itemsPerPage = 5;
 
     // State for User Details Popup
     const [selectedUser, setSelectedUser] = useState<any | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [editForm, setEditForm] = useState({
@@ -159,7 +152,6 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
 
     const handleClose = () => {
         setIsDetailsOpen(false);
-        setIsEditing(false);
         setPendingClose(false);
     };
 
@@ -267,7 +259,6 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
             moradaEmprego: user.moradaEmprego || '',
             telefoneEmprego: user.telefoneEmprego || ''
         });
-        setIsEditing(false);
         setIsDetailsOpen(true);
     };
 
@@ -428,7 +419,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         setShowUserExistsDialog(false);
 
         // 2. Switch to Recover Mode
-        setActiveSection('recover');
+        setManagerView('recover');
 
         // 3. Pre-fill Recovery Data
         setRecoverData({
@@ -451,7 +442,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
         setShowUserNotFoundDialog(false);
 
         // 2. Switch to Create Mode
-        setActiveSection('create');
+        setManagerView('create');
         handleClearCreate(); // Reset first
 
         // 3. Pre-fill NIF in Create Form
@@ -560,624 +551,518 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
     const currentUtentes = filteredUtentesList.slice(startIndexUtentes, startIndexUtentes + itemsPerPage);
 
     return (
-        <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-6 max-w-5xl mx-auto">
             {/* Page Header */}
-            <div>
-                <h1 className="text-2xl font-bold text-foreground">{t('userManagement.title')}</h1>
-                <p className="text-muted-foreground">{t('userManagement.subtitle')}</p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">{t('userManagement.title')}</h1>
+                    <p className="text-sm text-muted-foreground">{t('userManagement.subtitle')}</p>
+                </div>
+                <Button
+                    variant="outline"
+                    className="h-9 px-4 bg-muted/30 hover:bg-muted/50 border-border/40 text-xs font-medium"
+                    onClick={() => { fetchUsers(); fetchUtentes(); }}
+                >
+                    <RefreshCw className={`w-3.5 h-3.5 mr-2 ${(isLoading || isLoadingUtentes) ? 'animate-spin' : ''}`} />
+                    {t('common.refresh')}
+                </Button>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-6 items-start">
+            {/* Main Navigation Tabs - Simplified for Literacia Digital */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button
+                    onClick={() => setManagerView('employees')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'employees'
+                        ? 'bg-primary/20 border-primary ring-2 ring-primary/20'
+                        : 'bg-card border-border/40 hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'employees' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>
+                        <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-bold ${managerView === 'employees' ? 'text-primary' : 'text-foreground/70'}`}>
+                        {t('userManagement.employeesTitle')}
+                    </span>
+                    {pendingCount > 0 && (
+                        <span className="absolute top-2 right-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">
+                            {pendingCount}
+                        </span>
+                    )}
+                </button>
 
-                {/* Left Panel: Accordion for Create / Recover */}
-                <div className="w-full md:w-[450px] flex-shrink-0 flex flex-col gap-4">
+                <button
+                    onClick={() => setManagerView('utentes')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'utentes'
+                        ? 'bg-blue-500/10 border-blue-500 ring-2 ring-blue-500/20'
+                        : 'bg-card border-border/40 hover:border-blue-500/30 hover:bg-muted/30'
+                        }`}
+                >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'utentes' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-muted text-muted-foreground'}`}>
+                        <Users className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-bold ${managerView === 'utentes' ? 'text-blue-600 dark:text-blue-400' : 'text-foreground/70'}`}>
+                        {t('userManagement.usersTitle')}
+                    </span>
+                </button>
 
-                    {/* Create Account Section */}
-                    {/* Active state follows semantic primary token */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'create' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
-                        <button
-                            onClick={() => setActiveSection('create')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeSection === 'create' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
-                                    <UserPlus className="w-5 h-5" />
-                                </div>
-                                <div className="text-left">
-                                    <h2 className="text-lg font-bold text-foreground">{t('userManagement.createAccount')}</h2>
-                                    {activeSection !== 'create' && <p className="text-xs text-muted-foreground">{t('userManagement.clickToExpand')}</p>}
-                                </div>
-                            </div>
-                            {activeSection === 'create' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                        </button>
+                <button
+                    onClick={() => setManagerView('create')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'create'
+                        ? 'bg-status-success/10 border-status-success ring-2 ring-status-success/20'
+                        : 'bg-card border-border/40 hover:border-status-success/30 hover:bg-muted/30'
+                        }`}
+                >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'create' ? 'bg-status-success text-white shadow-lg shadow-status-success/20' : 'bg-muted text-muted-foreground'}`}>
+                        <UserPlus className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-bold ${managerView === 'create' ? 'text-status-success' : 'text-foreground/70'}`}>
+                        {t('userManagement.createAccount')}
+                    </span>
+                </button>
 
-                        {activeSection === 'create' && (
-                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
-                                <form onSubmit={handleCreateSubmit} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-foreground font-medium text-xs">NIF *</Label>
-                                            <Input
-                                                placeholder="123456789"
-                                                maxLength={9}
-                                                className={`bg-card h-9 text-sm ${errors.nif ? 'border-status-error' : ''}`}
-                                                value={formData.nif}
-                                                onChange={e => {
-                                                    setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') });
-                                                    if (errors.nif) setErrors({ ...errors, nif: '' });
-                                                }}
-                                                onBlur={checkNifExistence}
-                                            />
-                                            {errors.nif && <p className="text-status-error text-xs">{errors.nif}</p>}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-foreground font-medium text-xs">
-                                                {t('appointmentDialog.fields.contact')} <span className="font-normal opacity-70">{t('common.optional')}</span>
-                                            </Label>
-                                            <Input
-                                                placeholder="912345678"
-                                                maxLength={9}
-                                                className={`bg-card h-9 text-sm ${errors.contact ? 'border-status-error' : ''}`}
-                                                value={formData.contact}
-                                                onChange={e => {
-                                                    setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') });
-                                                    if (errors.contact) setErrors({ ...errors, contact: '' });
-                                                }}
-                                            />
-                                            {errors.contact && <p className="text-status-error text-xs">{errors.contact}</p>}
-                                        </div>
-                                    </div>
+                <button
+                    onClick={() => setManagerView('recover')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'recover'
+                        ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20'
+                        : 'bg-card border-border/40 hover:border-amber-500/30 hover:bg-muted/30'
+                        }`}
+                >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'recover' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-muted text-muted-foreground'}`}>
+                        <Lock className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-bold ${managerView === 'recover' ? 'text-amber-600' : 'text-foreground/70'}`}>
+                        {t('userManagement.recoverAccount')}
+                    </span>
+                </button>
+            </div>
 
-                                    <div className="space-y-2">
-                                        <Label className="text-foreground font-medium text-xs">{t('auth.fullName')} *</Label>
-                                        <Input
-                                            placeholder={t('userManagement.namePlaceholder')}
-                                            className={`bg-card h-9 text-sm ${errors.name ? 'border-status-error' : ''}`}
-                                            value={formData.name}
-                                            onChange={e => {
-                                                setFormData({ ...formData, name: e.target.value });
-                                                if (errors.name) setErrors({ ...errors, name: '' });
-                                            }}
-                                        />
-                                        {errors.name && <p className="text-status-error text-xs">{errors.name}</p>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
-                                        <DatePickerField
-                                            value={formData.birthDate}
-                                            onChange={(value) => {
-                                                setFormData({ ...formData, birthDate: value });
-                                                if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
-                                            }}
-                                            buttonClassName={`bg-card h-9 text-sm ${errors.birthDate ? 'border-status-error' : ''}`}
-                                        />
-                                        {errors.birthDate && <p className="text-status-error text-xs">{errors.birthDate}</p>}
-                                    </div>
-
-                                    {/* Role Selection */}
-                                    <div className="space-y-2 pt-2">
-                                        <Label className="text-foreground font-medium text-xs">{t('userManagement.userType')}</Label>
-                                        <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
-                                            <SelectTrigger className="bg-card h-9 text-sm">
-                                                <SelectValue placeholder={t('userManagement.selectRole')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="UTENTE">{t('userManagement.roles.userCommon')}</SelectItem>
-                                                <SelectItem value="SECRETARIA">{t('userManagement.roles.secretary')}</SelectItem>
-                                                <SelectItem value="BALNEARIO">{t('userManagement.roles.balneario')}</SelectItem>
-                                                <SelectItem value="ESCOLA">{t('userManagement.roles.school')}</SelectItem>
-                                                <SelectItem value="INTERNO">{t('userManagement.roles.internals')}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {formData.role !== 'UTENTE' ? (
-                                        <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                            <div className="space-y-2">
-                                                <Label className="text-foreground font-medium text-xs">{t('auth.institutionalEmail')}</Label>
-
-                                                {/* Auto/Manual Toggle for Institutional Email */}
-                                                <div className="space-y-3">
-                                                    {/* Option 1: Auto Generated */}
-                                                    <div
-                                                        onClick={() => setEmailSelection('auto')}
-                                                        className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'auto'
-                                                            ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
-                                                            : 'bg-card border-border hover:border-primary/30'
-                                                            }`}
-                                                    >
-                                                        <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'auto'
-                                                            ? 'border-primary bg-primary'
-                                                            : 'border-border'
-                                                            }`}>
-                                                            {emailSelection === 'auto' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                                                        </div>
-                                                        <div className="flex flex-col">
-                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'auto' ? 'text-primary' : 'text-foreground/80'}`}>
-                                                                {formData.name ? generateInstitutionalEmail(formData.name) : t('userManagement.fillNameFirst')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Option 2: Manual Entry */}
-                                                    <div
-                                                        onClick={() => setEmailSelection('manual')}
-                                                        className={`flex flex-col gap-2 p-2 rounded-lg border cursor-pointer transition-all duration-200 ${emailSelection === 'manual'
-                                                            ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20'
-                                                            : 'bg-card border-border hover:border-primary/30'
-                                                            }`}
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className={`flex items-center justify-center w-4 h-4 rounded-full border transition-colors ${emailSelection === 'manual'
-                                                                ? 'border-primary bg-primary'
-                                                                : 'border-border'
-                                                                }`}>
-                                                                {emailSelection === 'manual' && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
-                                                            </div>
-                                                            <span className={`text-xs font-medium transition-colors ${emailSelection === 'manual' ? 'text-primary' : 'text-foreground/80'}`}>
-                                                                {t('userManagement.other')}
-                                                            </span>
-                                                        </div>
-
-                                                        {emailSelection === 'manual' && (
-                                                            <div className="flex items-center gap-2 pl-7 animate-in">
-                                                                <Input
-                                                                    type="text"
-                                                                    placeholder={t('userManagement.nameShortPlaceholder')}
-                                                                    value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email}
-                                                                    onChange={(e) => {
-                                                                        const prefix = e.target.value.split('@')[0];
-                                                                        setFormData({ ...formData, email: prefix + '@florinhasdovouga.pt' });
-                                                                    }}
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                    className="h-8 bg-card border-border text-xs"
-                                                                />
-                                                                <span className="text-xs text-muted-foreground font-medium shrink-0">@florinhas...</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.email')}</Label>
-                                            <Input
-                                                type="email"
-                                                placeholder={t('userManagement.emailPlaceholder')}
-                                                className={`bg-card h-9 text-sm ${errors.email ? 'border-status-error' : ''}`}
-                                                value={formData.email}
-                                                onChange={e => {
-                                                    setFormData({ ...formData, email: e.target.value });
-                                                    if (errors.email) setErrors({ ...errors, email: '' });
-                                                }}
-                                            />
-                                            {errors.email && <p className="text-status-error text-xs">{errors.email}</p>}
-                                        </div>
-                                    )}
-
-                                    <div className="flex gap-3 pt-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="flex-1 h-9 text-xs"
-                                            onClick={handleClearCreate}
-                                        >
-                                            {t('documents.actions.clear')}
-                                        </Button>
-                                        <Button
-                                            type="submit"
-                                            className="flex-1 h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium"
-                                        >
-                                            <UserPlus className="w-3 h-3 mr-2" />
-                                            {t('requisitions.ui.create')}
-                                        </Button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-                    </GlassCard>
-
-                    {/* Recover Account Section */}
-                    {/* Active state follows semantic primary token */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeSection === 'recover' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
-                        <button
-                            onClick={() => setActiveSection('recover')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                {/* Icon color follows semantic primary token */}
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeSection === 'recover' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
-                                    <Lock className="w-5 h-5" />
-                                </div>
-                                <div className="text-left">
-                                    <h2 className="text-lg font-bold text-foreground">{t('userManagement.recoverAccount')}</h2>
-                                    {activeSection !== 'recover' && <p className="text-xs text-muted-foreground">{t('userManagement.clickToExpand')}</p>}
-                                </div>
-                            </div>
-                            {activeSection === 'recover' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                        </button>
-
-                        {activeSection === 'recover' && (
-                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
-                                <form onSubmit={handleRecoverSubmit} className="space-y-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        {t('userManagement.recoveryHint')}
-                                    </p>
-
-                                    {/* Step 1: Search by NIF */}
-                                    <div className="flex gap-2 items-end">
-                                        <div className="space-y-1 flex-1">
-                                            <Label className="text-foreground font-medium text-xs">{t('userManagement.searchNif')}</Label>
-                                            <Input
-                                                placeholder={t('userManagement.userNifPlaceholder')}
-                                                maxLength={9}
-                                                className="bg-card h-9 text-sm"
-                                                value={recoverData.nifSearch}
-                                                onChange={e => setRecoverData({ ...recoverData, nifSearch: e.target.value.replace(/\D/g, '') })}
-                                            />
-                                        </div>
-                                        <Button
-                                            type="button"
-                                            onClick={handleSearchForRecovery}
-                                            className="h-9 bg-muted text-foreground hover:bg-muted/80"
-                                        >
-                                            <Search className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-
-                                    {/* Step 2: Confirm Identity & Edit Contact */}
-                                    {recoverData.foundUser && (
-                                        <div className="space-y-3 pt-2 border-t border-border/60 animate-in slide-in-from-top-2 fade-in">
-                                            <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 mb-2">
-                                                <p className="text-xs text-primary font-semibold flex items-center gap-2">
-                                                    <Check className="w-3 h-3" />
-                                                    {t('userManagement.identityFound')}
-                                                </p>
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label className="text-foreground font-medium text-xs">{t('requisitions.ui.name')}</Label>
-                                                <Input
-                                                    readOnly
-                                                    className="bg-muted h-9 text-sm border-dashed"
-                                                    value={recoverData.name}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label className="text-foreground font-medium text-xs">{t('appointmentDialog.fields.birthDate')}</Label>
-                                                <Input
-                                                    readOnly
-                                                    className="bg-muted h-9 text-sm border-dashed"
-                                                    value={recoverData.birthDate}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label className="text-foreground font-medium text-xs">{t('userManagement.contactEditable')}</Label>
-                                                <Input
-                                                    maxLength={9}
-                                                    className="bg-card h-9 text-sm"
-                                                    value={recoverData.contact}
-                                                    onChange={e => setRecoverData({ ...recoverData, contact: e.target.value.replace(/\D/g, '') })}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label className="text-foreground font-medium text-xs">{t('userManagement.emailEditable')}</Label>
-                                                <Input
-                                                    className="bg-card h-9 text-sm"
-                                                    value={recoverData.email}
-                                                    onChange={e => setRecoverData({ ...recoverData, email: e.target.value })}
-                                                />
-                                            </div>
-
-                                            <Button
-                                                type="submit"
-                                                className="w-full h-9 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium mt-2"
-                                            >
-                                                <Send className="w-3 h-3 mr-2" />
-                                                {t('userManagement.notifyRecovery')}
-                                            </Button>
-                                        </div>
-                                    )}
-                                </form>
-                            </div>
-                        )}
-                    </GlassCard>
-
-                </div>
-
-                {/* Right Panel: Registered Users List */}
-                <div className="flex-1 flex flex-col gap-4">
-                    {/* Header with Global Refresh - Integrated for top alignment */}
-                    <GlassCard className="p-6 flex items-center justify-between border border-border/40">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                <Users className="w-6 h-6" />
+            {/* Content Area - Only shows the active view */}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Employees List */}
+                {managerView === 'employees' && (
+                    <GlassCard className="p-6 border-primary/20">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                <ShieldCheck className="w-5 h-5" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">{t('userManagement.title')}</h2>
-                                <p className="text-xs text-muted-foreground">{t('userManagement.subtitle')}</p>
+                                <h2 className="text-xl font-bold">{t('userManagement.employeesTitle')}</h2>
+                                <p className="text-sm text-muted-foreground">{t('userManagement.employeesSubtitle')}</p>
                             </div>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => { fetchUsers(); fetchUtentes(); }}
-                        >
-                            <RefreshCw className={`w-4 h-4 ${(isLoading || isLoadingUtentes) ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </GlassCard>
 
-                    {/* Section 1: Employees Management */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeTable === 'employees' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
-                        <button
-                            onClick={() => setActiveTable('employees')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-primary-foreground shadow-lg transition-colors ${activeTable === 'employees' ? 'bg-primary shadow-primary/20' : 'bg-muted-foreground'}`}>
+                        <div className="relative mb-6">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder={t('userManagement.searchByNameOrNif')}
+                                className="h-11 pl-11 bg-background/50 border-border text-base rounded-xl"
+                                value={searchQuery}
+                                onChange={e => {
+                                    setSearchQuery(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="text-sm font-bold text-muted-foreground/70 border-b border-border/40">
+                                    <tr>
+                                        <th className="text-left pb-4 pl-4">{t('requisitions.ui.name')}</th>
+                                        <th className="text-left pb-4">NIF</th>
+                                        <th className="text-left pb-4">{t('userManagement.role')}</th>
+                                        <th className="text-left pb-4">{t('requisitions.ui.status')}</th>
+                                        <th className="text-right pb-4 pr-4">{t('userManagement.action')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                    {isLoading ? (
+                                        <tr><td colSpan={5} className="py-20 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />{t('documents.actions.searching')}</td></tr>
+                                    ) : filteredUsers.length === 0 ? (
+                                        <tr><td colSpan={5} className="py-20 text-center text-muted-foreground">{t('userManagement.noUsersFound')}</td></tr>
+                                    ) : (
+                                        currentUsers.map((user: any, index) => (
+                                            <tr key={index} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors group">
+                                                <td className="py-4 pl-4 font-bold text-base">{user.nome}</td>
+                                                <td className="py-4 text-muted-foreground font-medium">{user.nif}</td>
+                                                <td className="py-4">
+                                                    <span className="bg-muted px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">
+                                                        {user.funcao ? (
+                                                            ({
+                                                                'SECRETARIA': t('userManagement.roles.secretary'),
+                                                                'BALNEARIO': t('userManagement.roles.balneario'),
+                                                                'ESCOLA': t('userManagement.roles.school'),
+                                                                'INTERNO': t('userManagement.roles.internals'),
+                                                                'OUTRO': t('userManagement.roles.other'),
+                                                                'UTENTE': t('userManagement.roles.userCommon')
+                                                            } as Record<string, string>)[user.funcao] || user.funcao
+                                                        ) : '-'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4">
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold ${user.active ? 'bg-status-success/15 text-status-success' : 'bg-amber-500/15 text-amber-500 animate-pulse'}`}>
+                                                        {user.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 pr-4 text-right">
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-9 px-4 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all font-bold"
+                                                        onClick={() => handleOpenDetails(user)}
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        {t('common.view')}
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Employees */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border/20">
+                                <p className="text-sm text-muted-foreground">
+                                    {t('userManagement.showingUsers', {
+                                        start: startIndex + 1,
+                                        end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
+                                        total: filteredUsers.length
+                                    })}
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                </div>
+                            </div>
+                        )}
+                    </GlassCard>
+                )}
+
+                {/* Utentes List */}
+                {managerView === 'utentes' && (
+                    <GlassCard className="p-6 border-blue-500/20">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                                <Users className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold">{t('userManagement.usersTitle')}</h2>
+                                <p className="text-sm text-muted-foreground">{t('userManagement.usersSubtitle')}</p>
+                            </div>
+                        </div>
+
+                        <div className="relative mb-6">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder={t('userManagement.searchByNameOrNif')}
+                                className="h-11 pl-11 bg-background/50 border-border text-base rounded-xl"
+                                value={searchQueryUtentes}
+                                onChange={e => {
+                                    setSearchQueryUtentes(e.target.value);
+                                    setCurrentPageUtentes(1);
+                                }}
+                            />
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="text-sm font-bold text-muted-foreground/70 border-b border-border/40">
+                                    <tr>
+                                        <th className="text-left pb-4 pl-4">{t('requisitions.ui.name')}</th>
+                                        <th className="text-left pb-4">NIF</th>
+                                        <th className="text-left pb-4">{t('requisitions.ui.status')}</th>
+                                        <th className="text-right pb-4 pr-4">{t('userManagement.action')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                    {isLoadingUtentes ? (
+                                        <tr><td colSpan={4} className="py-20 text-center text-muted-foreground"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />{t('documents.actions.searching')}</td></tr>
+                                    ) : filteredUtentesList.length === 0 ? (
+                                        <tr><td colSpan={4} className="py-20 text-center text-muted-foreground">{t('userManagement.noUsersFound')}</td></tr>
+                                    ) : (
+                                        currentUtentes.map((utente: any, index) => (
+                                            <tr key={index} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors group">
+                                                <td className="py-4 pl-4 font-bold text-base">{utente.nome}</td>
+                                                <td className="py-4 text-muted-foreground font-medium">{utente.nif}</td>
+                                                <td className="py-4">
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold ${utente.active ? 'bg-status-success/15 text-status-success' : 'bg-muted/30 text-muted-foreground'}`}>
+                                                        {utente.active ? t('userManagement.active') : t('userManagement.pending')}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 pr-4 text-right">
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-9 px-4 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all font-bold"
+                                                        onClick={() => handleOpenDetails(utente)}
+                                                    >
+                                                        <Eye className="w-4 h-4 mr-2" />
+                                                        {t('common.view')}
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Utentes */}
+                        {totalPagesUtentes > 1 && (
+                            <div className="flex items-center justify-between mt-8 pt-6 border-t border-border/20">
+                                <p className="text-sm text-muted-foreground">
+                                    {t('userManagement.showingUsers', {
+                                        start: startIndexUtentes + 1,
+                                        end: Math.min(startIndexUtentes + itemsPerPage, filteredUtentesList.length),
+                                        total: filteredUtentesList.length
+                                    })}
+                                </p>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0" disabled={currentPageUtentes === 1} onClick={() => setCurrentPageUtentes(prev => prev - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0" disabled={currentPageUtentes === totalPagesUtentes} onClick={() => setCurrentPageUtentes(prev => prev + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                </div>
+                            </div>
+                        )}
+                    </GlassCard>
+                )}
+
+                {/* Create Account View */}
+                {managerView === 'create' && (
+                    <div className="max-w-5xl mx-auto">
+                        <GlassCard className="p-6 border-status-success/20">
+                            <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border/40">
+                                <div className="w-11 h-11 rounded-xl bg-status-success/10 flex items-center justify-center text-status-success shadow-inner">
+                                    <UserPlus className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold tracking-tight">{t('userManagement.createAccount')}</h2>
+                                    <p className="text-sm text-muted-foreground">{t('userManagement.createAccountSubtitle')}</p>
+                                </div>
+                            </div>
+                            <form onSubmit={handleCreateSubmit} className="space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">NIF *</Label>
+                                        <Input
+                                            placeholder="Ex: 123456789"
+                                            maxLength={9}
+                                            className={`h-11 bg-background/50 text-base rounded-xl ${errors.nif ? 'border-status-error ring-status-error/20' : ''}`}
+                                            value={formData.nif}
+                                            onChange={e => {
+                                                setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') });
+                                                if (errors.nif) setErrors({ ...errors, nif: '' });
+                                            }}
+                                            onBlur={checkNifExistence}
+                                        />
+                                        {errors.nif && <p className="text-status-error text-xs font-bold pl-1">{errors.nif}</p>}
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">
+                                            {t('appointmentDialog.fields.contact')} <span className="font-normal opacity-50 lowercase">(opcional)</span>
+                                        </Label>
+                                        <Input
+                                            placeholder="Ex: 912345678"
+                                            maxLength={9}
+                                            className={`h-11 bg-background/50 text-base rounded-xl ${errors.contact ? 'border-status-error ring-status-error/20' : ''}`}
+                                            value={formData.contact}
+                                            onChange={e => {
+                                                setFormData({ ...formData, contact: e.target.value.replace(/\D/g, '') });
+                                                if (errors.contact) setErrors({ ...errors, contact: '' });
+                                            }}
+                                        />
+                                        {errors.contact && <p className="text-status-error text-xs font-bold pl-1">{errors.contact}</p>}
+                                    </div>
+                                </div>
+
+                                        <div className="space-y-3">
+                                            <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('auth.fullName')} *</Label>
+                                            <Input
+                                                placeholder="Introduza o nome completo"
+                                                className={`h-11 bg-background/50 text-base rounded-xl ${errors.name ? 'border-status-error ring-status-error/20' : ''}`}
+                                                value={formData.name}
+                                                onChange={e => {
+                                                    setFormData({ ...formData, name: e.target.value });
+                                                    if (errors.name) setErrors({ ...errors, name: '' });
+                                                }}
+                                            />
+                                            {errors.name && <p className="text-status-error text-xs font-bold pl-1">{errors.name}</p>}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-3">
+                                                <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('appointmentDialog.fields.birthDate')} *</Label>
+                                                <DatePickerField
+                                                    value={formData.birthDate}
+                                                    onChange={(value) => {
+                                                        setFormData({ ...formData, birthDate: value });
+                                                        if (errors.birthDate) setErrors({ ...errors, birthDate: '' });
+                                                    }}
+                                                    buttonClassName={`h-11 bg-background/50 text-base rounded-xl ${errors.birthDate ? 'border-status-error ring-status-error/20' : ''}`}
+                                                />
+                                                {errors.birthDate && <p className="text-status-error text-xs font-bold pl-1">{errors.birthDate}</p>}
+                                            </div>
+
+                                            <div className="space-y-3">
+                                                <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('userManagement.userType')}</Label>
+                                                <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
+                                                    <SelectTrigger className="h-11 bg-background/50 text-base rounded-xl">
+                                                        <SelectValue placeholder={t('userManagement.selectRole')} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="UTENTE">{t('userManagement.roles.userCommon')}</SelectItem>
+                                                        <SelectItem value="SECRETARIA">{t('userManagement.roles.secretary')}</SelectItem>
+                                                        <SelectItem value="BALNEARIO">{t('userManagement.roles.balneario')}</SelectItem>
+                                                        <SelectItem value="ESCOLA">{t('userManagement.roles.school')}</SelectItem>
+                                                        <SelectItem value="INTERNO">{t('userManagement.roles.internals')}</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            {formData.role !== 'UTENTE' ? (
+                                                <div className="space-y-4 pt-4 border-t border-border/40 animate-in slide-in-from-top-2 duration-300">
+                                                    <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('auth.institutionalEmail')}</Label>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        <div
+                                                            onClick={() => setEmailSelection('auto')}
+                                                            className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-300 ${emailSelection === 'auto' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
+                                                        >
+                                                            <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${emailSelection === 'auto' ? 'border-primary' : 'border-muted-foreground'}`}>
+                                                                {emailSelection === 'auto' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs font-bold text-muted-foreground uppercase mb-1">Automático</span>
+                                                                <span className={`text-sm font-bold break-all ${emailSelection === 'auto' ? 'text-primary' : 'text-foreground/70'}`}>
+                                                                    {formData.name ? generateInstitutionalEmail(formData.name) : 'Preencha o nome'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div
+                                                            onClick={() => setEmailSelection('manual')}
+                                                            className={`flex flex-col gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-300 ${emailSelection === 'manual' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
+                                                        >
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${emailSelection === 'manual' ? 'border-primary' : 'border-muted-foreground'}`}>
+                                                                    {emailSelection === 'manual' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                                                                </div>
+                                                                <span className="text-xs font-bold text-muted-foreground uppercase">Manual</span>
+                                                            </div>
+                                                            {emailSelection === 'manual' && (
+                                                                <div className="flex flex-col gap-2 animate-in slide-in-from-top-1">
+                                                                    <Input 
+                                                                        placeholder="nome.utilizador" 
+                                                                        value={formData.email.endsWith('@florinhasdovouga.pt') ? formData.email.slice(0, -20) : formData.email} 
+                                                                        onChange={(e) => setFormData({ ...formData, email: e.target.value.split('@')[0] + '@florinhasdovouga.pt' })} 
+                                                                        onClick={(e) => e.stopPropagation()} 
+                                                                        className="h-10 bg-background/50 font-medium" 
+                                                                    />
+                                                                    <span className="text-[10px] text-muted-foreground font-bold self-end">@florinhasdovouga.pt</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3 pt-4 border-t border-border/40">
+                                                    <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('appointmentDialog.fields.email')}</Label>
+                                                    <Input type="email" placeholder="email@exemplo.pt" className={`h-11 bg-background/50 text-base rounded-xl ${errors.email ? 'border-status-error ring-status-error/20' : ''}`} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }} />
+                                                    {errors.email && <p className="text-status-error text-xs font-bold pl-1">{errors.email}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-4 pt-6">
+                                            <Button type="button" variant="outline" className="flex-1 h-12 text-base font-bold rounded-xl" onClick={handleClearCreate}>Limpar Dados</Button>
+                                            <Button type="submit" className="flex-[2] h-12 bg-status-success hover:bg-status-success/90 text-white text-lg font-bold rounded-xl shadow-lg shadow-status-success/20">
+                                                <UserPlus className="w-5 h-5 mr-3" />
+                                                Criar Conta
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </GlassCard>
+                            </div>
+                        )}
+
+                {/* Recover Account View */}
+                {managerView === 'recover' && (
+                    <div className="max-w-5xl mx-auto">
+                        <GlassCard className="p-6 border-amber-500/20">
+                            <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border/40">
+                                <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
                                     <Lock className="w-5 h-5" />
                                 </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-foreground">{t('userManagement.employeesTitle')}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{t('userManagement.pending')}</span>
-                                        <span className="w-4 h-4 rounded-full bg-primary/15 text-primary text-[8px] flex items-center justify-center font-bold">{pendingCount}</span>
-                                    </div>
+                                <div>
+                                    <h2 className="text-xl font-bold tracking-tight">{t('userManagement.recoverAccount')}</h2>
+                                    <p className="text-sm text-muted-foreground">{t('userManagement.recoverAccountSubtitle')}</p>
                                 </div>
                             </div>
-                            {activeTable === 'employees' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                        </button>
 
-                        {activeTable === 'employees' && (
-                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
-                                {/* Search Employees */}
-                                <div className="relative mb-4">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                    <Input
-                                        placeholder={t('userManagement.searchByNameOrNif')}
-                                        className="h-9 pl-9 bg-card border-border text-xs"
-                                        value={searchQuery}
-                                        onChange={e => {
-                                            setSearchQuery(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Employees Table */}
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
-                                            <tr>
-                                                <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
-                                                <th className="text-left pb-2 font-medium">NIF</th>
-                                                <th className="text-left pb-2 font-medium">{t('userManagement.role')}</th>
-                                                <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
-                                                <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-xs">
-                                            {isLoading ? (
-                                                <tr>
-                                                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                                                        {t('documents.actions.searching')}
-                                                    </td>
-                                                </tr>
-                                            ) : filteredUsers.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
-                                                        {t('userManagement.noUsersFound')}
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                currentUsers.map((user: any, index) => (
-                                                    <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
-                                                        <td className="py-2.5 pl-2 font-medium text-foreground">{user.nome}</td>
-                                                        <td className="py-2.5 text-muted-foreground">{user.nif}</td>
-                                                        <td className="py-2.5 text-muted-foreground">
-                                                            {user.funcao ? (
-                                                                ({
-                                                                    'SECRETARIA': t('userManagement.roles.secretary'),
-                                                                    'BALNEARIO': t('userManagement.roles.balneario'),
-                                                                    'ESCOLA': t('userManagement.roles.school'),
-                                                                    'INTERNO': t('userManagement.roles.internals'),
-                                                                    'OUTRO': t('userManagement.roles.other'),
-                                                                    'UTENTE': t('userManagement.roles.userCommon')
-                                                                } as Record<string, string>)[user.funcao] || user.funcao
-                                                            ) : '-'}
-                                                        </td>
-                                                        <td className="py-2.5">
-                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${user.active
-                                                                ? 'bg-status-success/10 text-status-success'
-                                                                : 'bg-amber-500/10 text-amber-500'
-                                                                }`}>
-                                                                {user.active ? t('userManagement.active') : t('userManagement.pending')}
-                                                            </span>
-                                                        </td>
-                                                        <td className="py-2.5 pr-2 text-right">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                                                                onClick={() => handleOpenDetails(user)}
-                                                                title={t('common.view')}
-                                                            >
-                                                                <Eye className="w-4 h-4" />
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Pagination Employees */}
-                                {totalPages > 1 && (
-                                    <div className="flex items-center justify-between mt-4">
-                                        <p className="text-[10px] text-muted-foreground">
-                                            {t('userManagement.showingUsers', {
-                                                start: startIndex + 1,
-                                                end: Math.min(startIndex + itemsPerPage, filteredUsers.length),
-                                                total: filteredUsers.length
-                                            })}
-                                        </p>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                disabled={currentPage === 1}
-                                                onClick={() => setCurrentPage(prev => prev - 1)}
-                                            >
-                                                <ChevronLeft className="w-3 h-3" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                disabled={currentPage === totalPages}
-                                                onClick={() => setCurrentPage(prev => prev + 1)}
-                                            >
-                                                <ChevronRight className="w-3 h-3" />
-                                            </Button>
+                            <form onSubmit={handleRecoverSubmit} className="space-y-8">
+                                        <div className="space-y-4">
+                                            <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('userManagement.searchByNif')}</Label>
+                                            <div className="flex gap-4">
+                                                <Input
+                                                    placeholder={t('userManagement.userNifPlaceholder')}
+                                                    maxLength={9}
+                                                    className="h-12 bg-background/50 text-xl font-bold tracking-widest text-center rounded-xl"
+                                                    value={recoverData.nifSearch}
+                                                    onChange={e => setRecoverData({ ...recoverData, nifSearch: e.target.value.replace(/\D/g, '') })}
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleSearchForRecovery}
+                                                    className="h-12 px-8 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg shadow-amber-500/20 transition-all font-bold"
+                                                >
+                                                    <Search className="w-5 h-5 mr-2" />
+                                                    Procurar
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+
+                                        {recoverData.foundUser && (
+                                            <div className="space-y-6 pt-6 border-t border-border/40 animate-in slide-in-from-top-4 duration-300">
+                                                <div className="flex items-center gap-3 p-4 bg-status-success/10 rounded-xl border border-status-success/20">
+                                                    <div className="w-8 h-8 rounded-full bg-status-success/20 flex items-center justify-center text-status-success">
+                                                        <Check className="w-5 h-5" />
+                                                    </div>
+                                                    <p className="text-sm text-status-success font-bold">
+                                                        {t('userManagement.userFoundSuccess')}
+                                                    </p>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="md:col-span-2 space-y-2">
+                                                        <Label className="text-xs font-bold uppercase tracking-tight pl-1 opacity-70">Identidade Confirmada</Label>
+                                                        <div className="p-4 bg-muted/30 rounded-xl border border-dashed border-border flex items-center gap-3">
+                                                            <UserCircle className="w-6 h-6 text-muted-foreground" />
+                                                            <span className="font-bold text-lg">{recoverData.name}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <Label className="text-sm font-bold uppercase tracking-tight pl-1">Novo Contacto de Telemóvel</Label>
+                                                        <Input maxLength={9} className="h-11 bg-background/50 font-medium rounded-xl" value={recoverData.contact} onChange={e => setRecoverData({ ...recoverData, contact: e.target.value.replace(/\D/g, '') })} />
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <Label className="text-sm font-bold uppercase tracking-tight pl-1">Novo E-mail de Recuperação</Label>
+                                                        <Input className="h-11 bg-background/50 font-medium rounded-xl" value={recoverData.email} onChange={e => setRecoverData({ ...recoverData, email: e.target.value })} />
+                                                    </div>
+                                                </div>
+
+                                                <Button type="submit" className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                                                    <Send className="w-5 h-5 mr-3" />
+                                                    Atualizar e Enviar Acesso
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </form>
+                                </GlassCard>
                             </div>
                         )}
-                    </GlassCard>
-
-                    {/* Section 2: Utentes Management */}
-                    <GlassCard className={`w-full p-0 overflow-hidden transition-all duration-300 ${activeTable === 'utentes' ? 'ring-2 ring-primary/30' : 'opacity-80 hover:opacity-100'}`}>
-                        <button
-                            onClick={() => setActiveTable('utentes')}
-                            className="w-full flex items-center justify-between p-6 cursor-pointer hover:bg-muted/50 transition-colors"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg transition-colors ${activeTable === 'utentes' ? 'bg-blue-500 shadow-blue-500/20' : 'bg-muted-foreground'}`}>
-                                    <Users className="w-5 h-5" />
-                                </div>
-                                <div className="text-left">
-                                    <h3 className="text-lg font-bold text-foreground">{t('userManagement.usersTitle')}</h3>
-                                </div>
-                            </div>
-                            {activeTable === 'utentes' ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-                        </button>
-
-                        {activeTable === 'utentes' && (
-                            <div className="p-6 pt-0 animate-in slide-in-from-top-2 fade-in duration-300">
-                                {/* Search Utentes */}
-                                <div className="relative mb-4">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                                    <Input
-                                        placeholder={t('userManagement.searchByNameOrNif')}
-                                        className="h-9 pl-9 bg-card border-border text-xs"
-                                        value={searchQueryUtentes}
-                                        onChange={e => {
-                                            setSearchQueryUtentes(e.target.value);
-                                            setCurrentPageUtentes(1);
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Utentes Table */}
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead className="text-xs font-medium text-muted-foreground border-b border-border/60">
-                                            <tr>
-                                                <th className="text-left pb-2 pl-2 font-medium">{t('requisitions.ui.name')}</th>
-                                                <th className="text-left pb-2 font-medium">NIF</th>
-                                                <th className="text-left pb-2 font-medium">{t('requisitions.ui.status')}</th>
-                                                <th className="text-right pb-2 pr-2 font-medium">{t('userManagement.action')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-xs">
-                                            {isLoadingUtentes ? (
-                                                <tr>
-                                                    <td colSpan={3} className="py-12 text-center text-muted-foreground">
-                                                        {t('documents.actions.searching')}
-                                                    </td>
-                                                </tr>
-                                            ) : filteredUtentesList.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={3} className="py-12 text-center text-muted-foreground">
-                                                        {t('userManagement.noUsersFound')}
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                currentUtentes.map((utente: any, index) => (
-                                                    <tr key={index} className="border-b border-border/40 last:border-0 hover:bg-muted/40 transition-colors">
-                                                        <td className="py-2.5 pl-2 font-medium text-foreground">{utente.nome}</td>
-                                                        <td className="py-2.5 text-muted-foreground">{utente.nif}</td>
-                                                        <td className="py-2.5">
-                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${utente.active
-                                                                ? 'bg-status-success/10 text-status-success'
-                                                                : 'bg-muted/20 text-muted-foreground'
-                                                                }`}>
-                                                                {utente.active ? t('userManagement.active') : t('userManagement.pending')}
-                                                            </span>
-                                                        </td>
-                                                        <td className="py-2.5 pr-2 text-right">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                                                                onClick={() => handleOpenDetails(utente)}
-                                                                title={t('common.view')}
-                                                            >
-                                                                <Eye className="w-4 h-4" />
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Pagination Utentes */}
-                                {totalPagesUtentes > 1 && (
-                                    <div className="flex items-center justify-between mt-4">
-                                        <p className="text-[10px] text-muted-foreground">
-                                            {t('userManagement.showingUsers', {
-                                                start: startIndexUtentes + 1,
-                                                end: Math.min(startIndexUtentes + itemsPerPage, filteredUtentesList.length),
-                                                total: filteredUtentesList.length
-                                            })}
-                                        </p>
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                disabled={currentPageUtentes === 1}
-                                                onClick={() => setCurrentPageUtentes(prev => prev - 1)}
-                                            >
-                                                <ChevronLeft className="w-3 h-3" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-7 w-7 p-0"
-                                                disabled={currentPageUtentes === totalPagesUtentes}
-                                                onClick={() => setCurrentPageUtentes(prev => prev + 1)}
-                                            >
-                                                <ChevronRight className="w-3 h-3" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </GlassCard>
-                </div>
             </div>
 
             {/* User Details & Edit Dialog */}
@@ -1188,9 +1073,9 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full -ml-12 -mb-12 blur-2xl" />
 
-                        <div className="flex flex-col md:flex-row gap-6 items-center relative z-10">
-                            <div className="w-20 h-20 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
-                                <UserCircle className="w-12 h-12" />
+                        <div className="flex flex-col md:flex-row gap-5 items-center relative z-10">
+                            <div className="w-18 h-18 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
+                                <UserCircle className="w-10 h-10" />
                             </div>
                             <div className="text-center md:text-left flex-1">
                                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-1">
@@ -1255,7 +1140,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.nome}
                                                     onChange={e => setEditForm({ ...editForm, nome: e.target.value })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60 focus:border-primary/50 transition-all font-medium"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60 focus:border-primary/50 transition-all font-medium"
                                                 />
                                             </div>
                                         </div>
@@ -1267,7 +1152,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.nif}
                                                     readOnly
-                                                    className="h-9 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed"
+                                                    className="h-8 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed"
                                                 />
                                             </div>
                                         </div>
@@ -1280,7 +1165,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                     type="date"
                                                     value={editForm.dataNascimento}
                                                     onChange={e => setEditForm({ ...editForm, dataNascimento: e.target.value })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60"
                                                 />
                                             </div>
                                         </div>
@@ -1292,7 +1177,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.email}
                                                     onChange={e => setEditForm({ ...editForm, email: e.target.value })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60"
                                                 />
                                             </div>
                                         </div>
@@ -1304,7 +1189,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.telefone}
                                                     onChange={e => setEditForm({ ...editForm, telefone: e.target.value.replace(/\D/g, '') })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60"
                                                     maxLength={9}
                                                 />
                                             </div>
@@ -1317,7 +1202,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.profissao}
                                                     onChange={e => setEditForm({ ...editForm, profissao: e.target.value })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60"
                                                 />
                                             </div>
                                         </div>
@@ -1336,7 +1221,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <Input
                                                 value={editForm.morada}
                                                 onChange={e => setEditForm({ ...editForm, morada: e.target.value })}
-                                                className="h-9 text-sm bg-background border-border/60"
+                                                className="h-8 text-sm bg-background border-border/60"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
@@ -1344,7 +1229,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <Input
                                                 value={editForm.codigoPostal}
                                                 onChange={e => setEditForm({ ...editForm, codigoPostal: e.target.value })}
-                                                className="h-9 text-sm bg-background border-border/60"
+                                                className="h-8 text-sm bg-background border-border/60"
                                             />
                                         </div>
                                         <div className="md:col-span-2 space-y-1.5">
@@ -1352,7 +1237,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <Input
                                                 value={editForm.freguesia}
                                                 onChange={e => setEditForm({ ...editForm, freguesia: e.target.value })}
-                                                className="h-9 text-sm bg-background border-border/60"
+                                                className="h-8 text-sm bg-background border-border/60"
                                             />
                                         </div>
                                     </div>
@@ -1370,7 +1255,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <Input
                                                 value={editForm.localEmprego}
                                                 onChange={e => setEditForm({ ...editForm, localEmprego: e.target.value })}
-                                                className="h-9 text-sm bg-background border-border/60"
+                                                className="h-8 text-sm bg-background border-border/60"
                                             />
                                         </div>
                                         <div className="space-y-1.5">
@@ -1380,7 +1265,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                                 <Input
                                                     value={editForm.telefoneEmprego}
                                                     onChange={e => setEditForm({ ...editForm, telefoneEmprego: e.target.value })}
-                                                    className="h-9 pl-9 text-sm bg-background border-border/60"
+                                                    className="h-8 pl-9 text-sm bg-background border-border/60"
                                                 />
                                             </div>
                                         </div>
@@ -1389,7 +1274,7 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                                             <Input
                                                 value={editForm.moradaEmprego}
                                                 onChange={e => setEditForm({ ...editForm, moradaEmprego: e.target.value })}
-                                                className="h-9 text-sm bg-background border-border/60"
+                                                className="h-8 text-sm bg-background border-border/60"
                                             />
                                         </div>
                                     </div>
@@ -1402,14 +1287,14 @@ export function UserManagement({ isDarkMode }: UserManagementProps) {
                         <Button
                             variant="ghost"
                             onClick={requestClose}
-                            className="h-9 px-4 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                            className="h-8 px-4 text-xs font-semibold text-muted-foreground hover:bg-muted"
                         >
                             {t('common.cancel')}
                         </Button>
                         <Button
                             onClick={handleEditSave}
                             disabled={isSaving}
-                            className="h-9 px-6 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-2 shadow-lg shadow-primary/20"
+                            className="h-8 px-6 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-2 shadow-lg shadow-primary/20"
                         >
                             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-4 h-4" />}
                             {t('userManagement.details.saveChanges')}

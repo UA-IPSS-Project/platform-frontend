@@ -506,33 +506,34 @@ export function WarehouseManagement() {
 
             {/* Delete Alert */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent className="bg-card/90 border-border shadow-2xl backdrop-blur-xl max-w-md ring-1 ring-white/10">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-destructive/60" />
+                <AlertDialogContent className="bg-card/90 border-border shadow-2xl backdrop-blur-xl max-w-md ring-1 ring-primary/20">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/60 via-destructive/60 to-primary/60" />
                     
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-2xl font-bold flex items-center gap-3 text-foreground">
-                            <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
-                                <AlertTriangle className="w-6 h-6" />
+                            <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
+                                <Trash2 className="w-6 h-6" />
                             </div>
                             {t('consumos.inventory.deleteConfirm.title')}
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground pt-4 text-base leading-relaxed">
+                        <AlertDialogDescription className="text-muted-foreground pt-4 text-lg leading-relaxed">
                             <Trans
                                 i18nKey="consumos.inventory.deleteConfirm.description"
                                 values={{ name: itemToDelete?.nome }}
-                                components={[<span key="0" />, <strong key="1" className="text-foreground font-bold" />]}
+                                components={[<span key="0" />, <strong key="1" className="text-foreground font-extrabold" />]}
                             />
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     
                     <AlertDialogFooter className="pt-8 gap-3">
-                        <AlertDialogCancel className="bg-muted/50 hover:bg-muted border-none text-muted-foreground hover:text-foreground transition-colors h-11 px-6 rounded-xl">
+                        <AlertDialogCancel className="bg-muted/50 hover:bg-muted border-border/40 text-muted-foreground hover:text-foreground transition-all h-12 px-6 rounded-2xl font-medium">
                             {t('consumos.inventory.deleteConfirm.cancel')}
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-lg shadow-destructive/20 h-11 px-8 rounded-xl font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            className="bg-destructive hover:bg-destructive/90 text-white shadow-lg shadow-destructive/30 h-12 px-8 rounded-2xl font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
+                            <Trash2 className="w-4 h-4 mr-2" />
                             {t('consumos.inventory.deleteConfirm.action')}
                         </AlertDialogAction>
                     </AlertDialogFooter>

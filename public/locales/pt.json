@@ -927,7 +927,13 @@
     "title2": "Gestão da Plataforma",
     "subtitle": "Registe novos utilizadores ou recupere contas existentes.",
     "employeesTitle": "Gestão de Funcionários",
+    "employeesSubtitle": "Gerir acessos e aprovações da equipa",
     "usersTitle": "Gestão de Utentes",
+    "usersSubtitle": "Listagem de todos os utentes registados",
+    "createAccountSubtitle": "Registe um novo utilizador ou funcionário",
+    "recoverAccountSubtitle": "Recuperar e-mail ou atualizar contacto de acesso",
+    "searchByNif": "Procurar por NIF",
+    "userFoundSuccess": "Utilizador encontrado com sucesso!",
     "registeredEmployees": "Funcionários Registados",
     "registeredUtentes": "Utentes Registados",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
@@ -1330,7 +1336,7 @@
       },
       "deleteConfirm": {
         "title": "Eliminar Produto",
-        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação é permanente e removerá todos os registos deste item do inventário.",
+        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação não pode ser desfeita.",
         "action": "Eliminar Produto",
         "cancel": "Cancelar"
       },
