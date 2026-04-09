@@ -443,6 +443,7 @@
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",
+    "view": "Visualize",
     "edit": "Edit",
     "save": "Save",
     "saving": "Saving...",
@@ -914,9 +915,11 @@
     }
   },
   "userManagement": {
-    "title": "User Management",
+    "title": "Account Management",
     "title2": "Platform Management",
-    "subtitle": "Account creation and recovery",
+    "subtitle": "Register new users or recover existing accounts.",
+    "registeredEmployees": "Registered Employees",
+    "registeredUtentes": "Registered Users",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
     "secretarySlotsLabel": "Secretary (appointments per slot)",
@@ -924,7 +927,14 @@
     "secretarySlotsAria": "Number of appointments per slot for the secretary",
     "balnearioSlotsAria": "Number of appointments per slot for the social bathhouse",
     "saveSlotConfig": "Save slot configuration",
-    "createAccount": "Create Account",
+    "employeesTitle": "Employee Management",
+    "employeesSubtitle": "Manage team access and approvals",
+    "usersTitle": "User Management",
+    "usersSubtitle": "List of all registered users",
+    "createAccountSubtitle": "Register a new user or employee",
+    "recoverAccountSubtitle": "Recover email or update access contact",
+    "searchByNif": "Search by NIF",
+    "userFoundSuccess": "User successfully found!",
     "recoverAccount": "Account Recovery",
     "clickToExpand": "Click to expand",
     "namePlaceholder": "First and last name",
@@ -984,6 +994,26 @@
       "admin": "Administrator",
       "school": "School",
       "other": "Other"
+    },
+    "details": {
+      "title": "Manage User",
+      "description": "View and edit user information or perform administrative actions.",
+      "editTitle": "Edit Information",
+      "approveTitle": "Approve Account",
+      "approveDescription": "This employee is waiting for approval to access the platform.",
+      "approveAction": "Approve Employee",
+      "saveChanges": "Save Changes",
+      "deleting": "Deleting...",
+      "approving": "Approving...",
+      "success": {
+        "updated": "User updated successfully",
+        "approved": "Employee approved successfully"
+      },
+      "errors": {
+        "load": "Error loading user details",
+        "update": "Error updating user",
+        "approve": "Error approving employee"
+      }
     }
   },
   "appointmentDetails": {
@@ -1293,7 +1323,7 @@
       },
       "deleteConfirm": {
         "title": "Delete Product",
-        "description": "Are you sure you want to delete the product <strong class='text-foreground'>{{name}}</strong>? This action is permanent and will remove all records of this item from inventory.",
+        "description": "Are you sure you want to delete the product <1>{{name}}</1>? This action cannot be undone.",
         "action": "Delete Product",
         "cancel": "Cancel"
       },
@@ -1318,6 +1348,54 @@
     },
     "placeholders": {
       "observations": "Additional notes for this category..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Personalize your experience and manage system configurations.",
+    "sections": {
+      "interface": "Interface and Preferences",
+      "notifications": "Notification System",
+      "system": "System Status",
+      "data": "Data and Privacy"
+    },
+    "theme": {
+      "title": "Interface Theme",
+      "description": "Toggle between light and dark mode for better visual comfort.",
+      "dark": "Dark Mode",
+      "light": "Light Mode"
+    },
+    "language": {
+      "title": "System Language",
+      "description": "Select the language in which the platform should be displayed.",
+      "pt": "Portuguese (Português)",
+      "en": "English"
+    },
+    "sounds": {
+      "title": "Sound Alerts",
+      "description": "Enable or disable sounds for new notifications or system alerts.",
+      "enabled": "Sounds enabled",
+      "disabled": "Sounds disabled"
+    },
+    "clearCache": {
+      "title": "Cache Cleanup",
+      "description": "Clears local data saved in the browser to resolve display issues.",
+      "action": "Clear Cache and Reload",
+      "success": "Cache cleared successfully!"
+    },
+    "messages": {
+      "languageChanged": "Language changed successfully!",
+      "themeChanged": "Theme updated!"
+    },
+    "systemStatus": {
+      "title": "Server Connectivity",
+      "description": "Real-time connection status to primary services.",
+      "online": "Services Online",
+      "offline": "Services Offline / Network Error",
+      "version": "Application Version",
+      "development_label": "Development",
+      "status_development": "In development",
+      "lastChecked": "Last checked seconds ago"
     }
   }
 }
