@@ -77,6 +77,8 @@
       "contactPlaceholder": "912345678",
       "subject": "Subject *",
       "subjectPlaceholder": "Select subject",
+      "description": "Short description",
+      "descriptionPlaceholder": "Briefly describe the appointment reason...",
       "attachDocs": "Attach documents (optional)"
     },
     "subjects": {

@@ -77,6 +77,8 @@
       "contactPlaceholder": "912345678",
       "subject": "Assunto *",
       "subjectPlaceholder": "Selecione o assunto",
+      "description": "Descrição curta",
+      "descriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
       "attachDocs": "Anexar documentos (opcional)"
     },
     "subjects": {
