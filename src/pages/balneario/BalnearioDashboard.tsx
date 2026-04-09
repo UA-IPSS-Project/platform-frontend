@@ -19,6 +19,7 @@ import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
 import { BalnearioAdminArea } from './BalnearioAdminArea';
+import { BalnearioReportsPage } from './BalnearioReportsPage';
 import { SettingsPage } from '../SettingsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -500,9 +501,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                         ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
                         ) : currentView === 'reports' ? (
-                            <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
-                                <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
-                            </div>
+                            <BalnearioReportsPage />
                         ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (
                             <div className="py-8">
                                 <BalnearioAdminArea mode="slots" />
