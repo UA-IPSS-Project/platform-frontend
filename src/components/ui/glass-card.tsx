@@ -1,8 +1,8 @@
-import React from 'react';
+import { type ReactNode, type HTMLAttributes } from 'react';
 import { cn } from "./utils";
 
-interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
+interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
   className?: string;
 }
 

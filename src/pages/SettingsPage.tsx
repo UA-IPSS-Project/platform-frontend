@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -53,10 +53,21 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
   const checkSystemHealth = async () => {
     setCheckingSystem(true);
     try {
-      // Simple ping to check connectivity
-      await fetch(import.meta.env.VITE_API_URL || '', { mode: 'no-cors' });
-      setSystemOnline(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/actuator/health`, {
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      setSystemOnline(response.ok);
     } catch (error) {
+      console.error('System health check failed:', error);
       setSystemOnline(false);
     } finally {
       setCheckingSystem(false);
@@ -90,7 +101,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
     }
   };
 
-  const renderSectionHeader = (id: string, icon: React.ReactNode, title: string) => (
+  const renderSectionHeader = (id: string, icon: ReactNode, title: string) => (
     <button
       onClick={() => toggleSection(id)}
       className="w-full flex items-center justify-between p-4 bg-primary/5 hover:bg-primary/10 transition-colors rounded-t-xl group"

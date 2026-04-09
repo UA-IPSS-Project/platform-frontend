@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { utilizadoresApi } from '../../services/api';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -133,10 +133,12 @@ export function UserManagement() {
         setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
 
-    const renderSectionHeader = (title: string, icon: React.ReactNode, sectionKey: keyof typeof expandedSections) => (
-        <div
-            className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-all duration-200 group"
+    const renderSectionHeader = (title: string, icon: ReactNode, sectionKey: keyof typeof expandedSections) => (
+        <button
+            type="button"
+            className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-all duration-200 group"
             onClick={() => toggleSection(sectionKey)}
+            aria-expanded={expandedSections[sectionKey]}
         >
             <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-lg transition-colors ${expandedSections[sectionKey] ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}>
@@ -145,7 +147,7 @@ export function UserManagement() {
                 <h4 className="text-sm font-bold text-foreground">{title}</h4>
             </div>
             {expandedSections[sectionKey] ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </div>
+        </button>
     );
 
     const blocker = useUnsavedChangesWarning(isDirty);
@@ -250,7 +252,7 @@ export function UserManagement() {
             email: user.email || '',
             telefone: user.telefone || '',
             nif: user.nif || '',
-            dataNascimento: user.dataNascimento || '',
+            dataNascimento: user.dataNascimento ? user.dataNascimento.split('T')[0] : '',
             morada: user.morada || '',
             codigoPostal: user.codigoPostal || '',
             freguesia: user.freguesia || '',
@@ -266,7 +268,13 @@ export function UserManagement() {
         if (!selectedUser) return;
         setIsSaving(true);
         try {
-            await utilizadoresApi.atualizar(selectedUser.id, editForm);
+            const { nif, dataNascimento, ...updateData } = editForm;
+            void nif; // Remove from payload as API doesn't allow NIF updates
+            
+            await utilizadoresApi.atualizar(selectedUser.id, {
+                ...updateData,
+                dataNasc: dataNascimento ? dataNascimento.split('T')[0] : ''
+            });
             toast.success(t('userManagement.details.success.updated'));
             fetchUsers();
             fetchUtentes();
@@ -426,7 +434,7 @@ export function UserManagement() {
             nifSearch: existingUserForDialog.nif,
             foundUser: existingUserForDialog,
             name: existingUserForDialog.nome,
-            birthDate: existingUserForDialog.dataNascimento || '',
+            birthDate: existingUserForDialog.dataNascimento ? existingUserForDialog.dataNascimento.split('T')[0] : '',
             contact: existingUserForDialog.telefone,
             email: existingUserForDialog.email
         });
@@ -477,7 +485,7 @@ export function UserManagement() {
                 ...prev,
                 foundUser: user,
                 name: user.nome,
-                birthDate: user.dataNascimento || '',
+                birthDate: user.dataNascimento ? user.dataNascimento.split('T')[0] : '',
                 contact: user.telefone,
                 email: user.email
             }));
@@ -925,9 +933,10 @@ export function UserManagement() {
                                                 <div className="space-y-4 pt-4 border-t border-border/40 animate-in slide-in-from-top-2 duration-300">
                                                     <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('auth.institutionalEmail')}</Label>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div
+                                                        <button
+                                                            type="button"
                                                             onClick={() => setEmailSelection('auto')}
-                                                            className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-300 ${emailSelection === 'auto' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
+                                                            className={`flex items-start text-left gap-4 p-4 rounded-xl border transition-all duration-300 ${emailSelection === 'auto' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
                                                         >
                                                             <div className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${emailSelection === 'auto' ? 'border-primary' : 'border-muted-foreground'}`}>
                                                                 {emailSelection === 'auto' && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
@@ -938,11 +947,12 @@ export function UserManagement() {
                                                                     {formData.name ? generateInstitutionalEmail(formData.name) : 'Preencha o nome'}
                                                                 </span>
                                                             </div>
-                                                        </div>
+                                                        </button>
 
-                                                        <div
+                                                        <button
+                                                            type="button"
                                                             onClick={() => setEmailSelection('manual')}
-                                                            className={`flex flex-col gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-300 ${emailSelection === 'manual' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
+                                                            className={`flex flex-col text-left gap-3 p-4 rounded-xl border transition-all duration-300 ${emailSelection === 'manual' ? 'bg-primary/10 border-primary ring-2 ring-primary/10' : 'bg-background/30 border-border hover:border-primary/30'}`}
                                                         >
                                                             <div className="flex items-center gap-4">
                                                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${emailSelection === 'manual' ? 'border-primary' : 'border-muted-foreground'}`}>
@@ -962,7 +972,7 @@ export function UserManagement() {
                                                                     <span className="text-[10px] text-muted-foreground font-bold self-end">@florinhasdovouga.pt</span>
                                                                 </div>
                                                             )}
-                                                        </div>
+                                                        </button>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -1104,7 +1114,7 @@ export function UserManagement() {
                     <ScrollArea className="flex-1 max-h-[60vh] bg-card">
                         <div className="p-6 space-y-6">
                             {/* Actions Banner for Pending Employees - Integrated */}
-                            {selectedUser?.funcao && !selectedUser?.active && (
+                            {selectedUser?.funcao && selectedUser.funcao !== 'UTENTE' && !selectedUser?.active && (
                                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-300">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-600">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { GlassCard } from '../ui/glass-card';
 import {
     Calendar,
@@ -139,7 +139,7 @@ export default function BalnearioHome({ onNavigate, notifications = [] }: Balnea
                                 ? [...notifications].sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime()).slice(0, 4)
                                 : []).map((notification, index) => {
 
-                                    const iconMap: Record<string, React.ReactNode> = {
+                                    const iconMap: Record<string, ReactNode> = {
                                         LEMBRETE: <Calendar className="w-5 h-5" />,
                                         CANCELAMENTO: <Clock className="w-5 h-5" />,
                                         FICHEIRO: <FileText className="w-5 h-5" />,

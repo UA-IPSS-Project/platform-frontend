@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWebSocket } from './useWebSocket';
 import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
@@ -77,13 +77,11 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
     // In Spring, the client should always subscribe to /user/queue/... 
     // and Spring will automatically route it using the authenticated Principal.
-    const topic = userEmail ? `/user/queue/notifications` : null;
-    const wsUrl = import.meta.env.VITE_WS_URL
-        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
+    const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
+    const wsUrl = useMemo(() => import.meta.env.VITE_WS_URL
+        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`, []);
     
-    useWebSocket(wsUrl, topic, onNotificationReceived, () => {
-    }, (error) => {
-    });
+    useWebSocket(wsUrl, topic, onNotificationReceived);
 
     useEffect(() => {
         carregarNotificacoes();
