@@ -17,7 +17,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         }
     }, []);
     const onNotificationReceived = useCallback((notificacao: Notificacao) => {
-        console.log('Nova notificação recebida via WS:', notificacao);
 
         setNotifications(prev => [notificacao, ...prev]);
         setUnreadCount(prev => prev + 1);
@@ -81,7 +80,10 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     const topic = userEmail ? `/user/queue/notifications` : null;
     const wsUrl = import.meta.env.VITE_WS_URL
         || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
-    useWebSocket(wsUrl, topic, onNotificationReceived);
+    
+    useWebSocket(wsUrl, topic, onNotificationReceived, () => {
+    }, (error) => {
+    });
 
     useEffect(() => {
         carregarNotificacoes();
