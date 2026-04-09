@@ -124,6 +124,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       if (formData.nif.length === 9) {
         if (!validateNIF(formData.nif)) {
           setNifError(t('appointmentDialog.errors.nifInvalid'));
+          setOriginalUser(null);
           return;
         }
 
@@ -151,6 +152,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           toast.info(t('appointmentDialog.messages.userNotFoundOrNetwork'));
           setOriginalUser(null);
         }
+      } else if (formData.nif.length > 0 && formData.nif.length < 9) {
+        // Reset state if NIF is being edited and is not 9 digits
+        setOriginalUser(null);
+        setNifError(undefined);
       }
     };
 
@@ -363,7 +368,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   placeholder={t('appointmentDialog.fields.nifPlaceholder')}
                   maxLength={9}
                   value={formData.nif}
-                  onChange={(e) => setFormData({ ...formData, nif: e.target.value.replace(/\D/g, '') })}
+                  onChange={(e) => {
+                    const newNif = e.target.value.replace(/\D/g, '');
+                    setFormData({ ...formData, nif: newNif });
+                    if (originalUser || nifError) {
+                      setOriginalUser(null);
+                      setNifError(undefined);
+                    }
+                  }}
                   aria-invalid={!!errors.nif || !!nifError}
                   aria-describedby={errors.nif ? 'nif-error' : (nifError ? 'nif-remote-error' : undefined)}
                   className={`bg-card border-border text-foreground ${errors.nif || nifError ? 'border-status-error' : ''}`}
