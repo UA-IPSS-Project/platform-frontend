@@ -442,13 +442,17 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
     "saving": "A guardar...",
     "cancel": "Cancelar",
     "ok": "OK",
-    "optional": "(opcional)"
+    "add": "Adicionar",
+    "delete": "Eliminar",
+    "optional": "(opcional)",
+    "error": "Erro"
   },
   "notifications": {
     "title": "Notificações",
@@ -919,9 +923,19 @@
     }
   },
   "userManagement": {
-    "title": "Gestão de Utilizadores",
+    "title": "Gestão de Contas",
     "title2": "Gestão da Plataforma",
-    "subtitle": "Criação e recuperação de contas",
+    "subtitle": "Registe novos utilizadores ou recupere contas existentes.",
+    "employeesTitle": "Gestão de Funcionários",
+    "employeesSubtitle": "Gerir acessos e aprovações da equipa",
+    "usersTitle": "Gestão de Utentes",
+    "usersSubtitle": "Listagem de todos os utentes registados",
+    "createAccountSubtitle": "Registe um novo utilizador ou funcionário",
+    "recoverAccountSubtitle": "Recuperar e-mail ou atualizar contacto de acesso",
+    "searchByNif": "Procurar por NIF",
+    "userFoundSuccess": "Utilizador encontrado com sucesso!",
+    "registeredEmployees": "Funcionários Registados",
+    "registeredUtentes": "Utentes Registados",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
     "secretarySlotsLabel": "Secretaria (marcações por slot)",
@@ -947,7 +961,7 @@
     "emailEditable": "Email (Atualizável)",
     "notifyRecovery": "Notificar Recuperação",
     "registeredUsers": "Utilizadores Registados",
-    "pending": "Pendentes",
+    "pending": "Pendente",
     "active": "Ativo",
     "searchByNameOrNif": "Pesquisar por nome ou NIF...",
     "role": "Função",
@@ -989,6 +1003,26 @@
       "admin": "Administrador",
       "school": "Escola",
       "other": "Outro"
+    },
+    "details": {
+      "title": "Gerir Utilizador",
+      "description": "Visualize e edite as informações do utilizador ou realize ações administrativas.",
+      "editTitle": "Editar Informações",
+      "approveTitle": "Aprovar Conta",
+      "approveDescription": "Este funcionário está aguardando aprovação para aceder à plataforma.",
+      "approveAction": "Aprovar Funcionário",
+      "saveChanges": "Guardar Alterações",
+      "deleting": "A eliminar...",
+      "approving": "A aprovar...",
+      "success": {
+        "updated": "Utilizador atualizado com sucesso",
+        "approved": "Funcionário aprovado com sucesso"
+      },
+      "errors": {
+        "load": "Erro ao carregar detalhes do utilizador",
+        "update": "Erro ao atualizar utilizador",
+        "approve": "Erro ao aprovar funcionário"
+      }
     }
   },
   "appointmentDetails": {
@@ -1302,7 +1336,7 @@
       },
       "deleteConfirm": {
         "title": "Eliminar Produto",
-        "description": "Tem a certeza que deseja eliminar o produto <strong class='text-foreground'>{{name}}</strong>? Esta ação é permanente e removerá todos os registos deste item do inventário.",
+        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação não pode ser desfeita.",
         "action": "Eliminar Produto",
         "cancel": "Cancelar"
       },
@@ -1332,5 +1366,54 @@
     "placeholders": {
       "observations": "Notas adicionais para esta categoria..."
     }
+  },
+  "settings": {
+    "title": "Definições",
+    "description": "Personalize a sua experiência e gira as configurações do sistema.",
+    "sections": {
+      "interface": "Interface e Preferências",
+      "notifications": "Sistema de Notificações",
+      "system": "Estado do Sistema",
+      "data": "Dados e Privacidade"
+    },
+    "theme": {
+      "title": "Tema da Interface",
+      "description": "Alterne entre o modo claro e escuro para melhor conforto visual.",
+      "dark": "Modo Escuro",
+      "light": "Modo Claro"
+    },
+    "language": {
+      "title": "Idioma do Sistema",
+      "description": "Selecione o idioma em que a plataforma deve ser exibida.",
+      "pt": "Português",
+      "en": "Inglês (English)"
+    },
+    "sounds": {
+      "title": "Alertas Sonoros",
+      "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
+      "enabled": "Sons ativados",
+      "disabled": "Sons desativados"
+    },
+    "clearCache": {
+      "title": "Limpeza de Cache",
+      "description": "Limpa os dados locais guardados no navegador para resolver problemas de visualização.",
+      "action": "Limpar Cache e Recarregar",
+      "success": "Cache limpa com sucesso!"
+    },
+    "messages": {
+      "languageChanged": "Idioma alterado com sucesso!",
+      "themeChanged": "Tema atualizado!"
+    },
+    "systemStatus": {
+      "title": "Conectividade do Servidor",
+      "description": "Estado em tempo real da ligação aos serviços principais.",
+      "online": "Serviços Online",
+      "offline": "Serviços Offline / Erro de Rede",
+      "version": "Versão da Aplicação",
+      "development_label": "Desenvolvimento",
+      "status_development": "Em desenvolvimento",
+      "lastChecked": "Última verificação há segundos"
+    }
   }
 }
+

@@ -41,14 +41,12 @@ const loadImage = (url: string): Promise<string> => {
 };
 
 type ReportSection =
-  | 'secretaria'
   | 'balneario'
   | 'material'
   | 'transporte'
   | 'manutencao';
 
 const SECTIONS: { id: ReportSection; label: string; description: string }[] = [
-  { id: 'secretaria', label: 'Marcações da Secretaria', description: 'Presenças, remotas e estado das consultas' },
   { id: 'balneario', label: 'Marcações do Balneário', description: 'Sessões de higiene, lavagem de roupa e estado' },
   { id: 'material', label: 'Requisições de Material', description: 'Pedidos de material de escritório e consumíveis' },
   { id: 'transporte', label: 'Requisições de Transporte', description: 'Reservas de viaturas e viagens agendadas' },
@@ -85,12 +83,12 @@ function formatTimeStr(iso: string) {
 
 // Color palette for PDF (Fixed to Light Mode)
 const colors: Record<string, [number, number, number]> = {
-  primary: [241, 149, 217], // brand primary RGB
+  primary: [241, 149, 217], // brand primary RGB (Pink)
   background: [247, 242, 244], // light background RGB
   foreground: [30, 41, 59],
-  muted: [252, 231, 243], // pink-100 (softer than before)
-  accent: [252, 231, 243], // pink-100 (softer than before)
-  border: [251, 207, 232], // pink-200 (softer border)
+  muted: [252, 231, 243], // pink-100
+  accent: [252, 231, 243], // pink-100
+  border: [251, 207, 232], // pink-200
   tableBorder: [227, 45, 145], // table border RGB
 };
 
@@ -136,15 +134,13 @@ const getDurationCell = (r: RequisicaoResponse) => {
   };
 };
 
-export function ReportsPage() {
+export function BalnearioReportsPage() {
   const today = new Date();
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
   const [startDate, setStartDate] = useState(formatDate(firstOfMonth));
   const [endDate, setEndDate] = useState(formatDate(lastOfMonth));
-  const [selected, setSelected] = useState<Set<ReportSection>>(new Set(['secretaria', 'balneario']));
-  const isAllSelected = selected.size === SECTIONS.length;
-  const isNoneSelected = selected.size === 0;
+  const [selected, setSelected] = useState<Set<ReportSection>>(new Set(['balneario', 'material', 'transporte', 'manutencao']));
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
@@ -159,9 +155,8 @@ export function ReportsPage() {
     const startISO = `${startDate}T00:00:00`;
     const endISO = `${endDate}T23:59:59`;
 
-    // Parallel fetch
-    const [marcacoesSecretaria, marcacoesBalneario, requisicoes, logoData] = await Promise.all([
-      selected.has('secretaria') ? marcacoesApi.consultarAgenda(startISO, endISO, 'SECRETARIA') : Promise.resolve([]),
+    // Fetch Balneario Appointments and ALL requisitions (we filter them later)
+    const [marcacoesBalneario, allRequisitions, logoData] = await Promise.all([
       selected.has('balneario') ? marcacoesApi.consultarAgenda(startISO, endISO, 'BALNEARIO') : Promise.resolve([]),
       (selected.has('material') || selected.has('transporte') || selected.has('manutencao'))
         ? requisicoesApi.listar()
@@ -171,14 +166,22 @@ export function ReportsPage() {
 
     const startMs = new Date(startISO).getTime();
     const endMs = new Date(endISO).getTime();
-    const filteredReqs = requisicoes.filter(r => {
-      if (!r.criadoEm) return true;
-      const t = new Date(r.criadoEm).getTime();
-      return t >= startMs && t <= endMs;
+
+    // Filter requisitions by date and specifically by ROLE (BALNEARIO)
+    const filteredReqs = allRequisitions.filter(r => {
+      // Date filter
+      const createdAt = r.criadoEm ? new Date(r.criadoEm).getTime() : 0;
+      const isWithinDate = createdAt >= startMs && createdAt <= endMs;
+
+      // Role filter: Only show requisitions made by Balneario staff
+      const isFromBalneario = r.criadoPor?.tipo === 'BALNEARIO';
+
+      return isWithinDate && isFromBalneario;
     });
-    const reqMaterial = filteredReqs.filter(r => r.tipo === 'MATERIAL');
-    const reqTransporte = filteredReqs.filter(r => r.tipo === 'TRANSPORTE');
-    const reqManutencao = filteredReqs.filter(r => r.tipo === 'MANUTENCAO');
+
+    const reqMaterial = filteredReqs.filter(r => r.tipo === 'MATERIAL' && selected.has('material'));
+    const reqTransporte = filteredReqs.filter(r => r.tipo === 'TRANSPORTE' && selected.has('transporte'));
+    const reqManutencao = filteredReqs.filter(r => r.tipo === 'MANUTENCAO' && selected.has('manutencao'));
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageW = doc.internal.pageSize.getWidth();
@@ -189,16 +192,17 @@ export function ReportsPage() {
     doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]);
     doc.rect(0, 0, pageW, pageH, 'F');
 
+    // Header
     doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
     doc.rect(0, 0, pageW, 28, 'F');
-
-    // Add Header Content
+    
+    // Header Content
     if (logoData) {
       doc.addImage(logoData, 'PNG', 14, 5, 18, 18);
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text('Relatório Institucional', 38, 13);
+      doc.text('Relatório de Atividade do Balneário', 38, 13);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text(`Período: ${formatDatePt(startDate)} a ${formatDatePt(endDate)}`, 38, 21);
@@ -206,7 +210,7 @@ export function ReportsPage() {
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text('Relatório Institucional', 14, 13);
+      doc.text('Relatório de Atividade do Balneário', 14, 13);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text(`Período: ${formatDatePt(startDate)} a ${formatDatePt(endDate)}`, 14, 21);
@@ -241,7 +245,7 @@ export function ReportsPage() {
       doc.setFont('helvetica', 'normal');
       doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
       doc.line(10, pageH - 12, pageW - 10, pageH - 12);
-      doc.text('Documento gerado automaticamente — Florinhas do Vouga', 14, pageH - 7);
+      doc.text('Relatório de Atividade — Balneário Social', 14, pageH - 7);
       doc.text(`Pág. ${pageNum}`, pageW - 14 - doc.getTextWidth(`Pág. ${pageNum}`), pageH - 7);
     };
 
@@ -250,24 +254,6 @@ export function ReportsPage() {
     const tableAlternateRowStyles = { fillColor: colors.accent };
 
     let sectionCount = 0;
-
-    if (selected.has('secretaria')) {
-      if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
-      sectionCount++;
-      addSectionTitle('Marcações da Secretaria', marcacoesSecretaria.length);
-      if (marcacoesSecretaria.length === 0) {
-        doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem marcações no período selecionado.', 14, y); y += 8;
-      } else {
-        autoTable(doc, {
-          startY: y, head: [['Data', 'Hora', 'Utente', 'Assunto', 'Tipo', 'Estado']],
-          body: marcacoesSecretaria.map(m => [formatDateStr(m.data), formatTimeStr(m.data), m.marcacaoSecretaria?.utente?.nome ?? '—', m.marcacaoSecretaria?.assunto ?? '—', m.marcacaoSecretaria?.tipoAtendimento === 'PRESENCIAL' ? 'Presencial' : 'Remota', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
-          styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
-          tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
-          didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
-        });
-        y = (doc as any).lastAutoTable.finalY + 10;
-      }
-    }
 
     if (selected.has('balneario')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
@@ -278,7 +264,14 @@ export function ReportsPage() {
       } else {
         autoTable(doc, {
           startY: y, head: [['Data', 'Hora', 'Utente', 'Higiene', 'Lavagem', 'Estado']],
-          body: marcacoesBalneario.map(m => [formatDateStr(m.data), formatTimeStr(m.data), (m as any).marcacaoBalneario?.nomeUtente ?? '—', (m as any).marcacaoBalneario?.produtosHigiene ? 'Sim' : 'Não', (m as any).marcacaoBalneario?.lavagemRoupa ? 'Sim' : 'Não', { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }]),
+          body: marcacoesBalneario.map(m => [
+            formatDateStr(m.data),
+            formatTimeStr(m.data),
+            (m as any).marcacaoBalneario?.nomeUtente ?? '—',
+            (m as any).marcacaoBalneario?.produtosHigiene ? 'Sim' : 'Não',
+            (m as any).marcacaoBalneario?.lavagemRoupa ? 'Sim' : 'Não',
+            { content: ESTADO_LABELS[m.estado] ?? m.estado, styles: { textColor: getStatusColor(m.estado), fontStyle: 'bold' } }
+          ]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
           tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
@@ -290,12 +283,12 @@ export function ReportsPage() {
     if (selected.has('material')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Requisições de Material', reqMaterial.length);
+      addSectionTitle('Requisições de Material (Equipa Balneário)', reqMaterial.length);
       if (reqMaterial.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
+          startY: y, head: [['Data Criação', 'Criado Por', 'Itens', 'Prioridade', 'Duração', 'Estado']],
           body: reqMaterial.map(r => {
             const grouped = (r.itens ?? []).reduce((acc: Record<string, string[]>, i) => {
               const cat = i.material?.categoria || 'Geral';
@@ -308,8 +301,7 @@ export function ReportsPage() {
               .join('\n\n') || '—';
             return [
               r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
-              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
+              r.criadoPor?.nome ?? '—',
               itensStr,
               PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
               getDurationCell(r),
@@ -327,23 +319,20 @@ export function ReportsPage() {
     if (selected.has('transporte')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Requisições de Transporte', reqTransporte.length);
+      addSectionTitle('Requisições de Transporte (Equipa Balneário)', reqTransporte.length);
       if (reqTransporte.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
-          body: reqTransporte.map(r => {
-            return [
-              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
-              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
-              r.destino ?? '—',
-              r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
-              getDurationCell(r),
-              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
-            ];
-          }),
+          startY: y, head: [['Data Criação', 'Criado Por', 'Destino', 'Veículo', 'Duração', 'Estado']],
+          body: reqTransporte.map(r => [
+            r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+            r.criadoPor?.nome ?? '—',
+            r.destino ?? '—',
+            r.transportes?.[0]?.transporte?.matricula ?? r.transporte?.matricula ?? '—',
+            getDurationCell(r),
+            { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+          ]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
           tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
@@ -355,23 +344,20 @@ export function ReportsPage() {
     if (selected.has('manutencao')) {
       if (sectionCount > 0) { doc.addPage(); doc.setFillColor(colors.background[0], colors.background[1], colors.background[2]); doc.rect(0, 0, pageW, pageH, 'F'); y = 20; }
       sectionCount++;
-      addSectionTitle('Requisições de Manutenção', reqManutencao.length);
+      addSectionTitle('Requisições de Manutenção (Equipa Balneário)', reqManutencao.length);
       if (reqManutencao.length === 0) {
         doc.setFontSize(9); doc.setTextColor(140, 140, 140); doc.text('Sem requisições no período selecionado.', 14, y); y += 8;
       } else {
         autoTable(doc, {
-          startY: y, head: [['Data Criação', 'Modificado em', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
-          body: reqManutencao.map(r => {
-            return [
-              r.criadoEm ? formatDateStr(r.criadoEm) : '—',
-              r.ultimaAlteracaoEstadoEm ? formatDateStr(r.ultimaAlteracaoEstadoEm) : '—',
-              r.criadoPor?.nome ? `${r.criadoPor.nome} (${r.criadoPor.tipo ?? '?'})` : '—',
-              r.assunto ?? r.descricao ?? '—',
-              PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
-              getDurationCell(r),
-              { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
-            ];
-          }),
+          startY: y, head: [['Data Criação', 'Criado Por', 'Assunto', 'Prioridade', 'Duração', 'Estado']],
+          body: reqManutencao.map(r => [
+            r.criadoEm ? formatDateStr(r.criadoEm) : '—',
+            r.criadoPor?.nome ?? '—',
+            r.assunto ?? r.descricao ?? '—',
+            PRIORIDADE_LABELS[r.prioridade] ?? r.prioridade,
+            getDurationCell(r),
+            { content: ESTADO_LABELS[r.estado] ?? r.estado, styles: { textColor: getStatusColor(r.estado), fontStyle: 'bold' } }
+          ]),
           styles: tableStyles, headStyles: tableHeadStyles, alternateRowStyles: tableAlternateRowStyles, margin: { left: 10, right: 10 },
           tableLineColor: colors.tableBorder, tableLineWidth: 0.5,
           didDrawPage: (data) => { addFooter(data.pageNumber); y = data.cursor?.y ?? y; },
@@ -401,7 +387,7 @@ export function ReportsPage() {
 
     const datePart = start === end ? start : `${start}_a_${end}`;
 
-    return `relatorio_${moduleNames}_${datePart}.pdf`;
+    return `relatorio_balneario_${moduleNames}_${datePart}.pdf`;
   };
 
   const generatePDF = async () => {
@@ -443,8 +429,8 @@ export function ReportsPage() {
       const doc = await preparePDF();
       const pdfBase64 = doc.output('datauristring');
       const filename = getReportFilename();
-      const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
-      const body = `Olá,\n\nSegue em anexo o relatório institucional referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.\n\n` +
+      const subject = `Relatório Balneário - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
+      const body = `Olá,\n\nSegue em anexo o relatório de atividade do balneário referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.\n\n` +
         `Conteúdo do relatório:\n` +
         Array.from(selected).map(s => `- ${SECTIONS.find(sec => sec.id === s)?.label}`).join('\n') +
         `\n\nEste e-mail foi gerado automaticamente pelo portal de gestão.`;
@@ -468,13 +454,13 @@ export function ReportsPage() {
           </svg>
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-sm text-muted-foreground">Gere relatórios em PDF com os dados institucionais</p>
+          <h1 className="text-2xl font-bold text-foreground">Relatórios do Balneário</h1>
+          <p className="text-sm text-muted-foreground">Gere relatórios da sua atividade e requisições</p>
         </div>
       </div>
 
       <GlassCard className="p-6">
-        <h2 className="text-base font-semibold text-foreground mb-4">Período</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Período de Atividade</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-sm font-medium text-foreground">Início</label>
@@ -488,10 +474,8 @@ export function ReportsPage() {
         <div className="flex flex-wrap gap-2 mt-4">
           {[
             { label: 'Hoje', start: today, end: today },
-            { label: 'Ontem', start: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1), end: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1) },
             { label: 'Este mês', start: new Date(today.getFullYear(), today.getMonth(), 1), end: new Date(today.getFullYear(), today.getMonth() + 1, 0) },
             { label: 'Mês passado', start: new Date(today.getFullYear(), today.getMonth() - 1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) },
-            { label: 'Este ano', start: new Date(today.getFullYear(), 0, 1), end: today },
           ].map(({ label, start, end }) => {
             const sStr = formatDate(start);
             const eStr = formatDate(end);
@@ -514,7 +498,7 @@ export function ReportsPage() {
       </GlassCard>
 
       <GlassCard className="p-6">
-        <h2 className="text-base font-semibold text-foreground mb-4">Dados a Incluir</h2>
+        <h2 className="text-base font-semibold text-foreground mb-4">Dados a Incluir no Relatório</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {SECTIONS.map(section => {
             const isChecked = selected.has(section.id);
@@ -528,41 +512,14 @@ export function ReportsPage() {
             );
           })}
         </div>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))}
-            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected
-                ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-            Selecionar tudo
-          </button>
-
-          <button
-            onClick={() => setSelected(new Set())}
-            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected
-                ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Limpar seleção
-          </button>
-        </div>
       </GlassCard>
 
       <div className="flex justify-end gap-3">
         <Button onClick={handleSendEmail} disabled={isSendingEmail || selected.size === 0} variant="outline" className="border-border text-foreground hover:bg-accent px-6 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
-          {isSendingEmail ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A enviar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> Enviar por Email</>}
+          {isSendingEmail ? 'A enviar...' : 'Enviar por Email'}
         </Button>
         <Button onClick={generatePDF} disabled={isGenerating || selected.size === 0} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xl shadow-lg font-semibold text-sm transition-all flex items-center gap-2">
-          {isGenerating ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A gerar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Gerar PDF</>}
+          {isGenerating ? 'A gerar...' : 'Gerar PDF'}
         </Button>
       </div>
     </div>
