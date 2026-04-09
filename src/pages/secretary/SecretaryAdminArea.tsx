@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
-import { calendarioApi, requisicoesApi, marcacoesApi } from '../../services/api';
+import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
 
 
 function SlotsManagement({
@@ -149,7 +149,7 @@ export function SecretaryAdminArea() {
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
                     tiposManutencao: Array.isArray(manutencaoItems) 
-                        ? new Set(manutencaoItems.map((i: any) => i.categoria)).size 
+                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size 
                         : 0,
                     assuntosAtivos: Array.isArray(assuntos) ? assuntos.length : 0,
                 });
