@@ -23,6 +23,23 @@ const formatDatePt = (dateStr: string) => {
   return `${day}/${month}/${year}`;
 };
 
+const loadImage = (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = (err) => reject(err);
+    img.src = url;
+  });
+};
+
 type ReportSection =
   | 'secretaria'
   | 'balneario'
@@ -143,12 +160,13 @@ export function ReportsPage() {
     const endISO = `${endDate}T23:59:59`;
 
     // Parallel fetch
-    const [marcacoesSecretaria, marcacoesBalneario, requisicoes] = await Promise.all([
+    const [marcacoesSecretaria, marcacoesBalneario, requisicoes, logoData] = await Promise.all([
       selected.has('secretaria') ? marcacoesApi.consultarAgenda(startISO, endISO, 'SECRETARIA') : Promise.resolve([]),
       selected.has('balneario') ? marcacoesApi.consultarAgenda(startISO, endISO, 'BALNEARIO') : Promise.resolve([]),
       (selected.has('material') || selected.has('transporte') || selected.has('manutencao'))
         ? requisicoesApi.listar()
         : Promise.resolve([]),
+      loadImage('/assets/LogoSemTexto.png').catch(() => null),
     ]);
 
     const startMs = new Date(startISO).getTime();
@@ -173,13 +191,26 @@ export function ReportsPage() {
 
     doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
     doc.rect(0, 0, pageW, 28, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Relatório Institucional', 14, 13);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Período: ${formatDatePt(startDate)} a ${formatDatePt(endDate)}`, 14, 21);
+
+    // Add Header Content
+    if (logoData) {
+      doc.addImage(logoData, 'PNG', 14, 5, 18, 18);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório Institucional', 38, 13);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${formatDatePt(startDate)} a ${formatDatePt(endDate)}`, 38, 21);
+    } else {
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório Institucional', 14, 13);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${formatDatePt(startDate)} a ${formatDatePt(endDate)}`, 14, 21);
+    }
     doc.text(`Gerado em: ${new Date().toLocaleString('pt-PT')}`, pageW - 14 - doc.getTextWidth(`Gerado em: ${new Date().toLocaleString('pt-PT')}`), 21);
 
     y = 36;
