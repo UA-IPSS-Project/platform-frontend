@@ -50,3 +50,10 @@ export interface MarcacaoResponse {
         };
     };
 }
+
+export interface Assunto {
+    id: number;
+    nome: string;
+    descricao?: string;
+    ativo: boolean;
+}

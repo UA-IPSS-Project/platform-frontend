@@ -157,4 +157,28 @@ export const marcacoesApi = {
         apiRequest<BalnearioAttendanceStats>(`/api/marcacoes/balneario/estatisticas?periodo=${periodo}`, {
             method: 'GET',
         }),
+
+    // --- Gestão de Assuntos ---
+    listarAssuntos: () =>
+        apiRequest<any[]>('/api/assuntos', { method: 'GET' }),
+
+    listarAssuntosAdmin: () =>
+        apiRequest<any[]>('/api/assuntos/admin', { method: 'GET' }),
+
+    criarAssunto: (assunto: any) =>
+        apiRequest<any>('/api/assuntos', {
+            method: 'POST',
+            body: JSON.stringify(assunto),
+        }),
+
+    atualizarAssunto: (id: number, assunto: any) =>
+        apiRequest<any>(`/api/assuntos/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(assunto),
+        }),
+
+    apagarAssunto: (id: number) =>
+        apiRequest<void>(`/api/assuntos/${id}`, {
+            method: 'DELETE',
+        }),
 };

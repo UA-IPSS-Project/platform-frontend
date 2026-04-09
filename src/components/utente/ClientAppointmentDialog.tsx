@@ -22,8 +22,7 @@ interface ClientAppointmentDialogProps {
   onSuccess?: () => void;
 }
 
-import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
-import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
+import { calendarioApi, marcacoesApi, apiRequest, type Assunto } from '../../services/api';
 import { useTranslation } from 'react-i18next';
 
 export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
@@ -33,6 +32,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [subjects, setSubjects] = useState<Assunto[]>([]);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
   const [pendingClose, setPendingClose] = useState(false);
 
@@ -46,6 +46,7 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
   useEffect(() => {
     if (open) {
       reservarSlot();
+      loadSubjects();
     }
 
     // Cleanup: liberar reserva ao fechar ou desmontar
@@ -106,6 +107,15 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
       setTempReservaId(null);
     } catch (error) {
       console.error('Erro ao liberar slot:', error);
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const data = await marcacoesApi.listarAssuntos();
+      setSubjects(data);
+    } catch (error) {
+      console.error('Erro ao carregar assuntos:', error);
     }
   };
 
@@ -220,9 +230,9 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
                 <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {SUBJECTS.map((option) => (
-                  <SelectItem key={option} value={option} className="text-popover-foreground">
-                    {getSubjectLabel(option, t)}
+                {subjects.map((option) => (
+                  <SelectItem key={option.id} value={option.nome} className="text-popover-foreground">
+                    {option.nome}
                   </SelectItem>
                 ))}
               </SelectContent>

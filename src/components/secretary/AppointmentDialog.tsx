@@ -10,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { FileUpload } from '../shared/FileUpload';
 import { DatePickerField } from '../ui/date-picker-field';
-import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
-import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest } from '../../services/api';
+import { calendarioApi, utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest, marcacoesApi, type Assunto } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
 import { validateName, validateNIF, validateContact, validateEmail, validateBirthDate } from '../../lib/validations';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +40,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [subjects, setSubjects] = useState<Assunto[]>([]);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
   const tempReservaRef = useRef<number | null>(null);
 
@@ -99,6 +99,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   useEffect(() => {
     if (open) {
       reservarSlot();
+      loadSubjects();
     }
 
     // Cleanup: liberar reserva ao fechar ou desmontar
@@ -177,6 +178,15 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       tempReservaRef.current = null;
     } catch (error) {
       console.error('Erro ao liberar slot:', error);
+    }
+  };
+
+  const loadSubjects = async () => {
+    try {
+      const data = await marcacoesApi.listarAssuntos();
+      setSubjects(data);
+    } catch (error) {
+      console.error('Erro ao carregar assuntos:', error);
     }
   };
 
@@ -534,9 +544,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                   <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border">
-                  {SUBJECTS.map((subject) => (
-                    <SelectItem key={subject} value={subject} className="text-popover-foreground">
-                      {getSubjectLabel(subject, t)}
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={s.nome} className="text-popover-foreground">
+                      {s.nome}
                     </SelectItem>
                   ))}
                 </SelectContent>

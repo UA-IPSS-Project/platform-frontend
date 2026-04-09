@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Package, Truck, Wrench } from 'lucide-react';
+import { Package, Truck, Wrench, Settings2 } from 'lucide-react';
 import { 
   requisicoesApi, 
   type MaterialCatalogo, 
@@ -12,12 +11,13 @@ import { formatarCategoria } from '../../utils/formatters';
 import { MaterialCatalog } from './catalog/MaterialCatalog';
 import { TransportCatalog } from './catalog/TransportCatalog';
 import { MaintenanceCatalog } from './catalog/MaintenanceCatalog';
-import { GlassCard } from '../ui/glass-card';
+import { SubjectManagement } from './catalog/SubjectManagement';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MAX_LOAD_CATALOGO_RETRIES = 4;
 
 export function RequisitionsCatalogManagement() {
-  const { t } = useTranslation();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   
   const [materiais, setMateriais] = useState<MaterialCatalogo[]>([]);
@@ -67,6 +67,12 @@ export function RequisitionsCatalogManagement() {
                     <Wrench className="w-4 h-4" />
                     <span className="hidden sm:inline">Manutenção</span>
                 </TabsTrigger>
+                {user?.role === 'SECRETARIA' && (
+                  <TabsTrigger value="subjects" className="gap-2">
+                      <Settings2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Assuntos</span>
+                  </TabsTrigger>
+                )}
             </TabsList>
         </div>
 
@@ -101,6 +107,12 @@ export function RequisitionsCatalogManagement() {
                         formatCategoryName={formatCategoryName}
                     />
                 </TabsContent>
+
+                {user?.role === 'SECRETARIA' && (
+                  <TabsContent value="subjects" className="mt-0 focus-visible:ring-0">
+                      <SubjectManagement />
+                  </TabsContent>
+                )}
             </>
         )}
       </Tabs>
