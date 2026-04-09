@@ -65,7 +65,13 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     const fetchSubjects = async () => {
       try {
         const data = await marcacoesApi.listarAssuntos();
-        setSubjects(data);
+        // Sort subjects alphabetically, but keep "Outro" always last
+        const sorted = data.sort((a, b) => {
+          if (a.nome === 'Outro') return 1;
+          if (b.nome === 'Outro') return -1;
+          return a.nome.localeCompare(b.nome);
+        });
+        setSubjects(sorted);
       } catch (error) {
         console.error('Failed to fetch subjects:', error);
       }
@@ -399,10 +405,11 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth" className="text-foreground">{t('appointmentDialog.fields.dateOfBirth')}</Label>
+                <Label htmlFor="dateOfBirth" className="text-foreground">{t('appointmentDialog.fields.birthDate')}</Label>
                 <DatePickerField
                   id="dateOfBirth"
                   value={formData.dateOfBirth}
+                  placeholder={t('appointmentDialog.fields.birthDatePlaceholder')}
                   onChange={(val) => setFormData({ ...formData, dateOfBirth: val })}
                 />
                 {errors.dateOfBirth && <p className="text-sm text-status-error">{errors.dateOfBirth}</p>}

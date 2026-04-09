@@ -48,7 +48,13 @@ export function ClientAppointmentDialog({
     const fetchSubjects = async () => {
       try {
         const data = await marcacoesApi.listarAssuntos();
-        setSubjects(data);
+        // Sort subjects alphabetically, but keep "Outro" always last
+        const sorted = data.sort((a, b) => {
+          if (a.nome === 'Outro') return 1;
+          if (b.nome === 'Outro') return -1;
+          return a.nome.localeCompare(b.nome);
+        });
+        setSubjects(sorted);
       } catch (error) {
         console.error('Failed to fetch subjects:', error);
       }

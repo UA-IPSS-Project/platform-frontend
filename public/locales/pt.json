@@ -68,15 +68,15 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Data de Nascimento *",
+      "birthDatePlaceholder": "dd/mm/aaaa",
       "name": "Nome *",
+      "namePlaceholder": "Nome completo",
       "email": "Email *",
       "emailPlaceholder": "exemplo@email.com",
       "contact": "Contacto *",
       "contactPlaceholder": "912345678",
       "subject": "Assunto *",
       "subjectPlaceholder": "Selecione o assunto",
-      "shortDescription": "Descrição curta",
-      "shortDescriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
       "attachDocs": "Anexar documentos (opcional)"
     },
     "subjects": {

@@ -68,15 +68,15 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Date of Birth *",
+      "birthDatePlaceholder": "dd/mm/yyyy",
       "name": "Name *",
+      "namePlaceholder": "Full name",
       "email": "Email *",
       "emailPlaceholder": "example@email.com",
       "contact": "Contact *",
       "contactPlaceholder": "912345678",
       "subject": "Subject *",
       "subjectPlaceholder": "Select subject",
-      "shortDescription": "Short description",
-      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
       "attachDocs": "Attach documents (optional)"
     },
     "subjects": {
