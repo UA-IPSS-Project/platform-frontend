@@ -52,11 +52,6 @@ export const utilizadoresApi = {
             method: 'GET',
         }),
 
-    listarUtentes: () =>
-        apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/utentes', {
-            method: 'GET',
-        }),
-
     aprovarFuncionario: (id: number) =>
         apiRequest<void>(`/api/utilizadores/${id}/aprovar`, {
             method: 'PUT',
