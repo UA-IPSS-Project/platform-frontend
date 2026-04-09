@@ -17,47 +17,13 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         }
     }, []);
     const onNotificationReceived = useCallback((notificacao: Notificacao) => {
+        console.log('Nova notificação recebida via WS:', notificacao);
 
         setNotifications(prev => [notificacao, ...prev]);
         setUnreadCount(prev => prev + 1);
 
         const isOneDayReminder = notificacao.tipo === 'LEMBRETE'
             && notificacao.metadata?.notificationSubtype === 'REMINDER_1_DAY';
-
-        // Play notification sound
-        const soundEnabled = localStorage.getItem('notifications_sound') !== 'false';
-        if (soundEnabled) {
-            try {
-                const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-                if (AudioContextClass) {
-                    const audioCtx = new AudioContextClass();
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-
-                    oscillator.type = 'sine';
-                    // Pleasant high-pitched "ding" (A5 followed by C6-like frequency)
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1);
-
-                    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.02);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.3);
-                    
-                    // Close context after playing
-                    setTimeout(() => {
-                        if (audioCtx.state !== 'closed') audioCtx.close();
-                    }, 400);
-                }
-            } catch (error) {
-                console.warn('Could not play notification sound:', error);
-            }
-        }
 
         toast.info(
             isOneDayReminder ? 'Lembrete de Marcação' : notificacao.titulo,
@@ -80,10 +46,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     const topic = userEmail ? `/user/queue/notifications` : null;
     const wsUrl = import.meta.env.VITE_WS_URL
         || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
-    
-    useWebSocket(wsUrl, topic, onNotificationReceived, () => {
-    }, (error) => {
-    });
+    useWebSocket(wsUrl, topic, onNotificationReceived);
 
     useEffect(() => {
         carregarNotificacoes();

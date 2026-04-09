@@ -27,33 +27,32 @@ export function useWebSocket(
 
         stompClient.current = new Client({
             brokerURL: wsUrl,
-            connectHeaders: {
-                ...connectHeaders,
-                ...(onConnect ? {} : {}) // placeholder for now
-            },
+            connectHeaders,
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
-            onConnect: () => {
-                if (onConnect) onConnect();
-
-                stompClient.current?.subscribe(topic!, (message) => {
-                    try {
-                        const parsedMessage = JSON.parse(message.body);
-                        onMessage(parsedMessage);
-                    } catch (error) {
-                        onMessage(message.body);
-                    }
-                });
-            },
-            onStompError: (frame) => {
-                if (onError) onError(frame);
-            },
-            onWebSocketClose: () => {
-            },
-            onDisconnect: () => {
-            }
         });
+
+        stompClient.current.onConnect = () => {
+            console.log('Conectado ao WebSocket (autenticado)');
+            if (onConnect) onConnect();
+
+            stompClient.current?.subscribe(topic, (message) => {
+                try {
+                    const parsedMessage = JSON.parse(message.body);
+                    onMessage(parsedMessage);
+                } catch (error) {
+                    console.error('Erro ao processar mensagem WS:', error);
+                    onMessage(message.body);
+                }
+            });
+        };
+
+        stompClient.current.onStompError = (frame) => {
+            console.error('Erro STOMP:', frame.headers['message']);
+            console.error('Detalhes:', frame.body);
+            if (onError) onError(frame);
+        };
 
         stompClient.current.activate();
 

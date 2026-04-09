@@ -19,8 +19,6 @@ import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
 import { BalnearioAdminArea } from './BalnearioAdminArea';
-import { BalnearioReportsPage } from './BalnearioReportsPage';
-import { SettingsPage } from '../SettingsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -30,6 +28,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
@@ -122,6 +121,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+    const [showQuickAttendance, setShowQuickAttendance] = useState(false);
     const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
     const [, setLoadingStats] = useState(false);
 
@@ -382,7 +382,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
-                                notifications={notifications}
+                                onQuickAttendance={() => setShowQuickAttendance(true)}
                             />
                         ) : currentView === 'appointments' ? (
                             <>
@@ -498,7 +498,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                         ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
                         ) : currentView === 'reports' ? (
-                            <BalnearioReportsPage />
+                            <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
+                                <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
+                            </div>
                         ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (
                             <div className="py-8">
                                 <BalnearioAdminArea mode="slots" />
@@ -507,11 +509,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <div className="py-8">
                                 <BalnearioAdminArea mode="inventory" />
                             </div>
-                        ) : currentView === 'settings' ? (
-                            <SettingsPage
-                                isDarkMode={isDarkMode}
-                                onToggleDarkMode={onToggleDarkMode}
-                            />
                         ) : (
                             renderPlaceholder(currentView)
                         )}
@@ -606,6 +603,18 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 </AlertDialogContent>
             </AlertDialog>
 
+            {showQuickAttendance && authUser?.id && (
+                <QuickAttendanceModal
+                    isOpen={showQuickAttendance}
+                    onClose={() => setShowQuickAttendance(false)}
+                    onSuccess={() => {
+                        refreshCurrentWeek(currentDate);
+                        if (currentView === 'reports') carregarEstatisticas();
+                    }}
+                    funcionarioId={authUser.id}
+                    isDarkMode={isDarkMode}
+                />
+            )}
         </>
     );
 }
