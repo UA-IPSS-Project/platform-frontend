@@ -44,6 +44,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     dateOfBirth: '',
     contact: '',
     subject: '',
+    description: '',
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -55,6 +56,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       formData.email !== '' ||
       formData.contact !== '' ||
       formData.dateOfBirth !== '' ||
+      formData.description !== '' ||
       formData.subject !== '' ||
       selectedFiles.length > 0
     );
@@ -251,6 +253,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       const payload = {
         funcionarioId,
         criadoPorId: funcionarioId,
+        descricao: formData.description,
         data: format(dataHora, "yyyy-MM-dd'T'HH:mm:ss"),
         assunto: formData.subject,
         utenteNif: formData.nif,
@@ -386,38 +389,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">{t('appointmentDialog.fields.name')}</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder={t('appointmentDialog.fields.namePlaceholder')}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  aria-invalid={!!errors.name}
-                  aria-describedby={errors.name ? 'name-error' : undefined}
-                  className={`bg-card border-border text-foreground ${errors.name ? 'border-status-error' : ''}`}
-                />
-                {errors.name && <p id="name-error" className="text-sm text-status-error">{errors.name}</p>}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">{t('appointmentDialog.fields.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('appointmentDialog.fields.emailPlaceholder')}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  aria-invalid={!!errors.email}
-                  aria-describedby={errors.email ? 'email-error' : undefined}
-                  className={`bg-card border-border text-foreground ${errors.email ? 'border-status-error' : ''}`}
-                />
-                {errors.email && <p id="email-error" className="text-sm text-status-error">{errors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="dateOfBirth" className="text-foreground">{t('appointmentDialog.fields.birthDate')}</Label>
                 <DatePickerField
                   id="dateOfBirth"
@@ -427,6 +398,36 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 />
                 {errors.dateOfBirth && <p className="text-sm text-status-error">{errors.dateOfBirth}</p>}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-foreground">{t('appointmentDialog.fields.name')}</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder={t('appointmentDialog.fields.namePlaceholder')}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                aria-invalid={!!errors.name}
+                aria-describedby={errors.name ? 'name-error' : undefined}
+                className={`bg-card border-border text-foreground ${errors.name ? 'border-status-error' : ''}`}
+              />
+              {errors.name && <p id="name-error" className="text-sm text-status-error">{errors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground">{t('appointmentDialog.fields.email')}</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder={t('appointmentDialog.fields.emailPlaceholder')}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
+                className={`bg-card border-border text-foreground ${errors.email ? 'border-status-error' : ''}`}
+              />
+              {errors.email && <p id="email-error" className="text-sm text-status-error">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -465,6 +466,17 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 </SelectContent>
               </Select>
               {errors.subject && <p id="secretary-subject-error" className="text-sm text-status-error">{errors.subject}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="secretary-description" className="text-foreground">{t('appointmentDialog.fields.description')}</Label>
+              <Textarea
+                id="secretary-description"
+                placeholder={t('appointmentDialog.fields.descriptionPlaceholder')}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="bg-card border-border text-foreground"
+              />
             </div>
 
             <div className="space-y-2">

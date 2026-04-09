@@ -884,7 +884,7 @@
       "brandModel": "Marca/Modelo",
       "notDefined": "Não definido",
       "licenseDate": "Data matrícula",
-      "subjectOptional": "Assunto (opcional)",
+      "subjectOptional": "Assunto",
       "subjectPlaceholder": "Ex: Torneira com fuga",
       "close": "Fechar",
       "clearSelection": "Limpar seleção",
