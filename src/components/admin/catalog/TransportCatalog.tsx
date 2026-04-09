@@ -201,7 +201,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
       <div className="flex flex-col md:flex-row gap-4 items-center justify-end">
          <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" className="flex-1 md:flex-none gap-2">
-              <Truck className="h-4 w-4" /> Frota Total: {transportes.length}
+              <Truck className="h-4 w-4" /> {t('dashboard.admin.catalogs.totalFleet', { count: transportes.length })}
             </Button>
          </div>
       </div>
@@ -216,7 +216,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-end">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-muted-foreground ml-1">Próximo Código</label>
+              <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.nextCodeLabel')}</label>
               <Input value={nextCode} readOnly disabled className="h-11 rounded-xl bg-muted/30 font-mono font-bold text-primary" />
             </div>
             
@@ -238,7 +238,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-muted-foreground ml-1">{t('dashboard.admin.catalogs.plate')}</label>
-              <Input className="h-11 rounded-xl font-mono uppercase" placeholder="XX-00-XX" value={novaMatricula} onChange={(e) => setNovaMatricula(e.target.value)} />
+              <Input className="h-11 rounded-xl font-mono uppercase" placeholder={t('dashboard.admin.catalogs.platePlaceholder')} value={novaMatricula} onChange={(e) => setNovaMatricula(e.target.value)} />
             </div>
 
             <div className="space-y-2">
@@ -276,7 +276,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Pesquisar veículos (matrícula, marca...)" 
+                placeholder={t('dashboard.admin.catalogs.searchVehiclesPlaceholder')} 
                 className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 rounded-xl"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -287,7 +287,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
         {/* Categories List */}
         <div className="space-y-6">
           <div className="flex items-center gap-4 px-2">
-            <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">Frotas por Categoria</h4>
+            <h4 className="font-bold text-muted-foreground uppercase tracking-widest text-xs">{t('dashboard.admin.catalogs.fleetByCategory')}</h4>
             <div className="h-px flex-1 bg-border/40" />
           </div>
           {displayedCategorias.map(cat => {
@@ -316,7 +316,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
-                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Código Interno</label>
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.internalCode')}</label>
                               <Input value={editCodigo} onChange={(e) => setEditCodigo(e.target.value.toUpperCase())} className="h-10 font-mono" placeholder="Ex: V01" />
                             </div>
                             <div className="space-y-1">
@@ -371,7 +371,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                                         <Info className="w-3 h-3" /> {item.tipo}
                                     </span>
                                     <span className="inline-flex items-center gap-1 text-[11px] bg-muted px-2 py-0.5 rounded-md text-muted-foreground">
-                                        <Truck className="w-3 h-3" /> {item.lotacao} Lugares
+                                        <Truck className="w-3 h-3" /> {t('dashboard.admin.catalogs.seatsCount', { count: item.lotacao })}
                                     </span>
                                     {item.dataMatricula && (
                                         <span className="inline-flex items-center gap-1 text-[11px] bg-muted px-2 py-0.5 rounded-md text-muted-foreground">

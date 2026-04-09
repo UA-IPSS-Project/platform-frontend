@@ -313,7 +313,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
                          <MapPin className="w-5 h-5 text-primary" />
                          <h4 className="font-bold text-base uppercase tracking-wider">{t('dashboard.admin.catalogs.spaces')}</h4>
                       </div>
-                       <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">Total: {displaySpaces.length}</span>
+                       <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase">{t('dashboard.admin.catalogs.total', { count: displaySpaces.length })}</span>
                    </div>
 
                    <div className="space-y-3">

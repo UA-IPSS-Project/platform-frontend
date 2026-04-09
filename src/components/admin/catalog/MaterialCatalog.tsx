@@ -186,7 +186,7 @@ export function MaterialCatalog({ materiais, onRefresh, formatCategoryName }: Ma
                 }} 
                 className="w-full h-11 rounded-xl border border-border/40 bg-background px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               >
-                {uniqueCategorias.length === 0 && <option value="">Nenhuma categoria</option>}
+                {uniqueCategorias.length === 0 && <option value="">{t('dashboard.admin.catalogs.noCategories')}</option>}
                 {uniqueCategorias.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
                 <option value="NEW" className="font-bold text-primary">-- {t('dashboard.admin.catalogs.newCategory')} --</option>
               </select>

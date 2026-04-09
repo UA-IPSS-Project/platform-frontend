@@ -445,7 +445,16 @@
         "elementNameRequired": "Element name is required.",
         "noVerificationsFound": "No verifications found.",
         "noVerificationsRegistered": "No verifications registered.",
-        "loadingCatalog": "Loading catalog..."
+        "loadingCatalog": "Loading catalog...",
+        "totalFleet": "Total Fleet: {{count}}",
+        "nextCodeLabel": "Next Code",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Search vehicles (plate, brand...)",
+        "fleetByCategory": "Fleet by Category",
+        "internalCode": "Internal Code",
+        "seatsCount_one": "{{count}} Seat",
+        "seatsCount_other": "{{count}} Seats",
+        "noCategories": "No categories"
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",

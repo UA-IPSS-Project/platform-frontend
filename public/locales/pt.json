@@ -445,7 +445,16 @@
         "elementNameRequired": "O nome do elemento é obrigatório.",
         "noVerificationsFound": "Nenhuma verificação encontrada.",
         "noVerificationsRegistered": "Nenhuma verificação cadastrada.",
-        "loadingCatalog": "A carregar catálogo..."
+        "loadingCatalog": "A carregar catálogo...",
+        "totalFleet": "Frota Total: {{count}}",
+        "nextCodeLabel": "Próximo Código",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Pesquisar veículos (matrícula, marca...)",
+        "fleetByCategory": "Frotas por Categoria",
+        "internalCode": "Código Interno",
+        "seatsCount_one": "{{count}} Lugar",
+        "seatsCount_other": "{{count}} Lugares",
+        "noCategories": "Nenhuma categoria"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
