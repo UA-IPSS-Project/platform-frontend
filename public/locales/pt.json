@@ -430,7 +430,16 @@
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} itens",
-        "removeCategory": "Remover Categoria"
+        "removeCategory": "Remover Categoria",
+        "searchMaterials": "Pesquisar materiais...",
+        "existingCategoriesList": "Categorias Existentes",
+        "noMaterialsFound": "Nenhum material encontrado.",
+        "noMaterialsRegistered": "Nenhum material cadastrado.",
+        "newCategoryNamePlaceholder": "Nome da nova categoria",
+        "materialNamePlaceholder": "Ex: Cadernos, Tesoura...",
+        "attributePlaceholder": "Ex: Formato, Cor...",
+        "valuePlaceholder": "Ex: A4, Azul...",
+        "freeWrite": "Escreva livremente"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
