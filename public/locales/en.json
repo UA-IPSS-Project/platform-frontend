@@ -1344,5 +1344,53 @@
     "placeholders": {
       "observations": "Additional notes for this category..."
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Personalize your experience and manage system configurations.",
+    "sections": {
+      "interface": "Interface and Preferences",
+      "notifications": "Notification System",
+      "system": "System Status",
+      "data": "Data and Privacy"
+    },
+    "theme": {
+      "title": "Interface Theme",
+      "description": "Toggle between light and dark mode for better visual comfort.",
+      "dark": "Dark Mode",
+      "light": "Light Mode"
+    },
+    "language": {
+      "title": "System Language",
+      "description": "Select the language in which the platform should be displayed.",
+      "pt": "Portuguese (Português)",
+      "en": "English"
+    },
+    "sounds": {
+      "title": "Sound Alerts",
+      "description": "Enable or disable sounds for new notifications or system alerts.",
+      "enabled": "Sounds enabled",
+      "disabled": "Sounds disabled"
+    },
+    "clearCache": {
+      "title": "Cache Cleanup",
+      "description": "Clears local data saved in the browser to resolve display issues.",
+      "action": "Clear Cache and Reload",
+      "success": "Cache cleared successfully!"
+    },
+    "messages": {
+      "languageChanged": "Language changed successfully!",
+      "themeChanged": "Theme updated!"
+    },
+    "systemStatus": {
+      "title": "Server Connectivity",
+      "description": "Real-time connection status to primary services.",
+      "online": "Services Online",
+      "offline": "Services Offline / Network Error",
+      "version": "Application Version",
+      "development_label": "Development",
+      "status_development": "In development",
+      "lastChecked": "Last checked seconds ago"
+    }
   }
 }

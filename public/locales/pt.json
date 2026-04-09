@@ -449,7 +449,10 @@
     "saving": "A guardar...",
     "cancel": "Cancelar",
     "ok": "OK",
-    "optional": "(opcional)"
+    "add": "Adicionar",
+    "delete": "Eliminar",
+    "optional": "(opcional)",
+    "error": "Erro"
   },
   "notifications": {
     "title": "Notificações",
@@ -1327,7 +1330,7 @@
       },
       "deleteConfirm": {
         "title": "Eliminar Produto",
-        "description": "Tem a certeza que deseja eliminar o produto <strong class='text-foreground'>{{name}}</strong>? Esta ação é permanente e removerá todos os registos deste item do inventário.",
+        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação é permanente e removerá todos os registos deste item do inventário.",
         "action": "Eliminar Produto",
         "cancel": "Cancelar"
       },
@@ -1401,6 +1404,8 @@
       "online": "Serviços Online",
       "offline": "Serviços Offline / Erro de Rede",
       "version": "Versão da Aplicação",
+      "development_label": "Desenvolvimento",
+      "status_development": "Em desenvolvimento",
       "lastChecked": "Última verificação há segundos"
     }
   }

@@ -171,7 +171,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                         onClick={() => changeLanguage('pt')}
                         className="min-w-[80px]"
                       >
-                        PT
+                        {t('header.pt')}
                       </Button>
                       <Button
                         variant={i18n.language === 'en' ? 'default' : 'outline'}
@@ -179,7 +179,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                         onClick={() => changeLanguage('en')}
                         className="min-w-[80px]"
                       >
-                        EN
+                        {t('header.en')}
                       </Button>
                     </div>
                   </div>
@@ -271,7 +271,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                         </div>
                       </div>
                       <div className="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] font-bold rounded uppercase tracking-wider">
-                        Development
+                        {t('settings.systemStatus.development_label')}
                       </div>
                     </div>
                   </div>
