@@ -426,7 +426,10 @@
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
           "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
-        }
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} itens",
+        "removeCategory": "Remover Categoria"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
