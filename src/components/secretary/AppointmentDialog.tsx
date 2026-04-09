@@ -67,8 +67,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         const data = await marcacoesApi.listarAssuntos();
         // Sort subjects alphabetically, but keep "Outro" always last
         const sorted = data.sort((a, b) => {
-          if (a.nome === 'Outro') return 1;
-          if (b.nome === 'Outro') return -1;
+          if (a.nome.toLowerCase() === 'outro') return 1;
+          if (b.nome.toLowerCase() === 'outro') return -1;
           return a.nome.localeCompare(b.nome);
         });
         setSubjects(sorted);

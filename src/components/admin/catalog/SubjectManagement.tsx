@@ -175,7 +175,7 @@ export function SubjectManagement() {
                                 className="h-11 rounded-xl" 
                                 placeholder="Ex: Pagar mensalidade" 
                                 value={novoNome} 
-                                onChange={(e) => setNovoNome(e.target.value.toUpperCase())} 
+                                onChange={(e) => setNovoNome(e.target.value)} 
                             />
                         </div>
 
@@ -229,7 +229,7 @@ export function SubjectManagement() {
                                             <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nome</label>
                                             <Input 
                                                 value={editNome} 
-                                                onChange={(e) => setEditNome(e.target.value.toUpperCase())} 
+                                                onChange={(e) => setEditNome(e.target.value)} 
                                                 className="h-10 bg-background" 
                                             />
                                         </div>
