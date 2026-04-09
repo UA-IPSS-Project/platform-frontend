@@ -427,7 +427,24 @@
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
           "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
-        }
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} items",
+        "removeCategory": "Remove Category",
+        "searchMaterials": "Search materials...",
+        "existingCategoriesList": "Existing Categories",
+        "noMaterialsFound": "No materials found.",
+        "noMaterialsRegistered": "No materials registered.",
+        "newCategoryNamePlaceholder": "New category name",
+        "materialNamePlaceholder": "Ex: Notebooks, Scissors...",
+        "attributePlaceholder": "Ex: Size, Color...",
+        "valuePlaceholder": "Ex: A4, Blue...",
+        "freeWrite": "Write freely",
+        "searchVerificationsPlaceholder": "Search verifications...",
+        "spaceNameRequired": "Space name is required.",
+        "elementNameRequired": "Element name is required.",
+        "noVerificationsFound": "No verifications found.",
+        "noVerificationsRegistered": "No verifications registered."
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",

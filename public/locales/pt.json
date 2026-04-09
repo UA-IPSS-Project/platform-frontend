@@ -439,7 +439,12 @@
         "materialNamePlaceholder": "Ex: Cadernos, Tesoura...",
         "attributePlaceholder": "Ex: Formato, Cor...",
         "valuePlaceholder": "Ex: A4, Azul...",
-        "freeWrite": "Escreva livremente"
+        "freeWrite": "Escreva livremente",
+        "searchVerificationsPlaceholder": "Pesquisar verificações...",
+        "spaceNameRequired": "O nome do espaço é obrigatório.",
+        "elementNameRequired": "O nome do elemento é obrigatório.",
+        "noVerificationsFound": "Nenhuma verificação encontrada.",
+        "noVerificationsRegistered": "Nenhuma verificação cadastrada."
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
