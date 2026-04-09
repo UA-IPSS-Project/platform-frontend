@@ -6,6 +6,16 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from '../../ui/alert-dialog';
 import { cn } from '../../ui/utils';
 
 export function SubjectManagement() {
@@ -18,6 +28,10 @@ export function SubjectManagement() {
     const [novoNome, setNovoNome] = useState('');
     const [novaDescricao, setNovaDescricao] = useState('');
     const [isAddFormOpen, setIsAddFormOpen] = useState(true);
+
+    // Toggle State
+    const [itemToToggle, setItemToToggle] = useState<{ id: number, novoEstado: boolean } | null>(null);
+    const [showConfirmToggle, setShowConfirmToggle] = useState(false);
 
     // Edit State
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -87,13 +101,43 @@ export function SubjectManagement() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm('Tem a certeza que deseja desativar este assunto?')) return;
+        if (!window.confirm('Tem a certeza que deseja eliminar permanentemente este assunto?')) return;
         try {
             await marcacoesApi.apagarAssunto(id);
+            await loadAssuntos();
+            toast.success('Assunto eliminado');
+        } catch (error) {
+            toast.error('Erro ao eliminar assunto');
+        }
+    };
+
+    const handleToggleAtivo = async (id: number, novoEstado: boolean) => {
+        if (!novoEstado) {
+            setItemToToggle({ id, novoEstado });
+            setShowConfirmToggle(true);
+            return;
+        }
+
+        try {
+            await marcacoesApi.atualizarEstadoAssunto(id, novoEstado);
+            await loadAssuntos();
+            toast.success('Assunto ativado');
+        } catch (error) {
+            toast.error('Erro ao ativar assunto');
+        }
+    };
+
+    const confirmToggle = async () => {
+        if (!itemToToggle) return;
+        try {
+            await marcacoesApi.atualizarEstadoAssunto(itemToToggle.id, itemToToggle.novoEstado);
             await loadAssuntos();
             toast.success('Assunto desativado');
         } catch (error) {
             toast.error('Erro ao desativar assunto');
+        } finally {
+            setShowConfirmToggle(false);
+            setItemToToggle(null);
         }
     };
 
@@ -178,8 +222,8 @@ export function SubjectManagement() {
                             <div 
                                 key={assunto.id} 
                                 className={cn(
-                                    "group/item relative p-5 rounded-2xl border transition-all duration-300",
-                                    !assunto.ativo && "grayscale opacity-60",
+                                    "group/item relative p-6 rounded-2xl border transition-all duration-300",
+                                    !assunto.ativo && "bg-muted/30 opacity-80grayscale opacity-60",
                                     editingId === assunto.id 
                                         ? "bg-primary/5 border-primary shadow-inner" 
                                         : "bg-background/40 border-border/40 hover:border-primary/40 hover:bg-muted/30"
@@ -210,37 +254,59 @@ export function SubjectManagement() {
                                     </div>
                                 ) : (
                                     <div className="flex items-start justify-between">
-                                        <div className="space-y-1 pr-10">
+                                        <div className="space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-base text-foreground block">{assunto.nome}</span>
-                                                {!assunto.ativo && <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-black text-muted-foreground uppercase">Inativo</span>}
+                                                <span className={cn(
+                                                    "font-bold text-base block transition-colors",
+                                                    assunto.ativo ? "text-foreground" : "text-muted-foreground"
+                                                )}>
+                                                    {assunto.nome}
+                                                </span>
                                             </div>
                                             {assunto.descricao && (
                                                 <p className="text-sm text-muted-foreground line-clamp-2">{assunto.descricao}</p>
                                             )}
                                         </div>
                                         
-                                        <div className="flex gap-1 absolute top-4 right-4 opacity-0 group-hover/item:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/40 shadow-sm">
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" 
-                                                onClick={() => {
-                                                    setEditingId(assunto.id);
-                                                    setEditNome(assunto.nome);
-                                                    setEditDescricao(assunto.descricao || '');
-                                                }}
+                                        <div className="flex items-center gap-3 absolute top-4 right-4">
+                                            {/* Switch Toggle */}
+                                            <button
+                                                onClick={() => void handleToggleAtivo(assunto.id, !assunto.ativo)}
+                                                className={cn(
+                                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+                                                    assunto.ativo ? "bg-primary" : "bg-muted"
+                                                )}
                                             >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                            </Button>
-                                            <Button 
-                                                size="icon" 
-                                                variant="ghost" 
-                                                className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" 
-                                                onClick={() => void handleDelete(assunto.id)}
-                                            >
-                                                <TrashIcon className="w-3.5 h-3.5" />
-                                            </Button>
+                                                <span
+                                                    className={cn(
+                                                        "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                                                        assunto.ativo ? "translate-x-4" : "translate-x-0"
+                                                    )}
+                                                />
+                                            </button>
+
+                                            <div className="flex gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm p-1 rounded-xl border border-border/40 shadow-sm">
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary" 
+                                                    onClick={() => {
+                                                        setEditingId(assunto.id);
+                                                        setEditNome(assunto.nome);
+                                                        setEditDescricao(assunto.descricao || '');
+                                                    }}
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </Button>
+                                                <Button 
+                                                    size="icon" 
+                                                    variant="ghost" 
+                                                    className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive" 
+                                                    onClick={() => void handleDelete(assunto.id)}
+                                                >
+                                                    <TrashIcon className="w-3.5 h-3.5" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -255,6 +321,24 @@ export function SubjectManagement() {
                     )}
                 </div>
             </div>
+
+            <AlertDialog open={showConfirmToggle} onOpenChange={setShowConfirmToggle}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Desativar Assunto?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ao desativar este assunto, ele deixará de estar disponível para novos agendamentos tanto para utentes como para a secretaria. 
+                            Agendamentos existentes não serão afetados.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setItemToToggle(null)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => void confirmToggle()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Desativar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

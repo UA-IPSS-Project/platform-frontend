@@ -177,6 +177,12 @@ export const marcacoesApi = {
             body: JSON.stringify(assunto),
         }),
 
+    atualizarEstadoAssunto: (id: number, ativo: boolean) =>
+        apiRequest<any>(`/api/assuntos/${id}/ativo`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ativo }),
+        }),
+
     apagarAssunto: (id: number) =>
         apiRequest<void>(`/api/assuntos/${id}`, {
             method: 'DELETE',
