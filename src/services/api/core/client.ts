@@ -68,13 +68,20 @@ export async function apiRequest<T>(
 ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    const headers = {
+        ...buildHeaders(),
+        ...options.headers,
+    } as Record<string, string>;
+
+    // If body is FormData, let the browser set the Content-Type with boundary
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
     const config: RequestInit = {
         ...options,
         credentials: 'include', // IMPORTANT: Send cookies with request
-        headers: {
-            ...buildHeaders(),
-            ...options.headers,
-        },
+        headers,
     };
 
     try {

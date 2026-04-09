@@ -40,6 +40,17 @@ export const documentosApi = {
         return uploadedDocs;
     },
 
+    // Upload de múltiplos documentos para uma marcação em um único request
+    uploadDocumentosBulk: async (marcacaoId: number, files: File[]): Promise<void> => {
+        const formData = new FormData();
+        files.forEach(file => formData.append('files', file));
+
+        return apiRequest<void>(`/api/documentos/upload/${marcacaoId}`, {
+            method: 'POST',
+            body: formData,
+        });
+    },
+
         // Notificar utente sobre documentos inválidos
     notificarDocumentoInvalido: async (marcacaoId: number, documentoId: number, observacoes: string) => {
         const xsrfToken = getCookie('XSRF-TOKEN');

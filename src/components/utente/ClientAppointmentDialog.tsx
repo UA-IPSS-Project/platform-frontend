@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { FileUpload } from '../shared/FileUpload';
-import { apiRequest, marcacoesApi, type Assunto } from '../../services/api';
+import { apiRequest, marcacoesApi, documentosApi, type Assunto } from '../../services/api';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
@@ -109,13 +109,7 @@ export function ClientAppointmentDialog({
 
       if (selectedFiles.length > 0) {
         try {
-          const formData = new FormData();
-          selectedFiles.forEach(file => formData.append('files', file));
-          await apiRequest(`/api/documentos/upload/${response.id}`, {
-            method: 'POST',
-            body: formData,
-            // Header for FormData is handled by apiRequest if not JSON
-          });
+          await documentosApi.uploadDocumentosBulk(response.id, selectedFiles);
         } catch (uploadError) {
           console.error('Error uploading files:', uploadError);
         }
