@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search, MapPin, CheckSquare, Layers } from 'lucide-react';
@@ -57,6 +57,19 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
     if (!searchTerm.trim()) return uniqueCategorias;
     return Array.from(new Set(filteredItems.map(m => m.categoria).filter((c): c is string => !!c)));
   }, [filteredItems, uniqueCategorias, searchTerm]);
+
+  // Auto-expand categories when searching
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      setOpenGroups(prev => {
+        const next = { ...prev };
+        displayedUniqueCategorias.forEach(cat => {
+          next[cat] = true;
+        });
+        return next;
+      });
+    }
+  }, [searchTerm, displayedUniqueCategorias]);
 
   const handleCreateSpace = async (categoria: string) => {
     if (!novoEspaco.trim()) {
@@ -224,16 +237,7 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-         <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Pesquisar verificações..." 
-              className="pl-10 bg-background/50 backdrop-blur-sm border-border/40"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-         </div>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-end">
          <div className="flex gap-2 w-full md:w-auto">
             <div className="flex items-center gap-2 px-4 py-2 border rounded-xl border-primary/20 bg-primary/5">
                 <Layers className="w-4 h-4 text-primary" />
@@ -269,6 +273,19 @@ export function MaintenanceCatalog({ items, transportes, onRefresh, formatCatego
             </div>
         </CatalogSection>
       )}
+
+      {/* Search Bar - Repositioned near results */}
+      <div className="max-w-md">
+         <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Pesquisar verificações..." 
+              className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20 rounded-xl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+         </div>
+      </div>
 
       <div className="space-y-6">
         {displayedUniqueCategorias.map(cat => {

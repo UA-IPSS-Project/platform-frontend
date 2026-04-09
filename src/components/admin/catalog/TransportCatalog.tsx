@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Pencil, Plus, Search, Truck, Info, Calendar } from 'lucide-react';
@@ -70,6 +70,19 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     if (!searchTerm.trim()) return uniqueCategorias;
     return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
   }, [filteredTransportes, uniqueCategorias, searchTerm]);
+
+  // Auto-expand categories when searching
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      setOpenGroups(prev => {
+        const next = { ...prev };
+        displayedCategorias.forEach(cat => {
+          next[cat] = true;
+        });
+        return next;
+      });
+    }
+  }, [searchTerm, displayedCategorias]);
 
   const nextCode = useMemo(() => {
     const codigosExistentes = transportes.map(t => t.codigo).filter((c): c is string => !!c);
@@ -179,17 +192,8 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Action Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-         <div className="relative w-full md:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Pesquisar veículos (matrícula, marca...)" 
-              className="pl-10 bg-background/50 backdrop-blur-sm border-border/40"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-         </div>
+      {/* Action Bar - Counts only */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-end">
          <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" className="flex-1 md:flex-none gap-2">
               <Truck className="h-4 w-4" /> Frota Total: {transportes.length}
@@ -261,6 +265,19 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             </Button>
           </div>
         </CatalogSection>
+
+        {/* Search Bar - Repositioned near results */}
+        <div className="max-w-md">
+           <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Pesquisar veículos (matrícula, marca...)" 
+                className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 rounded-xl"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+           </div>
+        </div>
 
         {/* Categories List */}
         <div className="space-y-6">

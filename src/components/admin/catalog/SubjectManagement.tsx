@@ -158,18 +158,8 @@ export function SubjectManagement() {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Search Bar */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        placeholder={t('history.filters.searchPlaceholder')} 
-                        className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
+            {/* Spacer */}
+            <div className="h-2" />
 
             <div className="flex flex-col gap-8">
                 {/* Add Section */}
@@ -200,6 +190,19 @@ export function SubjectManagement() {
                         </div>
                     </div>
                 </CatalogSection>
+
+                {/* Search Bar - Repositioned near results */}
+                <div className="max-w-md">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder={t('history.filters.searchPlaceholder')} 
+                            className="pl-10 bg-background/50 backdrop-blur-sm border-border/40 focus:ring-primary/20 rounded-xl"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
 
                 {/* List Section */}
                 <div className="space-y-6">
