@@ -68,15 +68,17 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Date of Birth *",
+      "birthDatePlaceholder": "dd/mm/yyyy",
       "name": "Name *",
+      "namePlaceholder": "Full name",
       "email": "Email *",
       "emailPlaceholder": "example@email.com",
       "contact": "Contact *",
       "contactPlaceholder": "912345678",
       "subject": "Subject *",
       "subjectPlaceholder": "Select subject",
-      "shortDescription": "Short description",
-      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
+      "description": "Short description",
+      "descriptionPlaceholder": "Briefly describe the appointment reason...",
       "attachDocs": "Attach documents (optional)"
     },
     "subjects": {
@@ -322,19 +324,18 @@
       },
       "slots": {
         "operationalConfiguration": "Operational configuration",
-        "title": "Appointments capacity per slot",
-        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
-        "secretaryScheduleTitle": "Secretary schedule",
-        "balnearioScheduleTitle": "Bathhouse schedule",
-        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot. Each appointment lasts 15 min.",
-        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots. Each appointment lasts 30 min.",
+        "title": "Secretary Slot Capacity",
+        "description": "Configure the maximum number of users the secretary can attend to simultaneously per time slot.",
+        "secretaryScheduleTitle": "Secretary Schedule (15 min)",
+        "current": "current",
+        "secretaryScheduleDescription": "Defines how many appointments can coexist in the same 15-minute time slot.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretary/Bathhouse)",
+          "title": "Secretary Slots",
           "description": "capacity per time slot"
         },
         "materials": {
@@ -347,7 +348,11 @@
         },
         "maintenanceTypes": {
           "title": "Maintenance types",
-          "description": "available types"
+          "description": "categories in catalog"
+        },
+        "assuntos": {
+          "title": "Active Subjects",
+          "description": "available appointment types"
         }
       },
       "messages": {
@@ -380,11 +385,19 @@
         "addElement": "2. Add Element",
         "verificationElement": "Verification Element",
         "createElement": "Create Element",
+        "categoriesCount": "{{count}} Categories",
+        "createCategory": "Create New Category",
+        "newCategoryDescription": "This will create a new category with 'GENERAL' items by default.",
+        "categoryPlaceholder": "Ex: ELECTRICITY",
+        "vehiclesDependencyHint": "⚠️ Vehicles depend on the Transport Catalog.",
+        "addSpacePlaceholder": "Add new space...",
+        "addElementPlaceholder": "Add new element...",
         "materials": "Materials",
         "transports": "Transports",
         "maintenance": "Maintenance",
         "spaces": "Spaces",
         "elements": "Elements",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material created successfully.",
           "transportCreated": "Transport created successfully.",
@@ -398,6 +411,7 @@
           "elementUpdated": "Element updated.",
           "spaceDeleted": "Space deleted.",
           "elementDeleted": "Element deleted.",
+          "categoryCreated": "Category created successfully!",
           "categoryRemoved": "Category removed."
         },
         "errors": {
@@ -406,7 +420,8 @@
           "capacityPositive": "Capacity must be a number greater than zero.",
           "loadMaterials": "Error loading materials.",
           "loadTransports": "Error loading transports.",
-          "loadMaintenance": "Error loading maintenance items."
+          "loadMaintenance": "Error loading maintenance items.",
+          "codeRequired": "The internal code is required."
         },
         "confirm": {
           "deleteMaterial": "Are you sure you want to delete this material?",
@@ -414,11 +429,63 @@
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
           "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
-        }
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} items",
+        "removeCategory": "Remove Category",
+        "searchMaterials": "Search materials...",
+        "existingCategoriesList": "Existing Categories",
+        "noMaterialsFound": "No materials found.",
+        "noMaterialsRegistered": "No materials registered.",
+        "newCategoryNamePlaceholder": "New category name",
+        "materialNamePlaceholder": "Ex: Notebooks, Scissors...",
+        "attributePlaceholder": "Ex: Size, Color...",
+        "valuePlaceholder": "Ex: A4, Blue...",
+        "freeWrite": "Write freely",
+        "searchVerificationsPlaceholder": "Search verifications...",
+        "spaceNameRequired": "Space name is required.",
+        "elementNameRequired": "Element name is required.",
+        "noVerificationsFound": "No verifications found.",
+        "noVerificationsRegistered": "No verifications registered.",
+        "loadingCatalog": "Loading catalog...",
+        "totalFleet": "Total Fleet: {{count}}",
+        "nextCodeLabel": "Next Code",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Search vehicles (plate, brand...)",
+        "fleetByCategory": "Fleet by Category",
+        "internalCode": "Internal Code",
+        "seatsCount_one": "{{count}} Seat",
+        "seatsCount_other": "{{count}} Seats",
+        "noCategories": "No categories"
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",
         "saveSlotConfig": "Could not save slot configuration"
+      },
+      "assuntos": {
+        "sectionTitle": "Appointment Subjects",
+        "sectionDescription": "Configure the types of appointments available for users and staff at the front desk.",
+        "confirmDeactivateTitle": "Deactivate Subject?",
+        "confirmDeactivateDescription": "By deactivating this subject, it will no longer be available for new appointments for both users and staff. Existing appointments will not be affected.",
+        "confirmDeactivateAction": "Deactivate",
+        "activateSuccess": "Subject activated",
+        "deactivateSuccess": "Subject deactivated",
+        "activateError": "Error activating subject",
+        "deactivateError": "Error deactivating subject",
+        "loadError": "Error loading subjects",
+        "createSuccess": "Subject created successfully",
+        "createError": "Error creating subject",
+        "updateSuccess": "Subject updated",
+        "updateError": "Error updating subject",
+        "deleteConfirm": "Are you sure you want to permanently delete this subject?",
+        "deleteSuccess": "Subject deleted",
+        "deleteError": "Error deleting subject",
+        "addTitle": "New Appointment Subject",
+        "fieldName": "Subject Name",
+        "addAction": "Add Subject",
+        "listTitle": "Managed Subjects",
+        "nameLabel": "Name",
+        "nameRequired": "Subject name is required"
       }
     },
     "userHome": {

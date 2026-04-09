@@ -39,7 +39,6 @@ export interface MarcacaoResponse {
     motivoCancelamento?: string;
     marcacaoSecretaria?: {
         assunto: string;
-        descricao?: string;
         tipoAtendimento: 'PRESENCIAL' | 'REMOTO';
         utente?: {
             id: number;
@@ -49,4 +48,10 @@ export interface MarcacaoResponse {
             telefone?: string;
         };
     };
+}
+
+export interface Assunto {
+    id: number;
+    nome: string;
+    ativo: boolean;
 }

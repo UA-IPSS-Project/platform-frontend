@@ -7,7 +7,8 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
-import { calendarioApi, requisicoesApi } from '../../services/api';
+import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
+import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
 
 
 function SlotsManagement({
@@ -63,7 +64,7 @@ function SlotsManagement({
                         <div className="flex items-center gap-6 p-6 sm:w-72">
                             <div className="text-center min-w-[3rem]">
                                 <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
-                                <p className="text-xs text-muted-foreground mt-1.5">atual</p>
+                                <p className="text-xs text-muted-foreground mt-1.5">{t('dashboard.admin.slots.current')}</p>
                             </div>
                             <div className="flex-1 space-y-1.5">
                                 <Label htmlFor="slot-SECRETARIA" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -111,6 +112,7 @@ export function SecretaryAdminArea() {
         materiais: 0,
         transportes: 0,
         tiposManutencao: 0,
+        assuntosAtivos: 0,
     });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
@@ -136,16 +138,20 @@ export function SecretaryAdminArea() {
     useEffect(() => {
         const loadCatalogCounts = async () => {
             try {
-                const [materiais, transportes, tiposManutencao] = await Promise.all([
+                const [materiais, transportes, manutencaoItems, assuntos] = await Promise.all([
                     requisicoesApi.listarMateriais(),
                     requisicoesApi.listarTransportes(),
-                    requisicoesApi.listarTiposManutencao(),
+                    requisicoesApi.listarManutencaoItems(),
+                    marcacoesApi.listarAssuntos(),
                 ]);
 
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(tiposManutencao) ? tiposManutencao.length : 0,
+                    tiposManutencao: Array.isArray(manutencaoItems) 
+                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size 
+                        : 0,
+                    assuntosAtivos: Array.isArray(assuntos) ? assuntos.length : 0,
                 });
             } catch (error) {
                 toast.error(t('dashboard.admin.errors.loadCatalogCounts', 'Erro ao carregar métricas de catálogos'));
@@ -183,6 +189,13 @@ export function SecretaryAdminArea() {
             iconClassName: 'bg-primary/15 text-primary',
         },
         {
+            title: t('dashboard.admin.summary.assuntos.title'),
+            value: catalogCounts.assuntosAtivos,
+            description: t('dashboard.admin.summary.assuntos.description'),
+            icon: Settings2,
+            iconClassName: 'bg-primary/15 text-primary',
+        },
+        {
             title: t('dashboard.admin.summary.materials.title'),
             value: catalogCounts.materiais,
             description: t('dashboard.admin.summary.materials.description'),
@@ -213,7 +226,7 @@ export function SecretaryAdminArea() {
                     {t('dashboard.admin.mainDescription')}
                 </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {summaryCards.map((card) => (
                     <GlassCard key={card.title} className="p-6 flex items-start justify-between">
                         <div>
@@ -236,7 +249,20 @@ export function SecretaryAdminArea() {
                 onSave={handleSaveSlotCapacities}
                 t={t}
             />
-            <GlassCard className="p-6 mt-6">
+
+            <GlassCard className="p-6">
+                <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                    <Settings2 className="w-4 h-4" />
+                    {t('dashboard.admin.assuntos.sectionTitle')}
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
+                    {t('dashboard.admin.assuntos.sectionDescription')}
+                </p>
+                
+                <SubjectManagement />
+            </GlassCard>
+
+            <GlassCard className="p-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
                     {t('dashboard.admin.catalogs.title')}
