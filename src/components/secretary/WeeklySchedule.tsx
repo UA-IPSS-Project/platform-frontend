@@ -103,9 +103,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const error = isInteractive
       ? 'border-l-4 border-status-error bg-status-error-soft text-status-error border-status-error/40 hover:bg-status-error-soft/70'
       : 'border-l-4 border-status-error bg-status-error-soft text-status-error border-status-error/40';
+    const infoBase = 'border-l-4 border-status-in-progress bg-status-in-progress-soft text-status-in-progress border-status-in-progress/70 dark:bg-status-in-progress-soft dark:text-status-in-progress';
     const info = isInteractive
-      ? 'border-l-4 border-status-in-progress bg-status-in-progress-soft text-status-in-progress border-status-in-progress/70 hover:bg-status-in-progress-soft/70 dark:bg-status-in-progress-soft dark:text-status-in-progress'
-      : 'border-l-4 border-status-in-progress bg-status-in-progress-soft text-status-in-progress border-status-in-progress/70 dark:bg-status-in-progress-soft dark:text-status-in-progress';
+      ? `${infoBase} hover:bg-status-in-progress-soft/70`
+      : infoBase;
     const warning = isInteractive
       ? 'border-l-4 border-status-warning bg-status-warning-soft text-status-warning border-status-warning/40 hover:bg-status-warning-soft/70'
       : 'border-l-4 border-status-warning bg-status-warning-soft text-status-warning border-status-warning/40';
@@ -135,9 +136,10 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
     const error = isInteractive
       ? 'bg-status-error-soft text-status-error hover:bg-status-error-soft/70'
       : 'bg-status-error-soft text-status-error';
+    const infoBase = 'bg-status-in-progress-soft text-status-in-progress dark:bg-status-in-progress-soft dark:text-status-in-progress';
     const info = isInteractive
-      ? 'bg-status-in-progress-soft text-status-in-progress hover:bg-status-in-progress-soft/70 dark:bg-status-in-progress-soft dark:text-status-in-progress'
-      : 'bg-status-in-progress-soft text-status-in-progress dark:bg-status-in-progress-soft dark:text-status-in-progress';
+      ? `${infoBase} hover:bg-status-in-progress-soft/70`
+      : infoBase;
     const warning = isInteractive
       ? 'bg-status-warning-soft text-status-warning hover:bg-status-warning-soft/70'
       : 'bg-status-warning-soft text-status-warning';

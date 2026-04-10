@@ -33,6 +33,29 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
   const [utentesAtivos, setUtentesAtivos] = useState<string>('...');
   const [requisicoesPendentes, setRequisicoesPendentes] = useState<string>('...');
 
+  const statColorClassByStatusType = {
+    info: 'bg-status-rose-1',
+    primary: 'bg-status-rose-2',
+    warning: 'bg-status-rose-3',
+    success: 'bg-status-rose-4',
+  } as const;
+
+  const quickActionCardClassByStatusType = {
+    info: 'border-2 border-status-rose-3 bg-status-rose-1/35',
+    primary: 'border-2 border-status-rose-3 bg-status-rose-2/35',
+    warning: 'border-2 border-status-rose-4 bg-status-rose-3/35',
+    success: 'border-2 border-status-rose-4 bg-status-rose-4/35',
+  } as const;
+
+  const quickActionIconColorStyleByStatusType = {
+    info: { color: 'var(--status-rose-foreground)' },
+    primary: { color: 'var(--status-rose-foreground)' },
+    warning: { color: 'var(--status-rose-foreground)' },
+    success: { color: 'var(--status-rose-foreground)' },
+  } as const;
+
+  type StatusType = keyof typeof statColorClassByStatusType;
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -55,15 +78,82 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
     fetchStats();
   }, []);
 
-  const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, colorClass: 'bg-status-rose-1', view: 'appointments' },
-    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', colorClass: 'bg-status-rose-2', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições Abertas', value: requisicoesPendentes, colorClass: 'bg-status-rose-3', view: 'requisitions' },
-    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, colorClass: 'bg-status-rose-4', view: 'management' },
+  const stats: Array<{
+    icon: typeof Calendar;
+    label: string;
+    value: string;
+    statusType: StatusType;
+    view: string;
+  }> = [
+    {
+      icon: Calendar,
+      label: 'Marcações Hoje',
+      value: marcacoesHoje,
+      statusType: 'info',
+      view: 'appointments',
+    },
+    {
+      icon: FileText,
+      label: 'Candidaturas Pendentes',
+      value: '12',
+      statusType: 'primary',
+      view: 'candidaturas',
+    },
+    {
+      icon: ClipboardList,
+      label: 'Requisições Abertas',
+      value: requisicoesPendentes,
+      statusType: 'warning',
+      view: 'requisitions',
+    },
+    {
+      icon: Users,
+      label: 'Utentes Ativos',
+      value: utentesAtivos,
+      statusType: 'success',
+      view: 'management',
+    },
   ];
 
   const textClass = 'text-foreground';
   const textSecondaryClass = 'text-muted-foreground';
+
+  const quickActions: Array<{
+    icon: typeof Calendar;
+    title: string;
+    subtitle: string;
+    statusType: StatusType;
+    view: string;
+  }> = [
+    {
+      icon: Calendar,
+      title: 'Nova Marcação',
+      subtitle: 'Agendar atendimento',
+      statusType: 'info',
+      view: 'appointments',
+    },
+    {
+      icon: FileText,
+      title: 'Candidaturas',
+      subtitle: 'Ver pendentes',
+      statusType: 'primary',
+      view: 'candidaturas',
+    },
+    {
+      icon: UserPlus,
+      title: 'Criar Conta',
+      subtitle: 'Novo utilizador',
+      statusType: 'warning',
+      view: 'management',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Relatórios',
+      subtitle: 'Ver estatísticas',
+      statusType: 'success',
+      view: 'reports',
+    },
+  ];
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
@@ -109,7 +199,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
                   <p className={`text-3xl font-bold ${textClass} tracking-tight`}>{stat.value}</p>
                 </div>
                 <div
-                  className={`p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3 ${stat.colorClass}`}
+                  className={`p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3 ${statColorClassByStatusType[stat.statusType]}`}
                 >
                   <stat.icon className="w-6 h-6 text-status-rose-foreground" />
                 </div>
@@ -196,53 +286,22 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
             </div>
             <div className="p-4 flex-1 flex items-center">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
-                <button
-                  onClick={() => onNavigate('appointments')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-info)]/30 bg-[color:var(--status-info-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-info)' }}>
-                    <Calendar className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Nova Marcação</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Agendar atendimento</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('candidaturas')}
-                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Candidaturas</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Ver pendentes</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('management')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-warning)]/30 bg-[color:var(--status-warning-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-warning)' }}>
-                    <UserPlus className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Criar Conta</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Novo utilizador</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('reports')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-success)]/30 bg-[color:var(--status-success-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-success)' }}>
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Relatórios</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Ver estatísticas</p>
-                </button>
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => onNavigate(action.view)}
+                    className={`p-6 rounded-2xl border transition-all duration-200 text-left group ${quickActionCardClassByStatusType[action.statusType]}`}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform bg-white"
+                      style={quickActionIconColorStyleByStatusType[action.statusType]}
+                    >
+                      <action.icon className="w-6 h-6" />
+                    </div>
+                    <p className={`font-semibold ${textClass} text-lg mb-1`}>{action.title}</p>
+                    <p className={`text-sm ${textSecondaryClass}`}>{action.subtitle}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </GlassCard>
