@@ -4,15 +4,6 @@ import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
 
-const stripAuthChallengeHeader = (proxy: any) => {
-  proxy.on('proxyRes', (proxyRes: any) => {
-    if (proxyRes?.headers) {
-      delete proxyRes.headers['www-authenticate'];
-      delete proxyRes.headers['WWW-Authenticate'];
-    }
-  });
-};
-
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -115,18 +106,21 @@ export default defineConfig({
       protocol: 'ws'
     },
     proxy: {
+      '/api/requisicoes': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
-        configure: stripAuthChallengeHeader,
       },
       '/ws': {
         target: 'ws://127.0.0.1:8080',
         ws: true,
         changeOrigin: true,
         secure: false,
-        configure: stripAuthChallengeHeader,
       }
     }
   },
