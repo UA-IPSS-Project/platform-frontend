@@ -2,13 +2,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+import type { ProxyOptions } from 'vite';
 import path from 'node:path';
 
-const stripAuthChallengeHeader = (proxy: any) => {
-  proxy.on('proxyRes', (proxyRes: any) => {
+const stripAuthChallengeHeader: NonNullable<ProxyOptions['configure']> = (proxy) => {
+  proxy.on('proxyRes', (proxyRes) => {
     if (proxyRes?.headers) {
       delete proxyRes.headers['www-authenticate'];
-      delete proxyRes.headers['WWW-Authenticate'];
     }
   });
 };
