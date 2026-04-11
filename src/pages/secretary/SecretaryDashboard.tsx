@@ -552,7 +552,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 mode="secretaria"
                 candidaturaType={currentView}
                 currentUserName={userData.name}
-              
+              />
             ) : currentView === 'settings' ? (
               <SettingsPage 
                 isDarkMode={isDarkMode}
