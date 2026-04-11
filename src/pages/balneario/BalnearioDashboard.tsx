@@ -18,6 +18,9 @@ import { ClockIcon } from '../../components/shared/CustomIcons';
 import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
+import { BalnearioAdminArea } from './BalnearioAdminArea';
+import { BalnearioReportsPage } from './BalnearioReportsPage';
+import { SettingsPage } from '../SettingsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -27,7 +30,6 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
-import { QuickAttendanceModal } from '../../components/balneario/QuickAttendanceModal';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
     AlertDialog,
@@ -120,7 +122,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
-    const [showQuickAttendance, setShowQuickAttendance] = useState(false);
     const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
     const [, setLoadingStats] = useState(false);
 
@@ -282,7 +283,8 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     {view === 'reports' && 'Relatórios'}
                     {view === 'settings' && 'Definições'}
                     {view === 'administrative' && 'Área Administrativa'}
-                    {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+                    {view === 'management' && 'Gestão'}
+                    {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative', 'management', 'admin-area'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
                 </h2>
                 <p className="text-muted-foreground">Página em desenvolvimento</p>
             </div>
@@ -327,6 +329,17 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             >
                 {t('sidebar.reports')}
             </Button>
+
+            <NavDropdown
+                label={t('sidebar.management')}
+                items={[
+                    { id: 'admin-area-slots', label: t('sidebar.slots') },
+                    { id: 'admin-area-inventory', label: t('sidebar.inventory') },
+                ]}
+                isActive={['management', 'admin-area', 'admin-area-slots', 'admin-area-inventory'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('admin-area-slots')}
+            />
         </>
     );
 
@@ -369,7 +382,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
-                                onQuickAttendance={() => setShowQuickAttendance(true)}
+                                notifications={notifications}
                             />
                         ) : currentView === 'appointments' ? (
                             <>
@@ -485,9 +498,20 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                         ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
                             <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
                         ) : currentView === 'reports' ? (
-                            <div className="max-w-[1200px] mx-auto flex items-center justify-center h-64 text-center">
-                                <p className="text-xl text-muted-foreground">Página de relatórios vazia por enquanto.</p>
+                            <BalnearioReportsPage />
+                        ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (
+                            <div className="py-8">
+                                <BalnearioAdminArea mode="slots" />
                             </div>
+                        ) : currentView === 'admin-area-inventory' ? (
+                            <div className="py-8">
+                                <BalnearioAdminArea mode="inventory" />
+                            </div>
+                        ) : currentView === 'settings' ? (
+                            <SettingsPage
+                                isDarkMode={isDarkMode}
+                                onToggleDarkMode={onToggleDarkMode}
+                            />
                         ) : (
                             renderPlaceholder(currentView)
                         )}
@@ -582,18 +606,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 </AlertDialogContent>
             </AlertDialog>
 
-            {showQuickAttendance && authUser?.id && (
-                <QuickAttendanceModal
-                    isOpen={showQuickAttendance}
-                    onClose={() => setShowQuickAttendance(false)}
-                    onSuccess={() => {
-                        refreshCurrentWeek(currentDate);
-                        if (currentView === 'reports') carregarEstatisticas();
-                    }}
-                    funcionarioId={authUser.id}
-                    isDarkMode={isDarkMode}
-                />
-            )}
         </>
     );
 }

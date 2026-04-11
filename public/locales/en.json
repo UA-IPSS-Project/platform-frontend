@@ -68,15 +68,17 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Date of Birth *",
+      "birthDatePlaceholder": "dd/mm/yyyy",
       "name": "Name *",
+      "namePlaceholder": "Full name",
       "email": "Email *",
       "emailPlaceholder": "example@email.com",
       "contact": "Contact *",
       "contactPlaceholder": "912345678",
       "subject": "Subject *",
       "subjectPlaceholder": "Select subject",
-      "shortDescription": "Short description",
-      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
+      "description": "Short description",
+      "descriptionPlaceholder": "Briefly describe the appointment reason...",
       "attachDocs": "Attach documents (optional)"
     },
     "subjects": {
@@ -238,7 +240,9 @@
     "management": "Management",
     "consumption": "Consumption",
     "administrativeArea": "Administrative Area",
-    "general": "General"
+    "general": "General",
+    "slots": "Slot Management",
+    "inventory": "Inventory Management"
   },
   "dashboard": {
     "secretary": "Secretary",
@@ -320,19 +324,18 @@
       },
       "slots": {
         "operationalConfiguration": "Operational configuration",
-        "title": "Appointments capacity per slot",
-        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
-        "secretaryScheduleTitle": "Secretary schedule",
-        "balnearioScheduleTitle": "Bathhouse schedule",
-        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot. Each appointment lasts 15 min.",
-        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots. Each appointment lasts 30 min.",
+        "title": "Secretary Slot Capacity",
+        "description": "Configure the maximum number of users the secretary can attend to simultaneously per time slot.",
+        "secretaryScheduleTitle": "Secretary Schedule (15 min)",
+        "current": "current",
+        "secretaryScheduleDescription": "Defines how many appointments can coexist in the same 15-minute time slot.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretary/Bathhouse)",
+          "title": "Secretary Slots",
           "description": "capacity per time slot"
         },
         "materials": {
@@ -345,7 +348,11 @@
         },
         "maintenanceTypes": {
           "title": "Maintenance types",
-          "description": "available types"
+          "description": "categories in catalog"
+        },
+        "assuntos": {
+          "title": "Active Subjects",
+          "description": "available appointment types"
         }
       },
       "messages": {
@@ -378,11 +385,19 @@
         "addElement": "2. Add Element",
         "verificationElement": "Verification Element",
         "createElement": "Create Element",
+        "categoriesCount": "{{count}} Categories",
+        "createCategory": "Create New Category",
+        "newCategoryDescription": "This will create a new category with 'GENERAL' items by default.",
+        "categoryPlaceholder": "Ex: ELECTRICITY",
+        "vehiclesDependencyHint": "⚠️ Vehicles depend on the Transport Catalog.",
+        "addSpacePlaceholder": "Add new space...",
+        "addElementPlaceholder": "Add new element...",
         "materials": "Materials",
         "transports": "Transports",
         "maintenance": "Maintenance",
         "spaces": "Spaces",
         "elements": "Elements",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material created successfully.",
           "transportCreated": "Transport created successfully.",
@@ -396,6 +411,7 @@
           "elementUpdated": "Element updated.",
           "spaceDeleted": "Space deleted.",
           "elementDeleted": "Element deleted.",
+          "categoryCreated": "Category created successfully!",
           "categoryRemoved": "Category removed."
         },
         "errors": {
@@ -404,7 +420,8 @@
           "capacityPositive": "Capacity must be a number greater than zero.",
           "loadMaterials": "Error loading materials.",
           "loadTransports": "Error loading transports.",
-          "loadMaintenance": "Error loading maintenance items."
+          "loadMaintenance": "Error loading maintenance items.",
+          "codeRequired": "The internal code is required."
         },
         "confirm": {
           "deleteMaterial": "Are you sure you want to delete this material?",
@@ -412,11 +429,63 @@
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
           "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
-        }
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} items",
+        "removeCategory": "Remove Category",
+        "searchMaterials": "Search materials...",
+        "existingCategoriesList": "Existing Categories",
+        "noMaterialsFound": "No materials found.",
+        "noMaterialsRegistered": "No materials registered.",
+        "newCategoryNamePlaceholder": "New category name",
+        "materialNamePlaceholder": "Ex: Notebooks, Scissors...",
+        "attributePlaceholder": "Ex: Size, Color...",
+        "valuePlaceholder": "Ex: A4, Blue...",
+        "freeWrite": "Write freely",
+        "searchVerificationsPlaceholder": "Search verifications...",
+        "spaceNameRequired": "Space name is required.",
+        "elementNameRequired": "Element name is required.",
+        "noVerificationsFound": "No verifications found.",
+        "noVerificationsRegistered": "No verifications registered.",
+        "loadingCatalog": "Loading catalog...",
+        "totalFleet": "Total Fleet: {{count}}",
+        "nextCodeLabel": "Next Code",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Search vehicles (plate, brand...)",
+        "fleetByCategory": "Fleet by Category",
+        "internalCode": "Internal Code",
+        "seatsCount_one": "{{count}} Seat",
+        "seatsCount_other": "{{count}} Seats",
+        "noCategories": "No categories"
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",
         "saveSlotConfig": "Could not save slot configuration"
+      },
+      "assuntos": {
+        "sectionTitle": "Appointment Subjects",
+        "sectionDescription": "Configure the types of appointments available for users and staff at the front desk.",
+        "confirmDeactivateTitle": "Deactivate Subject?",
+        "confirmDeactivateDescription": "By deactivating this subject, it will no longer be available for new appointments for both users and staff. Existing appointments will not be affected.",
+        "confirmDeactivateAction": "Deactivate",
+        "activateSuccess": "Subject activated",
+        "deactivateSuccess": "Subject deactivated",
+        "activateError": "Error activating subject",
+        "deactivateError": "Error deactivating subject",
+        "loadError": "Error loading subjects",
+        "createSuccess": "Subject created successfully",
+        "createError": "Error creating subject",
+        "updateSuccess": "Subject updated",
+        "updateError": "Error updating subject",
+        "deleteConfirm": "Are you sure you want to permanently delete this subject?",
+        "deleteSuccess": "Subject deleted",
+        "deleteError": "Error deleting subject",
+        "addTitle": "New Appointment Subject",
+        "fieldName": "Subject Name",
+        "addAction": "Add Subject",
+        "listTitle": "Managed Subjects",
+        "nameLabel": "Name",
+        "nameRequired": "Subject name is required"
       }
     },
     "userHome": {
@@ -509,12 +578,14 @@
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
     "back": "Back",
+    "view": "View",
     "edit": "Edit",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
     "ok": "OK",
-    "optional": "(optional)"
+    "optional": "(optional)",
+    "refresh": "Refresh"
   },
   "notifications": {
     "title": "Notifications",
@@ -654,7 +725,7 @@
     "title": "Appointment History",
     "backToAppointments": "Back to Appointments",
     "status": {
-      "completed": "Completed",
+      "completed": "Ok",
       "warning": "Warning",
       "noShow": "No-show",
       "cancelled": "Cancelled"
@@ -980,9 +1051,11 @@
     }
   },
   "userManagement": {
-    "title": "User Management",
+    "title": "Account Management",
     "title2": "Platform Management",
-    "subtitle": "Account creation and recovery",
+    "subtitle": "Register new users or recover existing accounts.",
+    "registeredEmployees": "Registered Employees",
+    "registeredUtentes": "Registered Users",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
     "secretarySlotsLabel": "Secretary (appointments per slot)",
@@ -990,7 +1063,14 @@
     "secretarySlotsAria": "Number of appointments per slot for the secretary",
     "balnearioSlotsAria": "Number of appointments per slot for the social bathhouse",
     "saveSlotConfig": "Save slot configuration",
-    "createAccount": "Create Account",
+    "employeesTitle": "Employee Management",
+    "employeesSubtitle": "Manage team access and approvals",
+    "usersTitle": "User Management",
+    "usersSubtitle": "List of all registered users",
+    "createAccountSubtitle": "Register a new user or employee",
+    "recoverAccountSubtitle": "Recover email or update access contact",
+    "searchByNif": "Search by NIF",
+    "userFoundSuccess": "User successfully found!",
     "recoverAccount": "Account Recovery",
     "clickToExpand": "Click to expand",
     "namePlaceholder": "First and last name",
@@ -1050,6 +1130,26 @@
       "admin": "Administrator",
       "school": "School",
       "other": "Other"
+    },
+    "details": {
+      "title": "Manage User",
+      "description": "View and edit user information or perform administrative actions.",
+      "editTitle": "Edit Information",
+      "approveTitle": "Approve Account",
+      "approveDescription": "This employee is waiting for approval to access the platform.",
+      "approveAction": "Approve Employee",
+      "saveChanges": "Save Changes",
+      "deleting": "Deleting...",
+      "approving": "Approving...",
+      "success": {
+        "updated": "User updated successfully",
+        "approved": "Employee approved successfully"
+      },
+      "errors": {
+        "load": "Error loading user details",
+        "update": "Error updating user",
+        "approve": "Error approving employee"
+      }
     }
   },
   "appointmentDetails": {
@@ -1077,7 +1177,7 @@
     "rescheduledSuccess": "Appointment rescheduled successfully",
     "rescheduledFailed": "Failed to save reschedule.",
     "scheduled": "Scheduled",
-    "completed": "Completed",
+    "completed": "Ok",
     "noShow": "No-show",
     "cancelled": "Cancelled",
     "viewAppointment": "View Appointment",
@@ -1130,7 +1230,7 @@
     "inProgress": "In Progress",
     "scheduled": "Scheduled",
     "warning": "Warning",
-    "completed": "Completed",
+    "completed": "Ok",
     "cancelled": "Cancelled",
     "noShow": "No-show",
     "reserved": "Reserved"
@@ -1186,9 +1286,7 @@
     "description": "Form for scheduling quick baths.",
     "patientName": "User Name",
     "patientNamePlaceholder": "Ex: John Smith",
-    "patientNeeds": "User Needs",
-    "hygiene": "Hygiene",
-    "laundry": "Laundry",
+    "laundry": "Detergents",
     "clothing": "Clothing",
     "additionalNotes": "Additional Notes",
     "notesPlaceholder": "Ex: Allergies, special care, clothing size...",
@@ -1292,6 +1390,15 @@
       "vestuario": "Clothing",
       "calcado": "Footwear"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolls",
+      "pares": "pairs",
+      "caixa": "box",
+      "saco": "bag"
+    },
     "products": {
       "Detergente Roupa": "Laundry Detergent",
       "Amaciador": "Fabric Softener",
@@ -1310,6 +1417,59 @@
       "Roupa Interior": "Underwear",
       "Meias": "Socks",
       "Agasalho/Casaco": "Coat/Jacket"
+    },
+    "inventory": {
+      "managementTitle": "Inventory Management",
+      "newItem": "New Item",
+      "editItem": "Edit Item",
+      "createItem": "New Warehouse Item",
+      "searchPlaceholder": "Search items...",
+      "noItemsFound": "No items found",
+      "tryChangingFilters": "Try changing filters or search.",
+      "totalItems": "Total Items",
+      "lowStock": "Low Stock",
+      "all": "All",
+      "form": {
+        "detailsDescription": "Configure product details and stock limits.",
+        "productName": "Product Name",
+        "currentStock": "Current Stock",
+        "minAlert": "Minimum Alert",
+        "specificAttributes": "Specific Attributes",
+        "brand": "Brand",
+        "size": "Size",
+        "volume": "Volume / Weight",
+        "unit": "Unit",
+        "description": "Description",
+        "detailsPlaceholder": "Additional details...",
+        "saveChanges": "Save Changes",
+        "saving": "Saving...",
+        "requiredFields": "Name and Category are required"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Category",
+        "stock": "Stock",
+        "status": "Status",
+        "actions": "Actions",
+        "min": "Min",
+        "marca": "Brand",
+        "tam": "Size",
+        "vol": "Vol",
+        "empty": "No items found in warehouse"
+      },
+      "deleteConfirm": {
+        "title": "Delete Product",
+        "description": "Are you sure you want to delete the product <1>{{name}}</1>? This action cannot be undone.",
+        "action": "Delete Product",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "loadError": "Error loading warehouse items",
+        "deleteSuccess": "Item removed successfully",
+        "deleteError": "Error removing item",
+        "saveSuccess": "Item saved successfully",
+        "saveError": "Error saving item"
+      }
     }
   },
   "maintenance": {
@@ -1324,6 +1484,54 @@
     },
     "placeholders": {
       "observations": "Additional notes for this category..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Personalize your experience and manage system configurations.",
+    "sections": {
+      "interface": "Interface and Preferences",
+      "notifications": "Notification System",
+      "system": "System Status",
+      "data": "Data and Privacy"
+    },
+    "theme": {
+      "title": "Interface Theme",
+      "description": "Toggle between light and dark mode for better visual comfort.",
+      "dark": "Dark Mode",
+      "light": "Light Mode"
+    },
+    "language": {
+      "title": "System Language",
+      "description": "Select the language in which the platform should be displayed.",
+      "pt": "Portuguese (Português)",
+      "en": "English"
+    },
+    "sounds": {
+      "title": "Sound Alerts",
+      "description": "Enable or disable sounds for new notifications or system alerts.",
+      "enabled": "Sounds enabled",
+      "disabled": "Sounds disabled"
+    },
+    "clearCache": {
+      "title": "Cache Cleanup",
+      "description": "Clears local data saved in the browser to resolve display issues.",
+      "action": "Clear Cache and Reload",
+      "success": "Cache cleared successfully!"
+    },
+    "messages": {
+      "languageChanged": "Language changed successfully!",
+      "themeChanged": "Theme updated!"
+    },
+    "systemStatus": {
+      "title": "Server Connectivity",
+      "description": "Real-time connection status to primary services.",
+      "online": "Services Online",
+      "offline": "Services Offline / Network Error",
+      "version": "Application Version",
+      "development_label": "Development",
+      "status_development": "In development",
+      "lastChecked": "Last checked seconds ago"
     }
   }
 }

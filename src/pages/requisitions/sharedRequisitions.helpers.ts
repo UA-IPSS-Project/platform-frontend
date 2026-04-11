@@ -1,4 +1,5 @@
 import i18n from '../../i18n';
+import { formatarCategoria } from '../../utils/formatters';
 import { formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import {
   ManutencaoCategoria,
@@ -86,11 +87,15 @@ export const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; l
   { value: 'PESADO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryHeavyPassengers' },
   { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryLightPassengers' },
   { value: 'LIGEIRO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryLightGoods' },
+  { value: 'LIGEIRO_MISTO', label: 'requisitions.labels.transportCategoryLightMixed' },
   { value: 'LIGEIRO_ESPECIAL', label: 'requisitions.labels.transportCategoryLightSpecial' },
+  { value: 'PESADO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryHeavyGoods' },
+  { value: 'PESADO_MISTO', label: 'requisitions.labels.transportCategoryHeavyMixed' },
   { value: 'ADAPTADO', label: 'requisitions.labels.transportCategoryAdapted' },
-  { value: 'LIGEIRO', label: 'requisitions.labels.transportCategoryLight' },
-  { value: 'PESADO', label: 'requisitions.labels.transportCategoryHeavy' },
-  { value: 'PASSAGEIROS', label: 'requisitions.labels.passengers' },
+  { value: 'ESCOLAR', label: 'requisitions.labels.transportCategorySchool' },
+  { value: 'AMBULANCIA', label: 'requisitions.labels.transportCategoryAmbulance' },
+  { value: 'TRACTOR', label: 'requisitions.labels.transportCategoryTractor' },
+  { value: 'OUTRO', label: 'requisitions.labels.other' },
 ];
 
 // NOTE: 'OUTROS' exclusivamente para retrocompatibilidade com dados históricos.
@@ -210,26 +215,26 @@ export const formatMaterialCategoria = (categoria?: MaterialCategoria | string) 
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = MATERIAL_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = MANUTENCAO_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const formatManutencaoCategoriaDisplay = (categoria?: ManutencaoCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const typed = categoria as ManutencaoCategoria;
-  return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? categoria;
+  return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? formatarCategoria(categoria);
 };
 export const formatTransporteCategoria = (categoria?: TransporteCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = TRANSPORTE_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const toIsoFromDateOnly = (date?: Date): string | undefined => {

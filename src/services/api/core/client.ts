@@ -24,23 +24,18 @@ const isLikelyHtmlResponse = (text: string, contentType: string | null): boolean
 // Helper to get cookie by name
 export const getCookie = (name: string): string | null => {
     if (!document.cookie) {
-        console.debug(`[CSRF] No cookies found in document.cookie`);
         return null;
     }
 
-    // Log all cookies for debugging (be careful with sensitive info in prod, but ok for dev/debugging now)
-    // console.debug('[CSRF] Cookies present:', document.cookie);
 
     const xsrfCookies = document.cookie.split(';')
         .map(c => c.trim())
         .filter(c => c.startsWith(name + '='));
 
     if (xsrfCookies.length === 0) {
-        console.warn(`[CSRF] Cookie ${name} not found in:`, document.cookie);
         return null;
     }
     const value = decodeURIComponent(xsrfCookies[0].substring(name.length + 1));
-    console.debug(`[CSRF] Found cookie ${name}:`, value ? 'present' : 'empty');
     return value;
 };
 
@@ -53,9 +48,6 @@ export const buildHeaders = (): HeadersInit => {
     const xsrfToken = getCookie('XSRF-TOKEN');
     if (xsrfToken) {
         headers['X-XSRF-TOKEN'] = xsrfToken;
-        console.debug('[CSRF] Added header X-XSRF-TOKEN');
-    } else {
-        console.warn('[CSRF] XSRF-TOKEN cookie missing, header not added');
     }
 
     return headers;
@@ -68,13 +60,20 @@ export async function apiRequest<T>(
 ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    const headers = {
+        ...buildHeaders(),
+        ...options.headers,
+    } as Record<string, string>;
+
+    // If body is FormData, let the browser set the Content-Type with boundary
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+
     const config: RequestInit = {
         ...options,
         credentials: 'include', // IMPORTANT: Send cookies with request
-        headers: {
-            ...buildHeaders(),
-            ...options.headers,
-        },
+        headers,
     };
 
     try {

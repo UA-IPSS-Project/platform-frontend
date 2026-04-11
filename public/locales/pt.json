@@ -68,15 +68,17 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Data de Nascimento *",
+      "birthDatePlaceholder": "dd/mm/aaaa",
       "name": "Nome *",
+      "namePlaceholder": "Nome completo",
       "email": "Email *",
       "emailPlaceholder": "exemplo@email.com",
       "contact": "Contacto *",
       "contactPlaceholder": "912345678",
       "subject": "Assunto *",
       "subjectPlaceholder": "Selecione o assunto",
-      "shortDescription": "Descrição curta",
-      "shortDescriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
+      "description": "Descrição curta",
+      "descriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
       "attachDocs": "Anexar documentos (opcional)"
     },
     "subjects": {
@@ -238,7 +240,9 @@
     "management": "Gestão",
     "consumption": "Consumos",
     "administrativeArea": "Área Administrativa",
-    "general": "Geral"
+    "general": "Geral",
+    "slots": "Gestão de Slots",
+    "inventory": "Gestão de Inventário"
   },
   "dashboard": {
     "secretary": "Secretaria",
@@ -320,19 +324,18 @@
       },
       "slots": {
         "operationalConfiguration": "Configuração operacional",
-        "title": "Capacidade de marcações por slot",
-        "description": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
+        "title": "Capacidade da Secretaria por Slot",
+        "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
         "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
-        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
-        "secretaryScheduleDescription": "Define quantas marcações da secretaria podem coexistir no mesmo horário.",
-        "balnearioScheduleDescription": "Controla a lotação operacional dos slots de marcação do balneário.",
+        "current": "atual",
+        "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
         "maxPerSlot": "Máximo por slot",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretaria/Balneário)",
+          "title": "Slots da Secretaria",
           "description": "capacidade por horário"
         },
         "materials": {
@@ -345,7 +348,11 @@
         },
         "maintenanceTypes": {
           "title": "Tipos de manutenção",
-          "description": "tipos disponíveis"
+          "description": "categorias no catálogo"
+        },
+        "assuntos": {
+          "title": "Assuntos Ativos",
+          "description": "tipos de marcação disponíveis"
         }
       },
       "messages": {
@@ -378,11 +385,19 @@
         "addElement": "2. Adicionar Elemento",
         "verificationElement": "Elemento de Verificação",
         "createElement": "Criar Elemento",
+        "categoriesCount": "{{count}} Categorias",
+        "createCategory": "Criar Nova Categoria",
+        "newCategoryDescription": "Isto criará uma nova categoria com itens 'GERAL' por padrão.",
+        "categoryPlaceholder": "Ex: ELETRICIDADE",
+        "vehiclesDependencyHint": "⚠️ Os veículos dependem do Catálogo de Transportes.",
+        "addSpacePlaceholder": "Adicionar novo espaço...",
+        "addElementPlaceholder": "Adicionar novo elemento...",
         "materials": "Materiais",
         "transports": "Transportes",
         "maintenance": "Manutenção",
         "spaces": "Espaços",
         "elements": "Elementos",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material criado com sucesso.",
           "transportCreated": "Transporte criado com sucesso.",
@@ -396,6 +411,7 @@
           "elementUpdated": "Elemento atualizado.",
           "spaceDeleted": "Espaço eliminado.",
           "elementDeleted": "Elemento eliminado.",
+          "categoryCreated": "Categoria criada com sucesso!",
           "categoryRemoved": "Categoria removida."
         },
         "errors": {
@@ -404,7 +420,8 @@
           "capacityPositive": "A lotação deve ser um número maior que zero.",
           "loadMaterials": "Erro ao carregar materiais.",
           "loadTransports": "Erro ao carregar transportes.",
-          "loadMaintenance": "Erro ao carregar itens de manutenção."
+          "loadMaintenance": "Erro ao carregar itens de manutenção.",
+          "codeRequired": "O código interno é obrigatório."
         },
         "confirm": {
           "deleteMaterial": "Tem a certeza que deseja eliminar este material?",
@@ -412,11 +429,63 @@
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
           "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
-        }
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} itens",
+        "removeCategory": "Remover Categoria",
+        "searchMaterials": "Pesquisar materiais...",
+        "existingCategoriesList": "Categorias Existentes",
+        "noMaterialsFound": "Nenhum material encontrado.",
+        "noMaterialsRegistered": "Nenhum material cadastrado.",
+        "newCategoryNamePlaceholder": "Nome da nova categoria",
+        "materialNamePlaceholder": "Ex: Cadernos, Tesoura...",
+        "attributePlaceholder": "Ex: Formato, Cor...",
+        "valuePlaceholder": "Ex: A4, Azul...",
+        "freeWrite": "Escreva livremente",
+        "searchVerificationsPlaceholder": "Pesquisar verificações...",
+        "spaceNameRequired": "O nome do espaço é obrigatório.",
+        "elementNameRequired": "O nome do elemento é obrigatório.",
+        "noVerificationsFound": "Nenhuma verificação encontrada.",
+        "noVerificationsRegistered": "Nenhuma verificação cadastrada.",
+        "loadingCatalog": "A carregar catálogo...",
+        "totalFleet": "Frota Total: {{count}}",
+        "nextCodeLabel": "Próximo Código",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Pesquisar veículos (matrícula, marca...)",
+        "fleetByCategory": "Frotas por Categoria",
+        "internalCode": "Código Interno",
+        "seatsCount_one": "{{count}} Lugar",
+        "seatsCount_other": "{{count}} Lugares",
+        "noCategories": "Nenhuma categoria"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
         "saveSlotConfig": "Não foi possível guardar a configuração de slots"
+      },
+      "assuntos": {
+        "sectionTitle": "Assuntos de Marcação",
+        "sectionDescription": "Configure os tipos de agendamento disponíveis para os utentes e funcionários na secretaria.",
+        "confirmDeactivateTitle": "Desativar Assunto?",
+        "confirmDeactivateDescription": "Ao desativar este assunto, ele deixará de estar disponível para novos agendamentos tanto para utentes como para a secretaria. Agendamentos existentes não serão afetados.",
+        "confirmDeactivateAction": "Desativar",
+        "activateSuccess": "Assunto ativado",
+        "deactivateSuccess": "Assunto desativado",
+        "activateError": "Erro ao ativar assunto",
+        "deactivateError": "Erro ao desativar assunto",
+        "loadError": "Erro ao carregar assuntos",
+        "createSuccess": "Assunto criado com sucesso",
+        "createError": "Erro ao criar assunto",
+        "updateSuccess": "Assunto atualizado",
+        "updateError": "Erro ao atualizar assunto",
+        "deleteConfirm": "Tem a certeza que deseja eliminar permanentemente este assunto?",
+        "deleteSuccess": "Assunto eliminado",
+        "deleteError": "Erro ao eliminar assunto",
+        "addTitle": "Novo Assunto de Marcação",
+        "fieldName": "Nome do Assunto",
+        "addAction": "Adicionar Assunto",
+        "listTitle": "Assuntos Geridos",
+        "nameLabel": "Nome",
+        "nameRequired": "O nome do assunto é obrigatório"
       }
     },
     "userHome": {
@@ -508,13 +577,18 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
     "saving": "A guardar...",
     "cancel": "Cancelar",
     "ok": "OK",
-    "optional": "(opcional)"
+    "add": "Adicionar",
+    "delete": "Eliminar",
+    "optional": "(opcional)",
+    "refresh": "Atualizar",
+    "error": "Erro"
   },
   "notifications": {
     "title": "Notificações",
@@ -654,7 +728,7 @@
     "title": "Histórico de Marcações",
     "backToAppointments": "Voltar para Marcações",
     "status": {
-      "completed": "Concluído",
+      "completed": "Ok",
       "warning": "Aviso",
       "noShow": "Não compareceu",
       "cancelled": "Cancelado"
@@ -885,7 +959,7 @@
       "brandModel": "Marca/Modelo",
       "notDefined": "Não definido",
       "licenseDate": "Data matrícula",
-      "subjectOptional": "Assunto (opcional)",
+      "subjectOptional": "Assunto",
       "subjectPlaceholder": "Ex: Torneira com fuga",
       "close": "Fechar",
       "clearSelection": "Limpar seleção",
@@ -985,9 +1059,19 @@
     }
   },
   "userManagement": {
-    "title": "Gestão de Utilizadores",
+    "title": "Gestão de Contas",
     "title2": "Gestão da Plataforma",
-    "subtitle": "Criação e recuperação de contas",
+    "subtitle": "Registe novos utilizadores ou recupere contas existentes.",
+    "employeesTitle": "Gestão de Funcionários",
+    "employeesSubtitle": "Gerir acessos e aprovações da equipa",
+    "usersTitle": "Gestão de Utentes",
+    "usersSubtitle": "Listagem de todos os utentes registados",
+    "createAccountSubtitle": "Registe um novo utilizador ou funcionário",
+    "recoverAccountSubtitle": "Recuperar e-mail ou atualizar contacto de acesso",
+    "searchByNif": "Procurar por NIF",
+    "userFoundSuccess": "Utilizador encontrado com sucesso!",
+    "registeredEmployees": "Funcionários Registados",
+    "registeredUtentes": "Utentes Registados",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
     "secretarySlotsLabel": "Secretaria (marcações por slot)",
@@ -1013,7 +1097,7 @@
     "emailEditable": "Email (Atualizável)",
     "notifyRecovery": "Notificar Recuperação",
     "registeredUsers": "Utilizadores Registados",
-    "pending": "Pendentes",
+    "pending": "Pendente",
     "active": "Ativo",
     "searchByNameOrNif": "Pesquisar por nome ou NIF...",
     "role": "Função",
@@ -1055,6 +1139,26 @@
       "admin": "Administrador",
       "school": "Escola",
       "other": "Outro"
+    },
+    "details": {
+      "title": "Gerir Utilizador",
+      "description": "Visualize e edite as informações do utilizador ou realize ações administrativas.",
+      "editTitle": "Editar Informações",
+      "approveTitle": "Aprovar Conta",
+      "approveDescription": "Este funcionário está aguardando aprovação para aceder à plataforma.",
+      "approveAction": "Aprovar Funcionário",
+      "saveChanges": "Guardar Alterações",
+      "deleting": "A eliminar...",
+      "approving": "A aprovar...",
+      "success": {
+        "updated": "Utilizador atualizado com sucesso",
+        "approved": "Funcionário aprovado com sucesso"
+      },
+      "errors": {
+        "load": "Erro ao carregar detalhes do utilizador",
+        "update": "Erro ao atualizar utilizador",
+        "approve": "Erro ao aprovar funcionário"
+      }
     }
   },
   "appointmentDetails": {
@@ -1082,7 +1186,7 @@
     "rescheduledSuccess": "Marcação reagendada com sucesso",
     "rescheduledFailed": "Falha ao guardar o reagendamento.",
     "scheduled": "Agendado",
-    "completed": "Concluído",
+    "completed": "Ok",
     "noShow": "Não compareceu",
     "cancelled": "Cancelado",
     "viewAppointment": "Consultar Agendamento",
@@ -1135,7 +1239,7 @@
     "inProgress": "Em Curso",
     "scheduled": "Agendado",
     "warning": "Aviso",
-    "completed": "Concluído",
+    "completed": "Ok",
     "cancelled": "Cancelado",
     "noShow": "Não compareceu",
     "reserved": "Reservado"
@@ -1193,7 +1297,7 @@
     "patientNamePlaceholder": "Ex: João da Silva",
     "patientNeeds": "Necessidades do Utente",
     "hygiene": "Higiene",
-    "laundry": "Lavandaria",
+    "laundry": "Detergentes",
     "clothing": "Vestuário",
     "additionalNotes": "Notas Adicionais",
     "notesPlaceholder": "Ex: Alergias, cuidados especiais, tamanho de roupa...",
@@ -1297,7 +1401,18 @@
       "vestuario": "Vestuário",
       "calcado": "Calçado"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolos",
+      "pares": "pares",
+      "caixa": "caixa",
+      "saco": "saco"
+    },
     "products": {
+      "Lavar Roupa Seca": "Lavar Roupa Seca",
+      "Lavar Roupa Molhada": "Lavar Roupa Molhada",
       "Detergente Roupa": "Detergente Roupa",
       "Amaciador": "Amaciador",
       "Lixívia": "Lixívia",
@@ -1315,6 +1430,59 @@
       "Roupa Interior": "Roupa Interior",
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
+    },
+    "inventory": {
+      "managementTitle": "Gestão de Inventário",
+      "newItem": "Novo Item",
+      "editItem": "Editar Item",
+      "createItem": "Novo Item do Armazém",
+      "searchPlaceholder": "Pesquisar itens...",
+      "noItemsFound": "Nenhum item encontrado",
+      "tryChangingFilters": "Experimente mudar os filtros ou a pesquisa.",
+      "totalItems": "Total Itens",
+      "lowStock": "Stock Baixo",
+      "all": "Todos",
+      "form": {
+        "detailsDescription": "Configure os detalhes do produto e limites de stock.",
+        "productName": "Nome do Produto",
+        "currentStock": "Stock Atual",
+        "minAlert": "Mínimo Alerta",
+        "specificAttributes": "Atributos Específicos",
+        "brand": "Marca",
+        "size": "Tamanho",
+        "volume": "Volume / Peso",
+        "unit": "Unidade",
+        "description": "Descrição",
+        "detailsPlaceholder": "Detalhes adicionais...",
+        "saveChanges": "Guardar Alterações",
+        "saving": "A guardar...",
+        "requiredFields": "Nome e Categoria são obrigatórios"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Categoria",
+        "stock": "Stock",
+        "status": "Estado",
+        "actions": "Ações",
+        "min": "Min",
+        "marca": "Marca",
+        "tam": "Tam",
+        "vol": "Vol",
+        "empty": "Nenhum item encontrado no armazém"
+      },
+      "deleteConfirm": {
+        "title": "Eliminar Produto",
+        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação não pode ser desfeita.",
+        "action": "Eliminar Produto",
+        "cancel": "Cancelar"
+      },
+      "toasts": {
+        "loadError": "Erro ao carregar itens do armazém",
+        "deleteSuccess": "Item removido com sucesso",
+        "deleteError": "Erro ao remover o item",
+        "saveSuccess": "Item guardado com sucesso",
+        "saveError": "Erro ao guardar o item"
+      }
     }
   },
   "maintenance": {
@@ -1334,5 +1502,54 @@
     "placeholders": {
       "observations": "Notas adicionais para esta categoria..."
     }
+  },
+  "settings": {
+    "title": "Definições",
+    "description": "Personalize a sua experiência e gira as configurações do sistema.",
+    "sections": {
+      "interface": "Interface e Preferências",
+      "notifications": "Sistema de Notificações",
+      "system": "Estado do Sistema",
+      "data": "Dados e Privacidade"
+    },
+    "theme": {
+      "title": "Tema da Interface",
+      "description": "Alterne entre o modo claro e escuro para melhor conforto visual.",
+      "dark": "Modo Escuro",
+      "light": "Modo Claro"
+    },
+    "language": {
+      "title": "Idioma do Sistema",
+      "description": "Selecione o idioma em que a plataforma deve ser exibida.",
+      "pt": "Português",
+      "en": "Inglês (English)"
+    },
+    "sounds": {
+      "title": "Alertas Sonoros",
+      "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
+      "enabled": "Sons ativados",
+      "disabled": "Sons desativados"
+    },
+    "clearCache": {
+      "title": "Limpeza de Cache",
+      "description": "Limpa os dados locais guardados no navegador para resolver problemas de visualização.",
+      "action": "Limpar Cache e Recarregar",
+      "success": "Cache limpa com sucesso!"
+    },
+    "messages": {
+      "languageChanged": "Idioma alterado com sucesso!",
+      "themeChanged": "Tema atualizado!"
+    },
+    "systemStatus": {
+      "title": "Conectividade do Servidor",
+      "description": "Estado em tempo real da ligação aos serviços principais.",
+      "online": "Serviços Online",
+      "offline": "Serviços Offline / Erro de Rede",
+      "version": "Versão da Aplicação",
+      "development_label": "Desenvolvimento",
+      "status_development": "Em desenvolvimento",
+      "lastChecked": "Última verificação há segundos"
+    }
   }
 }
+

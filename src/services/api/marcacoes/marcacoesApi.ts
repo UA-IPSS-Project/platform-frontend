@@ -3,7 +3,8 @@ import {
     MarcacaoPresencialRequest,
     MarcacaoRemotaRequest,
     MarcacaoResponse,
-    BalnearioAttendanceStats
+    BalnearioAttendanceStats,
+    Assunto
 } from './types';
 
 export const marcacoesApi = {
@@ -156,5 +157,35 @@ export const marcacoesApi = {
     obterEstatisticasFrequenciaBalneario: (periodo: 'DIA' | 'SEMANA' | 'MES' = 'MES') =>
         apiRequest<BalnearioAttendanceStats>(`/api/marcacoes/balneario/estatisticas?periodo=${periodo}`, {
             method: 'GET',
+        }),
+
+    // --- Gestão de Assuntos ---
+    listarAssuntos: () =>
+        apiRequest<Assunto[]>('/api/assuntos', { method: 'GET' }),
+
+    listarAssuntosAdmin: () =>
+        apiRequest<Assunto[]>('/api/assuntos/admin', { method: 'GET' }),
+
+    criarAssunto: (assunto: Pick<Assunto, 'nome' | 'ativo'>) =>
+        apiRequest<Assunto>('/api/assuntos', {
+            method: 'POST',
+            body: JSON.stringify(assunto),
+        }),
+
+    atualizarAssunto: (id: number, assunto: Partial<Assunto>) =>
+        apiRequest<Assunto>(`/api/assuntos/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(assunto),
+        }),
+
+    atualizarEstadoAssunto: (id: number, ativo: boolean) =>
+        apiRequest<Assunto>(`/api/assuntos/${id}/ativo`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ativo }),
+        }),
+
+    apagarAssunto: (id: number) =>
+        apiRequest<void>(`/api/assuntos/${id}`, {
+            method: 'DELETE',
         }),
 };

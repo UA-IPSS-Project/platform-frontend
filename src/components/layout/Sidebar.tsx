@@ -18,7 +18,8 @@ import {
   UsersIcon,
   HeartIcon,
   ShieldCheckIcon,
-  FileTextIcon
+  FileTextIcon,
+  PackageIcon
 } from '../shared/CustomIcons';
 import { useTranslation } from 'react-i18next';
 
@@ -139,6 +140,15 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
     { id: 'consumos', label: t('sidebar.consumption'), icon: HistoryIcon },
     { id: 'requisitions', label: t('sidebar.requisitions'), icon: ClipboardListIcon },
     { id: 'reports', label: t('sidebar.reports'), icon: FileTextIcon },
+    {
+      id: 'management',
+      label: t('sidebar.management'),
+      icon: DatabaseIcon,
+      subitems: [
+        { id: 'admin-area-slots', label: t('sidebar.slots'), icon: SlidersIcon },
+        { id: 'admin-area-inventory', label: t('sidebar.inventory'), icon: PackageIcon },
+      ]
+    },
   ];
 
   return (

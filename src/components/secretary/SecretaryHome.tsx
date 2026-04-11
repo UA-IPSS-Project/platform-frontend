@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { GlassCard } from '../ui/glass-card';
 import {
   Calendar,
@@ -10,55 +10,150 @@ import {
   ArrowRight,
   UserPlus,
 } from 'lucide-react';
-import { marcacoesApi, utilizadoresApi } from '../../services/api';
+import { marcacoesApi, utilizadoresApi, requisicoesApi, Notificacao } from '../../services/api';
 import { useIsMobile } from '../ui/use-mobile';
+import { formatDistanceToNow } from 'date-fns';
+import { pt } from 'date-fns/locale';
 
 interface SecretaryHomeProps {
   isDarkMode: boolean;
   onNavigate: (view: string) => void;
+  notifications?: Notificacao[];
 }
 
-const recentActivity = [
-  { type: 'marcacao', text: 'Nova marcação - Maria Silva', time: 'Há 5 min', color: 'bg-[color:var(--status-info)]' },
-  { type: 'candidatura', text: 'Candidatura Creche recebida', time: 'Há 15 min', color: 'bg-primary' },
-  { type: 'requisicao', text: 'Requisição aprovada - Escola', time: 'Há 1 hora', color: 'bg-[color:var(--status-warning)]' },
-  { type: 'utente', text: 'Novo utente registado', time: 'Há 2 horas', color: 'bg-[color:var(--status-success)]' },
+// Fallback activity if no notifications exist
+const fallbackActivity = [
+  { type: 'marcacao', text: 'Sem atividades recentes', time: '-', color: 'bg-muted' },
 ];
 
-export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeProps) {
+export default function SecretaryHome({ isDarkMode, onNavigate, notifications = [] }: SecretaryHomeProps) {
   const isMobile = useIsMobile();
   void isDarkMode;
   const [marcacoesHoje, setMarcacoesHoje] = useState<string>('...');
   const [utentesAtivos, setUtentesAtivos] = useState<string>('...');
+  const [requisicoesPendentes, setRequisicoesPendentes] = useState<string>('...');
+
+  const statColorClassByStatusType = {
+    info: 'bg-status-rose-1',
+    primary: 'bg-status-rose-2',
+    warning: 'bg-status-rose-3',
+    success: 'bg-status-rose-4',
+  } as const;
+
+  const quickActionCardClassByStatusType = {
+    info: 'border-2 border-status-rose-3 bg-status-rose-1/35',
+    primary: 'border-2 border-status-rose-3 bg-status-rose-2/35',
+    warning: 'border-2 border-status-rose-4 bg-status-rose-3/35',
+    success: 'border-2 border-status-rose-4 bg-status-rose-4/35',
+  } as const;
+
+  const quickActionIconColorStyleByStatusType = {
+    info: { color: 'var(--status-rose-foreground)' },
+    primary: { color: 'var(--status-rose-foreground)' },
+    warning: { color: 'var(--status-rose-foreground)' },
+    success: { color: 'var(--status-rose-foreground)' },
+  } as const;
+
+  type StatusType = keyof typeof statColorClassByStatusType;
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [marcacoes, utentes] = await Promise.all([
+        const [marcacoes, utentes, requisicoes] = await Promise.all([
           marcacoesApi.contarHoje(),
           utilizadoresApi.contarUtentesAtivos(),
+          requisicoesApi.listar('ABERTO')
         ]);
         setMarcacoesHoje(marcacoes.toString());
         setUtentesAtivos(utentes.toString());
+        setRequisicoesPendentes(requisicoes.length.toString());
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
         setMarcacoesHoje('0');
         setUtentesAtivos('0');
+        setRequisicoesPendentes('0');
       }
     };
 
     fetchStats();
   }, []);
 
-  const stats = [
-    { icon: Calendar, label: 'Marcações Hoje', value: marcacoesHoje, color: 'var(--status-info)', view: 'appointments' },
-    { icon: FileText, label: 'Candidaturas Pendentes', value: '12', color: 'var(--primary)', view: 'candidaturas' },
-    { icon: ClipboardList, label: 'Requisições', value: '5', color: 'var(--status-warning)', view: 'requisitions' },
-    { icon: Users, label: 'Utentes Ativos', value: utentesAtivos, color: 'var(--status-success)', view: 'management' },
+  const stats: Array<{
+    icon: typeof Calendar;
+    label: string;
+    value: string;
+    statusType: StatusType;
+    view: string;
+  }> = [
+    {
+      icon: Calendar,
+      label: 'Marcações Hoje',
+      value: marcacoesHoje,
+      statusType: 'info',
+      view: 'appointments',
+    },
+    {
+      icon: FileText,
+      label: 'Candidaturas Pendentes',
+      value: '12',
+      statusType: 'primary',
+      view: 'candidaturas',
+    },
+    {
+      icon: ClipboardList,
+      label: 'Requisições Abertas',
+      value: requisicoesPendentes,
+      statusType: 'warning',
+      view: 'requisitions',
+    },
+    {
+      icon: Users,
+      label: 'Utentes Ativos',
+      value: utentesAtivos,
+      statusType: 'success',
+      view: 'management',
+    },
   ];
 
   const textClass = 'text-foreground';
   const textSecondaryClass = 'text-muted-foreground';
+
+  const quickActions: Array<{
+    icon: typeof Calendar;
+    title: string;
+    subtitle: string;
+    statusType: StatusType;
+    view: string;
+  }> = [
+    {
+      icon: Calendar,
+      title: 'Nova Marcação',
+      subtitle: 'Agendar atendimento',
+      statusType: 'info',
+      view: 'appointments',
+    },
+    {
+      icon: FileText,
+      title: 'Candidaturas',
+      subtitle: 'Ver pendentes',
+      statusType: 'primary',
+      view: 'candidaturas',
+    },
+    {
+      icon: UserPlus,
+      title: 'Criar Conta',
+      subtitle: 'Novo utilizador',
+      statusType: 'warning',
+      view: 'management',
+    },
+    {
+      icon: TrendingUp,
+      title: 'Relatórios',
+      subtitle: 'Ver estatísticas',
+      statusType: 'success',
+      view: 'reports',
+    },
+  ];
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
@@ -104,10 +199,9 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
                   <p className={`text-3xl font-bold ${textClass} tracking-tight`}>{stat.value}</p>
                 </div>
                 <div
-                  className="p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3"
-                  style={{ backgroundColor: stat.color }}
+                  className={`p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0 ml-3 ${statColorClassByStatusType[stat.statusType]}`}
                 >
-                  <stat.icon className="w-6 h-6 text-primary-foreground" />
+                  <stat.icon className="w-6 h-6 text-status-rose-foreground" />
                 </div>
               </div>
             </GlassCard>
@@ -130,29 +224,56 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
               </button>
             </div>
             <div className="p-4 space-y-3">
-              {recentActivity.map((activity, index) => {
-                const iconMap: Record<string, React.ReactNode> = {
-                  marcacao: <Calendar className="w-5 h-5" />,
-                  candidatura: <FileText className="w-5 h-5" />,
-                  requisicao: <ClipboardList className="w-5 h-5" />,
-                  utente: <Users className="w-5 h-5" />,
+              {(notifications.length > 0 
+                ? [...notifications].sort((a, b) => new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime()).slice(0, 4) 
+                : []).map((notification, index) => {
+                const iconMap: Record<string, ReactNode> = {
+                  LEMBRETE: <Calendar className="w-5 h-5" />,
+                  CANCELAMENTO: <Clock className="w-5 h-5" />,
+                  FICHEIRO: <FileText className="w-5 h-5" />,
+                  SISTEMA: <TrendingUp className="w-5 h-5" />,
                 };
+
+                const colorMap: Record<string, string> = {
+                  LEMBRETE: 'bg-[color:var(--status-info)]',
+                  CANCELAMENTO: 'bg-destructive',
+                  FICHEIRO: 'bg-primary',
+                  SISTEMA: 'bg-[color:var(--status-success)]',
+                };
+
+                const timeAgo = formatDistanceToNow(new Date(notification.dataCriacao), { 
+                  addSuffix: true, 
+                  locale: pt 
+                });
+
                 return (
-                  <div key={index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
-                      {iconMap[activity.type] ?? <Calendar className="w-5 h-5" />}
+                  <div key={notification.id || index} className="group p-4 rounded-xl border border-border bg-muted/30 hover:bg-card transition-all duration-300 hover:shadow-md cursor-pointer flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${colorMap[notification.tipo] || 'bg-primary'}`}>
+                      {iconMap[notification.tipo] ?? <Calendar className="w-5 h-5" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{activity.text}</p>
+                      <p className={`font-semibold ${textClass} text-sm mb-0.5 truncate group-hover:text-primary transition-colors`}>{notification.titulo}</p>
                       <div className="flex items-center gap-1.5">
                         <Clock className={`w-3 h-3 ${textSecondaryClass}`} />
-                        <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
+                        <p className={`text-xs ${textSecondaryClass} capitalize`}>{timeAgo}</p>
                       </div>
                     </div>
                     <ArrowRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors transform group-hover:translate-x-1" />
                   </div>
                 );
               })}
+
+              {notifications.length === 0 && fallbackActivity.map((activity, index) => (
+                <div key={index} className="group p-4 rounded-xl border border-border bg-muted/10 flex items-center gap-4 opacity-50">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-primary-foreground shadow-sm flex-shrink-0 ${activity.color}`}>
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-semibold ${textClass} text-sm mb-0.5`}>{activity.text}</p>
+                    <p className={`text-xs ${textSecondaryClass}`}>{activity.time}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </GlassCard>
         </div>
@@ -165,53 +286,22 @@ export default function SecretaryHome({ isDarkMode, onNavigate }: SecretaryHomeP
             </div>
             <div className="p-4 flex-1 flex items-center">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
-                <button
-                  onClick={() => onNavigate('appointments')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-info)]/30 bg-[color:var(--status-info-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-info)' }}>
-                    <Calendar className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Nova Marcação</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Agendar atendimento</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('candidaturas')}
-                  className="p-6 rounded-2xl border border-primary/30 bg-primary/10 transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--primary)' }}>
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Candidaturas</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Ver pendentes</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('management')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-warning)]/30 bg-[color:var(--status-warning-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-warning)' }}>
-                    <UserPlus className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Criar Conta</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Novo utilizador</p>
-                </button>
-
-                <button
-                  onClick={() => onNavigate('reports')}
-                  className="p-6 rounded-2xl border border-[color:var(--status-success)]/30 bg-[color:var(--status-success-soft)] transition-all duration-200 text-left group"
-                >
-                  <div className={`w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: 'var(--background)', color: 'var(--status-success)' }}>
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <p className={`font-semibold ${textClass} text-lg mb-1`}>Relatórios</p>
-                  <p className={`text-sm ${textSecondaryClass}`}>Ver estatísticas</p>
-                </button>
+                {quickActions.map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={() => onNavigate(action.view)}
+                    className={`p-6 rounded-2xl border transition-all duration-200 text-left group ${quickActionCardClassByStatusType[action.statusType]}`}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform bg-white"
+                      style={quickActionIconColorStyleByStatusType[action.statusType]}
+                    >
+                      <action.icon className="w-6 h-6" />
+                    </div>
+                    <p className={`font-semibold ${textClass} text-lg mb-1`}>{action.title}</p>
+                    <p className={`text-sm ${textSecondaryClass}`}>{action.subtitle}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </GlassCard>

@@ -11,6 +11,7 @@ import { RjsfCandidaturaPage } from '../candidaturas/RjsfCandidaturaPage';
 import { CandidaturaDetailPage } from '../candidaturas/CandidaturaDetailPage';
 import { HistoryPage } from '../HistoryPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
+import { SettingsPage } from '../SettingsPage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
@@ -456,7 +457,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
               <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
               <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
-              <Route path="/settings" element={renderPlaceholder('Definições')} />
+              <Route path="/settings" element={
+                <SettingsPage
+                  isDarkMode={isDarkMode}
+                  onToggleDarkMode={onToggleDarkMode}
+                />
+              } />
               <Route path="*" element={renderPlaceholder('Página não encontrada')} />
             </Routes>
           </motion.div>

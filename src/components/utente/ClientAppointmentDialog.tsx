@@ -1,117 +1,70 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, FormEvent } from 'react';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-
-import { toast } from 'sonner';
-import { documentosApi } from '../../services/api';
 import { FileUpload } from '../shared/FileUpload';
+import { apiRequest, marcacoesApi, documentosApi, type Assunto } from '../../services/api';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 
 interface ClientAppointmentDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess: () => void;
   date: Date;
   time: string;
   utenteId: number;
-  onSuccess?: () => void;
 }
 
-import SUBJECTS, { getSubjectLabel } from '../../lib/subjects';
-import { calendarioApi, marcacoesApi, apiRequest } from '../../services/api';
-import { useTranslation } from 'react-i18next';
-
-export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, onSuccess }: ClientAppointmentDialogProps) {
+export function ClientAppointmentDialog({ 
+  open, 
+  onClose, 
+  onSuccess, 
+  date, 
+  time, 
+  utenteId 
+}: ClientAppointmentDialogProps) {
   const { t, i18n } = useTranslation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [subjects, setSubjects] = useState<Assunto[]>([]);
   const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [tempReservaId, setTempReservaId] = useState<number | null>(null);
   const [pendingClose, setPendingClose] = useState(false);
 
+  // Dirty state for protection
   const isDirty = useMemo(() => {
-    return subject !== '' || description.trim() !== '' || selectedFiles.length > 0;
-  }, [subject, description, selectedFiles]);
+     return subject !== '' || selectedFiles.length > 0;
+  }, [subject, selectedFiles]);
 
-  const blocker = useUnsavedChangesWarning(isDirty);
+  const blocker = useUnsavedChangesWarning(isDirty && open);
 
-  // Reservar slot ao abrir o dialog
   useEffect(() => {
-    if (open) {
-      reservarSlot();
-    }
-
-    // Cleanup: liberar reserva ao fechar ou desmontar
-    return () => {
-      if (tempReservaId) {
-        liberarSlot();
+    const fetchSubjects = async () => {
+      try {
+        const data = await marcacoesApi.listarAssuntos();
+        // Sort subjects alphabetically, but keep "Outro" always last
+        const sorted = data.sort((a, b) => {
+          if (a.nome.toLowerCase() === 'outro') return 1;
+          if (b.nome.toLowerCase() === 'outro') return -1;
+          return a.nome.localeCompare(b.nome);
+        });
+        setSubjects(sorted);
+      } catch (error) {
+        console.error('Failed to fetch subjects:', error);
       }
     };
+    if (open) {
+      fetchSubjects();
+    }
   }, [open]);
 
-  const reservarSlot = async () => {
-    try {
-      const [hours, minutes] = time.split(':');
-      const dateTime = new Date(date);
-      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-
-      // Validar se a data/hora não é no passado
-      const now = new Date();
-      if (dateTime <= now) {
-        toast.error(t('appointmentDialog.errors.pastDate'));
-        onClose();
-        return;
-      }
-
-      // Verificar se o slot está bloqueado
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const isBlocked = await calendarioApi.verificarSlot(dateStr, time, 'SECRETARIA');
-      if (isBlocked) {
-        toast.error(t('appointmentDialog.errors.slotUnavailable'));
-        onClose();
-        return;
-      }
-
-      const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
-
-      const data = await marcacoesApi.reservarSlot({
-        data: localDateTime,
-        utenteId: utenteId,
-        criadoPorId: utenteId,
-      });
-
-      setTempReservaId(data.tempId);
-      console.log('Slot reservado temporariamente:', data.tempId);
-
-    } catch (error) {
-      console.error('Erro ao reservar slot:', error);
-      toast.error(t('appointmentDialog.errors.slotOccupied'));
-      onClose();
-    }
-  };
-
-  const liberarSlot = async () => {
-    if (!tempReservaId) return;
-
-    try {
-      await marcacoesApi.libertarSlot(tempReservaId);
-      console.log('Slot liberado:', tempReservaId);
-      setTempReservaId(null);
-    } catch (error) {
-      console.error('Erro ao liberar slot:', error);
-    }
-  };
-
-  const handleClose = async () => {
-    // Liberar slot antes de fechar
-    await liberarSlot();
+  const handleClose = () => {
     onClose();
   };
 
@@ -123,75 +76,55 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
     }
   };
 
-  const validate = () => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!subject) newErrors.subject = t('appointmentDialog.errors.subjectRequired');
+    if (!subject) {
+      newErrors.subject = t('appointmentDialog.errors.subjectRequired');
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
-      toast.error(t('appointmentDialog.errors.subjectRequired'));
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      // 1. PRIMEIRO: Liberar slot temporário
-      if (tempReservaId) {
-        await marcacoesApi.libertarSlot(tempReservaId);
-        console.log('Slot temporário liberado antes de criar marcação real');
-        setTempReservaId(null);
-      }
-
-      // 2. DEPOIS: Criar marcação real
+      const dataHora = new Date(date);
       const [hours, minutes] = time.split(':');
-      const dateTime = new Date(date);
-      dateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      dataHora.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const localDateTime = format(dateTime, "yyyy-MM-dd'T'HH:mm:ss");
+      const payload = {
+        utenteId: utenteId,
+        criadoPorId: utenteId,
+        data: format(dataHora, "yyyy-MM-dd'T'HH:mm:ss"),
+        assunto: subject,
+      };
 
-      // Use apiRequest directly to match exact original body format but with CSRF protection
-      // We avoid marcacoesApi.criarRemota here because strict typing would force us to send 
-      // fields that might not be needed by this specific endpoint variant
       const response = await apiRequest<{ id: number }>('/api/marcacoes/remota', {
         method: 'POST',
-        body: JSON.stringify({
-          data: localDateTime,
-          assunto: subject,
-          utenteId: utenteId,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      // Guardar o ID da marcação criada para upload de documentos
-      const marcacaoId = response.id;
-
-      toast.success(t('appointmentDialog.messages.appointmentCreated'));
-
-      // Se houver ficheiros selecionados, fazer upload
       if (selectedFiles.length > 0) {
         try {
-          await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
-          toast.success(t('appointmentDialog.messages.documentsUploaded', { count: selectedFiles.length }));
+          await documentosApi.uploadDocumentosBulk(response.id, selectedFiles);
         } catch (uploadError) {
-          console.error('Erro ao enviar documentos:', uploadError);
-          toast.error(t('appointmentDialog.messages.documentsUploadError'));
+          console.error('Error uploading files:', uploadError);
         }
       }
 
-      onSuccess?.();
+      toast.success(t('appointmentDialog.messages.appointmentCreated'));
+      onSuccess();
       onClose();
-    } catch (error) {
-      console.error('Erro ao criar marcação:', error);
-      toast.error(error instanceof Error ? error.message : t('auth.errorCreatingAccount'));
+    } catch (error: any) {
+      console.error('Error creating appointment:', error);
+      toast.error(error.message || t('appointmentDialog.errors.creationFailed'));
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <>
@@ -220,25 +153,14 @@ export function ClientAppointmentDialog({ open, onClose, date, time, utenteId, o
                 <SelectValue placeholder={t('appointmentDialog.fields.subjectPlaceholder')} />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border">
-                {SUBJECTS.map((option) => (
-                  <SelectItem key={option} value={option} className="text-popover-foreground">
-                    {getSubjectLabel(option, t)}
+                {subjects.map((option) => (
+                  <SelectItem key={option.id} value={option.nome} className="text-popover-foreground">
+                    {option.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {errors.subject && <p id="client-subject-error" className="text-sm text-status-error">{errors.subject}</p>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description" className="text-foreground">{t('requisitions.ui.description')}</Label>
-            <Textarea
-              id="description"
-              placeholder={t('appointmentDialog.fields.shortDescriptionPlaceholder')}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="bg-card border-border text-foreground"
-            />
           </div>
 
           <div className="space-y-2">
