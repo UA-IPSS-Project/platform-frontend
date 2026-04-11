@@ -2,7 +2,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+import type { ProxyOptions } from 'vite';
 import path from 'node:path';
+
+const stripAuthChallengeHeader: NonNullable<ProxyOptions['configure']> = (proxy) => {
+  proxy.on('proxyRes', (proxyRes) => {
+    if (proxyRes?.headers) {
+      delete proxyRes.headers['www-authenticate'];
+    }
+  });
+};
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -106,21 +115,18 @@ export default defineConfig({
       protocol: 'ws'
     },
     proxy: {
-      '/api/requisicoes': {
-        target: 'http://127.0.0.1:8081',
-        changeOrigin: true,
-        secure: false,
-      },
       '/api': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
         secure: false,
+        configure: stripAuthChallengeHeader,
       },
       '/ws': {
         target: 'ws://127.0.0.1:8080',
         ws: true,
         changeOrigin: true,
         secure: false,
+        configure: stripAuthChallengeHeader,
       }
     }
   },
