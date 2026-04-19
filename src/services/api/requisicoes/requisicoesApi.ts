@@ -77,11 +77,6 @@ export const requisicoesApi = {
       body: JSON.stringify(payload),
     }),
 
-  apagarTransporteCatalogo: (id: number) =>
-    apiRequest<void>(`/api/requisicoes/transportes/${id}`, {
-      method: 'DELETE',
-    }),
-
   atualizarCategoriaTransporte: (id: number, categoria: string) =>
     apiRequest<TransporteCatalogo>(`/api/requisicoes/transportes/${id}/categoria`, {
       method: 'PATCH',

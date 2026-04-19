@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Pencil, Plus, Search, Truck, Info, Calendar, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Search, Truck, Info, Calendar, XCircle } from 'lucide-react';
 import { 
   TransporteCategoria, 
   requisicoesApi, 
@@ -14,14 +14,14 @@ const AVAILABLE_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   'ADAPTADO', 'ESCOLAR', 'AMBULANCIA', 'TRACTOR', 'OUTRO'
 ];
 
-// Categorias para admin - inclui ABATE_VENDIDO
+// Categorias para admin - inclui ABATE_VENDIDO e ABATE_VENDIDO_DESCONTINUADO
 const ADMIN_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   ...AVAILABLE_TRANSPORT_CATEGORIES,
-  'ABATE_VENDIDO'
+  'ABATE_VENDIDO',
+  'ABATE_VENDIDO_DESCONTINUADO'
 ];
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
-import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
 import { ScrapTransportDialog } from './ScrapTransportDialog';
 import { cn } from '../../ui/utils';
@@ -80,9 +80,9 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
 
   const displayedCategorias = useMemo(() => {
     if (!searchTerm.trim()) {
-      // Sem pesquisa: mostrar todas as categorias existentes + ABATE_VENDIDO (sempre)
-      const existentes = uniqueCategorias.filter(cat => cat !== 'ABATE_VENDIDO');
-      return [...existentes, 'ABATE_VENDIDO'];
+      // Sem pesquisa: mostrar todas as categorias existentes + categorias de indisponibilidade (sempre)
+      const existentes = uniqueCategorias.filter(cat => cat !== 'ABATE_VENDIDO' && cat !== 'ABATE_VENDIDO_DESCONTINUADO');
+      return [...existentes, 'ABATE_VENDIDO', 'ABATE_VENDIDO_DESCONTINUADO'];
     }
     // Com pesquisa: mostrar apenas as categorias com itens filtrados
     return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
@@ -179,17 +179,6 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
       setEditingId(null);
       await onRefresh();
       toast.success(t('dashboard.admin.catalogs.success.transportUpdated'));
-    } catch (error: any) {
-      toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteTransport'))) return;
-    try {
-      await requisicoesApi.apagarTransporteCatalogo(id);
-      await onRefresh();
-      toast.success(t('dashboard.admin.catalogs.success.transportDeleted'));
     } catch (error: any) {
       toast.error(error?.message || t('dashboard.admin.catalogs.errors.loadTransports'));
     }
@@ -416,7 +405,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
-                            {item.categoria !== 'ABATE_VENDIDO' && (
+                            {item.categoria !== 'ABATE_VENDIDO' && item.categoria !== 'ABATE_VENDIDO_DESCONTINUADO' && (
                               <Button 
                                 size="icon" 
                                 variant="ghost" 
@@ -424,18 +413,9 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                                 onClick={() => setScrapDialog({ isOpen: true, transport: item })}
                                 title={t('dashboard.admin.catalogs.confirm.scrapTransport')}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <XCircle className="w-4 h-4" />
                               </Button>
                             )}
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-8 w-8 rounded-lg text-destructive" 
-                              onClick={() => void handleDelete(item.id)}
-                              title={t('common.delete')}
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </Button>
                           </div>
                         </div>
                       )}

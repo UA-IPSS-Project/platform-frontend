@@ -13,7 +13,7 @@ export type TransporteCategoria =
   | 'LIGEIRO_DE_PASSAGEIROS' | 'LIGEIRO_DE_MERCADORIAS' | 'LIGEIRO_MISTO' | 'LIGEIRO_ESPECIAL'
   | 'PESADO_DE_PASSAGEIROS' | 'PESADO_DE_MERCADORIAS' | 'PESADO_MISTO'
   | 'ADAPTADO' | 'ESCOLAR' | 'AMBULANCIA' | 'TRACTOR' | 'OUTRO'
-  | 'ABATE_VENDIDO';
+  | 'ABATE_VENDIDO' | 'ABATE_VENDIDO_DESCONTINUADO';
 export type MaterialCategoria = string;
 export type ManutencaoCategoria = string;
 

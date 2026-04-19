@@ -441,13 +441,13 @@
         },
         "confirm": {
           "deleteMaterial": "Tem a certeza que deseja eliminar este material?",
-          "deleteTransport": "Tem a certeza que deseja eliminar este transporte?",
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
           "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
           "scrapTransport": "Marcar como Abate/Vendido",
-          "scrapTransportDescription": "Este veículo será marcado como abatido/vendido e deixará de estar disponível para requisições. Esta ação é irreversível.",
-          "confirmScrap": "Confirmar Abate"
+          "scrapTransportDescription": "Este veículo será marcado como abatido/vendido e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
+          "confirmScrap": "Marcar como Indisponível",
+          "selectScrapCategory": "Selecione o motivo da indisponibilidade:"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} itens",
@@ -800,6 +800,7 @@
       "transportCategoryAmbulance": "Ambulância",
       "transportCategoryTractor": "Trator",
       "transportCategoryAbateSold": "Abate/Vendido",
+      "transportCategoryAbateSoldDiscontinued": "Abate/Vendido/Descontinuado",
       "transportCategoryLight": "Ligeiro",
       "transportCategoryHeavy": "Pesado",
       "passengers": "Passageiros",
