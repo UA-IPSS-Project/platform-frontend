@@ -46,7 +46,6 @@ const unlockAudio = async () => {
   }
   
   if (ctx && ctx.state === 'running') {
-    console.log('[Audio] Successfully unlocked and running');
     window.removeEventListener('click', unlockAudio);
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('touchstart', unlockAudio);
