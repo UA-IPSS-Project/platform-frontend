@@ -7,6 +7,7 @@ import {
   requisicoesApi, 
   type TransporteCatalogo 
 } from '../../../services/api';
+import { TRANSPORTE_CATEGORIA_OPTIONS_ADMIN } from '../../../pages/requisitions/sharedRequisitions.helpers';
 
 const AVAILABLE_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   'LIGEIRO_DE_PASSAGEIROS', 'LIGEIRO_DE_MERCADORIAS', 'LIGEIRO_MISTO', 'LIGEIRO_ESPECIAL',
@@ -14,11 +15,10 @@ const AVAILABLE_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   'ADAPTADO', 'ESCOLAR', 'AMBULANCIA', 'TRACTOR', 'OUTRO'
 ];
 
-// Categorias para admin - inclui ABATE_VENDIDO e ABATE_VENDIDO_DESCONTINUADO
+// Categorias para admin - inclui ABATE_VENDIDO
 const ADMIN_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   ...AVAILABLE_TRANSPORT_CATEGORIES,
-  'ABATE_VENDIDO',
-  'ABATE_VENDIDO_DESCONTINUADO'
+  'ABATIDO_VENDIDO_DESCONTINUADO'
 ];
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
@@ -61,6 +61,15 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [editDataMatricula, setEditDataMatricula] = useState('');
   const [editCodigo, setEditCodigo] = useState('');
 
+  // Helper para obter nome formatado da categoria (com suporte a i18n para ABATE_VENDIDO)
+  const getCategoryDisplayName = (category: TransporteCategoria): string => {
+    if (category === 'ABATIDO_VENDIDO_DESCONTINUADO') {
+      const option = TRANSPORTE_CATEGORIA_OPTIONS_ADMIN.find(opt => opt.value === 'ABATIDO_VENDIDO_DESCONTINUADO');
+      return option ? t(option.label) : formatCategoryName(category);
+    }
+    return formatCategoryName(category);
+  };
+
   const uniqueCategorias = useMemo(() => {
     return Array.from(new Set(transportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
   }, [transportes]);
@@ -80,9 +89,9 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
 
   const displayedCategorias = useMemo(() => {
     if (!searchTerm.trim()) {
-      // Sem pesquisa: mostrar todas as categorias existentes + categorias de indisponibilidade (sempre)
-      const existentes = uniqueCategorias.filter(cat => cat !== 'ABATE_VENDIDO' && cat !== 'ABATE_VENDIDO_DESCONTINUADO');
-      return [...existentes, 'ABATE_VENDIDO', 'ABATE_VENDIDO_DESCONTINUADO'];
+      // Sem pesquisa: mostrar todas as categorias existentes + ABATIDO_VENDIDO_DESCONTINUADO (sempre)
+      const existentes = uniqueCategorias.filter(cat => cat !== 'ABATIDO_VENDIDO_DESCONTINUADO');
+      return [...existentes, 'ABATIDO_VENDIDO_DESCONTINUADO'];
     }
     // Com pesquisa: mostrar apenas as categorias com itens filtrados
     return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
@@ -185,7 +194,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   };
 
   const handleDeleteCategory = async (category: TransporteCategoria) => {
-    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteCategory', { name: formatCategoryName(category) }))) return;
+    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteCategory', { name: getCategoryDisplayName(category) }))) return;
     try {
       const itemsToDelete = transportes.filter(t => t.categoria === category);
       await Promise.all(itemsToDelete.map(i => requisicoesApi.apagarTransporteCatalogo(i.id)));
@@ -237,7 +246,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                 onChange={(e) => setNovaCategoria(e.target.value as TransporteCategoria)} 
                 className="w-full h-11 rounded-xl border border-border/40 bg-background px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
               >
-                {AVAILABLE_TRANSPORT_CATEGORIES.map(cat => <option key={cat} value={cat}>{formatCategoryName(cat)}</option>)}
+                {AVAILABLE_TRANSPORT_CATEGORIES.map(cat => <option key={cat} value={cat}>{getCategoryDisplayName(cat)}</option>)}
               </select>
             </div>
 
@@ -300,7 +309,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
             return (
               <CatalogSection
                 key={cat}
-                title={formatCategoryName(cat)}
+                title={getCategoryDisplayName(cat)}
                 count={items.length}
                 isOpen={!!openGroups[cat]}
                 onToggle={() => toggleGroup(cat)}
@@ -405,7 +414,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
-                            {item.categoria !== 'ABATE_VENDIDO' && item.categoria !== 'ABATE_VENDIDO_DESCONTINUADO' && (
+                            {item.categoria !== 'ABATIDO_VENDIDO_DESCONTINUADO' && (
                               <Button 
                                 size="icon" 
                                 variant="ghost" 

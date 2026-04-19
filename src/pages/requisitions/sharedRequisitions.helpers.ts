@@ -98,12 +98,11 @@ export const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; l
   { value: 'OUTRO', label: 'requisitions.labels.other' },
 ];
 
-// Categorias de transporte para admin apenas - inclui ABATE_VENDIDO e ABATE_VENDIDO_DESCONTINUADO
-// Estas categorias não devem aparecer na seleção de requisições normais
+// Categorias de transporte para admin apenas - inclui ABATIDO_VENDIDO_DESCONTINUADO
+// ABATIDO_VENDIDO_DESCONTINUADO não deve aparecer na seleção de requisições normais
 export const TRANSPORTE_CATEGORIA_OPTIONS_ADMIN: Array<{ value: TransporteCategoria; label: string }> = [
   ...TRANSPORTE_CATEGORIA_OPTIONS,
-  { value: 'ABATE_VENDIDO', label: 'requisitions.labels.transportCategoryAbateSold' },
-  { value: 'ABATE_VENDIDO_DESCONTINUADO', label: 'requisitions.labels.transportCategoryAbateSoldDiscontinued' },
+  { value: 'ABATIDO_VENDIDO_DESCONTINUADO', label: 'requisitions.labels.transportCategoryAbateSold' },
 ];
 
 // NOTE: 'OUTROS' exclusivamente para retrocompatibilidade com dados históricos.

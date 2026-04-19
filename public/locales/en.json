@@ -444,10 +444,9 @@
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
           "deleteCategory": "Delete ALL items in category \"{{name}}\"?",
-          "scrapTransport": "Mark as Scrapped/Sold",
-          "scrapTransportDescription": "This vehicle will be marked as scrapped/sold and will no longer be available for requests. Vehicle data will be preserved.",
-          "confirmScrap": "Mark as Unavailable",
-          "selectScrapCategory": "Select the reason for unavailability:"
+          "scrapTransport": "Mark as Scrapped / Sold / Discontinued",
+          "scrapTransportDescription": "This vehicle will be marked as unavailable and will no longer be available for requests. Vehicle data will be preserved.",
+          "confirmScrap": "Mark as Unavailable"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} items",
@@ -796,8 +795,7 @@
       "transportCategorySchool": "School transport",
       "transportCategoryAmbulance": "Ambulance",
       "transportCategoryTractor": "Tractor",
-      "transportCategoryAbateSold": "Scrapped/Sold",
-      "transportCategoryAbateSoldDiscontinued": "Scrapped/Sold/Discontinued",
+      "transportCategoryAbateSold": "Scrapped / Sold / Discontinued",
       "transportCategoryLight": "Light vehicle",
       "transportCategoryHeavy": "Heavy vehicle",
       "passengers": "Passengers",

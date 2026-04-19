@@ -444,10 +444,9 @@
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
           "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
-          "scrapTransport": "Marcar como Abate/Vendido",
-          "scrapTransportDescription": "Este veículo será marcado como abatido/vendido e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
-          "confirmScrap": "Marcar como Indisponível",
-          "selectScrapCategory": "Selecione o motivo da indisponibilidade:"
+          "scrapTransport": "Marcar como Abatido / Vendido / Descontinuado",
+          "scrapTransportDescription": "Este veículo será marcado como indisponível e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
+          "confirmScrap": "Marcar como Indisponível"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} itens",
@@ -799,8 +798,7 @@
       "transportCategorySchool": "Escolar",
       "transportCategoryAmbulance": "Ambulância",
       "transportCategoryTractor": "Trator",
-      "transportCategoryAbateSold": "Abate/Vendido",
-      "transportCategoryAbateSoldDiscontinued": "Abate/Vendido/Descontinuado",
+      "transportCategoryAbateSold": "Abatido / Vendido / Descontinuado",
       "transportCategoryLight": "Ligeiro",
       "transportCategoryHeavy": "Pesado",
       "passengers": "Passageiros",
