@@ -2,8 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWebSocket } from './useWebSocket';
 import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
+import { playNotificationSound } from '../utils/notificationSound';
+import { useTranslation } from 'react-i18next';
 
 export function useNotifications(userEmail: string | undefined, onRefreshNeeded?: () => void) {
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState<Notificacao[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -16,67 +19,64 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             console.error('Erro ao carregar notificações:', error);
         }
     }, []);
-    const onNotificationReceived = useCallback((notificacao: Notificacao) => {
 
-        setNotifications(prev => [notificacao, ...prev]);
-        setUnreadCount(prev => prev + 1);
+    const onNotificationReceived = useCallback((payload: any) => {
+        console.log('[Notifications] Received payload:', payload);
+        
+        if (!payload) return;
 
-        const isOneDayReminder = notificacao.tipo === 'LEMBRETE'
-            && notificacao.metadata?.notificationSubtype === 'REMINDER_1_DAY';
-
-        // Play notification sound
-        const soundEnabled = localStorage.getItem('notifications_sound') !== 'false';
-        if (soundEnabled) {
-            try {
-                const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-                if (AudioContextClass) {
-                    const audioCtx = new AudioContextClass();
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-
-                    oscillator.type = 'sine';
-                    // Pleasant high-pitched "ding" (A5 followed by C6-like frequency)
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1);
-
-                    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.02);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.3);
-                    
-                    // Close context after playing
-                    setTimeout(() => {
-                        if (audioCtx.state !== 'closed') audioCtx.close();
-                    }, 400);
+        const items = Array.isArray(payload) ? payload : [payload];
+        
+        items.forEach(notificacao => {
+            let data = notificacao;
+            if (typeof notificacao === 'string') {
+                try {
+                    data = JSON.parse(notificacao);
+                } catch (e) {
+                    data = { mensagem: notificacao };
                 }
-            } catch (error) {
-                console.warn('Could not play notification sound:', error);
             }
-        }
 
-        toast.info(
-            isOneDayReminder ? 'Lembrete de Marcação' : notificacao.titulo,
-            {
-                description: isOneDayReminder
-                    ? `Tem uma marcação em 1 dia. ${notificacao.mensagem}`
-                    : notificacao.mensagem,
-                duration: isOneDayReminder ? 7000 : 5000,
-            }
-        );
+            const normalized: Notificacao = {
+                id: data.id || Math.random(),
+                utilizadorId: data.utilizadorId || 0,
+                titulo: data.titulo || data.title || t('notifications.new_notification', 'Nova Notificação'),
+                mensagem: data.mensagem || data.message || '',
+                tipo: data.tipo || 'SISTEMA',
+                lida: !!data.lida,
+                dataCriacao: data.dataCriacao || new Date().toISOString(),
+                metadata: data.metadata || {}
+            };
 
-        // Refresh appointments after a small delay to allow backend transaction to commit
+            console.log('[Notifications] Normalized:', normalized);
+
+            setNotifications(prev => [normalized, ...prev]);
+            setUnreadCount(prev => prev + 1);
+
+            const isOneDayReminder = normalized.tipo === 'LEMBRETE'
+                && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY';
+
+            // Usar toast.success para ser mais visível (verde) e garantir que aparece
+            console.log('[Notifications] Displaying toast for:', normalized.titulo);
+            toast.success(
+                isOneDayReminder ? t('dashboard.admin.messages.appointmentReminder', 'Lembrete de Marcação') : normalized.titulo,
+                {
+                    description: isOneDayReminder
+                        ? t('dashboard.admin.messages.appointmentReminderDesc', { count: 1, defaultValue: `Tem uma marcação em 1 dia. ${normalized.mensagem}` })
+                        : normalized.mensagem,
+                    duration: 10000, // Aumentado para 10s para facilitar o teste
+                }
+            );
+
+            // Tocar som (silenciosamente falha se o áudio estiver bloqueado)
+            playNotificationSound().catch(() => {});
+        });
+
         if (onRefreshNeeded) {
             setTimeout(() => onRefreshNeeded(), 500);
         }
-    }, [onRefreshNeeded]);
+    }, [onRefreshNeeded, t]);
 
-    // In Spring, the client should always subscribe to /user/queue/... 
-    // and Spring will automatically route it using the authenticated Principal.
     const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
     const wsUrl = useMemo(() => import.meta.env.VITE_WS_URL
         || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`, []);
@@ -84,8 +84,16 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     useWebSocket(wsUrl, topic, onNotificationReceived);
 
     useEffect(() => {
+        // Notificação de teste para confirmar que o Toaster está a funcionar
+        if (userEmail) {
+            console.log('[Notifications] Hook initialized for:', userEmail);
+            toast.info('Sistema de notificações ligado', { 
+                description: 'Irá receber alertas em tempo real.',
+                duration: 3000 
+            });
+        }
         carregarNotificacoes();
-    }, [carregarNotificacoes]);
+    }, [carregarNotificacoes, userEmail]);
 
     const handleMarkAsRead = async (id: number) => {
         try {
