@@ -441,7 +441,7 @@ export function BalnearioReportsPage() {
       toast.success(t('dashboard.admin.messages.reportEmailSent'));
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao enviar e-mail.');
+      toast.error(t('dashboard.admin.messages.reportEmailSendError', { defaultValue: 'Erro ao enviar e-mail.' }));
     } finally {
       setIsSendingEmail(false);
     }
