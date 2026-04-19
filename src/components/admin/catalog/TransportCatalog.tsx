@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Pencil, Plus, Search, Truck, Info, Calendar } from 'lucide-react';
+import { Pencil, Plus, Search, Truck, Info, Calendar, Trash2 } from 'lucide-react';
 import { 
   TransporteCategoria, 
   requisicoesApi, 
@@ -13,10 +13,17 @@ const AVAILABLE_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
   'PESADO_DE_PASSAGEIROS', 'PESADO_DE_MERCADORIAS', 'PESADO_MISTO',
   'ADAPTADO', 'ESCOLAR', 'AMBULANCIA', 'TRACTOR', 'OUTRO'
 ];
+
+// Categorias para admin - inclui ABATE_VENDIDO
+const ADMIN_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
+  ...AVAILABLE_TRANSPORT_CATEGORIES,
+  'ABATE_VENDIDO'
+];
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { TrashIcon } from '../../shared/CustomIcons';
 import { CatalogSection } from './CatalogSection';
+import { ScrapTransportDialog } from './ScrapTransportDialog';
 import { cn } from '../../ui/utils';
 import { DatePickerField } from '../../ui/date-picker-field';
 import { normalizeString } from '../../../utils/formatters';
@@ -30,6 +37,10 @@ interface TransportCatalogProps {
 export function TransportCatalog({ transportes, onRefresh, formatCategoryName }: TransportCatalogProps) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
+  const [scrapDialog, setScrapDialog] = useState<{ isOpen: boolean; transport: TransporteCatalogo | null }>({
+    isOpen: false,
+    transport: null,
+  });
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ '__ADD_FORM__': true });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +79,12 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   }, [transportes, searchTerm]);
 
   const displayedCategorias = useMemo(() => {
-    if (!searchTerm.trim()) return uniqueCategorias;
+    if (!searchTerm.trim()) {
+      // Sem pesquisa: mostrar todas as categorias existentes + ABATE_VENDIDO (sempre)
+      const existentes = uniqueCategorias.filter(cat => cat !== 'ABATE_VENDIDO');
+      return [...existentes, 'ABATE_VENDIDO'];
+    }
+    // Com pesquisa: mostrar apenas as categorias com itens filtrados
     return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
   }, [filteredTransportes, uniqueCategorias, searchTerm]);
 
@@ -396,14 +412,27 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                                 setEditDataMatricula(item.dataMatricula || '');
                                 setEditCodigo(item.codigo || '');
                               }}
+                              title={t('common.edit')}
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
+                            {item.categoria !== 'ABATE_VENDIDO' && (
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-8 w-8 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                                onClick={() => setScrapDialog({ isOpen: true, transport: item })}
+                                title={t('dashboard.admin.catalogs.confirm.scrapTransport')}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button 
                               size="icon" 
                               variant="ghost" 
                               className="h-8 w-8 rounded-lg text-destructive" 
                               onClick={() => void handleDelete(item.id)}
+                              title={t('common.delete')}
                             >
                               <TrashIcon className="w-4 h-4" />
                             </Button>
@@ -418,6 +447,13 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
           })}
         </div>
       </div>
+
+      <ScrapTransportDialog
+        isOpen={scrapDialog.isOpen}
+        transport={scrapDialog.transport}
+        onClose={() => setScrapDialog({ isOpen: false, transport: null })}
+        onSuccess={() => onRefresh()}
+      />
     </div>
   );
 }

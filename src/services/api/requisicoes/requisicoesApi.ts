@@ -82,6 +82,12 @@ export const requisicoesApi = {
       method: 'DELETE',
     }),
 
+  atualizarCategoriaTransporte: (id: number, categoria: string) =>
+    apiRequest<TransporteCatalogo>(`/api/requisicoes/transportes/${id}/categoria`, {
+      method: 'PATCH',
+      body: JSON.stringify({ categoria }),
+    }),
+
   criarTipoManutencao: (payload: CriarTipoManutencaoCatalogoRequest) =>
     apiRequest<TipoManutencaoCatalogo>('/api/requisicoes/tipos-manutencao', {
       method: 'POST',

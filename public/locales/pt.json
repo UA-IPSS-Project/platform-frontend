@@ -427,7 +427,8 @@
           "spaceDeleted": "Espaço eliminado.",
           "elementDeleted": "Elemento eliminado.",
           "categoryCreated": "Categoria criada com sucesso!",
-          "categoryRemoved": "Categoria removida."
+          "categoryRemoved": "Categoria removida.",
+          "transportScrapSold": "Transporte marcado como abatido/vendido com sucesso."
         },
         "errors": {
           "requiredFields": "Todos os campos são obrigatórios.",
@@ -443,7 +444,10 @@
           "deleteTransport": "Tem a certeza que deseja eliminar este transporte?",
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
-          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
+          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
+          "scrapTransport": "Marcar como Abate/Vendido",
+          "scrapTransportDescription": "Este veículo será marcado como abatido/vendido e deixará de estar disponível para requisições. Esta ação é irreversível.",
+          "confirmScrap": "Confirmar Abate"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} itens",
@@ -792,6 +796,10 @@
       "transportCategoryLightGoods": "Ligeiro de mercadorias",
       "transportCategoryLightSpecial": "Ligeiro especial",
       "transportCategoryAdapted": "Adaptado",
+      "transportCategorySchool": "Escolar",
+      "transportCategoryAmbulance": "Ambulância",
+      "transportCategoryTractor": "Trator",
+      "transportCategoryAbateSold": "Abate/Vendido",
       "transportCategoryLight": "Ligeiro",
       "transportCategoryHeavy": "Pesado",
       "passengers": "Passageiros",

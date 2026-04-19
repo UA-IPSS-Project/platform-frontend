@@ -427,7 +427,8 @@
           "spaceDeleted": "Space deleted.",
           "elementDeleted": "Element deleted.",
           "categoryCreated": "Category created successfully!",
-          "categoryRemoved": "Category removed."
+          "categoryRemoved": "Category removed.",
+          "transportScrapSold": "Transport successfully marked as scrapped/sold."
         },
         "errors": {
           "requiredFields": "All fields are required.",
@@ -443,7 +444,10 @@
           "deleteTransport": "Are you sure you want to delete this transport?",
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
-          "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
+          "deleteCategory": "Delete ALL items in category \"{{name}}\"?",
+          "scrapTransport": "Mark as Scrapped/Sold",
+          "scrapTransportDescription": "This vehicle will be marked as scrapped/sold and will no longer be available for requests. This action is irreversible.",
+          "confirmScrap": "Confirm Scrap"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} items",
@@ -789,6 +793,10 @@
       "transportCategoryLightGoods": "Light goods vehicle",
       "transportCategoryLightSpecial": "Special light vehicle",
       "transportCategoryAdapted": "Adapted",
+      "transportCategorySchool": "School transport",
+      "transportCategoryAmbulance": "Ambulance",
+      "transportCategoryTractor": "Tractor",
+      "transportCategoryAbateSold": "Scrapped/Sold",
       "transportCategoryLight": "Light vehicle",
       "transportCategoryHeavy": "Heavy vehicle",
       "passengers": "Passengers",
