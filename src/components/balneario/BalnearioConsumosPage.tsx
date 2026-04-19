@@ -472,15 +472,13 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
             [cat.id]: stats.totaisPorCategoria[cat.id] || 0
         }), {} as Record<string, number>);
 
-        const getCatBarColorHex = (cat: string) => {
-            switch (cat) {
-                case 'HIGIENE': return 'var(--primary)';
-                case 'DETERGENTES': return 'var(--status-success)';
-                case 'VESTUARIO': return 'var(--status-info)';
-                case 'CALCADO': return 'var(--status-warning)';
-                default: return 'var(--status-neutral)';
-            }
-        };
+        // Mesma paleta e mesmo índice que o gráfico circular de consumos por categoria
+        const PIE_COLORS = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
+        const catColorMap: Record<string, string> = {};
+        Object.keys(stats.totaisPorCategoria).forEach((cat, idx) => {
+            catColorMap[cat] = PIE_COLORS[idx % PIE_COLORS.length];
+        });
+        const getCatColor = (cat: string) => catColorMap[cat] ?? PIE_COLORS[0];
 
         // Initialize with all items from the inventory to show 0 for unconsumed items
         const statsByCategory = items.reduce((acc, item) => {
@@ -538,11 +536,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                 </div>
                                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
                                     <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-error)]">{t('stats.missed', 'Faltou')}</p>
-                                    <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltou}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltas}</p>
                                 </div>
                                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-warning)]">{t('stats.agendado', 'Agendado')}</p>
-                                    <p className="text-3xl font-bold text-[color:var(--status-warning)] mt-1">{attendanceStats.totalAgendadas}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider" style={{ color: '#3b82f6' }}>{t('stats.agendado', 'Agendado')}</p>
+                                    <p className="text-3xl font-bold mt-1" style={{ color: '#3b82f6' }}>{attendanceStats.totalAgendadas}</p>
                                 </div>
                             </div>
                         )}
@@ -553,12 +551,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                 isDarkMode={_isDarkMode} 
                                 data={[
                                     { name: 'Compareceu', value: attendanceStats.totalPresencas },
-                                    { name: 'Faltou', value: attendanceStats.totalFaltou },
+                                    { name: 'Faltou', value: attendanceStats.totalFaltas },
                                     { name: 'Agendado', value: attendanceStats.totalAgendadas }
                                 ]}
                                 barChartTitle="Comparação de Estados"
                                 pieChartTitle="Distribuição de Estados"
-                                customColors={['var(--status-success)', 'var(--status-error)', 'var(--status-warning)']}
+                                customColors={['var(--status-success)', 'var(--status-error)', '#3b82f6']}
                             />
                         )}
                     </div>
@@ -603,7 +601,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                                 {categories.map(catData => {
                                     const cat = catData.id;
-                                    const items = statsByCategory[cat].sort((a,b) => b.quantidade - a.quantidade);
+                                    const catItemsSorted = (statsByCategory[cat] ?? []);
+                                    const items = cat === 'CALCADO'
+                                        ? [...catItemsSorted].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
+                                        : [...catItemsSorted].sort((a, b) => b.quantidade - a.quantidade);
                                     return (
                                         <div key={cat} className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col">
                                             <h3 className="text-base font-bold text-foreground mb-6 uppercase tracking-tight">
@@ -651,7 +652,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                                             barSize={24}
                                                         >
                                                             {items.map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={getCatBarColorHex(cat)} />
+                                                                <Cell key={`cell-${index}`} fill={getCatColor(cat)} />
                                                             ))}
                                                         </Bar>
                                                     </BarChart>

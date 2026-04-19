@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
@@ -9,6 +10,7 @@ import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
+import { EmailReportDialog } from '../../components/reports/EmailReportDialog';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
 const formatDate = (date: Date) => {
@@ -135,6 +137,7 @@ const getDurationCell = (r: RequisicaoResponse) => {
 };
 
 export function BalnearioReportsPage() {
+  const { t } = useTranslation();
   const today = new Date();
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const lastOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -143,6 +146,7 @@ export function BalnearioReportsPage() {
   const [selected, setSelected] = useState<Set<ReportSection>>(new Set(['balneario', 'material', 'transporte', 'manutencao']));
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
@@ -412,19 +416,17 @@ export function BalnearioReportsPage() {
     }
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (selected.size === 0) {
-      toast.error('Selecione pelo menos um tipo de dados.');
+      toast.error(t('dashboard.admin.messages.selectAtLeastOneDataType'));
       return;
     }
-    const email = window.prompt('Introduza o e-mail de destino:');
-    if (!email) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('E-mail inválido');
-      return;
-    }
+    setIsEmailDialogOpen(true);
+  };
 
+  const handleConfirmSendEmail = async (email: string) => {
     setIsSendingEmail(true);
+    setIsEmailDialogOpen(false);
     try {
       const doc = await preparePDF();
       const pdfBase64 = doc.output('datauristring');
@@ -436,10 +438,10 @@ export function BalnearioReportsPage() {
         `\n\nEste e-mail foi gerado automaticamente pelo portal de gestão.`;
 
       await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: filename });
-      toast.success('Relatório enviado com sucesso!');
+      toast.success(t('dashboard.admin.messages.reportEmailSent'));
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao enviar e-mail.');
+      toast.error(t('dashboard.admin.messages.reportEmailSendError', { defaultValue: 'Erro ao enviar e-mail.' }));
     } finally {
       setIsSendingEmail(false);
     }
@@ -522,6 +524,13 @@ export function BalnearioReportsPage() {
           {isGenerating ? 'A gerar...' : 'Gerar PDF'}
         </Button>
       </div>
+
+      <EmailReportDialog
+        isOpen={isEmailDialogOpen}
+        onClose={() => setIsEmailDialogOpen(false)}
+        onConfirm={handleConfirmSendEmail}
+        isLoading={isSendingEmail}
+      />
     </div>
   );
 }

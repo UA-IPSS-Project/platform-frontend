@@ -298,6 +298,7 @@
       "mainTitle": "Gestão de Plataforma",
       "mainDescription": "Todas as alterações são refletidas em tempo real para todos os utilizadores.",
       "administrationOnlyArea": "Área exclusiva para administração",
+      "inventoryDescription": "Gestão de stock, categorias e detalhes dos produtos do armazém.",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -326,9 +327,13 @@
         "operationalConfiguration": "Configuração operacional",
         "title": "Capacidade da Secretaria por Slot",
         "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
+        "balnearioTitle": "Capacidade do Balneário por Slot",
+        "balnearioDescription": "Configure o número máximo de utentes que o balneário pode receber simultaneamente por horário.",
         "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
         "current": "atual",
         "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
+        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
+        "balnearioScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 30 minutos.",
         "maxPerSlot": "Máximo por slot",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
@@ -356,7 +361,17 @@
         }
       },
       "messages": {
-        "slotConfigUpdated": "Configuração de slots atualizada com sucesso"
+        "slotConfigUpdated": "Configuração de slots atualizada com sucesso",
+        "reportEmailSent": "Relatório enviado com sucesso!"
+      },
+      "reportDialog": {
+        "title": "Enviar Relatório por Email",
+        "description": "Introduza o endereço de e-mail para onde deseja enviar o relatório gerado.",
+        "emailLabel": "Endereço de E-mail",
+        "emailPlaceholder": "exemplo@email.com",
+        "cancel": "Cancelar",
+        "send": "Enviar Relatório",
+        "invalidEmail": "Por favor, introduza um e-mail válido."
       },
       "catalogs": {
         "title": "Configuração do Catálogo",
@@ -524,6 +539,7 @@
   },
   "notifications": {
     "title": "Notificações",
+    "new_notification": "Nova Notificação",
     "unreadCount_one": "{{count}} notificação não lida",
     "unreadCount_other": "{{count}} notificações não lidas",
     "markAllRead": "Marcar todas como lidas",
@@ -1460,7 +1476,8 @@
       "title": "Alertas Sonoros",
       "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
       "enabled": "Sons ativados",
-      "disabled": "Sons desativados"
+      "disabled": "Sons desativados",
+      "test": "Testar Alerta"
     },
     "clearCache": {
       "title": "Limpeza de Cache",
