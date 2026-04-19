@@ -78,8 +78,9 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     }, [onRefreshNeeded, t]);
 
     const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
-    const wsUrl = useMemo(() => import.meta.env.VITE_WS_URL
-        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`, []);
+    const wsUrl = useMemo(() => import.meta.env.VITE_NOTIFICACOES_WS_URL
+        || import.meta.env.VITE_WS_URL
+        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws-notificacoes`, []);
     
     useWebSocket(wsUrl, topic, onNotificationReceived);
 
