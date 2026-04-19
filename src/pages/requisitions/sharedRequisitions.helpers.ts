@@ -19,14 +19,14 @@ export const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string
   { value: 'ABERTO', label: 'requisitions.labels.open' },
   { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
   { value: 'FECHADO', label: 'requisitions.labels.closed' },
-  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
   { value: 'ABERTO', label: 'requisitions.labels.open' },
   { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
   { value: 'FECHADO', label: 'requisitions.labels.closed' },
-  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
