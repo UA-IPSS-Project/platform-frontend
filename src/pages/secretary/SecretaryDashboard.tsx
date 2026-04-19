@@ -534,6 +534,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     setHighlightedSlot({ date: slotDate, time });
                     setTimeout(() => setHighlightedSlot(null), 5000);
                   },
+                  onNavigateToRequisition: (requisitionId) => {
+                    navigateTo('requisitions');
+                    setShowNotifications(false);
+                    // Aqui poderíamos adicionar lógica para filtrar/destacar a requisição se necessário
+                    console.log('Navegando para requisição:', requisitionId);
+                  },
                 }}
               />
             ) : currentView === 'reports' ? (

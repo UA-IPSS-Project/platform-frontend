@@ -338,3 +338,30 @@ select::-webkit-scrollbar-thumb {
 .dark select::-webkit-scrollbar-thumb {
   background-color: var(--status-info-soft);
 }
+/* Animação para destaque de slot de marcação */
+@keyframes slot-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(230, 0, 126, 0.4);
+    background-color: transparent;
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 15px 5px rgba(230, 0, 126, 0.2);
+    background-color: rgba(230, 0, 126, 0.15);
+    border-color: #e6007e;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(230, 0, 126, 0);
+    background-color: transparent;
+  }
+}
+
+.slot-highlight {
+  animation: slot-pulse 1.2s ease-in-out infinite;
+  z-index: 10;
+  position: relative;
+  border: 2px solid #e6007e !important;
+  border-radius: var(--radius);
+}

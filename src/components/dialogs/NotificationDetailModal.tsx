@@ -104,13 +104,13 @@ export function NotificationDetailModal({
         {/* Botões de Ação */}
         <DialogFooter className="flex flex-row gap-2 sm:gap-3 pt-4">
           <Button
-            variant="destructive"
+            variant="outline"
             onClick={onClose}
             className="flex-1 sm:flex-none"
           >
-            Fechar
+            Voltar
           </Button>
-          {hasAction && (
+          {hasAction && label !== 'Fechar' && (
             <Button
               variant={variant}
               onClick={handlePrimaryAction}

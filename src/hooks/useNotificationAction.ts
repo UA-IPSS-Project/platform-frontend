@@ -22,6 +22,7 @@ export interface NotificationActionCallbacks {
   onNavigateToDocument?: (documentId: string) => void;
   onNavigateToHistory?: (appointmentId: string) => void;
   onNavigateToCancelledSlot?: (date: string, time: string) => void;
+  onNavigateToRequisition?: (requisitionId: string) => void;
 }
 
 /**
@@ -128,14 +129,43 @@ export function useNotificationAction(
           },
         };
 
+      case 'REQUISICAO':
+        return {
+          label: 'Ver Requisição',
+          variant: 'default',
+          execute: () => {
+            const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+            if (requisitionId && callbacks?.onNavigateToRequisition) {
+              callbacks.onNavigateToRequisition(String(requisitionId));
+            } else {
+              console.log('TODO: Redirecionar para requisição:', requisitionId);
+            }
+          },
+        };
+
       // Caso genérico para tipos desconhecidos
       default:
+        // Tentar inferir se é requisição pelo título
+        if (notification.title.toLowerCase().includes('requisição')) {
+          return {
+            label: 'Ver Requisição',
+            variant: 'default',
+            execute: () => {
+              const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+              if (requisitionId && callbacks?.onNavigateToRequisition) {
+                callbacks.onNavigateToRequisition(String(requisitionId));
+              } else {
+                console.log('TODO: Redirecionar para requisição (inferido):', requisitionId);
+              }
+            },
+          };
+        }
+
         return {
           label: 'Ver Detalhes',
           variant: 'outline',
           execute: () => {
             console.log('Ação não mapeada para tipo:', notification.type);
-            // Comportamento padrão (pode ser redirecionar para uma página genérica)
           },
         };
     }
