@@ -274,7 +274,14 @@ function App() {
 
         </div>
 
-        <Toaster richColors position="top-center" closeButton />
+        <Toaster 
+          richColors 
+          position="top-center" 
+          closeButton 
+          toastOptions={{
+            style: { zIndex: 99999 }
+          }}
+        />
       </div>
     </ErrorBoundary>
   );

@@ -11,20 +11,23 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     const [unreadCount, setUnreadCount] = useState(0);
 
     const carregarNotificacoes = useCallback(async () => {
+        if (!userEmail) return;
         try {
             const data = await notificationsApi.listar();
             setNotifications(data);
-            setUnreadCount(data.filter((n: Notificacao) => !n.lida).length);
+            setUnreadCount(data.filter(n => !n.lida).length);
         } catch (error) {
-            console.error('Erro ao carregar notificações:', error);
+            console.error('[Notifications] Error loading notifications:', error);
         }
-    }, []);
+    }, [userEmail]);
+
+    useEffect(() => {
+        carregarNotificacoes();
+    }, [carregarNotificacoes]);
 
     const onNotificationReceived = useCallback((payload: any) => {
-        console.log('[Notifications] Received payload:', payload);
+        console.warn('[Notifications] REAL-TIME MESSAGE RECEIVED:', payload);
         
-        if (!payload) return;
-
         const items = Array.isArray(payload) ? payload : [payload];
         
         items.forEach(notificacao => {
@@ -38,73 +41,74 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             }
 
             const normalized: Notificacao = {
-                id: data.id || Math.random(),
+                id: data.id || Date.now(),
                 utilizadorId: data.utilizadorId || 0,
                 titulo: data.titulo || data.title || t('notifications.new_notification', 'Nova Notificação'),
                 mensagem: data.mensagem || data.message || '',
-                tipo: data.tipo || 'SISTEMA',
-                lida: !!data.lida,
-                dataCriacao: data.dataCriacao || new Date().toISOString(),
+                lida: false,
+                dataCriacao: data.dataCriacao || data.createdAt || new Date().toISOString(),
+                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
                 metadata: data.metadata || {}
             };
 
-            console.log('[Notifications] Normalized:', normalized);
+            console.log('[Notifications] Normalized data:', normalized);
 
-            setNotifications(prev => [normalized, ...prev]);
+            // 1. Play sound
+            playNotificationSound().catch(err => console.error('[Notifications] Sound failed:', err));
+
+            // 2. Display toast
+            try {
+                const toastTitle = normalized.tipo === 'LEMBRETE' && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY'
+                    ? t('dashboard.admin.messages.appointmentReminder', 'Lembrete de Marcação')
+                    : normalized.titulo;
+                
+                const toastDesc = normalized.tipo === 'LEMBRETE' && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY'
+                    ? t('dashboard.admin.messages.appointmentReminderDesc', { count: 1, defaultValue: `Tem uma marcação em 1 dia. ${normalized.mensagem}` })
+                    : normalized.mensagem;
+
+                // Using toast.info to keep it blue/informative
+                toast.info(toastTitle, {
+                    description: toastDesc,
+                    duration: 8000,
+                });
+                
+                console.log('[Notifications] Toast triggered for:', toastTitle);
+            } catch (err) {
+                console.error('[Notifications] Toast failed:', err);
+            }
+
+            // 3. Update local state
+            setNotifications(prev => {
+                if (prev.some(n => n.id === normalized.id)) return prev;
+                return [normalized, ...prev];
+            });
             setUnreadCount(prev => prev + 1);
-
-            const isOneDayReminder = normalized.tipo === 'LEMBRETE'
-                && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY';
-
-            // Usar toast.success para ser mais visível (verde) e garantir que aparece
-            console.log('[Notifications] Displaying toast for:', normalized.titulo);
-            toast.success(
-                isOneDayReminder ? t('dashboard.admin.messages.appointmentReminder', 'Lembrete de Marcação') : normalized.titulo,
-                {
-                    description: isOneDayReminder
-                        ? t('dashboard.admin.messages.appointmentReminderDesc', { count: 1, defaultValue: `Tem uma marcação em 1 dia. ${normalized.mensagem}` })
-                        : normalized.mensagem,
-                    duration: 10000, // Aumentado para 10s para facilitar o teste
-                }
-            );
-
-            // Tocar som (silenciosamente falha se o áudio estiver bloqueado)
-            playNotificationSound().catch(() => {});
         });
 
         if (onRefreshNeeded) {
-            setTimeout(() => onRefreshNeeded(), 500);
+            console.log('[Notifications] Triggering refresh callback');
+            onRefreshNeeded();
         }
     }, [onRefreshNeeded, t]);
 
+    const wsUrl = '/ws-notificacoes';
     const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
-    const wsUrl = useMemo(() => import.meta.env.VITE_NOTIFICACOES_WS_URL
-        || import.meta.env.VITE_WS_URL
-        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws-notificacoes`, []);
-    
-    useWebSocket(wsUrl, topic, onNotificationReceived);
 
-    useEffect(() => {
-        // Notificação de teste para confirmar que o Toaster está a funcionar
-        if (userEmail) {
-            console.log('[Notifications] Hook initialized for:', userEmail);
-            toast.info('Sistema de notificações ligado', { 
-                description: 'Irá receber alertas em tempo real.',
-                duration: 3000 
-            });
-        }
-        carregarNotificacoes();
-    }, [carregarNotificacoes, userEmail]);
+    useWebSocket(wsUrl, topic, onNotificationReceived, () => {
+        console.log('[Notifications] WebSocket Connected');
+        toast.info(t('notifications.system_online', 'Sistema de notificações ligado'), { 
+            description: t('notifications.ready_to_receive', 'Pronto para receber alertas em tempo real.'),
+            duration: 3000 
+        });
+    });
 
     const handleMarkAsRead = async (id: number) => {
         try {
             await notificationsApi.marcarComoLida(id);
-            setNotifications(prev => prev.map(n =>
-                n.id === id ? { ...n, lida: true } : n
-            ));
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
-            console.error('Erro ao marcar notificação como lida:', error);
+            console.error('[Notifications] Error marking as read:', error);
         }
     };
 
@@ -114,22 +118,18 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
             setUnreadCount(0);
         } catch (error) {
-            console.error('Erro ao marcar todas notificações como lidas:', error);
+            console.error('[Notifications] Error marking all as read:', error);
         }
     };
 
     const handleDeleteNotification = async (id: number) => {
         try {
             await notificationsApi.eliminar(id);
-            setNotifications(prev => {
-                const notif = prev.find(n => n.id === id);
-                if (notif && !notif.lida) {
-                    setUnreadCount(count => Math.max(0, count - 1));
-                }
-                return prev.filter(n => n.id !== id);
-            });
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            const wasUnread = notifications.find(n => n.id === id && !n.lida);
+            if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
-            console.error('Erro ao eliminar notificação:', error);
+            console.error('[Notifications] Error deleting notification:', error);
         }
     };
 
@@ -139,7 +139,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             setNotifications([]);
             setUnreadCount(0);
         } catch (error) {
-            console.error('Erro ao eliminar todas as notificações:', error);
+            console.error('[Notifications] Error deleting all notifications:', error);
         }
     };
 
