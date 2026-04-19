@@ -208,6 +208,10 @@ export const formatPrioridade = (prioridade: RequisicaoPrioridade) => {
   return key ? i18n.t(key) : prioridade;
 };
 export const formatEstado = (estado: RequisicaoEstado) => {
+  // Traduzir RECUSADO para Indisponível
+  if (estado === 'RECUSADO') {
+    return i18n.t('requisitions.labels.unavailable');
+  }
   const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
   return key ? i18n.t(key) : estado;
 };

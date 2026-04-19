@@ -775,6 +775,7 @@
       "inAnalysis": "In analysis",
       "accepted": "Accepted",
       "rejected": "Rejected",
+      "unavailable": "Unavailable",
       "low": "Low",
       "medium": "Medium",
       "high": "High",
