@@ -83,6 +83,12 @@ export const requisicoesApi = {
       body: JSON.stringify({ categoria }),
     }),
 
+  moverCategoriaPara: (origem: string, destino: string) =>
+    apiRequest<void>(`/api/requisicoes/transportes/mover-categoria`, {
+      method: 'PATCH',
+      body: JSON.stringify({ origem, destino }),
+    }),
+
   criarTipoManutencao: (payload: CriarTipoManutencaoCatalogoRequest) =>
     apiRequest<TipoManutencaoCatalogo>('/api/requisicoes/tipos-manutencao', {
       method: 'POST',

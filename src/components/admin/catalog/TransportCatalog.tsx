@@ -24,6 +24,7 @@ import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { CatalogSection } from './CatalogSection';
 import { ScrapTransportDialog } from './ScrapTransportDialog';
+import { DeleteCategoryDialog } from './DeleteCategoryDialog';
 import { cn } from '../../ui/utils';
 import { DatePickerField } from '../../ui/date-picker-field';
 import { normalizeString } from '../../../utils/formatters';
@@ -40,6 +41,10 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [scrapDialog, setScrapDialog] = useState<{ isOpen: boolean; transport: TransporteCatalogo | null }>({
     isOpen: false,
     transport: null,
+  });
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; category: TransporteCategoria | null }>({
+    isOpen: false,
+    category: null,
   });
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ '__ADD_FORM__': true });
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -194,15 +199,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   };
 
   const handleDeleteCategory = async (category: TransporteCategoria) => {
-    if (!window.confirm(t('dashboard.admin.catalogs.confirm.deleteCategory', { name: getCategoryDisplayName(category) }))) return;
-    try {
-      const itemsToDelete = transportes.filter(t => t.categoria === category);
-      await Promise.all(itemsToDelete.map(i => requisicoesApi.apagarTransporteCatalogo(i.id)));
-      await onRefresh();
-      toast.success(t('dashboard.admin.catalogs.success.categoryRemoved'));
-    } catch (error) {
-      toast.error(t('dashboard.admin.catalogs.errors.loadTransports'));
-    }
+    setDeleteDialog({ isOpen: true, category });
   };
 
   const toggleGroup = (categoria: TransporteCategoria) => {
@@ -441,6 +438,15 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
         isOpen={scrapDialog.isOpen}
         transport={scrapDialog.transport}
         onClose={() => setScrapDialog({ isOpen: false, transport: null })}
+        onSuccess={() => onRefresh()}
+      />
+
+      <DeleteCategoryDialog
+        isOpen={deleteDialog.isOpen}
+        category={deleteDialog.category}
+        itemCount={deleteDialog.category ? filteredTransportes.filter(t => t.categoria === deleteDialog.category).length : 0}
+        categoryName={deleteDialog.category ? getCategoryDisplayName(deleteDialog.category) : ''}
+        onClose={() => setDeleteDialog({ isOpen: false, category: null })}
         onSuccess={() => onRefresh()}
       />
     </div>
