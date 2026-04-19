@@ -475,7 +475,8 @@
         "internalCode": "Internal Code",
         "seatsCount_one": "{{count}} Seat",
         "seatsCount_other": "{{count}} Seats",
-        "noCategories": "No categories"
+        "noCategories": "No categories",
+        "noVehiclesInCategory": "No vehicles exist in this category yet"
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",

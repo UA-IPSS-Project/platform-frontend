@@ -315,7 +315,8 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                 onDeleteCategory={() => void handleDeleteCategory(cat)}
               >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {items.map(item => (
+                  {items.length > 0 ? (
+                    items.map(item => (
                     <div 
                       key={item.id} 
                       className={cn(
@@ -446,7 +447,12 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                         </div>
                       )}
                     </div>
-                  ))}
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center py-12 text-center">
+                      <p className="text-muted-foreground">{t('dashboard.admin.catalogs.noVehiclesInCategory')}</p>
+                    </div>
+                  )}
                 </div>
               </CatalogSection>
             );
