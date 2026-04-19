@@ -418,7 +418,7 @@ export function BalnearioReportsPage() {
 
   const handleSendEmail = () => {
     if (selected.size === 0) {
-      toast.error('Selecione pelo menos um tipo de dados.');
+      toast.error(t('dashboard.admin.messages.selectAtLeastOneDataType'));
       return;
     }
     setIsEmailDialogOpen(true);
