@@ -50,7 +50,7 @@ export function ScrapTransportDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <AlertTriangle className="h-6 w-6 text-primary" />
             <AlertDialogTitle>{t('dashboard.admin.catalogs.confirm.scrapTransport')}</AlertDialogTitle>
           </div>
           <AlertDialogDescription className="pt-2">
@@ -61,7 +61,7 @@ export function ScrapTransportDialog({
                     defaultValue: 'Este veículo será marcado como abatido/vendido e deixará de estar disponível para requisições. Esta ação é irreversível.',
                   })}
                 </p>
-                <div className="mt-4 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <div className="mt-4 p-3 bg-muted rounded-lg border border-border/50">
                   <p className="text-sm font-semibold">
                     {transport.matricula} - {transport.marca} {transport.modelo}
                   </p>
@@ -80,7 +80,6 @@ export function ScrapTransportDialog({
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={isLoading}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {isLoading ? '...' : t('dashboard.admin.catalogs.confirm.confirmScrap')}
           </AlertDialogAction>
