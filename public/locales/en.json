@@ -298,6 +298,7 @@
       "mainTitle": "Platform Management",
       "mainDescription": "All changes are reflected in real time for all users.",
       "administrationOnlyArea": "Administration-only area",
+      "inventoryDescription": "Inventory stock, categories and product details management.",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -326,9 +327,13 @@
         "operationalConfiguration": "Operational configuration",
         "title": "Secretary Slot Capacity",
         "description": "Configure the maximum number of users the secretary can attend to simultaneously per time slot.",
+        "balnearioTitle": "Bathhouse Slot Capacity",
+        "balnearioDescription": "Configure the maximum number of users the bathhouse can receive simultaneously per time slot.",
         "secretaryScheduleTitle": "Secretary Schedule (15 min)",
         "current": "current",
         "secretaryScheduleDescription": "Defines how many appointments can coexist in the same 15-minute time slot.",
+        "balnearioScheduleTitle": "Bathhouse Schedule (30 min)",
+        "balnearioScheduleDescription": "Defines how many appointments can coexist in the same 30-minute time slot.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"

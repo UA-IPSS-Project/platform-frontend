@@ -298,6 +298,7 @@
       "mainTitle": "Gestão de Plataforma",
       "mainDescription": "Todas as alterações são refletidas em tempo real para todos os utilizadores.",
       "administrationOnlyArea": "Área exclusiva para administração",
+      "inventoryDescription": "Gestão de stock, categorias e detalhes dos produtos do armazém.",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -326,9 +327,13 @@
         "operationalConfiguration": "Configuração operacional",
         "title": "Capacidade da Secretaria por Slot",
         "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
+        "balnearioTitle": "Capacidade do Balneário por Slot",
+        "balnearioDescription": "Configure o número máximo de utentes que o balneário pode receber simultaneamente por horário.",
         "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
         "current": "atual",
         "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
+        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
+        "balnearioScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 30 minutos.",
         "maxPerSlot": "Máximo por slot",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
