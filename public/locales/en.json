@@ -361,7 +361,17 @@
         }
       },
       "messages": {
-        "slotConfigUpdated": "Slot configuration updated successfully"
+        "slotConfigUpdated": "Slot configuration updated successfully",
+        "reportEmailSent": "Report sent successfully!"
+      },
+      "reportDialog": {
+        "title": "Send Report by Email",
+        "description": "Enter the email address where you want to send the generated report.",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "example@email.com",
+        "cancel": "Cancel",
+        "send": "Send Report",
+        "invalidEmail": "Please enter a valid email address."
       },
       "catalogs": {
         "title": "Catalog Configuration",
@@ -526,6 +536,7 @@
   },
   "notifications": {
     "title": "Notifications",
+    "new_notification": "New Notification",
     "unreadCount_one": "{{count}} unread notification",
     "unreadCount_other": "{{count}} unread notifications",
     "markAllRead": "Mark all as read",
@@ -1448,7 +1459,8 @@
       "title": "Sound Alerts",
       "description": "Enable or disable sounds for new notifications or system alerts.",
       "enabled": "Sounds enabled",
-      "disabled": "Sounds disabled"
+      "disabled": "Sounds disabled",
+      "test": "Test Alert"
     },
     "clearCache": {
       "title": "Cache Cleanup",

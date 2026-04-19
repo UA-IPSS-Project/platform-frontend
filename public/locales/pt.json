@@ -361,7 +361,17 @@
         }
       },
       "messages": {
-        "slotConfigUpdated": "Configuração de slots atualizada com sucesso"
+        "slotConfigUpdated": "Configuração de slots atualizada com sucesso",
+        "reportEmailSent": "Relatório enviado com sucesso!"
+      },
+      "reportDialog": {
+        "title": "Enviar Relatório por Email",
+        "description": "Introduza o endereço de e-mail para onde deseja enviar o relatório gerado.",
+        "emailLabel": "Endereço de E-mail",
+        "emailPlaceholder": "exemplo@email.com",
+        "cancel": "Cancelar",
+        "send": "Enviar Relatório",
+        "invalidEmail": "Por favor, introduza um e-mail válido."
       },
       "catalogs": {
         "title": "Configuração do Catálogo",
@@ -529,6 +539,7 @@
   },
   "notifications": {
     "title": "Notificações",
+    "new_notification": "Nova Notificação",
     "unreadCount_one": "{{count}} notificação não lida",
     "unreadCount_other": "{{count}} notificações não lidas",
     "markAllRead": "Marcar todas como lidas",
@@ -1465,7 +1476,8 @@
       "title": "Alertas Sonoros",
       "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
       "enabled": "Sons ativados",
-      "disabled": "Sons desativados"
+      "disabled": "Sons desativados",
+      "test": "Testar Alerta"
     },
     "clearCache": {
       "title": "Limpeza de Cache",
