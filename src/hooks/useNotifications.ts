@@ -54,16 +54,8 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
             // 2. Display toast
             try {
-                const toastTitle = normalized.tipo === 'LEMBRETE' && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY'
-                    ? t('dashboard.admin.messages.appointmentReminder', 'Lembrete de Marcação')
-                    : normalized.titulo;
-                
-                const toastDesc = normalized.tipo === 'LEMBRETE' && normalized.metadata?.notificationSubtype === 'REMINDER_1_DAY'
-                    ? t('dashboard.admin.messages.appointmentReminderDesc', { count: 1, defaultValue: `Tem uma marcação em 1 dia. ${normalized.mensagem}` })
-                    : normalized.mensagem;
-
-                toast.info(toastTitle, {
-                    description: toastDesc,
+                toast.info(normalized.titulo, {
+                    description: normalized.mensagem,
                     duration: 8000,
                 });
             } catch (err) {
