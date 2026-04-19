@@ -26,8 +26,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     }, [carregarNotificacoes]);
 
     const onNotificationReceived = useCallback((payload: any) => {
-        console.warn('[Notifications] REAL-TIME MESSAGE RECEIVED:', payload);
-        
         const items = Array.isArray(payload) ? payload : [payload];
         
         items.forEach(notificacao => {
@@ -51,8 +49,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
                 metadata: data.metadata || {}
             };
 
-            console.log('[Notifications] Normalized data:', normalized);
-
             // 1. Play sound
             playNotificationSound().catch(err => console.error('[Notifications] Sound failed:', err));
 
@@ -66,13 +62,10 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
                     ? t('dashboard.admin.messages.appointmentReminderDesc', { count: 1, defaultValue: `Tem uma marcação em 1 dia. ${normalized.mensagem}` })
                     : normalized.mensagem;
 
-                // Using toast.info to keep it blue/informative
                 toast.info(toastTitle, {
                     description: toastDesc,
                     duration: 8000,
                 });
-                
-                console.log('[Notifications] Toast triggered for:', toastTitle);
             } catch (err) {
                 console.error('[Notifications] Toast failed:', err);
             }
@@ -86,7 +79,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         });
 
         if (onRefreshNeeded) {
-            console.log('[Notifications] Triggering refresh callback');
             onRefreshNeeded();
         }
     }, [onRefreshNeeded, t]);
@@ -96,10 +88,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
     useWebSocket(wsUrl, topic, onNotificationReceived, () => {
         console.log('[Notifications] WebSocket Connected');
-        toast.info(t('notifications.system_online', 'Sistema de notificações ligado'), { 
-            description: t('notifications.ready_to_receive', 'Pronto para receber alertas em tempo real.'),
-            duration: 3000 
-        });
     });
 
     const handleMarkAsRead = async (id: number) => {

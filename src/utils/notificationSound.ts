@@ -23,7 +23,7 @@ export const initAudio = async () => {
     }
 
     if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-      await globalAudioCtx.resume().catch(() => {});
+      await globalAudioCtx.resume().catch(() => { });
     }
 
     isInitialized = true;
@@ -39,14 +39,13 @@ export const initAudio = async () => {
 const unlockAudio = async () => {
   const ctx = await initAudio();
   if (ctx && ctx.state === 'suspended') {
-    await ctx.resume().catch(() => {});
+    await ctx.resume().catch(() => { });
   }
-  
+
   if (ctx && ctx.state === 'running') {
     window.removeEventListener('click', unlockAudio);
     window.removeEventListener('keydown', unlockAudio);
     window.removeEventListener('touchstart', unlockAudio);
-    console.log('[Sound] AudioContext unlocked and running');
   }
 };
 
@@ -96,7 +95,7 @@ export const playNotificationSound = async () => {
     console.warn('[Sound] Web Audio failed, trying fallback');
   }
 
-  // Fallback: Simple Audio element (more likely to be blocked by browser if no interaction)
+  // Fallback: Simple Audio element
   try {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     audio.volume = 0.4;
