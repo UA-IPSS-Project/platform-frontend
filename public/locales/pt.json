@@ -444,6 +444,7 @@
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
           "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
+          "deleteCategoryMovesVehicles": "Esta ação vai mover todos os {{count}} veículo(s) desta categoria para \"Abatido / Vendido / Descontinuado\". Os dados dos veículos serão preservados.",
           "scrapTransport": "Marcar como Abatido / Vendido / Descontinuado",
           "scrapTransportDescription": "Este veículo será marcado como indisponível e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
           "confirmScrap": "Marcar como Indisponível"
@@ -527,6 +528,7 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "confirm": "Confirmar",
     "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
@@ -538,7 +540,9 @@
     "delete": "Eliminar",
     "optional": "(opcional)",
     "refresh": "Atualizar",
-    "error": "Erro"
+    "error": "Erro",
+    "vehicle": "veículo",
+    "vehicles": "veículos"
   },
   "notifications": {
     "title": "Notificações",

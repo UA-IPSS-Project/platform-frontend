@@ -22,6 +22,7 @@ const ADMIN_TRANSPORT_CATEGORIES: TransporteCategoria[] = [
 ];
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { CatalogSection } from './CatalogSection';
 import { ScrapTransportDialog } from './ScrapTransportDialog';
 import { DeleteCategoryDialog } from './DeleteCategoryDialog';
@@ -65,6 +66,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
   const [editLotacao, setEditLotacao] = useState('');
   const [editDataMatricula, setEditDataMatricula] = useState('');
   const [editCodigo, setEditCodigo] = useState('');
+  const [editCategoria, setEditCategoria] = useState<TransporteCategoria>('LIGEIRO_DE_PASSAGEIROS');
 
   // Helper para obter nome formatado da categoria (com suporte a i18n para ABATE_VENDIDO)
   const getCategoryDisplayName = (category: TransporteCategoria): string => {
@@ -361,9 +363,26 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                               <DatePickerField value={editDataMatricula} onChange={setEditDataMatricula} />
                             </div>
                           </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">{t('dashboard.admin.catalogs.category')}</label>
+                              <Select value={editCategoria} onValueChange={(value) => setEditCategoria(value as TransporteCategoria)}>
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder={t('dashboard.admin.catalogs.selectCategory')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {AVAILABLE_TRANSPORT_CATEGORIES.map(cat => (
+                                    <SelectItem key={cat} value={cat}>
+                                      {getCategoryDisplayName(cat)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                           <div className="flex gap-2 justify-end pt-2">
                             <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>{t('common.cancel')}</Button>
-                            <Button size="sm" onClick={() => void handleUpdate(item.id, cat, editCodigo)}>{t('common.ok')}</Button>
+                            <Button size="sm" onClick={() => void handleUpdate(item.id, editCategoria, editCodigo)}>{t('common.ok')}</Button>
                           </div>
                         </div>
                       ) : (
@@ -406,6 +425,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                                 setEditLotacao(item.lotacao ? String(item.lotacao) : '');
                                 setEditDataMatricula(item.dataMatricula || '');
                                 setEditCodigo(item.codigo || '');
+                                setEditCategoria(item.categoria || 'LIGEIRO_DE_PASSAGEIROS');
                               }}
                               title={t('common.edit')}
                             >

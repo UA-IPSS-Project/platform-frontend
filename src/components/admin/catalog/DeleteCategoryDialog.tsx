@@ -62,14 +62,15 @@ export function DeleteCategoryDialog({
             {category && (
               <div className="space-y-3">
                 <p>
-                  {t('dashboard.admin.catalogs.confirm.deleteCategoryDescription', {
+                  {t('dashboard.admin.catalogs.confirm.deleteCategoryMovesVehicles', {
                     defaultValue: `Esta ação vai mover todos os ${itemCount} veículo(s) desta categoria para "Abatido / Vendido / Descontinuado". Os dados dos veículos serão preservados.`,
+                    count: itemCount,
                   })}
                 </p>
                 {itemCount > 0 && (
                   <div className="mt-3 p-3 bg-muted rounded-lg border border-border/50">
                     <p className="text-sm font-semibold text-primary">
-                      {itemCount} {itemCount === 1 ? 'veículo' : 'veículos'} será(ão) movido(s)
+                      {itemCount} {itemCount === 1 ? t('common.vehicle') : t('common.vehicles')} será(ão) movido(s)
                     </p>
                   </div>
                 )}
@@ -85,7 +86,7 @@ export function DeleteCategoryDialog({
             onClick={handleConfirm}
             disabled={isLoading}
           >
-            {isLoading ? '...' : t('dashboard.admin.catalogs.confirm.confirm')}
+            {isLoading ? '...' : t('common.confirm')}
           </AlertDialogAction>
         </div>
       </AlertDialogContent>

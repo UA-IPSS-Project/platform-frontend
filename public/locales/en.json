@@ -444,6 +444,7 @@
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
           "deleteCategory": "Delete ALL items in category \"{{name}}\"?",
+          "deleteCategoryMovesVehicles": "This action will move all {{count}} vehicle(s) in this category to \"Scrapped / Sold / Discontinued\". Vehicle data will be preserved.",
           "scrapTransport": "Mark as Scrapped / Sold / Discontinued",
           "scrapTransportDescription": "This vehicle will be marked as unavailable and will no longer be available for requests. Vehicle data will be preserved.",
           "confirmScrap": "Mark as Unavailable"
@@ -527,6 +528,7 @@
   },
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
+    "confirm": "Confirm",
     "back": "Back",
     "view": "View",
     "edit": "Edit",
@@ -535,7 +537,9 @@
     "cancel": "Cancel",
     "ok": "OK",
     "optional": "(optional)",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "vehicle": "vehicle",
+    "vehicles": "vehicles"
   },
   "notifications": {
     "title": "Notifications",
