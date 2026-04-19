@@ -474,10 +474,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
 
         // Mesma paleta e mesmo índice que o gráfico circular de consumos por categoria
         const PIE_COLORS = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
-        const catColorMap: Record<string, string> = Object.keys(stats.totaisPorCategoria).reduce(
-            (acc, cat, idx) => ({ ...acc, [cat]: PIE_COLORS[idx % PIE_COLORS.length] }),
-            {} as Record<string, string>
-        );
+        const catColorMap: Record<string, string> = {};
+        Object.keys(stats.totaisPorCategoria).forEach((cat, idx) => {
+            catColorMap[cat] = PIE_COLORS[idx % PIE_COLORS.length];
+        });
         const getCatColor = (cat: string) => catColorMap[cat] ?? PIE_COLORS[0];
 
         // Initialize with all items from the inventory to show 0 for unconsumed items
