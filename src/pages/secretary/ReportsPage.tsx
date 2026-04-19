@@ -455,7 +455,7 @@ export function ReportsPage() {
       toast.success(t('dashboard.admin.messages.reportEmailSent'));
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao enviar e-mail.');
+      toast.error(t('dashboard.admin.messages.reportEmailError'));
     } finally {
       setIsSendingEmail(false);
     }
