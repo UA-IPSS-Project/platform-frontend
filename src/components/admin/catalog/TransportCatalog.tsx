@@ -98,7 +98,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
     if (!searchTerm.trim()) {
       // Sem pesquisa: mostrar todas as categorias existentes + ABATIDO_VENDIDO_DESCONTINUADO (sempre)
       const existentes = uniqueCategorias.filter(cat => cat !== 'ABATIDO_VENDIDO_DESCONTINUADO');
-      return [...existentes, 'ABATIDO_VENDIDO_DESCONTINUADO'];
+      return [...existentes, 'ABATIDO_VENDIDO_DESCONTINUADO' as TransporteCategoria];
     }
     // Com pesquisa: mostrar apenas as categorias com itens filtrados
     return Array.from(new Set(filteredTransportes.map(t => t.categoria).filter((c): c is TransporteCategoria => !!c)));
