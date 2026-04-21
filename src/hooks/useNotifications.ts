@@ -53,7 +53,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
             // 2. Display toast
             try {
-                toast.info(normalized.titulo, {
+                toast.success(normalized.titulo, {
                     description: normalized.mensagem,
                     duration: 8000,
                 });
