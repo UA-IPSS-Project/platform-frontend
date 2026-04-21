@@ -22,13 +22,10 @@ export function useWebSocket(
             wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
         }
 
-        // Pass JWT as query parameter (httpOnly cookies are not accessible via JS)
-        // Also pass in STOMP connectHeaders as a backup
+        // Send JWT via STOMP connectHeaders (httpOnly cookies are not accessible via JS)
         const connectHeaders: Record<string, string> = {};
         if (authToken) {
             connectHeaders['Authorization'] = `Bearer ${authToken}`;
-            const sep = wsUrl.includes('?') ? '&' : '?';
-            wsUrl = `${wsUrl}${sep}token=${encodeURIComponent(authToken)}`;
         }
 
         stompClient.current = new Client({

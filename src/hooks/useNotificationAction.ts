@@ -146,7 +146,7 @@ export function useNotificationAction(
       // Caso genérico para tipos desconhecidos
       default:
         // Tentar inferir se é requisição pelo título
-        if (notification.title.toLowerCase().includes('requisição')) {
+        if (notification.title?.toLowerCase().includes('requisição')) {
           return {
             label: 'Ver Requisição',
             variant: 'default',

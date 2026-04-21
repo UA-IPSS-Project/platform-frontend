@@ -45,7 +45,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
                 mensagem: data.mensagem || data.message || '',
                 lida: false,
                 dataCriacao: data.dataCriacao || data.createdAt || new Date().toISOString(),
-                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
+                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA', 'REQUISICAO'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
                 metadata: data.metadata || {}
             };
 
@@ -105,9 +105,13 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     const handleDeleteNotification = async (id: number) => {
         try {
             await notificationsApi.eliminar(id);
-            setNotifications(prev => prev.filter(n => n.id !== id));
-            const wasUnread = notifications.find(n => n.id === id && !n.lida);
-            if (wasUnread) setUnreadCount(prev => Math.max(0, prev - 1));
+            setNotifications(prev => {
+                const notif = prev.find(n => n.id === id);
+                if (notif && !notif.lida) {
+                    setUnreadCount(count => Math.max(0, count - 1));
+                }
+                return prev.filter(n => n.id !== id);
+            });
         } catch (error) {
             console.error('[Notifications] Error deleting notification:', error);
         }
