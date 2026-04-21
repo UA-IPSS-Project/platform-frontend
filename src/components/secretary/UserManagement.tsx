@@ -601,14 +601,14 @@ export function UserManagement() {
                 <button
                     onClick={() => setManagerView('utentes')}
                     className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'utentes'
-                        ? 'bg-blue-500/10 border-blue-500 ring-2 ring-blue-500/20'
-                        : 'bg-card border-border/40 hover:border-blue-500/30 hover:bg-muted/30'
+                        ? 'bg-status-in-progress/10 border-status-in-progress ring-2 ring-status-in-progress/20'
+                        : 'bg-card border-border/40 hover:border-status-in-progress/30 hover:bg-muted/30'
                         }`}
                 >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'utentes' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-muted text-muted-foreground'}`}>
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'utentes' ? 'bg-status-in-progress text-white shadow-lg shadow-status-in-progress/20' : 'bg-muted text-muted-foreground'}`}>
                         <Users className="w-5 h-5" />
                     </div>
-                    <span className={`text-xs font-bold ${managerView === 'utentes' ? 'text-blue-600 dark:text-blue-400' : 'text-foreground/70'}`}>
+                    <span className={`text-xs font-bold ${managerView === 'utentes' ? 'text-status-in-progress' : 'text-foreground/70'}`}>
                         {t('userManagement.usersTitle')}
                     </span>
                 </button>
@@ -631,14 +631,14 @@ export function UserManagement() {
                 <button
                     onClick={() => setManagerView('recover')}
                     className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'recover'
-                        ? 'bg-amber-500/10 border-amber-500 ring-2 ring-amber-500/20'
-                        : 'bg-card border-border/40 hover:border-amber-500/30 hover:bg-muted/30'
+                        ? 'bg-status-warning/10 border-status-warning ring-2 ring-status-warning/20'
+                        : 'bg-card border-border/40 hover:border-status-warning/30 hover:bg-muted/30'
                         }`}
                 >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'recover' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-muted text-muted-foreground'}`}>
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'recover' ? 'bg-status-warning text-white shadow-lg shadow-status-warning/20' : 'bg-muted text-muted-foreground'}`}>
                         <Lock className="w-5 h-5" />
                     </div>
-                    <span className={`text-xs font-bold ${managerView === 'recover' ? 'text-amber-600' : 'text-foreground/70'}`}>
+                    <span className={`text-xs font-bold ${managerView === 'recover' ? 'text-status-warning' : 'text-foreground/70'}`}>
                         {t('userManagement.recoverAccount')}
                     </span>
                 </button>
@@ -708,7 +708,7 @@ export function UserManagement() {
                                                     </span>
                                                 </td>
                                                 <td className="py-4">
-                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold ${user.active ? 'bg-status-success/15 text-status-success' : 'bg-amber-500/15 text-amber-500 animate-pulse'}`}>
+                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold ${user.active ? 'bg-status-success/15 text-status-success' : 'bg-status-warning/15 text-status-warning animate-pulse'}`}>
                                                         {user.active ? t('userManagement.active') : t('userManagement.pending')}
                                                     </span>
                                                 </td>
@@ -750,9 +750,9 @@ export function UserManagement() {
 
                 {/* Utentes List */}
                 {managerView === 'utentes' && (
-                    <GlassCard className="p-6 border-blue-500/20">
+                    <GlassCard className="p-6 border-status-in-progress/20">
                         <div className="flex items-center gap-4 mb-6">
-                            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                            <div className="w-10 h-10 rounded-2xl bg-status-in-progress/10 flex items-center justify-center text-status-in-progress">
                                 <Users className="w-5 h-5" />
                             </div>
                             <div>
@@ -802,7 +802,7 @@ export function UserManagement() {
                                                 <td className="py-4 pr-4 text-right">
                                                     <Button
                                                         size="sm"
-                                                        className="h-9 px-4 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all font-bold"
+                                                        className="h-9 px-4 bg-status-in-progress/10 text-status-in-progress hover:bg-status-in-progress hover:text-white transition-all font-bold"
                                                         onClick={() => handleOpenDetails(utente)}
                                                     >
                                                         <Eye className="w-4 h-4 mr-2" />
@@ -999,9 +999,9 @@ export function UserManagement() {
                 {/* Recover Account View */}
                 {managerView === 'recover' && (
                     <div className="max-w-5xl mx-auto">
-                        <GlassCard className="p-6 border-amber-500/20">
+                        <GlassCard className="p-6 border-status-warning/20">
                             <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border/40">
-                                <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner">
+                                <div className="w-11 h-11 rounded-xl bg-status-warning/10 flex items-center justify-center text-status-warning shadow-inner">
                                     <Lock className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -1024,7 +1024,7 @@ export function UserManagement() {
                                                 <Button
                                                     type="button"
                                                     onClick={handleSearchForRecovery}
-                                                    className="h-12 px-8 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-lg shadow-amber-500/20 transition-all font-bold"
+                                                    className="h-12 px-8 bg-status-warning hover:bg-status-warning/90 text-white rounded-xl shadow-lg shadow-status-warning/20 transition-all font-bold"
                                                 >
                                                     <Search className="w-5 h-5 mr-2" />
                                                     Procurar
@@ -1063,7 +1063,7 @@ export function UserManagement() {
                                                     </div>
                                                 </div>
 
-                                                <Button type="submit" className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                                                <Button type="submit" className="w-full h-12 bg-status-warning hover:bg-status-warning/90 text-white text-base font-bold rounded-xl shadow-lg shadow-status-warning/20 transition-all">
                                                     <Send className="w-5 h-5 mr-3" />
                                                     Atualizar e Enviar Acesso
                                                 </Button>
@@ -1092,7 +1092,7 @@ export function UserManagement() {
                                     <h2 className="text-2xl font-bold text-foreground">{editForm.nome}</h2>
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedUser?.active
                                         ? 'bg-status-success/10 text-status-success'
-                                        : 'bg-amber-500/10 text-amber-500'
+                                        : 'bg-status-warning/10 text-status-warning'
                                         }`}>
                                         {selectedUser?.active ? t('userManagement.active') : t('userManagement.pending')}
                                     </span>
@@ -1115,19 +1115,19 @@ export function UserManagement() {
                         <div className="p-6 space-y-6">
                             {/* Actions Banner for Pending Employees - Integrated */}
                             {selectedUser?.funcao && selectedUser.funcao !== 'UTENTE' && !selectedUser?.active && (
-                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-300">
+                                <div className="p-4 bg-status-warning/10 border border-status-warning/20 rounded-xl flex items-center justify-between gap-4 animate-in slide-in-from-top-1 duration-300">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-600">
+                                        <div className="w-10 h-10 bg-status-warning/20 rounded-lg flex items-center justify-center text-status-warning">
                                             <ShieldCheck className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-bold text-amber-700">{t('userManagement.details.approveTitle')}</h4>
-                                            <p className="text-[11px] text-amber-600/80">{t('userManagement.details.approveDescription')}</p>
+                                            <h4 className="text-sm font-bold text-status-warning">{t('userManagement.details.approveTitle')}</h4>
+                                            <p className="text-[11px] text-status-warning/80">{t('userManagement.details.approveDescription')}</p>
                                         </div>
                                     </div>
                                     <Button
                                         size="sm"
-                                        className="h-8 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4"
+                                        className="h-8 bg-status-warning hover:bg-status-warning/90 text-white text-xs font-bold px-4"
                                         onClick={handleApproveDetail}
                                         disabled={isApproving}
                                     >
@@ -1170,11 +1170,11 @@ export function UserManagement() {
                                         <div className="space-y-1.5">
                                             <Label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.ui.status')}</Label>
                                             <div className="relative">
-                                                <ShieldCheck className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${selectedUser?.active ? 'text-status-success' : 'text-amber-500'}`} />
+                                                <ShieldCheck className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${selectedUser?.active ? 'text-status-success' : 'text-status-warning'}`} />
                                                 <Input
                                                     value={selectedUser?.active ? t('userManagement.active') : t('userManagement.pending')}
                                                     readOnly
-                                                    className={`h-8 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed font-bold ${selectedUser?.active ? 'text-status-success' : 'text-amber-500'}`}
+                                                    className={`h-8 pl-9 text-sm bg-muted/30 cursor-not-allowed border-dashed font-bold ${selectedUser?.active ? 'text-status-success' : 'text-status-warning'}`}
                                                 />
                                             </div>
                                         </div>

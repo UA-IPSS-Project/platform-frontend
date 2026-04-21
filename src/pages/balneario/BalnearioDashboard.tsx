@@ -496,7 +496,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                 onDirtyChange={handleRequisitionsDirtyChange}
                             />
                         ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
-                            <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
+                            <BalnearioConsumosPage variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
                         ) : currentView === 'reports' ? (
                             <BalnearioReportsPage />
                         ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (

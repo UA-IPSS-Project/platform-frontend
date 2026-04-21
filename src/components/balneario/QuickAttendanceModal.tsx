@@ -73,7 +73,7 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <UserPlus className="w-5 h-5 text-purple-600" />
+                        <UserPlus className="w-5 h-5 text-primary" />
                         Registo de Presença Rápida (Walk-in)
                     </DialogTitle>
                 </DialogHeader>
@@ -92,7 +92,7 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer" 
+                            <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer" 
                                  onClick={() => setFormData({ ...formData, produtosHigiene: !formData.produtosHigiene })}>
                                 <Checkbox 
                                     id="produtosHigiene" 
@@ -100,12 +100,12 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
                                     onCheckedChange={(checked) => setFormData({ ...formData, produtosHigiene: !!checked })}
                                 />
                                 <label htmlFor="produtosHigiene" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                                    <ShowerHead className="w-4 h-4 text-blue-500" />
+                                    <ShowerHead className="w-4 h-4 text-status-in-progress" />
                                     Banho
                                 </label>
                             </div>
 
-                            <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                            <div className="flex items-center space-x-2 border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
                                  onClick={() => setFormData({ ...formData, lavagemRoupa: !formData.lavagemRoupa })}>
                                 <Checkbox 
                                     id="lavagemRoupa" 
@@ -113,7 +113,7 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
                                     onCheckedChange={(checked) => setFormData({ ...formData, lavagemRoupa: !!checked })}
                                 />
                                 <label htmlFor="lavagemRoupa" className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
-                                    <Shirt className="w-4 h-4 text-green-500" />
+                                    <Shirt className="w-4 h-4 text-status-success" />
                                     Lavagem de Roupa
                                 </label>
                             </div>
@@ -130,7 +130,7 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
                         </div>
                     </div>
 
-                    <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg flex gap-3 text-xs text-purple-700 dark:text-purple-300">
+                    <div className="bg-accent/50 p-3 rounded-lg flex gap-3 text-xs text-accent-foreground">
                         <Info className="w-4 h-4 flex-shrink-0" />
                         <p>Este registo criará uma presença imediata com estado "EM PROGRESSO" e descontará os itens base do stock.</p>
                     </div>
@@ -139,7 +139,7 @@ export function QuickAttendanceModal({ isOpen, onClose, onSuccess, funcionarioId
                         <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
                             Cancelar
                         </Button>
-                        <Button type="submit" disabled={loading} className="bg-purple-600 hover:bg-purple-700 text-white">
+                        <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
                             {loading ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

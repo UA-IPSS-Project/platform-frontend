@@ -18,28 +18,25 @@ import {
 import { GlassCard } from '../ui/glass-card';
 
 interface BalnearioChartsProps {
-    isDarkMode: boolean;
     data: { name: string; value: number }[];
     barChartTitle: string;
     pieChartTitle: string;
     customColors?: string[];
 }
 
-export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle, customColors }: BalnearioChartsProps) {
+export function BalnearioCharts({ data, barChartTitle, pieChartTitle, customColors }: BalnearioChartsProps) {
     const { t } = useTranslation();
-    const textClass = isDarkMode ? 'text-gray-100' : 'text-gray-800';
-    const textSecondaryClass = isDarkMode ? 'text-gray-400' : 'text-gray-500';
 
     const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className={`p-4 rounded-xl shadow-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-transparent'}`}>
-                    <div className={`text-[17px] tracking-wide font-extrabold pb-3 border-b border-dashed ${isDarkMode ? 'text-gray-100 border-gray-600' : 'text-[#202842] border-gray-300'}`}>
+                <div className="p-4 rounded-xl shadow-lg border bg-card border-border">
+                    <div className="text-[17px] tracking-wide font-extrabold pb-3 border-b border-dashed text-foreground border-border">
                         {label || payload[0]?.name || ''}
                     </div>
                     <div className="flex items-baseline gap-1 mt-3">
-                        <span className={`text-[16px] ${isDarkMode ? 'text-gray-300' : 'text-[#1c2132]'}`}>{t('consumos.quantity', 'Quantidade')} :</span>
-                        <span className="text-[18px] font-bold text-[#c83c74]">{payload[0].value}</span>
+                        <span className="text-[16px] text-foreground">{t('consumos.quantity', 'Quantidade')} :</span>
+                        <span className="text-[18px] font-bold text-primary">{payload[0].value}</span>
                     </div>
                 </div>
             );
@@ -50,13 +47,22 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
     if (!data || data.length === 0) {
         return (
             <div className="flex items-center justify-center h-64">
-                <p className={textSecondaryClass}>{t('consumos.loadingStats', 'A carregar estatísticas...')}</p>
+                <p className="text-muted-foreground">{t('consumos.loadingStats', 'A carregar estatísticas...')}</p>
             </div>
         );
     }
 
     // Cores para os gráficos
-    const defaultColors = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
+    const defaultColors = [
+        'var(--status-in-progress)',
+        'var(--status-info)',
+        'var(--status-warning)',
+        'var(--status-success)',
+        'var(--status-error)',
+        'var(--chart-2)',
+        'var(--primary)',
+        'var(--chart-4)',
+    ];
     const COLORS = customColors || defaultColors;
 
     return (
@@ -65,25 +71,25 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Bar Chart */}
                 <GlassCard className="p-6">
-                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>{barChartTitle}</h3>
+                    <h3 className="text-lg font-bold mb-6 text-foreground">{barChartTitle}</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#374151' : '#e5e7eb'} vertical={false} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                                 <XAxis 
                                     dataKey="name" 
-                                    stroke={isDarkMode ? '#9ca3af' : '#6b7280'}
+                                    stroke="var(--muted-foreground)"
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
                                 />
                                 <YAxis 
-                                    stroke={isDarkMode ? '#9ca3af' : '#6b7280'}
+                                    stroke="var(--muted-foreground)"
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip content={<CustomTooltip />} cursor={{fill: isDarkMode ? '#374151' : '#f3f4f6'}} />
+                                <Tooltip content={<CustomTooltip />} cursor={{fill: 'var(--muted)'}} />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                                     {data.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -96,7 +102,7 @@ export function BalnearioCharts({ isDarkMode, data, barChartTitle, pieChartTitle
 
                 {/* Pie Chart */}
                 <GlassCard className="p-6">
-                    <h3 className={`text-lg font-bold mb-6 ${textClass}`}>{pieChartTitle}</h3>
+                    <h3 className="text-lg font-bold mb-6 text-foreground">{pieChartTitle}</h3>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>

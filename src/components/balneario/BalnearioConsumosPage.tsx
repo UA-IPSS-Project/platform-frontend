@@ -21,7 +21,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { BalnearioCharts } from './BalnearioCharts';
 
 interface BalnearioConsumosPageProps {
-    isDarkMode: boolean;
     variant?: 'armazem' | 'estatisticas';
 }
 
@@ -32,7 +31,7 @@ const BASE_CATEGORIES = [
     { id: 'CALCADO', labelKey: 'consumos.categories.calcado' },
 ];
 
-export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'armazem' }: BalnearioConsumosPageProps) {
+export function BalnearioConsumosPage({ variant = 'armazem' }: BalnearioConsumosPageProps) {
     const { t } = useTranslation();
     const [items, setItems] = useState<ItemArmazemDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -293,8 +292,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                     ) : (
                         <Badge className={`text-xs px-3 py-1 font-bold rounded-md border-none ${
                             estado === 'OK'
-                                ? 'bg-emerald-600/90 text-white hover:bg-emerald-600'
-                                : 'bg-red-800/90 text-white hover:bg-red-800'
+                                ? 'bg-status-success/90 text-white hover:bg-status-success'
+                                : 'bg-status-error/90 text-white hover:bg-status-error'
                         }`}>
                             {estado === 'OK' ? (
                                 <span>OK</span>
@@ -539,8 +538,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                     <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltas}</p>
                                 </div>
                                 <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
-                                    <p className="text-xs text-muted-foreground uppercase tracking-wider" style={{ color: '#3b82f6' }}>{t('stats.agendado', 'Agendado')}</p>
-                                    <p className="text-3xl font-bold mt-1" style={{ color: '#3b82f6' }}>{attendanceStats.totalAgendadas}</p>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-status-in-progress">{t('stats.agendado', 'Agendado')}</p>
+                                    <p className="text-3xl font-bold mt-1 text-status-in-progress">{attendanceStats.totalAgendadas}</p>
                                 </div>
                             </div>
                         )}
@@ -548,7 +547,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                         {/* BalnearioCharts for Presenças */}
                         {attendanceStats && (
                             <BalnearioCharts 
-                                isDarkMode={_isDarkMode} 
                                 data={[
                                     { name: 'Compareceu', value: attendanceStats.totalPresencas },
                                     { name: 'Faltou', value: attendanceStats.totalFaltas },
@@ -556,7 +554,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                                 ]}
                                 barChartTitle="Comparação de Estados"
                                 pieChartTitle="Distribuição de Estados"
-                                customColors={['var(--status-success)', 'var(--status-error)', '#3b82f6']}
+                                customColors={['var(--status-success)', 'var(--status-error)', 'var(--status-in-progress)']}
                             />
                         )}
                     </div>
@@ -585,7 +583,6 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'arma
                         {/* BalnearioCharts for Consumos */}
                         {stats && (
                             <BalnearioCharts 
-                                isDarkMode={_isDarkMode} 
                                 data={Object.entries(stats.totaisPorCategoria).map(([name, value]) => ({ name: catLabels[name] || name, value }))}
                                 barChartTitle="Consumo por Categoria"
                                 pieChartTitle="Distribuição de Itens"

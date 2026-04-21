@@ -204,7 +204,7 @@ export function WarehouseManagement() {
                     </div>
                 </GlassCard>
                 <GlassCard className="p-4 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                    <div className="h-10 w-10 rounded-xl bg-status-warning/10 flex items-center justify-center text-status-warning">
                         <TrendingDown className="w-5 h-5" />
                     </div>
                     <div>
@@ -296,12 +296,12 @@ export function WarehouseManagement() {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 {item.estado === 'BAIXO' ? (
-                                                    <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 hover:bg-orange-500/20 gap-1">
+                                                    <Badge className="bg-status-warning/10 text-status-warning border-status-warning/20 hover:bg-status-warning/20 gap-1">
                                                         <AlertTriangle className="w-3 h-3" />
                                                         {t('consumos.inventory.lowStock')}
                                                     </Badge>
                                                 ) : (
-                                                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20 gap-1">
+                                                    <Badge className="bg-status-success/10 text-status-success border-status-success/20 hover:bg-status-success/20 gap-1">
                                                         <Check className="w-3 h-3" />
                                                         {t('common.ok', 'Ok')}
                                                     </Badge>
