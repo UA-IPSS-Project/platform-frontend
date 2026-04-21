@@ -45,7 +45,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
                 mensagem: data.mensagem || data.message || '',
                 lida: false,
                 dataCriacao: data.dataCriacao || data.createdAt || new Date().toISOString(),
-                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA', 'REQUISICAO'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
+                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA', 'REQUISICAO', 'DOCUMENTO_INVALIDO'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
                 metadata: data.metadata || {}
             };
 
