@@ -19,7 +19,11 @@ export function useWebSocket(
         let wsUrl = url;
         if (!/^wss?:\/\//.test(url)) {
             const proto = getWebSocketProtocol();
-            wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
+            if (/^https?:\/\//.test(url)) {
+                wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
+            } else if (url.startsWith('/')) {
+                wsUrl = `${proto}://${window.location.host}${url}`;
+            }
         }
 
         // Send JWT via STOMP connectHeaders (httpOnly cookies are not accessible via JS)
