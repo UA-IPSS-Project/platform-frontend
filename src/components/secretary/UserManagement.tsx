@@ -585,14 +585,14 @@ export function UserManagement() {
                         : 'bg-card border-border/40 hover:border-primary/30 hover:bg-muted/30'
                         }`}
                 >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'employees' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'employees' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-muted text-muted-foreground'}`}>
                         <ShieldCheck className="w-5 h-5" />
                     </div>
                     <span className={`text-xs font-bold ${managerView === 'employees' ? 'text-primary' : 'text-foreground/70'}`}>
                         {t('userManagement.employeesTitle')}
                     </span>
                     {pendingCount > 0 && (
-                        <span className="absolute top-2 right-2 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">
+                        <span className="absolute top-2 right-2 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full animate-bounce">
                             {pendingCount}
                         </span>
                     )}

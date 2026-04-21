@@ -91,7 +91,7 @@ export function BalnearioCharts({ data, barChartTitle, pieChartTitle, customColo
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{fill: 'var(--muted)'}} />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                                    {data.map((entry, index) => (
+                                    {data.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Bar>
@@ -115,7 +115,7 @@ export function BalnearioCharts({ data, barChartTitle, pieChartTitle, customColo
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {data.map((entry, index) => (
+                                    {data.map((_, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>

@@ -156,7 +156,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                     <div className="flex p-1 bg-primary/5 rounded-lg border border-primary/20">
                       <button
                         onClick={onToggleDarkMode}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${!isDarkMode ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${!isDarkMode ? 'bg-background shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
                           }`}
                       >
                         <SunIcon className="w-4 h-4" />
@@ -164,7 +164,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                       </button>
                       <button
                         onClick={onToggleDarkMode}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${isDarkMode ? 'bg-primary text-white shadow-md' : 'text-muted-foreground hover:text-foreground'
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${isDarkMode ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'
                           }`}
                       >
                         <MoonIcon className="w-4 h-4" />
@@ -219,7 +219,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                   <div className="flex flex-col gap-4 p-4 rounded-xl bg-background/40 border border-border/50">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-full ${notificationsSound ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        <div className={`p-2 rounded-full ${notificationsSound ? 'bg-status-success/10 text-status-success' : 'bg-status-error/10 text-status-error'}`}>
                           {notificationsSound ? <Volume2Icon className="w-5 h-5" /> : <VolumeXIcon className="w-5 h-5" />}
                         </div>
                         <div className="space-y-1">
@@ -272,7 +272,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                     {/* Connectivity card */}
                     <div className="p-4 rounded-xl bg-background/40 border border-border/50 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${systemOnline ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                        <div className={`p-2 rounded-lg ${systemOnline ? 'bg-status-success/10 text-status-success' : 'bg-status-error/10 text-status-error'}`}>
                           {systemOnline ? <ShieldCheckIcon className="w-5 h-5" /> : <AlertCircleIcon className="w-5 h-5" />}
                         </div>
                         <div className="space-y-0.5">
@@ -293,7 +293,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                     {/* Version card */}
                     <div className="p-4 rounded-xl bg-background/40 border border-border/50 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg">
+                        <div className="p-2 bg-status-in-progress/10 text-status-in-progress rounded-lg">
                           <InfoIcon className="w-5 h-5" />
                         </div>
                         <div className="space-y-0.5">
@@ -301,7 +301,7 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                           <p className="font-semibold text-foreground">v0.1</p>
                         </div>
                       </div>
-                      <div className="px-2 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] font-bold rounded uppercase tracking-wider">
+                      <div className="px-2 py-0.5 bg-status-warning/20 text-status-warning text-[10px] font-bold rounded uppercase tracking-wider">
                         {t('settings.systemStatus.development_label')}
                       </div>
                     </div>

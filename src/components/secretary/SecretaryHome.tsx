@@ -293,7 +293,7 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
                     className={`p-6 rounded-2xl border transition-all duration-200 text-left group ${quickActionCardClassByStatusType[action.statusType]}`}
                   >
                     <div
-                      className="w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform bg-white"
+                      className="w-12 h-12 rounded-xl mb-4 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform bg-background"
                       style={quickActionIconColorStyleByStatusType[action.statusType]}
                     >
                       <action.icon className="w-6 h-6" />
