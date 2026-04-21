@@ -7,7 +7,8 @@ export function useWebSocket(
     topic: string | null,
     onMessage: (message: any) => void,
     onConnect?: () => void,
-    onError?: (frame: any) => void
+    onError?: (frame: any) => void,
+    authToken?: string
 ) {
     const stompClient = useRef<Client | null>(null);
 
@@ -18,19 +19,22 @@ export function useWebSocket(
         let wsUrl = url;
         if (!/^wss?:\/\//.test(url)) {
             const proto = getWebSocketProtocol();
-            wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
+            if (/^https?:\/\//.test(url)) {
+                wsUrl = url.replace(/^http(s?):\/\//, proto + '://');
+            } else if (url.startsWith('/')) {
+                wsUrl = `${proto}://${window.location.host}${url}`;
+            }
         }
 
-        // Authentication is handled via HTTP-Only cookies at the handshake level
-        // and via the JwtWebSocketInterceptor (Principal) in the backend.
+        // Send JWT via STOMP connectHeaders (httpOnly cookies are not accessible via JS)
         const connectHeaders: Record<string, string> = {};
+        if (authToken) {
+            connectHeaders['Authorization'] = `Bearer ${authToken}`;
+        }
 
         stompClient.current = new Client({
             brokerURL: wsUrl,
-            connectHeaders: {
-                ...connectHeaders,
-                ...(onConnect ? {} : {}) // placeholder for now
-            },
+            connectHeaders,
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
@@ -62,7 +66,7 @@ export function useWebSocket(
                 stompClient.current.deactivate();
             }
         };
-    }, [url, topic, onMessage, onConnect, onError]);
+    }, [url, topic, onMessage, onConnect, onError, authToken]);
 
     return stompClient;
 }
