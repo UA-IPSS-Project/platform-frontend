@@ -312,7 +312,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                 count={items.length}
                 isOpen={!!openGroups[cat]}
                 onToggle={() => toggleGroup(cat)}
-                onDeleteCategory={() => void handleDeleteCategory(cat)}
+                onDeleteCategory={cat !== 'ABATIDO_VENDIDO_DESCONTINUADO' ? () => void handleDeleteCategory(cat) : undefined}
               >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {items.length > 0 ? (
