@@ -251,7 +251,7 @@ html {
   }
 
   50% {
-    box-shadow: 0 0 6px 4px rgb(34, 197, 94);
+    box-shadow: 0 0 6px 4px var(--status-success);
   }
 }
 

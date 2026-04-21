@@ -470,9 +470,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onDirtyChange={handleRequisitionsDirtyChange}
               />
             ) : currentView === 'management' ? (
-              <UserManagement
-                isDarkMode={isDarkMode}
-              />
+              <UserManagement />
             ) : currentView === 'admin-area' ? (
               <div className="py-8">
                 <SecretaryAdminArea />
