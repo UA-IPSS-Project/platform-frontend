@@ -470,9 +470,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onDirtyChange={handleRequisitionsDirtyChange}
               />
             ) : currentView === 'management' ? (
-              <UserManagement
-                isDarkMode={isDarkMode}
-              />
+              <UserManagement />
             ) : currentView === 'admin-area' ? (
               <div className="py-8">
                 <SecretaryAdminArea />
@@ -533,6 +531,11 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                     setCurrentDate(slotDate);
                     setHighlightedSlot({ date: slotDate, time });
                     setTimeout(() => setHighlightedSlot(null), 5000);
+                  },
+                  onNavigateToRequisition: (_requisitionId) => {
+                    navigateTo('requisitions');
+                    setShowNotifications(false);
+                    // Aqui poderíamos adicionar lógica para filtrar/destacar a requisição se necessário
                   },
                 }}
               />

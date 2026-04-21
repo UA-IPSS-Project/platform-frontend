@@ -431,6 +431,11 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       setHighlightedSlot({ date: slotDate, time });
                       setTimeout(() => setHighlightedSlot(null), 5000);
                     },
+                    onNavigateToRequisition: (requisitionId) => {
+                      navigate('/dashboard/requisitions');
+                      setShowNotifications(false);
+                      console.log('Navegando para requisição utente:', requisitionId);
+                    },
                   }}
                 />
               } />
