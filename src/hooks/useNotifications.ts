@@ -53,10 +53,22 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
             // 2. Display toast
             try {
-                toast.info(normalized.titulo, {
-                    description: normalized.mensagem,
-                    duration: 8000,
-                });
+                if (normalized.tipo === 'LEMBRETE') {
+                    toast.success(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 3000,
+                    });
+                } else if (normalized.tipo === 'REQUISICAO' || normalized.tipo === 'SISTEMA') {
+                    toast.info(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 10000,
+                    });
+                } else {
+                    toast(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 5000,
+                    });
+                }
             } catch (err) {
                 console.error('[Notifications] Toast failed:', err);
             }

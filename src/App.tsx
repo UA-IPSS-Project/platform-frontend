@@ -278,6 +278,7 @@ function App() {
           richColors 
           position="top-right" 
           expand={true}
+          duration={5000}
           closeButton 
           toastOptions={{
             style: { zIndex: 99999 }
