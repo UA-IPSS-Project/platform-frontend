@@ -268,7 +268,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
                     />
                     ))
                   ) : (
-                    <div className="flex items-center justify-center py-12 text-center">
+                    <div className="col-span-full flex items-center justify-center py-12 text-center">
                       <p className="text-muted-foreground">{t('dashboard.admin.catalogs.noVehiclesInCategory')}</p>
                     </div>
                   )}

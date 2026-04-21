@@ -77,13 +77,15 @@ export function TransportAddForm({
         <DatePickerField value={fields.novaDataMatricula} onChange={setters.setNovaDataMatricula} />
       </div>
 
-      <Button
-        onClick={onSubmit}
-        disabled={saving}
-        className="h-11 w-full bg-primary rounded-xl shadow-lg shadow-primary/20 text-base font-semibold"
-      >
-        {saving ? '...' : <Plus className="w-5 h-5" />}
-      </Button>
+      <div className="col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 flex justify-center">
+        <Button
+          onClick={onSubmit}
+          disabled={saving}
+          className="h-11 w-full md:w-80 bg-primary rounded-xl shadow-lg shadow-primary/20 text-base font-semibold"
+        >
+          {saving ? '...' : <Plus className="w-5 h-5" />}
+        </Button>
+      </div>
     </div>
   );
 }
