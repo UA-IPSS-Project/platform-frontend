@@ -276,7 +276,8 @@ function App() {
 
         <Toaster 
           richColors 
-          position="top-center" 
+          position="top-right" 
+          expand={true}
           closeButton 
           toastOptions={{
             style: { zIndex: 99999 }
