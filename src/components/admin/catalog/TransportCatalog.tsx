@@ -289,7 +289,7 @@ export function TransportCatalog({ transportes, onRefresh, formatCategoryName }:
       <DeleteCategoryDialog
         isOpen={!!deleteTarget}
         category={deleteTarget}
-        itemCount={deleteTarget ? filteredTransportes.filter(t => t.categoria === deleteTarget).length : 0}
+        itemCount={deleteTarget ? transportes.filter(t => t.categoria === deleteTarget).length : 0}
         categoryName={deleteTarget ? getCategoryDisplayName(deleteTarget) : ''}
         onClose={() => setDeleteTarget(null)}
         onSuccess={() => onRefresh()}
