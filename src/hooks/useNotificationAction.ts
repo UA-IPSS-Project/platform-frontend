@@ -129,34 +129,39 @@ export function useNotificationAction(
           },
         };
 
-      case 'REQUISICAO':
+      case 'REQUISICAO': {
+        const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+        const canNavigateToRequisition = Boolean(requisitionId && callbacks?.onNavigateToRequisition);
+
         return {
-          label: 'Ver Requisição',
-          variant: 'default',
+          label: canNavigateToRequisition ? 'Ver Requisição' : 'Requisição indisponível',
+          variant: canNavigateToRequisition ? 'default' : 'outline',
           execute: () => {
-            const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
-            if (requisitionId && callbacks?.onNavigateToRequisition) {
-              callbacks.onNavigateToRequisition(String(requisitionId));
-            } else {
-              console.log('TODO: Redirecionar para requisição:', requisitionId);
+            if (!canNavigateToRequisition) {
+              return;
             }
+
+            callbacks!.onNavigateToRequisition!(String(requisitionId));
           },
         };
+      }
 
       // Caso genérico para tipos desconhecidos
       default:
         // Tentar inferir se é requisição pelo título
         if (notification.title?.toLowerCase().includes('requisição')) {
+          const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+          const canNavigateToRequisition = Boolean(requisitionId && callbacks?.onNavigateToRequisition);
+
           return {
-            label: 'Ver Requisição',
-            variant: 'default',
+            label: canNavigateToRequisition ? 'Ver Requisição' : 'Requisição indisponível',
+            variant: canNavigateToRequisition ? 'default' : 'outline',
             execute: () => {
-              const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
-              if (requisitionId && callbacks?.onNavigateToRequisition) {
-                callbacks.onNavigateToRequisition(String(requisitionId));
-              } else {
-                console.log('TODO: Redirecionar para requisição (inferido):', requisitionId);
+              if (!canNavigateToRequisition) {
+                return;
               }
+
+              callbacks!.onNavigateToRequisition!(String(requisitionId));
             },
           };
         }
