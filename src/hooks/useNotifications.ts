@@ -26,7 +26,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
     const onNotificationReceived = useCallback((payload: any) => {
         const items = Array.isArray(payload) ? payload : [payload];
-        
+
         items.forEach(notificacao => {
             let data = notificacao;
             if (typeof notificacao === 'string') {
@@ -53,7 +53,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
 
             // 2. Display toast
             try {
-                toast.success(normalized.titulo, {
+                toast.info(normalized.titulo, {
                     description: normalized.mensagem,
                     duration: 8000,
                 });
