@@ -8,14 +8,13 @@ import { useTranslation } from 'react-i18next';
 export function useNotifications(userEmail: string | undefined, onRefreshNeeded?: () => void) {
     const { t } = useTranslation();
     const [notifications, setNotifications] = useState<Notificacao[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const unreadCount = useMemo(() => notifications.filter(n => !n.lida).length, [notifications]);
 
     const carregarNotificacoes = useCallback(async () => {
         if (!userEmail) return;
         try {
             const data = await notificationsApi.listar();
             setNotifications(data);
-            setUnreadCount(data.filter(n => !n.lida).length);
         } catch (error) {
             console.error('[Notifications] Error loading notifications:', error);
         }
@@ -39,7 +38,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             }
 
             const normalized: Notificacao = {
-                id: data.id || Date.now(),
+                id: data.id || Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
                 utilizadorId: data.utilizadorId || 0,
                 titulo: data.titulo || data.title || t('notifications.new_notification', 'Nova Notificação'),
                 mensagem: data.mensagem || data.message || '',
@@ -67,7 +66,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
                 if (prev.some(n => n.id === normalized.id)) return prev;
                 return [normalized, ...prev];
             });
-            setUnreadCount(prev => prev + 1);
         });
 
         if (onRefreshNeeded) {
@@ -86,7 +84,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         try {
             await notificationsApi.marcarComoLida(id);
             setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
-            setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
             console.error('[Notifications] Error marking as read:', error);
         }
@@ -96,7 +93,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         try {
             await notificationsApi.marcarTodasComoLidas();
             setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-            setUnreadCount(0);
         } catch (error) {
             console.error('[Notifications] Error marking all as read:', error);
         }
@@ -105,13 +101,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
     const handleDeleteNotification = async (id: number) => {
         try {
             await notificationsApi.eliminar(id);
-            setNotifications(prev => {
-                const notif = prev.find(n => n.id === id);
-                if (notif && !notif.lida) {
-                    setUnreadCount(count => Math.max(0, count - 1));
-                }
-                return prev.filter(n => n.id !== id);
-            });
+            setNotifications(prev => prev.filter(n => n.id !== id));
         } catch (error) {
             console.error('[Notifications] Error deleting notification:', error);
         }
@@ -121,7 +111,6 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         try {
             await notificationsApi.eliminarTodas();
             setNotifications([]);
-            setUnreadCount(0);
         } catch (error) {
             console.error('[Notifications] Error deleting all notifications:', error);
         }
