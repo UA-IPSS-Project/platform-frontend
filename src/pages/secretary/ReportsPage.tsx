@@ -68,7 +68,7 @@ const ESTADO_LABELS: Record<string, string> = {
   ABERTO: 'Aberto',
   EM_PROGRESSO: 'Em Progresso',
   FECHADO: 'Fechado',
-  RECUSADO: 'Recusado',
+  RECUSADO: 'Indisponível',
 };
 
 const PRIORIDADE_LABELS: Record<string, string> = {
@@ -100,7 +100,7 @@ const getStatusColor = (status?: string): [number, number, number] => {
   if (!status) return [107, 114, 128];
   const s = status.toUpperCase();
   if (['CONCLUIDO', 'ACEITE', 'CONCLUIDA'].includes(s)) return [16, 185, 129]; // Emerald 600
-  if (['CANCELADO', 'RECUSADA', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
+  if (['CANCELADO', 'RECUSADA', 'RECUSADO', 'NAO_COMPARECIDO', 'INVALIDO'].includes(s)) return [220, 38, 38]; // Red 600
   if (['EM_PROGRESSO', 'EM_ANALISE', 'EM_PREENCHIMENTO', 'ENVIADA', 'URGENTE', 'ALTA'].includes(s)) return [245, 158, 11]; // Amber 600
   if (['AGENDADO', 'MEDIA'].includes(s)) return [241, 149, 217]; // scheduled/medium RGB
   return [107, 114, 128]; // Gray

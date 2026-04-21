@@ -427,7 +427,8 @@
           "spaceDeleted": "Espaço eliminado.",
           "elementDeleted": "Elemento eliminado.",
           "categoryCreated": "Categoria criada com sucesso!",
-          "categoryRemoved": "Categoria removida."
+          "categoryRemoved": "Categoria removida.",
+          "transportScrapSold": "Transporte marcado como abatido/vendido com sucesso."
         },
         "errors": {
           "requiredFields": "Todos os campos são obrigatórios.",
@@ -440,10 +441,13 @@
         },
         "confirm": {
           "deleteMaterial": "Tem a certeza que deseja eliminar este material?",
-          "deleteTransport": "Tem a certeza que deseja eliminar este transporte?",
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
-          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
+          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
+          "deleteCategoryMovesVehicles": "Esta ação vai mover todos os {{count}} veículo(s) desta categoria para \"Abatido / Vendido / Descontinuado\". Os dados dos veículos serão preservados.",
+          "scrapTransport": "Marcar como Abatido / Vendido / Descontinuado",
+          "scrapTransportDescription": "Este veículo será marcado como indisponível e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
+          "confirmScrap": "Marcar como Indisponível"
         },
         "itemsCount_one": "{{count}} item",
         "itemsCount_other": "{{count}} itens",
@@ -471,7 +475,8 @@
         "internalCode": "Código Interno",
         "seatsCount_one": "{{count}} Lugar",
         "seatsCount_other": "{{count}} Lugares",
-        "noCategories": "Nenhuma categoria"
+        "noCategories": "Nenhuma categoria",
+        "noVehiclesInCategory": "Ainda não existem veículos com esta categoria"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
@@ -524,6 +529,7 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "confirm": "Confirmar",
     "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
@@ -535,7 +541,9 @@
     "delete": "Eliminar",
     "optional": "(opcional)",
     "refresh": "Atualizar",
-    "error": "Erro"
+    "error": "Erro",
+    "vehicle": "veículo",
+    "vehicles": "veículos"
   },
   "notifications": {
     "title": "Notificações",
@@ -778,6 +786,7 @@
       "inAnalysis": "Em análise",
       "accepted": "Aceite",
       "rejected": "Recusada",
+      "unavailable": "Indisponível",
       "low": "Baixa",
       "medium": "Média",
       "high": "Alta",
@@ -791,6 +800,10 @@
       "transportCategoryLightGoods": "Ligeiro de mercadorias",
       "transportCategoryLightSpecial": "Ligeiro especial",
       "transportCategoryAdapted": "Adaptado",
+      "transportCategorySchool": "Escolar",
+      "transportCategoryAmbulance": "Ambulância",
+      "transportCategoryTractor": "Trator",
+      "transportCategoryAbateSold": "Abatido / Vendido / Descontinuado",
       "transportCategoryLight": "Ligeiro",
       "transportCategoryHeavy": "Pesado",
       "passengers": "Passageiros",
