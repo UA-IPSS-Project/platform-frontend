@@ -19,14 +19,14 @@ export const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string
   { value: 'ABERTO', label: 'requisitions.labels.open' },
   { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
   { value: 'FECHADO', label: 'requisitions.labels.closed' },
-  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
   { value: 'ABERTO', label: 'requisitions.labels.open' },
   { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
   { value: 'FECHADO', label: 'requisitions.labels.closed' },
-  { value: 'RECUSADO', label: 'requisitions.labels.rejected' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
@@ -96,6 +96,13 @@ export const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; l
   { value: 'AMBULANCIA', label: 'requisitions.labels.transportCategoryAmbulance' },
   { value: 'TRACTOR', label: 'requisitions.labels.transportCategoryTractor' },
   { value: 'OUTRO', label: 'requisitions.labels.other' },
+];
+
+// Categorias de transporte para admin apenas - inclui ABATIDO_VENDIDO_DESCONTINUADO
+// ABATIDO_VENDIDO_DESCONTINUADO não deve aparecer na seleção de requisições normais
+export const TRANSPORTE_CATEGORIA_OPTIONS_ADMIN: Array<{ value: TransporteCategoria; label: string }> = [
+  ...TRANSPORTE_CATEGORIA_OPTIONS,
+  { value: 'ABATIDO_VENDIDO_DESCONTINUADO', label: 'requisitions.labels.transportCategoryAbateSold' },
 ];
 
 // NOTE: 'OUTROS' exclusivamente para retrocompatibilidade com dados históricos.
@@ -208,6 +215,10 @@ export const formatPrioridade = (prioridade: RequisicaoPrioridade) => {
   return key ? i18n.t(key) : prioridade;
 };
 export const formatEstado = (estado: RequisicaoEstado) => {
+  // Traduzir RECUSADO para Indisponível
+  if (estado === 'RECUSADO') {
+    return i18n.t('requisitions.labels.unavailable');
+  }
   const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
   return key ? i18n.t(key) : estado;
 };

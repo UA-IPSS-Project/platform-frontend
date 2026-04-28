@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { playNotificationSound } from '../utils/notificationSound';
 import {
   MoonIcon,
   SunIcon,
@@ -87,6 +88,9 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
     const newValue = !notificationsSound;
     setNotificationsSound(newValue);
     localStorage.setItem('notifications_sound', String(newValue));
+    if (newValue) {
+      playNotificationSound();
+    }
     toast.info(newValue ? t('settings.sounds.enabled') : t('settings.sounds.disabled'));
   };
 
@@ -212,23 +216,39 @@ export function SettingsPage({ isDarkMode, onToggleDarkMode }: SettingsPageProps
                 className="overflow-hidden"
               >
                 <div className="p-6 bg-card/50">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-background/40 border border-border/50">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${notificationsSound ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                        {notificationsSound ? <Volume2Icon className="w-5 h-5" /> : <VolumeXIcon className="w-5 h-5" />}
+                  <div className="flex flex-col gap-4 p-4 rounded-xl bg-background/40 border border-border/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`p-2 rounded-full ${notificationsSound ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                          {notificationsSound ? <Volume2Icon className="w-5 h-5" /> : <VolumeXIcon className="w-5 h-5" />}
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="font-medium text-foreground">{t('settings.sounds.title')}</h4>
+                          <p className="text-sm text-muted-foreground">{t('settings.sounds.description')}</p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <h4 className="font-medium text-foreground">{t('settings.sounds.title')}</h4>
-                        <p className="text-sm text-muted-foreground">{t('settings.sounds.description')}</p>
-                      </div>
+                      <Button
+                        variant={notificationsSound ? 'default' : 'outline'}
+                        onClick={toggleSound}
+                        className="min-w-[120px]"
+                      >
+                        {notificationsSound ? t('settings.sounds.enabled') : t('settings.sounds.disabled')}
+                      </Button>
                     </div>
-                    <Button
-                      variant={notificationsSound ? 'default' : 'outline'}
-                      onClick={toggleSound}
-                      className="min-w-[120px]"
-                    >
-                      {notificationsSound ? t('settings.sounds.enabled') : t('settings.sounds.disabled')}
-                    </Button>
+
+                    {notificationsSound && (
+                      <div className="pt-2 border-t border-border/50 flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => playNotificationSound()}
+                          className="text-primary hover:bg-primary/10 gap-2"
+                        >
+                          <Volume2Icon className="w-4 h-4" />
+                          {t('settings.sounds.test', 'Testar Som')}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

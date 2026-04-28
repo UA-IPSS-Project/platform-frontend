@@ -36,9 +36,9 @@ function SlotsManagement({
                         <Settings2 className="w-4 h-4" />
                         {t('dashboard.admin.slots.operationalConfiguration')}
                     </div>
-                    <h2 className="mt-2 text-xl font-semibold text-foreground">{t('dashboard.admin.slots.title')}</h2>
+                    <h2 className="mt-2 text-xl font-semibold text-foreground">{t('dashboard.admin.slots.balnearioTitle')}</h2>
                     <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                        {t('dashboard.admin.slots.description')}
+                        {t('dashboard.admin.slots.balnearioDescription')}
                     </p>
                 </div>
 
@@ -153,12 +153,12 @@ export function BalnearioAdminArea({ mode = 'slots' }: { mode?: 'slots' | 'inven
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6">
                 <div className="flex flex-col gap-1">
                     <h1 className="text-3xl font-bold text-foreground">
-                        {mode === 'slots' ? 'Gestão de Slots' : 'Gestão de Inventário'}
+                        {mode === 'slots' ? t('sidebar.slots') : t('sidebar.inventory')}
                     </h1>
                     <p className="text-muted-foreground max-w-2xl">
                         {mode === 'slots' 
-                            ? 'Configure os parâmetros operacionais de marcações e capacidade do balneário.' 
-                            : 'Gestão de stock, categorias e detalhes dos produtos do armazém.'}
+                            ? t('dashboard.admin.slots.balnearioDescription') 
+                            : t('dashboard.admin.inventoryDescription')}
                     </p>
                 </div>
             </div>

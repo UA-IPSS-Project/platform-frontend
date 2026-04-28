@@ -2,100 +2,102 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWebSocket } from './useWebSocket';
 import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
+import { playNotificationSound } from '../utils/notificationSound';
+import { useTranslation } from 'react-i18next';
 
 export function useNotifications(userEmail: string | undefined, onRefreshNeeded?: () => void) {
+    const { t } = useTranslation();
     const [notifications, setNotifications] = useState<Notificacao[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
+    const unreadCount = useMemo(() => notifications.filter(n => !n.lida).length, [notifications]);
 
     const carregarNotificacoes = useCallback(async () => {
+        if (!userEmail) return;
         try {
             const data = await notificationsApi.listar();
             setNotifications(data);
-            setUnreadCount(data.filter((n: Notificacao) => !n.lida).length);
         } catch (error) {
-            console.error('Erro ao carregar notificações:', error);
+            console.error('[Notifications] Error loading notifications:', error);
         }
-    }, []);
-    const onNotificationReceived = useCallback((notificacao: Notificacao) => {
-
-        setNotifications(prev => [notificacao, ...prev]);
-        setUnreadCount(prev => prev + 1);
-
-        const isOneDayReminder = notificacao.tipo === 'LEMBRETE'
-            && notificacao.metadata?.notificationSubtype === 'REMINDER_1_DAY';
-
-        // Play notification sound
-        const soundEnabled = localStorage.getItem('notifications_sound') !== 'false';
-        if (soundEnabled) {
-            try {
-                const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
-                if (AudioContextClass) {
-                    const audioCtx = new AudioContextClass();
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-
-                    oscillator.type = 'sine';
-                    // Pleasant high-pitched "ding" (A5 followed by C6-like frequency)
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    oscillator.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.1);
-
-                    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-                    gainNode.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.02);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.3);
-                    
-                    // Close context after playing
-                    setTimeout(() => {
-                        if (audioCtx.state !== 'closed') audioCtx.close();
-                    }, 400);
-                }
-            } catch (error) {
-                console.warn('Could not play notification sound:', error);
-            }
-        }
-
-        toast.info(
-            isOneDayReminder ? 'Lembrete de Marcação' : notificacao.titulo,
-            {
-                description: isOneDayReminder
-                    ? `Tem uma marcação em 1 dia. ${notificacao.mensagem}`
-                    : notificacao.mensagem,
-                duration: isOneDayReminder ? 7000 : 5000,
-            }
-        );
-
-        // Refresh appointments after a small delay to allow backend transaction to commit
-        if (onRefreshNeeded) {
-            setTimeout(() => onRefreshNeeded(), 500);
-        }
-    }, [onRefreshNeeded]);
-
-    // In Spring, the client should always subscribe to /user/queue/... 
-    // and Spring will automatically route it using the authenticated Principal.
-    const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
-    const wsUrl = useMemo(() => import.meta.env.VITE_WS_URL
-        || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`, []);
-    
-    useWebSocket(wsUrl, topic, onNotificationReceived);
+    }, [userEmail]);
 
     useEffect(() => {
         carregarNotificacoes();
     }, [carregarNotificacoes]);
 
+    const onNotificationReceived = useCallback((payload: any) => {
+        const items = Array.isArray(payload) ? payload : [payload];
+
+        items.forEach(notificacao => {
+            let data = notificacao;
+            if (typeof notificacao === 'string') {
+                try {
+                    data = JSON.parse(notificacao);
+                } catch (e) {
+                    data = { mensagem: notificacao };
+                }
+            }
+
+            const normalized: Notificacao = {
+                id: data.id || Number(`${Date.now()}${Math.floor(Math.random() * 1000)}`),
+                utilizadorId: data.utilizadorId || 0,
+                titulo: data.titulo || data.title || t('notifications.new_notification', 'Nova Notificação'),
+                mensagem: data.mensagem || data.message || '',
+                lida: false,
+                dataCriacao: data.dataCriacao || data.createdAt || new Date().toISOString(),
+                tipo: (['LEMBRETE', 'CANCELAMENTO', 'FICHEIRO', 'SISTEMA', 'REQUISICAO', 'DOCUMENTO_INVALIDO'].includes(data.tipo) ? data.tipo : 'SISTEMA') as Notificacao['tipo'],
+                metadata: data.metadata || {}
+            };
+
+            // 1. Play sound
+            playNotificationSound().catch(err => console.error('[Notifications] Sound failed:', err));
+
+            // 2. Display toast
+            try {
+                if (normalized.tipo === 'LEMBRETE') {
+                    toast.success(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 3000,
+                    });
+                } else if (normalized.tipo === 'REQUISICAO' || normalized.tipo === 'SISTEMA') {
+                    toast.info(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 10000,
+                    });
+                } else {
+                    toast(normalized.titulo, {
+                        description: normalized.mensagem,
+                        duration: 5000,
+                    });
+                }
+            } catch (err) {
+                console.error('[Notifications] Toast failed:', err);
+            }
+
+            // 3. Update local state
+            setNotifications(prev => {
+                if (prev.some(n => n.id === normalized.id)) return prev;
+                return [normalized, ...prev];
+            });
+        });
+
+        if (onRefreshNeeded) {
+            onRefreshNeeded();
+        }
+    }, [onRefreshNeeded, t]);
+
+    const wsUrl = '/ws-notificacoes';
+    const topic = useMemo(() => userEmail ? `/user/queue/notifications` : null, [userEmail]);
+
+    useWebSocket(wsUrl, topic, onNotificationReceived, () => {
+        console.log('[Notifications] WebSocket Connected');
+    });
+
     const handleMarkAsRead = async (id: number) => {
         try {
             await notificationsApi.marcarComoLida(id);
-            setNotifications(prev => prev.map(n =>
-                n.id === id ? { ...n, lida: true } : n
-            ));
-            setUnreadCount(prev => Math.max(0, prev - 1));
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, lida: true } : n));
         } catch (error) {
-            console.error('Erro ao marcar notificação como lida:', error);
+            console.error('[Notifications] Error marking as read:', error);
         }
     };
 
@@ -103,24 +105,17 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         try {
             await notificationsApi.marcarTodasComoLidas();
             setNotifications(prev => prev.map(n => ({ ...n, lida: true })));
-            setUnreadCount(0);
         } catch (error) {
-            console.error('Erro ao marcar todas notificações como lidas:', error);
+            console.error('[Notifications] Error marking all as read:', error);
         }
     };
 
     const handleDeleteNotification = async (id: number) => {
         try {
             await notificationsApi.eliminar(id);
-            setNotifications(prev => {
-                const notif = prev.find(n => n.id === id);
-                if (notif && !notif.lida) {
-                    setUnreadCount(count => Math.max(0, count - 1));
-                }
-                return prev.filter(n => n.id !== id);
-            });
+            setNotifications(prev => prev.filter(n => n.id !== id));
         } catch (error) {
-            console.error('Erro ao eliminar notificação:', error);
+            console.error('[Notifications] Error deleting notification:', error);
         }
     };
 
@@ -128,9 +123,8 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
         try {
             await notificationsApi.eliminarTodas();
             setNotifications([]);
-            setUnreadCount(0);
         } catch (error) {
-            console.error('Erro ao eliminar todas as notificações:', error);
+            console.error('[Notifications] Error deleting all notifications:', error);
         }
     };
 
