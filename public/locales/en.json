@@ -774,6 +774,21 @@
     }
   },
   "requisitions": {
+    "periodica": {
+      "label": "Periodic Request",
+      "frequencia": {
+        "label": "Frequency",
+        "DIARIA": "Daily",
+        "SEMANAL": "Weekly",
+        "MENSAL": "Monthly"
+      },
+      "dataInicio": "Start Date",
+      "dataFim": "End Date",
+      "dataFimHint": "Optional. Maximum date.",
+      "errors": {
+        "dataInicioRequired": "Start date is mandatory for this frequency."
+      }
+    },
     "summary": "{{total}} request(s) · {{urgent}} urgent",
     "labels": {
       "allStatuses": "All statuses",

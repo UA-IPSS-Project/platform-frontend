@@ -54,8 +54,7 @@ export function RequisitionsCreateCommonFields({
   onChangePeriodicaDataInicio,
   periodicaDataFim,
   onChangePeriodicaDataFim,
-  descricaoError,
-  textareaFieldClassName,
+  descricaoError,  inputFieldClassName,  textareaFieldClassName,
   selectFieldClassName,
   t,
 }: Readonly<RequisitionsCreateCommonFieldsProps>) {
