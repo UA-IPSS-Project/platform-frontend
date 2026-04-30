@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { maskNif } from '../../utils/maskNif';
 import { Button } from '../ui/button';
 import { GlassCard } from '../ui/glass-card';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -792,7 +793,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           formattedDate,
           apt.time,
           escapeField(apt.patientName || ''),
-          apt.patientNIF || '',
+          maskNif(apt.patientNIF),
           apt.patientContact || '',
           apt.patientEmail || '',
           escapeField(apt.subject || ''),
@@ -856,7 +857,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       tableContent += `<td style="padding:6px;">${formattedDate}</td>`;
       tableContent += `<td style="padding:6px;">${apt.time}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
-      tableContent += `<td style="padding:6px;">${apt.patientNIF || ''}</td>`;
+      tableContent += `<td style="padding:6px;">${maskNif(apt.patientNIF)}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
       tableContent += `<td style="padding:6px;">${apt.subject || ''}</td>`;
@@ -949,7 +950,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
           <td>${formattedDate}</td>
           <td>${apt.time}</td>
           <td>${apt.patientName || ''}</td>
-          <td>${apt.patientNIF || ''}</td>
+          <td>${maskNif(apt.patientNIF)}</td>
           <td>${apt.patientContact || ''}</td>
           <td>${apt.patientEmail || ''}</td>
           <td>${apt.subject || ''}</td>
@@ -1037,7 +1038,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
         `DTSTART:${formatICSDate(aptDate, apt.time)}`,
         `DTEND:${formatICSEndDate(aptDate, apt.time)}`,
         `SUMMARY:${apt.subject} - ${apt.patientName}`,
-        `DESCRIPTION:${tt('Utente', 'Patient')}: ${apt.patientName}\\nNIF: ${apt.patientNIF || 'N/A'}\\n${tt('Contacto', 'Contact')}: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\n${tt('Estado', 'Status')}: ${status}`,
+        `DESCRIPTION:${tt('Utente', 'Patient')}: ${apt.patientName}\\nNIF: ${maskNif(apt.patientNIF)}\\n${tt('Contacto', 'Contact')}: ${apt.patientContact || 'N/A'}\\nEmail: ${apt.patientEmail || 'N/A'}\\n${tt('Estado', 'Status')}: ${status}`,
         `STATUS:${apt.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'}`,
         'END:VEVENT'
       );
