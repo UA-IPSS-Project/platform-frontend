@@ -4,6 +4,18 @@ import { notificationsApi, Notificacao } from '../services/api';
 import { toast } from 'sonner';
 import { playNotificationSound } from '../utils/notificationSound';
 import { useTranslation } from 'react-i18next';
+ 
+const getToastDuration = (tipo: Notificacao['tipo']): number => {
+    switch (tipo) {
+        case 'LEMBRETE':
+            return 3000;
+        case 'REQUISICAO':
+        case 'SISTEMA':
+            return 10000;
+        default:
+            return 5000;
+    }
+};
 
 export function useNotifications(userEmail: string | undefined, onRefreshNeeded?: () => void) {
     const { t } = useTranslation();
@@ -55,7 +67,7 @@ export function useNotifications(userEmail: string | undefined, onRefreshNeeded?
             try {
                 toast.info(normalized.titulo, {
                     description: normalized.mensagem,
-                    duration: normalized.tipo === 'LEMBRETE' ? 3000 : normalized.tipo === 'REQUISICAO' || normalized.tipo === 'SISTEMA' ? 10000 : 5000,
+                    duration: getToastDuration(normalized.tipo),
                 });
             } catch (err) {
                 console.error('[Notifications] Toast failed:', err);

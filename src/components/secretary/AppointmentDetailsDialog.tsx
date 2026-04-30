@@ -133,35 +133,35 @@ export function AppointmentDetailsDialog({
   };
 
   function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
-function cleanFilename(name: string) {
-  if (!name) return "";
-  const dotIndex = name.lastIndexOf(".");
-  const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
-  const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
-
-  const parts = baseName.split("_");
-  if (parts.length >= 4) {
-    // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
-    const nif = parts[0];
-    const contador = parts[parts.length - 2];
-    const assuntoParts = parts.slice(1, parts.length - 2);
-    const assunto = assuntoParts.join("_");
-    
-    // Na vista de marcação, apenas NIF_ASSUNTO_1 (sem data, pois já está no título)
-    return `${nif}_${assunto}_${contador}${extension}`;
-  } else if (parts.length === 3) {
-    // Formato legado: NIF_TIPO_UUID
-    return `${parts[0]}_${parts[1]}${extension}`;
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }
-  return name;
-}
+
+  function cleanFilename(name: string) {
+    if (!name) return "";
+    const dotIndex = name.lastIndexOf(".");
+    const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+    const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
+
+    const parts = baseName.split("_");
+    if (parts.length >= 4) {
+      // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
+      const nif = parts[0];
+      const contador = parts[parts.length - 2];
+      const assuntoParts = parts.slice(1, parts.length - 2);
+      const assunto = assuntoParts.join("_");
+
+      // Na vista de marcação, apenas NIF_ASSUNTO_1 (sem data, pois já está no título)
+      return `${nif}_${assunto}_${contador}${extension}`;
+    } else if (parts.length === 3) {
+      // Formato legado: NIF_TIPO_UUID
+      return `${parts[0]}_${parts[1]}${extension}`;
+    }
+    return name;
+  }
 
   const handleDocToggle = (index: number) => {
     setSelectedDocs(prev => {
@@ -755,7 +755,7 @@ function cleanFilename(name: string) {
                             <EyeIcon className="w-4 h-4 text-status-info" />
                           </button>
                         )}
-                        
+
                         {isEditable ? (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -799,15 +799,17 @@ function cleanFilename(name: string) {
                             </PopoverContent>
                           </Popover>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadDocumento(doc)}
-                            className="p-2 hover:bg-muted rounded"
-                            title={t('appointmentDetails.download', 'Transferir')}
-                            aria-label={t('appointmentDetails.download', 'Transferir')}
-                          >
-                            <Download className="w-4 h-4 text-muted-foreground" />
-                          </button>
+                          !isClient && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadDocumento(doc)}
+                              className="p-2 hover:bg-muted rounded"
+                              title={t('appointmentDetails.download', 'Transferir')}
+                              aria-label={t('appointmentDetails.download', 'Transferir')}
+                            >
+                              <Download className="w-4 h-4 text-muted-foreground" />
+                            </button>
+                          )
                         )}
 
 
@@ -1144,11 +1146,10 @@ function cleanFilename(name: string) {
                       key={slot}
                       type="button"
                       onClick={() => setRescheduleTime(slot)}
-                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                        rescheduleTime === slot
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${rescheduleTime === slot
                           ? 'bg-status-warning text-primary-foreground border-status-warning'
                           : 'bg-muted/40 border-border text-foreground/80 hover:border-status-warning/60 hover:bg-status-warning-soft/40'
-                      }`}
+                        }`}
                     >
                       {slot}
                     </button>
