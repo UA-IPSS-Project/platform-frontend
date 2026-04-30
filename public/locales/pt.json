@@ -789,7 +789,7 @@
       "dataFim": "Data de Fim (Opcional)",
       "dataFimHint": "Selecionar data",
       "errors": {
-        "dataInicioRequired": "A data de início é obrigatória para esta frequência."
+        "dataInicioRequired": "A data de início é obrigatória para requisições periódicas."
       }
     },
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
