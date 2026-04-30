@@ -5,18 +5,6 @@ import { RequisicaoPrioridade, RequisicaoTipo } from '../../../services/api';
 import { PRIORIDADE_OPTIONS, TIPO_OPTIONS } from '../../../pages/requisitions/sharedRequisitions.helpers';
 import { PeriodicidadeFrequencia } from '../../../services/api/requisicoes/types';
 
-/* 
-i18n keys needed (inform only):
-requisitions.periodica.label
-requisitions.periodica.frequencia.label
-requisitions.periodica.frequencia.DIARIA
-requisitions.periodica.frequencia.SEMANAL
-requisitions.periodica.frequencia.MENSAL
-requisitions.periodica.dataInicio
-requisitions.periodica.dataFim
-requisitions.periodica.dataFimHint
-*/
-
 interface RequisitionsCreateCommonFieldsProps {
   descricao: string;
   onChangeDescricao: (value: string) => void;
