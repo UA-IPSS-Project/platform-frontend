@@ -2,6 +2,9 @@
 export function maskNif(nif: string | null | undefined): string {
     if (!nif) return '—';
     const s = String(nif);
-    if (s.length <= 4) return s;
-    return '*'.repeat(s.length - 4) + s.slice(-4);
+    const trimmed = s.trim();
+
+    if (!/^\d{9}$/.test(trimmed)) return s;
+
+    return '*'.repeat(trimmed.length - 4) + trimmed.slice(-4);
 }

@@ -239,7 +239,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
 
       if (!isClient) {
         tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
-        tableContent += `<td style="padding:6px;">${maskNif(apt.patientNIF)}</td>`;
+        tableContent += `<td style="padding:6px;">${apt.patientNIF ? maskNif(apt.patientNIF) : ''}</td>`;
         tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
         tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
       }
