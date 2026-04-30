@@ -22,6 +22,7 @@ import { SettingsPage } from '../SettingsPage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { ReportsPage } from './ReportsPage';
 import { CandidaturasByTypePage } from '../candidaturas/CandidaturasByTypePage';
+import { AdminFormsManagementPage } from '../admin/AdminFormsManagementPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -283,11 +284,12 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {view === 'escola' && 'Valências - Escola'}
           {view === 'valencias' && 'Valências'}
           {view === 'candidaturas' && 'Candidaturas'}
-          {view === 'creche' && 'Candidaturas - Creche'}
-          {view === 'catl' && 'Candidaturas - CATL'}
-          {view === 'erpi' && 'Candidaturas - ERPI'}
+          {view === 'forms-management' && 'Gestão de Formulários de Candidaturas'}
+          {view === 'creche' && t('dashboard.applicationsCreche')}
+          {view === 'catl' && t('dashboard.applicationsCatl')}
+          {view === 'erpi' && t('dashboard.applicationsErpi')}
           {view === 'reports' && 'Relatórios'}
-          {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+            {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'forms-management', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
         <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>
@@ -350,9 +352,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         label={t('sidebar.management')}
         items={[
           { id: 'management', label: t('userManagement.title') },
+          { id: 'forms-management', label: t('sidebar.managementApplications') },
           { id: 'admin-area', label: t('userManagement.title2') },
         ]}
-        isActive={['management', 'admin-area'].includes(currentView)}
+        isActive={['management', 'admin-area', 'forms-management'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         onLabelClick={() => navigateTo('management')}
       />
@@ -479,9 +482,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 onDirtyChange={handleRequisitionsDirtyChange}
               />
             ) : currentView === 'management' ? (
-              <UserManagement
-                isDarkMode={isDarkMode}
-              />
+              <UserManagement />
             ) : currentView === 'admin-area' ? (
               <div className="py-8">
                 <SecretaryAdminArea />
@@ -545,6 +546,40 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   },
                 }}
               />
+            ) : currentView === 'forms-management' ? (
+              <AdminFormsManagementPage />
+            ) : currentView === 'candidaturas' ? (
+              <div className="mx-auto max-w-4xl rounded-xl border border-border bg-card p-6 shadow-sm">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-foreground">{t('dashboard.managementApplications')}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {t('dashboard.managementApplicationsDescription')}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Button type="button" className="h-auto py-6" onClick={() => navigateTo('creche')}>
+                    <span className="flex flex-col items-start text-left">
+                      <span className="text-base font-semibold">Creche</span>
+                      <span className="text-xs opacity-80">{t('dashboard.crecheApplicationsDescription')}</span>
+                    </span>
+                  </Button>
+
+                  <Button type="button" variant="outline" className="h-auto py-6" onClick={() => navigateTo('catl')}>
+                    <span className="flex flex-col items-start text-left">
+                      <span className="text-base font-semibold">CATL</span>
+                      <span className="text-xs opacity-80">{t('dashboard.catlApplicationsDescription')}</span>
+                    </span>
+                  </Button>
+
+                  <Button type="button" variant="outline" className="h-auto py-6" onClick={() => navigateTo('erpi')}>
+                    <span className="flex flex-col items-start text-left">
+                      <span className="text-base font-semibold">ERPI</span>
+                      <span className="text-xs opacity-80">{t('dashboard.erpiApplicationsDescription')}</span>
+                    </span>
+                  </Button>
+                </div>
+              </div>
             ) : currentView === 'reports' ? (
               <ReportsPage />
             ) : ['creche', 'catl', 'erpi'].includes(currentView) ? (

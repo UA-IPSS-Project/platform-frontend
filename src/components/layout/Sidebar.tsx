@@ -96,6 +96,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       icon: DatabaseIcon,
       subitems: [
         { id: 'management', label: t('userManagement.title', 'Gestão de Utilizadores'), icon: UserIcon },
+        { id: 'forms-management', label: t('sidebar.managementApplications'), icon: FileTextIcon },
         { id: 'admin-area', label: t('userManagement.title2', 'Gestão da Plataforma'), icon: SlidersIcon },
       ]
     },
@@ -244,13 +245,13 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
                                 }}
                                 aria-label={`Ir para ${subitem.label}`}
                                 aria-current={isSubActive ? 'page' : undefined}
-                                className={`w-full flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm ${isSubActive
+                                className={`w-full flex items-start justify-start gap-2 px-4 py-2 rounded-lg transition-colors text-sm text-left ${isSubActive
                                   ? 'bg-primary/10 text-primary'
                                   : 'text-muted-foreground hover:bg-primary/10 hover:text-primary'
                                   }`}
                               >
-                                {SubIcon && <SubIcon className="w-4 h-4" aria-hidden="true" />}
-                                <span>{subitem.label}</span>
+                                {SubIcon && <SubIcon className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />}
+                                <span className="block leading-snug">{subitem.label}</span>
                               </button>
                             );
                           })}

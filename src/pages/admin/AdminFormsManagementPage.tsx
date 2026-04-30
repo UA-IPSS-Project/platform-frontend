@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Pencil, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
+import { Checkbox } from '../../components/ui/checkbox';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Input } from '../../components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Textarea } from '../../components/ui/textarea';
 import {
   AlertDialog,
@@ -76,6 +79,155 @@ const parseJson = (value: string): Record<string, unknown> | null => {
   }
 };
 
+type FieldKind = 'string' | 'number' | 'boolean' | 'date' | 'email' | 'textarea' | 'select';
+
+interface FieldEditorState {
+  key: string;
+  title: string;
+  kind: FieldKind;
+  placeholder: string;
+  required: boolean;
+  options: string;
+}
+
+interface FieldSummary {
+  key: string;
+  title: string;
+  kind: FieldKind;
+  required: boolean;
+  placeholder: string;
+  options: string[];
+}
+
+interface FormLayoutSection {
+  id: string;
+  title: string;
+  description: string;
+}
+
+interface FormLayoutState {
+  title: string;
+  description: string;
+  accentColor: string;
+  sections: FormLayoutSection[];
+}
+
+const EMPTY_FIELD_EDITOR: FieldEditorState = {
+  key: '',
+  title: '',
+  kind: 'string',
+  placeholder: '',
+  required: false,
+  options: '',
+};
+
+const DEFAULT_FORM_LAYOUT: FormLayoutState = {
+  title: 'Nova candidatura',
+  description: 'Preencha os dados abaixo para submeter a candidatura.',
+  accentColor: '#8b5cf6',
+  sections: [
+    {
+      id: 'section-1',
+      title: 'Informação principal',
+      description: 'Os campos essenciais do formulário.',
+    },
+  ],
+};
+
+const createSectionId = () => `section-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
+
+const sanitizeFieldKey = (value: string) => value.trim().replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
+
+const splitFieldOptions = (value: string) =>
+  value
+    .split(/\r?\n|,/)
+    .map(option => option.trim())
+    .filter(Boolean);
+
+const inferFieldKind = (property: Record<string, unknown>, uiSchema?: Record<string, unknown>): FieldKind => {
+  const widget = typeof uiSchema?.['ui:widget'] === 'string' ? uiSchema['ui:widget'] : undefined;
+
+  if (widget === 'TextareaWidget') return 'textarea';
+  if (widget === 'DateWidget') return 'date';
+  if (widget === 'EmailWidget') return 'email';
+  if (widget === 'CheckboxWidget') return 'boolean';
+  if (Array.isArray(property.enum) && property.enum.length > 0) return 'select';
+  if (property.type === 'boolean') return 'boolean';
+  if (property.format === 'date') return 'date';
+  if (property.format === 'email') return 'email';
+  if (property.type === 'number' || property.type === 'integer') return 'number';
+
+  return 'string';
+};
+
+const buildPropertyForField = (field: FieldEditorState) => {
+  const property: Record<string, unknown> = {
+    title: field.title.trim(),
+  };
+
+  switch (field.kind) {
+    case 'number':
+      property.type = 'number';
+      break;
+    case 'boolean':
+      property.type = 'boolean';
+      property.default = false;
+      break;
+    case 'date':
+      property.type = 'string';
+      property.format = 'date';
+      break;
+    case 'email':
+      property.type = 'string';
+      property.format = 'email';
+      break;
+    case 'textarea':
+      property.type = 'string';
+      break;
+    case 'select': {
+      const options = splitFieldOptions(field.options);
+      property.type = 'string';
+      property.enum = options;
+      break;
+    }
+    default:
+      property.type = 'string';
+  }
+
+  return property;
+};
+
+const buildUiSchemaForField = (field: FieldEditorState) => {
+  const uiSchema: Record<string, unknown> = {};
+
+  if (field.placeholder.trim() && field.kind !== 'boolean' && field.kind !== 'select') {
+    uiSchema['ui:placeholder'] = field.placeholder.trim();
+  }
+
+  switch (field.kind) {
+    case 'boolean':
+      uiSchema['ui:widget'] = 'CheckboxWidget';
+      break;
+    case 'date':
+      uiSchema['ui:widget'] = 'DateWidget';
+      break;
+    case 'email':
+      uiSchema['ui:widget'] = 'EmailWidget';
+      break;
+    case 'textarea':
+      uiSchema['ui:widget'] = 'TextareaWidget';
+      uiSchema['ui:options'] = { rows: 4 };
+      if (field.placeholder.trim()) {
+        uiSchema['ui:placeholder'] = field.placeholder.trim();
+      }
+      break;
+    default:
+      break;
+  }
+
+  return uiSchema;
+};
+
 interface AdminFormsManagementPageProps {
   onFormsChanged?: () => Promise<void> | void;
 }
@@ -88,6 +240,9 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   const [name, setName] = useState('');
   const [schemaText, setSchemaText] = useState(toPrettyJson(BASE_FORM_SCHEMA));
   const [uiSchemaText, setUiSchemaText] = useState(toPrettyJson(BASE_FORM_UI_SCHEMA));
+  const [layoutState, setLayoutState] = useState<FormLayoutState>(DEFAULT_FORM_LAYOUT);
+  const [fieldEditor, setFieldEditor] = useState<FieldEditorState>(EMPTY_FIELD_EDITOR);
+  const [editingFieldKey, setEditingFieldKey] = useState<string | null>(null);
   const [formToDelete, setFormToDelete] = useState<FormularioResponse | null>(null);
 
   const isEditing = Boolean(editingFormId);
@@ -96,6 +251,288 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     () => [...forms].sort((a, b) => a.name.localeCompare(b.name, 'pt-PT')),
     [forms]
   );
+
+  const parsedSchema = useMemo(() => parseJson(schemaText), [schemaText]);
+  const parsedUiSchema = useMemo(() => parseJson(uiSchemaText), [uiSchemaText]);
+
+  const currentLayoutSections = layoutState.sections.length > 0 ? layoutState.sections : DEFAULT_FORM_LAYOUT.sections;
+
+  const fields = useMemo<FieldSummary[]>(() => {
+    if (!parsedSchema || parsedSchema.type !== 'object') {
+      return [];
+    }
+
+    const properties = parsedSchema.properties;
+    if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+      return [];
+    }
+
+    const requiredFields = new Set(
+      Array.isArray(parsedSchema.required)
+        ? parsedSchema.required.filter((item): item is string => typeof item === 'string')
+        : []
+    );
+
+    return Object.entries(properties).map(([key, value]) => {
+      const property = value as Record<string, unknown>;
+      const uiSchema = parsedUiSchema?.[key] as Record<string, unknown> | undefined;
+
+      return {
+        key,
+        title: typeof property.title === 'string' ? property.title : key,
+        kind: inferFieldKind(property, uiSchema),
+        required: requiredFields.has(key),
+        placeholder: typeof uiSchema?.['ui:placeholder'] === 'string' ? String(uiSchema['ui:placeholder']) : '',
+        options: Array.isArray(property.enum) ? property.enum.map((option) => String(option)) : [],
+      };
+    });
+  }, [parsedSchema, parsedUiSchema]);
+
+  const resetFieldEditor = () => {
+    setFieldEditor(EMPTY_FIELD_EDITOR);
+    setEditingFieldKey(null);
+  };
+
+  const resetLayoutState = () => {
+    setLayoutState(DEFAULT_FORM_LAYOUT);
+  };
+
+  const buildSchemaWithLayout = (schema: Record<string, unknown>) => ({
+    ...schema,
+    title: layoutState.title.trim() || String(schema.title || 'Formulário de candidatura'),
+    description: layoutState.description.trim(),
+    'x-layout': {
+      accentColor: layoutState.accentColor,
+      sections: layoutState.sections.map((section) => ({
+        id: section.id,
+        title: section.title.trim(),
+        description: section.description.trim(),
+      })),
+    },
+  });
+
+  const buildPreviewFieldsBySection = () => {
+    const sections = currentLayoutSections;
+    return sections.map((section, index) => ({
+      ...section,
+      fields: index === 0 ? fields : [],
+    }));
+  };
+
+  const persistSchemaUpdate = (nextSchema: Record<string, unknown>, nextUiSchema: Record<string, unknown>) => {
+    setSchemaText(toPrettyJson(nextSchema));
+    setUiSchemaText(toPrettyJson(nextUiSchema));
+  };
+
+  const startEditingField = (field: FieldSummary) => {
+    setEditingFieldKey(field.key);
+    setFieldEditor({
+      key: field.key,
+      title: field.title,
+      kind: field.kind,
+      placeholder: field.placeholder,
+      required: field.required,
+      options: field.options.join('\n'),
+    });
+  };
+
+  const handleSaveField = () => {
+    if (!parsedSchema || parsedSchema.type !== 'object') {
+      toast.error('Schema base inválido.');
+      return;
+    }
+
+    const fieldKey = sanitizeFieldKey(fieldEditor.key);
+    const fieldTitle = fieldEditor.title.trim();
+
+    if (!fieldKey) {
+      toast.error('A chave técnica do campo é obrigatória.');
+      return;
+    }
+
+    if (!fieldTitle) {
+      toast.error('O título do campo é obrigatório.');
+      return;
+    }
+
+    if (fieldEditor.kind === 'select' && splitFieldOptions(fieldEditor.options).length === 0) {
+      toast.error('Adicione pelo menos uma opção para o campo de escolha.');
+      return;
+    }
+
+    const nextSchema: Record<string, unknown> = {
+      ...parsedSchema,
+      properties: {
+        ...(parsedSchema.properties as Record<string, unknown> | undefined),
+      },
+    };
+    const nextUiSchema: Record<string, unknown> = {
+      ...(parsedUiSchema || {}),
+    };
+    const nextProperties = nextSchema.properties as Record<string, unknown>;
+    const nextRequired = new Set(
+      Array.isArray(parsedSchema.required)
+        ? parsedSchema.required.filter((item): item is string => typeof item === 'string')
+        : []
+    );
+
+    if (editingFieldKey && editingFieldKey !== fieldKey) {
+      delete nextProperties[editingFieldKey];
+      delete nextUiSchema[editingFieldKey];
+      nextRequired.delete(editingFieldKey);
+    }
+
+    nextProperties[fieldKey] = buildPropertyForField({
+      ...fieldEditor,
+      key: fieldKey,
+      title: fieldTitle,
+    });
+
+    const uiSchemaForField = buildUiSchemaForField({
+      ...fieldEditor,
+      key: fieldKey,
+      title: fieldTitle,
+    });
+
+    if (Object.keys(uiSchemaForField).length > 0) {
+      nextUiSchema[fieldKey] = uiSchemaForField;
+    } else {
+      delete nextUiSchema[fieldKey];
+    }
+
+    if (fieldEditor.required) {
+      nextRequired.add(fieldKey);
+    } else {
+      nextRequired.delete(fieldKey);
+    }
+
+    nextSchema.required = Array.from(nextRequired);
+
+    persistSchemaUpdate(nextSchema, nextUiSchema);
+    resetFieldEditor();
+    toast.success(editingFieldKey ? 'Campo atualizado com sucesso.' : 'Campo adicionado com sucesso.');
+  };
+
+  const handleDeleteField = (fieldKey: string) => {
+    if (!parsedSchema || parsedSchema.type !== 'object') {
+      return;
+    }
+
+    const properties = parsedSchema.properties as Record<string, unknown> | undefined;
+    if (!properties || !(fieldKey in properties)) {
+      return;
+    }
+
+    const nextSchema: Record<string, unknown> = {
+      ...parsedSchema,
+      properties: { ...properties },
+    };
+    const nextUiSchema: Record<string, unknown> = { ...(parsedUiSchema || {}) };
+    const nextProperties = nextSchema.properties as Record<string, unknown>;
+    const nextRequired = new Set(
+      Array.isArray(parsedSchema.required)
+        ? parsedSchema.required.filter((item): item is string => typeof item === 'string')
+        : []
+    );
+
+    delete nextProperties[fieldKey];
+    delete nextUiSchema[fieldKey];
+    nextRequired.delete(fieldKey);
+    nextSchema.required = Array.from(nextRequired);
+
+    persistSchemaUpdate(nextSchema, nextUiSchema);
+
+    if (editingFieldKey === fieldKey) {
+      resetFieldEditor();
+    }
+
+    toast.success('Campo removido com sucesso.');
+  };
+
+  const handleMoveField = (fieldKey: string, direction: -1 | 1) => {
+    if (!parsedSchema || parsedSchema.type !== 'object') {
+      return;
+    }
+
+    const properties = parsedSchema.properties as Record<string, unknown> | undefined;
+    if (!properties || !(fieldKey in properties)) {
+      return;
+    }
+
+    const entries = Object.entries(properties);
+    const index = entries.findIndex(([key]) => key === fieldKey);
+    const targetIndex = index + direction;
+
+    if (index === -1 || targetIndex < 0 || targetIndex >= entries.length) {
+      return;
+    }
+
+    [entries[index], entries[targetIndex]] = [entries[targetIndex], entries[index]];
+
+    const nextSchema: Record<string, unknown> = {
+      ...parsedSchema,
+      properties: Object.fromEntries(entries),
+    };
+
+    persistSchemaUpdate(nextSchema, parsedUiSchema || {});
+  };
+
+  const addLayoutSection = () => {
+    setLayoutState((current) => ({
+      ...current,
+      sections: [
+        ...current.sections,
+        {
+          id: createSectionId(),
+          title: `Secção ${current.sections.length + 1}`,
+          description: '',
+        },
+      ],
+    }));
+  };
+
+  const updateLayoutSection = (sectionId: string, updates: Partial<FormLayoutSection>) => {
+    setLayoutState((current) => ({
+      ...current,
+      sections: current.sections.map((section) => (
+        section.id === sectionId ? { ...section, ...updates } : section
+      )),
+    }));
+  };
+
+  const removeLayoutSection = (sectionId: string) => {
+    setLayoutState((current) => ({
+      ...current,
+      sections: current.sections.length > 1
+        ? current.sections.filter((section) => section.id !== sectionId)
+        : current.sections,
+    }));
+  };
+
+  const moveLayoutSection = (sectionId: string, direction: -1 | 1) => {
+    setLayoutState((current) => {
+      const index = current.sections.findIndex((section) => section.id === sectionId);
+      const targetIndex = index + direction;
+
+      if (index === -1 || targetIndex < 0 || targetIndex >= current.sections.length) {
+        return current;
+      }
+
+      const nextSections = [...current.sections];
+      [nextSections[index], nextSections[targetIndex]] = [nextSections[targetIndex], nextSections[index]];
+
+      return {
+        ...current,
+        sections: nextSections,
+      };
+    });
+  };
+
+  const beginNewForm = () => {
+    resetEditor();
+    resetFieldEditor();
+    resetLayoutState();
+  };
 
   const loadForms = async () => {
     try {
@@ -118,6 +555,8 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     setName('');
     setSchemaText(toPrettyJson(BASE_FORM_SCHEMA));
     setUiSchemaText(toPrettyJson(BASE_FORM_UI_SCHEMA));
+    resetLayoutState();
+    resetFieldEditor();
   };
 
   const fillWithMockup = () => {
@@ -130,6 +569,25 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     setName(form.name);
     setSchemaText(toPrettyJson(form.schema));
     setUiSchemaText(toPrettyJson(form.uiSchema || BASE_FORM_UI_SCHEMA));
+    const layout = form.schema?.['x-layout'] as Partial<FormLayoutState> | undefined;
+    if (layout) {
+      setLayoutState({
+        title: typeof form.schema.title === 'string' ? form.schema.title : layout.title || DEFAULT_FORM_LAYOUT.title,
+        description: typeof form.schema.description === 'string' ? form.schema.description : layout.description || DEFAULT_FORM_LAYOUT.description,
+        accentColor: typeof layout.accentColor === 'string' ? layout.accentColor : DEFAULT_FORM_LAYOUT.accentColor,
+        sections: Array.isArray(layout.sections) && layout.sections.length > 0
+          ? layout.sections
+              .map((section, index) => ({
+                id: typeof section?.id === 'string' ? section.id : createSectionId(),
+                title: typeof section?.title === 'string' ? section.title : `Secção ${index + 1}`,
+                description: typeof section?.description === 'string' ? section.description : '',
+              }))
+          : DEFAULT_FORM_LAYOUT.sections,
+      });
+    } else {
+      resetLayoutState();
+    }
+    resetFieldEditor();
   };
 
   const handleSave = async () => {
@@ -152,19 +610,21 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
       return;
     }
 
+    const schemaWithLayout = buildSchemaWithLayout(schema);
+
     try {
       setSaving(true);
       if (editingFormId) {
         await candidaturasApi.atualizarFormulario(editingFormId, {
           name: normalizedName,
-          schema,
+          schema: schemaWithLayout,
           uiSchema,
         });
         toast.success('Formulário atualizado com sucesso.');
       } else {
         await candidaturasApi.criarFormulario({
           name: normalizedName,
-          schema,
+          schema: schemaWithLayout,
           uiSchema,
         });
         toast.success('Formulário criado com sucesso.');
@@ -196,6 +656,8 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
       toast.error(error?.message || 'Não foi possível remover o formulário.');
     }
   };
+
+  const previewSections = buildPreviewFieldsBySection();
 
   return (
     <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
@@ -246,51 +708,335 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
             <Button type="button" variant="outline" size="sm" onClick={fillWithMockup}>
               Usar Mockup Completo
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={resetEditor}>
+              <Button type="button" variant="outline" size="sm" onClick={beginNewForm}>
               <Plus className="w-4 h-4" />
               Novo
-            </Button>
+              </Button>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Formulário</label>
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Ex: CRECHE"
-              className="mt-1"
-            />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Este nome é único e identifica o tipo de candidatura.
-            </p>
-          </div>
+        <Tabs defaultValue="layout" className="space-y-4">
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="layout">Layout</TabsTrigger>
+            <TabsTrigger value="fields">Campos</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="advanced">JSON</TabsTrigger>
+          </TabsList>
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Schema (JSON)</label>
-            <Textarea
-              value={schemaText}
-              onChange={(event) => setSchemaText(event.target.value)}
-              className="mt-1 min-h-[220px] font-mono text-xs"
-            />
-          </div>
+          <TabsContent value="layout" className="space-y-4 mt-0">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Título do formulário</label>
+                <Input
+                  value={layoutState.title}
+                  onChange={(event) => setLayoutState((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Ex: Candidatura à Creche"
+                  className="mt-1"
+                />
+              </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">uiSchema (JSON)</label>
-            <Textarea
-              value={uiSchemaText}
-              onChange={(event) => setUiSchemaText(event.target.value)}
-              className="mt-1 min-h-[220px] font-mono text-xs"
-            />
-          </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Descrição / introdução</label>
+                <Textarea
+                  value={layoutState.description}
+                  onChange={(event) => setLayoutState((current) => ({ ...current, description: event.target.value }))}
+                  className="mt-1 min-h-[120px]"
+                  placeholder="Texto de introdução para o utilizador"
+                />
+              </div>
 
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <Button type="button" variant="outline" onClick={resetEditor}>Cancelar</Button>
-            <Button type="button" onClick={() => void handleSave()} disabled={saving} className="bg-purple-600 text-white hover:bg-purple-700">
-              {saving ? 'A guardar...' : isEditing ? 'Guardar Alterações' : 'Criar Formulário'}
-            </Button>
-          </div>
+              <div className="grid gap-4 md:grid-cols-[1fr_180px]">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Cor principal</label>
+                  <Input
+                    type="color"
+                    value={layoutState.accentColor}
+                    onChange={(event) => setLayoutState((current) => ({ ...current, accentColor: event.target.value }))}
+                    className="mt-1 h-11 p-1"
+                  />
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Resumo</p>
+                  <p className="mt-1 text-sm text-gray-900 dark:text-white">{fields.length} campo(s)</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{layoutState.sections.length} secção(ões)</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Secções do layout</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Organize o formulário como uma sequência de blocos, à semelhança do Google Forms.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addLayoutSection}>
+                  <Plus className="w-4 h-4" />
+                  Adicionar secção
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {layoutState.sections.map((section, index) => (
+                  <div key={section.id} className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/40 p-3 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 grid gap-3 md:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Título da secção</label>
+                          <Input
+                            value={section.title}
+                            onChange={(event) => updateLayoutSection(section.id, { title: event.target.value })}
+                            className="mt-1"
+                            placeholder="Ex: Dados do encarregado"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Descrição</label>
+                          <Input
+                            value={section.description}
+                            onChange={(event) => updateLayoutSection(section.id, { description: event.target.value })}
+                            className="mt-1"
+                            placeholder="Breve explicação da secção"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(section.id, -1)} disabled={index === 0}>
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(section.id, 1)} disabled={index === layoutState.sections.length - 1}>
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => removeLayoutSection(section.id)} disabled={layoutState.sections.length === 1}>
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="fields" className="space-y-4 mt-0">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Campos do formulário</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Adicione, edite, remova ou reorganize os campos antes de guardar o formulário.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => resetFieldEditor()}>
+                  <X className="w-4 h-4" />
+                  Limpar edição
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {fields.length === 0 ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não existem campos definidos.</p>
+                ) : (
+                  fields.map((field, index) => (
+                    <div key={field.key} className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/40 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-white">{field.title}</p>
+                            <span className="text-[11px] rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-gray-600 dark:text-gray-300">{field.kind}</span>
+                            {field.required ? <span className="text-[11px] rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-red-700 dark:text-red-200">Obrigatório</span> : null}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Chave: {field.key}</p>
+                          {field.placeholder ? <p className="text-xs text-gray-500 dark:text-gray-400">Placeholder: {field.placeholder}</p> : null}
+                          {field.options.length > 0 ? <p className="text-xs text-gray-500 dark:text-gray-400">Opções: {field.options.join(' · ')}</p> : null}
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveField(field.key, -1)} disabled={index === 0} aria-label={`Mover ${field.title} para cima`}>
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveField(field.key, 1)} disabled={index === fields.length - 1} aria-label={`Mover ${field.title} para baixo`}>
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => startEditingField(field)} aria-label={`Editar ${field.title}`}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteField(field.key)} aria-label={`Remover ${field.title}`}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Chave técnica</label>
+                  <Input
+                    value={fieldEditor.key}
+                    onChange={(event) => setFieldEditor((prev) => ({ ...prev, key: event.target.value }))}
+                    placeholder="ex: guardianPhone"
+                    className="mt-1"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Sem espaços. Esta chave identifica o campo no schema.</p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Título visível</label>
+                  <Input
+                    value={fieldEditor.title}
+                    onChange={(event) => setFieldEditor((prev) => ({ ...prev, title: event.target.value }))}
+                    placeholder="Ex: Número de telefone"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label>
+                  <Select value={fieldEditor.kind} onValueChange={(value) => setFieldEditor((prev) => ({ ...prev, kind: value as FieldKind }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="string">Texto</SelectItem>
+                      <SelectItem value="number">Número</SelectItem>
+                      <SelectItem value="boolean">Checkbox</SelectItem>
+                      <SelectItem value="date">Data</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="textarea">Área de texto</SelectItem>
+                      <SelectItem value="select">Lista de opções</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Placeholder</label>
+                  <Input
+                    value={fieldEditor.placeholder}
+                    onChange={(event) => setFieldEditor((prev) => ({ ...prev, placeholder: event.target.value }))}
+                    placeholder="Ex: Introduza um valor"
+                    className="mt-1"
+                  />
+                </div>
+
+                {fieldEditor.kind === 'select' ? (
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Opções</label>
+                    <Textarea
+                      value={fieldEditor.options}
+                      onChange={(event) => setFieldEditor((prev) => ({ ...prev, options: event.target.value }))}
+                      className="mt-1 min-h-[110px] font-mono text-xs"
+                      placeholder={['Opção 1', 'Opção 2'].join('\n')}
+                    />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Uma opção por linha, ou separadas por vírgulas.</p>
+                  </div>
+                ) : null}
+
+                <div className="md:col-span-2 flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Checkbox
+                      checked={fieldEditor.required}
+                      onCheckedChange={(checked) => setFieldEditor((prev) => ({ ...prev, required: checked === true }))}
+                    />
+                    Campo obrigatório
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" onClick={() => resetFieldEditor()}>
+                      Cancelar
+                    </Button>
+                    <Button type="button" onClick={handleSaveField} className="bg-purple-600 text-white hover:bg-purple-700">
+                      <Save className="w-4 h-4" />
+                      {editingFieldKey ? 'Atualizar campo' : 'Adicionar campo'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4 mt-0">
+            <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/50 p-4 md:p-6 shadow-sm">
+              <div
+                className="rounded-2xl p-5 text-white"
+                style={{ background: `linear-gradient(135deg, ${layoutState.accentColor}, #111827)` }}
+              >
+                <p className="text-xs uppercase tracking-[0.25em] opacity-70">Pré-visualização</p>
+                <h3 className="mt-2 text-2xl font-semibold">{layoutState.title}</h3>
+                <p className="mt-2 max-w-2xl text-sm opacity-90">{layoutState.description}</p>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                {previewSections.map((section, index) => (
+                  <div key={section.id} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-background p-4 md:p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white" style={{ backgroundColor: layoutState.accentColor }}>
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-semibold text-foreground">{section.title}</h4>
+                        {section.description ? <p className="text-sm text-muted-foreground">{section.description}</p> : null}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {(index === 0 ? fields : []).map((field) => (
+                        <div key={field.key} className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 px-4 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{field.title}{field.required ? ' *' : ''}</p>
+                              <p className="text-xs text-muted-foreground">{field.kind}{field.placeholder ? ` · ${field.placeholder}` : ''}</p>
+                            </div>
+                            <div className="h-3 w-20 rounded-full bg-gray-200 dark:bg-gray-800" />
+                          </div>
+                        </div>
+                      ))}
+                      {index === 0 && fields.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Ainda não existem campos nesta secção.</p>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-4 mt-0">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nome do Formulário</label>
+                <Input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Ex: CRECHE"
+                  className="mt-1"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Este nome é único e identifica o tipo de candidatura.</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Schema (JSON)</label>
+                <Textarea
+                  value={schemaText}
+                  onChange={(event) => setSchemaText(event.target.value)}
+                  className="mt-1 min-h-[220px] font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">uiSchema (JSON)</label>
+                <Textarea
+                  value={uiSchemaText}
+                  onChange={(event) => setUiSchemaText(event.target.value)}
+                  className="mt-1 min-h-[220px] font-mono text-xs"
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex items-center justify-end gap-2 pt-1">
+          <Button type="button" variant="outline" onClick={resetEditor}>Cancelar</Button>
+          <Button type="button" onClick={() => void handleSave()} disabled={saving} className="bg-purple-600 text-white hover:bg-purple-700">
+            {saving ? 'A guardar...' : isEditing ? 'Guardar Alterações' : 'Criar Formulário'}
+          </Button>
         </div>
       </GlassCard>
 
