@@ -783,8 +783,8 @@
         "MENSAL": "Monthly"
       },
       "dataInicio": "Start Date",
-      "dataFim": "End Date",
-      "dataFimHint": "Optional. Maximum date.",
+      "dataFim": "End Date (Optional)",
+      "dataFimHint": "Select date",
       "errors": {
         "dataInicioRequired": "Start date is mandatory for this frequency."
       }

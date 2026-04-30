@@ -786,8 +786,8 @@
         "MENSAL": "Mensal"
       },
       "dataInicio": "Data de Início",
-      "dataFim": "Data de Fim",
-      "dataFimHint": "Opcional. Data máxima.",
+      "dataFim": "Data de Fim (Opcional)",
+      "dataFimHint": "Selecionar data",
       "errors": {
         "dataInicioRequired": "A data de início é obrigatória para esta frequência."
       }
