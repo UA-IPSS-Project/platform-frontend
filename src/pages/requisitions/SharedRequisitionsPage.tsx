@@ -794,7 +794,7 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
-        periodica: createForm.periodicaConfig,
+        ...(createForm.periodicaConfig != null ? { periodica: createForm.periodicaConfig } : {}),
       };
 
       if (createForm.tipo === 'MATERIAL') {
