@@ -857,7 +857,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
       tableContent += `<td style="padding:6px;">${formattedDate}</td>`;
       tableContent += `<td style="padding:6px;">${apt.time}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
-      tableContent += `<td style="padding:6px;">${maskNif(apt.patientNIF)}</td>`;
+      tableContent += `<td style="padding:6px;">${apt.patientNIF ? maskNif(apt.patientNIF) : ''}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
       tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
       tableContent += `<td style="padding:6px;">${apt.subject || ''}</td>`;
