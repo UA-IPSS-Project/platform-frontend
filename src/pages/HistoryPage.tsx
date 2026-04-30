@@ -342,7 +342,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           <td>${apt.time}</td>
           <td>${formattedDate}</td>
           <td>${apt.attendantName || '-'}</td>
-          ${!isClient ? `<td>${apt.patientName || ''}</td><td>${maskNif(apt.patientNIF)}</td>` : ''}
+          ${!isClient ? `<td>${apt.patientName || ''}</td><td>${apt.patientNIF ? maskNif(apt.patientNIF) : ''}</td>` : ''}
           <td>${apt.subject || ''}</td>
           <td class="${statusClass}">${status}</td>
         </tr>
