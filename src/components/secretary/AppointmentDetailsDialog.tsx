@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { maskNif } from '../../utils/maskNif';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -643,7 +642,7 @@ function cleanFilename(name: string) {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm mb-2"># NIF</Label>
-                <p className="text-foreground">{maskNif(appointment.patientNIF)}</p>
+                <p className="text-foreground">{appointment.patientNIF}</p>
               </div>
 
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
