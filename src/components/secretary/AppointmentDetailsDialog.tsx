@@ -744,104 +744,70 @@ function cleanFilename(name: string) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPreview(doc.nomeOriginal) ? (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => documentosApi.previewDocumento(doc.id)}
-                              className="p-2 hover:bg-muted rounded"
-                              title={t('appointmentDetails.previewDocument', 'Visualizar')}
-                              aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
-                            >
-                              <EyeIcon className="w-4 h-4 text-status-info" />
-                            </button>
-                            {isEditable && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="p-2 hover:bg-muted rounded"
-                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                  >
-                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-popover border-border shadow-xl rounded-xl z-50" align="end">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
-                                  >
-                                    <Download className="w-4 h-4 text-primary" />
-                                    {t('appointmentDetails.download', 'Transferir')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded-lg transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    {t('appointmentDetails.removeDocument', 'Apagar')}
-                                  </button>
-                                  {/* Só mostra o botão de documento inválido se NÃO for utente */}
-                                  {!isClient && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded-lg transition-colors"
-                                    >
-                                      <BellIcon className="w-4 h-4" />
-                                      {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
-                                    </button>
-                                  )}
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </>
+                        {hasPreview(doc.nomeOriginal) && (
+                          <button
+                            type="button"
+                            onClick={() => documentosApi.previewDocumento(doc.id)}
+                            className="p-2 hover:bg-muted rounded"
+                            title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                          >
+                            <EyeIcon className="w-4 h-4 text-status-info" />
+                          </button>
+                        )}
+                        
+                        {isEditable ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className="p-2 hover:bg-muted rounded"
+                                title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                              >
+                                <MenuIcon className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-popover border-border shadow-xl rounded-xl z-50" align="end">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadDocumento(doc)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
+                              >
+                                <Download className="w-4 h-4 text-primary" />
+                                {t('appointmentDetails.download', 'Transferir')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoverDocumento(doc)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                {t('appointmentDetails.removeDocument', 'Apagar')}
+                              </button>
+                              {/* Só mostra o botão de documento inválido se NÃO for utente */}
+                              {!isClient && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded-lg transition-colors"
+                                >
+                                  <BellIcon className="w-4 h-4" />
+                                  {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                </button>
+                              )}
+                            </PopoverContent>
+                          </Popover>
                         ) : (
-                          <>
-                            {isEditable && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="p-2 hover:bg-muted rounded"
-                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                  >
-                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    {t('appointmentDetails.download', 'Transferir')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    {t('appointmentDetails.removeDocument', 'Apagar')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded"
-                                  >
-                                    <BellIcon className="w-4 h-4" />
-                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
-                                  </button>
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadDocumento(doc)}
+                            className="p-2 hover:bg-muted rounded"
+                            title={t('appointmentDetails.download', 'Transferir')}
+                            aria-label={t('appointmentDetails.download', 'Transferir')}
+                          >
+                            <Download className="w-4 h-4 text-muted-foreground" />
+                          </button>
                         )}
 
 
