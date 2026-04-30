@@ -1,5 +1,4 @@
 import { apiRequest } from '../core/client';
-import { hashNif } from '../../../utils/hashNif';
 import {
     LoginFuncionarioRequest,
     LoginUtenteRequest,
@@ -13,31 +12,25 @@ export const authApi = {
         apiRequest<AuthResponse>('/api/auth/login/funcionario', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }),
 
-    loginUtente: async (data: LoginUtenteRequest) => {
-        const nifHash = await hashNif(data.nif);
-        return apiRequest<AuthResponse>('/api/auth/login/utente', {
+    loginUtente: (data: LoginUtenteRequest) =>
+        apiRequest<AuthResponse>('/api/auth/login/utente', {
             method: 'POST',
-            body: JSON.stringify({ ...data, nif: nifHash }),
-        }, false);
-    },
+            body: JSON.stringify(data),
+        }),
 
-    registerUtente: async (data: UtenteRegisterRequest) => {
-        const nifHash = await hashNif(data.nif);
-        return apiRequest<AuthResponse>('/api/auth/register/utente', {
+    registerUtente: (data: UtenteRegisterRequest) =>
+        apiRequest<AuthResponse>('/api/auth/register/utente', {
             method: 'POST',
-            body: JSON.stringify({ ...data, nif: nifHash }),
-        }, false);
-    },
+            body: JSON.stringify(data),
+        }),
 
-    registerFuncionario: async (data: FuncionarioRegisterRequest) => {
-        const nifHash = await hashNif(data.nif);
-        return apiRequest<AuthResponse>('/api/auth/register/funcionario', {
+    registerFuncionario: (data: FuncionarioRegisterRequest) =>
+        apiRequest<AuthResponse>('/api/auth/register/funcionario', {
             method: 'POST',
-            body: JSON.stringify({ ...data, nif: nifHash }),
-        }, false);
-    },
+            body: JSON.stringify(data),
+        }),
 
     updatePassword: (password: string, termsAccepted: boolean) =>
         apiRequest<void>('/api/auth/password', {
