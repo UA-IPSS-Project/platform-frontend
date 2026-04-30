@@ -786,7 +786,7 @@
       "dataFim": "End Date (Optional)",
       "dataFimHint": "Select date",
       "errors": {
-        "dataInicioRequired": "Start date is mandatory for this frequency."
+        "dataInicioRequired": "Start date is mandatory for periodic requests."
       }
     },
     "summary": "{{total}} request(s) · {{urgent}} urgent",
