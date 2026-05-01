@@ -138,10 +138,19 @@ export interface RequisicaoFilters {
   dataFim?: string;
 }
 
+export type PeriodicidadeFrequencia = 'DIARIA' | 'SEMANAL' | 'MENSAL';
+
+export interface RequisicaoPeriodicaConfig {
+  frequencia: PeriodicidadeFrequencia;
+  dataInicio: string;
+  dataFim?: string | null;
+}
+
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
   geridoPorId?: number;
+  periodica?: RequisicaoPeriodicaConfig | null;
 }
 
 export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseRequest {

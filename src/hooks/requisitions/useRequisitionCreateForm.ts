@@ -1,12 +1,18 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
-import { MaterialCategoria } from '../../services/api/requisicoes/types';
+import { MaterialCategoria, PeriodicidadeFrequencia, RequisicaoPeriodicaConfig } from '../../services/api/requisicoes/types';
 
 export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPrioridade?: RequisicaoPrioridade) {
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
+  
+  // Periodicidade state
+  const [isPeriodica, setIsPeriodica] = useState(false);
+  const [periodicaFrequencia, setPeriodicaFrequencia] = useState<PeriodicidadeFrequencia>('SEMANAL');
+  const [periodicaDataInicio, setPeriodicaDataInicio] = useState('');
+  const [periodicaDataFim, setPeriodicaDataFim] = useState('');
   
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
@@ -51,6 +57,10 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   const resetForm = useCallback(() => {
     setDescricao('');
+    setIsPeriodica(false);
+    setPeriodicaFrequencia('SEMANAL');
+    setPeriodicaDataInicio('');
+    setPeriodicaDataFim('');
     setMaterialLinhas([]);
     setDestinoTransporte('');
     setDataSaida('');
@@ -128,6 +138,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
       tipo !== (initialTipo ?? 'MATERIAL') ||
       prioridade !== (initialPrioridade ?? 'MEDIA') ||
       descricao !== '' ||
+      isPeriodica !== false ||
       materialLinhas.length > 0 ||
       destinoTransporte !== '' ||
       dataSaida !== '' ||
@@ -146,6 +157,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     prioridade,
     initialPrioridade,
     descricao,
+    isPeriodica,
     materialLinhas,
     destinoTransporte,
     dataSaida,
@@ -159,6 +171,16 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     manutencaoObservacoesPorCategoria,
   ]);
 
+
+  const periodicaConfig = useMemo((): RequisicaoPeriodicaConfig | null => {
+    if (!isPeriodica || !periodicaDataInicio) return null;
+    return {
+      frequencia: periodicaFrequencia,
+      dataInicio: periodicaDataInicio,
+      dataFim: periodicaDataFim || null,
+    };
+  }, [isPeriodica, periodicaFrequencia, periodicaDataInicio, periodicaDataFim]);
+
   return {
     // General form state
     tipo,
@@ -167,6 +189,15 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setDescricao,
     prioridade,
     setPrioridade,
+    isPeriodica,
+    setIsPeriodica,
+    periodicaFrequencia,
+    setPeriodicaFrequencia,
+    periodicaDataInicio,
+    setPeriodicaDataInicio,
+    periodicaDataFim,
+    setPeriodicaDataFim,
+    periodicaConfig,
     isDirty,
     // Validation
     createErrors,
