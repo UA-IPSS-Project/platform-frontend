@@ -12,10 +12,17 @@ export function useWebSocket(
 ) {
     const stompClient = useRef<Client | null>(null);
 
+    // Keep callbacks in refs so the effect doesn't re-run when they change
+    const onMessageRef = useRef(onMessage);
+    const onConnectRef = useRef(onConnect);
+    const onErrorRef = useRef(onError);
+    useEffect(() => { onMessageRef.current = onMessage; }, [onMessage]);
+    useEffect(() => { onConnectRef.current = onConnect; }, [onConnect]);
+    useEffect(() => { onErrorRef.current = onError; }, [onError]);
+
     useEffect(() => {
         if (!topic) return;
 
-        // Dynamically select ws/wss protocol
         let wsUrl = url;
         if (!/^wss?:\/\//.test(url)) {
             const proto = getWebSocketProtocol();
@@ -26,47 +33,39 @@ export function useWebSocket(
             }
         }
 
-        // Send JWT via STOMP connectHeaders (httpOnly cookies are not accessible via JS)
         const connectHeaders: Record<string, string> = {};
         if (authToken) {
             connectHeaders['Authorization'] = `Bearer ${authToken}`;
         }
 
-        stompClient.current = new Client({
+        const client = new Client({
             brokerURL: wsUrl,
             connectHeaders,
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
             onConnect: () => {
-                if (onConnect) onConnect();
-
-                stompClient.current?.subscribe(topic!, (message) => {
+                onConnectRef.current?.();
+                client.subscribe(topic!, (message) => {
                     try {
-                        const parsedMessage = JSON.parse(message.body);
-                        onMessage(parsedMessage);
-                    } catch (error) {
-                        onMessage(message.body);
+                        onMessageRef.current(JSON.parse(message.body));
+                    } catch {
+                        onMessageRef.current(message.body);
                     }
                 });
             },
             onStompError: (frame) => {
-                if (onError) onError(frame);
+                onErrorRef.current?.(frame);
             },
-            onWebSocketClose: () => {
-            },
-            onDisconnect: () => {
-            }
         });
 
-        stompClient.current.activate();
+        stompClient.current = client;
+        client.activate();
 
         return () => {
-            if (stompClient.current?.active) {
-                stompClient.current.deactivate();
-            }
+            client.deactivate();
         };
-    }, [url, topic, onMessage, onConnect, onError, authToken]);
+    }, [url, topic, authToken]); // callbacks removidos das dependências
 
     return stompClient;
 }
