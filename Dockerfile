@@ -16,5 +16,8 @@ RUN rm -rf ./*
 COPY --from=build /app/build ./
 COPY --from=build /app/nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Criar diretório para certificados SSL
+RUN mkdir -p /etc/nginx/ssl
+
+EXPOSE 80 443
 CMD ["nginx", "-g", "daemon off;"]
