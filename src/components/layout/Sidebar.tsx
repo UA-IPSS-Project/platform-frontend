@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useFormTypes } from '@/hooks/useFormTypes';
+import { type FormTypeResponse } from '@/services/api';
 import {
   CalendarIcon,
   HistoryIcon,
@@ -35,6 +37,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria' }: SidebarProps) {
   const { t } = useTranslation();
+  const { formTypes } = useFormTypes();
   const isClient = mode === 'client';
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 
@@ -79,11 +82,11 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       id: 'candidaturas',
       label: t('sidebar.applications'),
       icon: FileTextIcon,
-      subitems: [
-        { id: 'creche', label: t('sidebar.creche'), icon: BabyIcon },
-        { id: 'catl', label: 'CATL', icon: UsersIcon },
-        { id: 'erpi', label: 'ERPI', icon: HeartIcon },
-      ]
+      subitems: formTypes.map((ft: FormTypeResponse) => ({ 
+        id: ft.id.toLowerCase(), 
+        label: ft.name, 
+        icon: ft.id.toLowerCase() === 'creche' ? BabyIcon : (ft.id.toLowerCase() === 'erpi' ? HeartIcon : UsersIcon) 
+      }))
     },
     {
       id: 'reports',
@@ -113,11 +116,11 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       id: 'candidaturas',
       label: t('sidebar.applications'),
       icon: FileTextIcon,
-      subitems: [
-        { id: 'creche', label: t('sidebar.creche'), icon: BabyIcon },
-        { id: 'catl', label: 'CATL', icon: UsersIcon },
-        { id: 'erpi', label: 'ERPI', icon: HeartIcon },
-      ]
+      subitems: formTypes.map((ft: FormTypeResponse) => ({ 
+        id: ft.id.toLowerCase(), 
+        label: ft.name, 
+        icon: ft.id.toLowerCase() === 'creche' ? BabyIcon : (ft.id.toLowerCase() === 'erpi' ? HeartIcon : UsersIcon) 
+      }))
     },
   ];
 
@@ -195,7 +198,8 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
                 {((isClient ? clientMenuItems : (mode === 'balneario' ? balnearioMenuItems : secretaryMenuItems)) as any[]).map((item) => {
                   const Icon = item.icon;
                   const isActive = currentView === item.id;
-                  const hasSubitems = item.subitems && item.subitems.length > 0;
+                  const isCandidaturas = item.id === 'candidaturas';
+                  const hasSubitems = (item.subitems && item.subitems.length > 0) || isCandidaturas;
                   const isExpanded = expandedMenus.includes(item.id);
 
                   return (
@@ -231,7 +235,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
                       </button>
 
                       {/* Subitems */}
-                      {hasSubitems && 'subitems' in item && isExpanded && (
+                      {hasSubitems && isExpanded && (
                         <div className="ml-8 mt-1 space-y-1">
                           {item.subitems!.map((subitem: any) => {
                             const SubIcon = subitem.icon;
@@ -255,6 +259,13 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
                               </button>
                             );
                           })}
+                        </div>
+                      )}
+
+                      {/* Empty subitems message for candidaturas */}
+                      {item.id === 'candidaturas' && item.subitems?.length === 0 && isExpanded && (
+                        <div className="ml-8 mt-1 px-4 py-2 text-xs text-muted-foreground italic">
+                          {t('applications.flow.messages.unavailableForms')}
                         </div>
                       )}
                     </div>
