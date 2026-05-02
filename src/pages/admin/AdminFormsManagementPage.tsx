@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowDown, ArrowUp, Pencil, Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -18,11 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
-import { candidaturaMockupSchema } from '../../components/rjsf/schemas/candidaturaMockup.schema';
-import { candidaturaMockupUiSchema } from '../../components/rjsf/ui/candidaturaMockup.uiSchema';
 import {
   candidaturasApi,
-  type FormularioResponse,
+  type FormResponse,
+  type FormPage,
 } from '../../services/api';
 
 const BASE_FORM_SCHEMA: Record<string, unknown> = {
@@ -99,17 +99,10 @@ interface FieldSummary {
   options: string[];
 }
 
-interface FormLayoutSection {
-  id: string;
-  title: string;
-  description: string;
-}
 
 interface FormLayoutState {
   title: string;
-  description: string;
-  accentColor: string;
-  sections: FormLayoutSection[];
+  pages: FormPage[];
 }
 
 const EMPTY_FIELD_EDITOR: FieldEditorState = {
@@ -123,20 +116,15 @@ const EMPTY_FIELD_EDITOR: FieldEditorState = {
 
 const DEFAULT_FORM_LAYOUT: FormLayoutState = {
   title: 'Nova candidatura',
-  description: 'Preencha os dados abaixo para submeter a candidatura.',
-  accentColor: '#8b5cf6',
-  sections: [
+  pages: [
     {
-      id: 'section-1',
-      title: 'Informação principal',
-      description: 'Os campos essenciais do formulário.',
+      title: 'Página 1',
+      description: '',
+      fields: [],
     },
   ],
 };
 
-const createSectionId = () => `section-${Date.now()}-${Math.random().toString(16).slice(2, 6)}`;
-
-const sanitizeFieldKey = (value: string) => value.trim().replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
 
 const splitFieldOptions = (value: string) =>
   value
@@ -229,11 +217,13 @@ const buildUiSchemaForField = (field: FieldEditorState) => {
 };
 
 interface AdminFormsManagementPageProps {
+  candidaturaType?: string;
   onFormsChanged?: () => Promise<void> | void;
 }
 
-export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminFormsManagementPageProps>) {
-  const [forms, setForms] = useState<FormularioResponse[]>([]);
+export function AdminFormsManagementPage({ candidaturaType = '', onFormsChanged }: AdminFormsManagementPageProps) {
+  const { t } = useTranslation();
+  const [forms, setForms] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingFormId, setEditingFormId] = useState<string | null>(null);
@@ -241,9 +231,9 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   const [schemaText, setSchemaText] = useState(toPrettyJson(BASE_FORM_SCHEMA));
   const [uiSchemaText, setUiSchemaText] = useState(toPrettyJson(BASE_FORM_UI_SCHEMA));
   const [layoutState, setLayoutState] = useState<FormLayoutState>(DEFAULT_FORM_LAYOUT);
-  const [fieldEditor, setFieldEditor] = useState<FieldEditorState>(EMPTY_FIELD_EDITOR);
+  const [fieldEditor, setFieldEditor] = useState<FieldEditorState & { pageIndex: number }>({ ...EMPTY_FIELD_EDITOR, pageIndex: 0 });
   const [editingFieldKey, setEditingFieldKey] = useState<string | null>(null);
-  const [formToDelete, setFormToDelete] = useState<FormularioResponse | null>(null);
+  const [formToDelete, setFormToDelete] = useState<FormResponse | null>(null);
 
   const isEditing = Boolean(editingFormId);
 
@@ -255,7 +245,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   const parsedSchema = useMemo(() => parseJson(schemaText), [schemaText]);
   const parsedUiSchema = useMemo(() => parseJson(uiSchemaText), [uiSchemaText]);
 
-  const currentLayoutSections = layoutState.sections.length > 0 ? layoutState.sections : DEFAULT_FORM_LAYOUT.sections;
 
   const fields = useMemo<FieldSummary[]>(() => {
     if (!parsedSchema || parsedSchema.type !== 'object') {
@@ -289,7 +278,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   }, [parsedSchema, parsedUiSchema]);
 
   const resetFieldEditor = () => {
-    setFieldEditor(EMPTY_FIELD_EDITOR);
+    setFieldEditor({ ...EMPTY_FIELD_EDITOR, pageIndex: 0 });
     setEditingFieldKey(null);
   };
 
@@ -297,25 +286,12 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     setLayoutState(DEFAULT_FORM_LAYOUT);
   };
 
-  const buildSchemaWithLayout = (schema: Record<string, unknown>) => ({
-    ...schema,
-    title: layoutState.title.trim() || String(schema.title || 'Formulário de candidatura'),
-    description: layoutState.description.trim(),
-    'x-layout': {
-      accentColor: layoutState.accentColor,
-      sections: layoutState.sections.map((section) => ({
-        id: section.id,
-        title: section.title.trim(),
-        description: section.description.trim(),
-      })),
-    },
-  });
 
   const buildPreviewFieldsBySection = () => {
-    const sections = currentLayoutSections;
-    return sections.map((section, index) => ({
-      ...section,
-      fields: index === 0 ? fields : [],
+    return layoutState.pages.map((page) => ({
+      ...page,
+      id: page.title,
+      fieldDetails: page.fields.map(key => fields.find(f => f.key === key)).filter(Boolean) as FieldSummary[]
     }));
   };
 
@@ -325,6 +301,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   };
 
   const startEditingField = (field: FieldSummary) => {
+    const pageIndex = layoutState.pages.findIndex(p => p.fields.includes(field.key));
     setEditingFieldKey(field.key);
     setFieldEditor({
       key: field.key,
@@ -333,7 +310,29 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
       placeholder: field.placeholder,
       required: field.required,
       options: field.options.join('\n'),
+      pageIndex: pageIndex >= 0 ? pageIndex : 0,
     });
+  };
+
+  const generateUniqueKey = (title: string, currentProperties: Record<string, unknown>, excludeKey?: string) => {
+    let baseKey = title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // remove acentos
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '');
+    
+    if (!baseKey) baseKey = 'campo';
+    
+    let finalKey = baseKey;
+    let counter = 1;
+    
+    while (finalKey in currentProperties && finalKey !== excludeKey) {
+      finalKey = `${baseKey}_${counter}`;
+      counter++;
+    }
+    
+    return finalKey;
   };
 
   const handleSaveField = () => {
@@ -342,18 +341,14 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
       return;
     }
 
-    const fieldKey = sanitizeFieldKey(fieldEditor.key);
     const fieldTitle = fieldEditor.title.trim();
-
-    if (!fieldKey) {
-      toast.error('A chave técnica do campo é obrigatória.');
-      return;
-    }
-
     if (!fieldTitle) {
       toast.error('O título do campo é obrigatório.');
       return;
     }
+
+    const currentProperties = (parsedSchema.properties as Record<string, unknown>) || {};
+    const fieldKey = editingFieldKey || generateUniqueKey(fieldTitle, currentProperties, editingFieldKey || undefined);
 
     if (fieldEditor.kind === 'select' && splitFieldOptions(fieldEditor.options).length === 0) {
       toast.error('Adicione pelo menos uma opção para o campo de escolha.');
@@ -362,13 +357,9 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
 
     const nextSchema: Record<string, unknown> = {
       ...parsedSchema,
-      properties: {
-        ...(parsedSchema.properties as Record<string, unknown> | undefined),
-      },
+      properties: { ...currentProperties },
     };
-    const nextUiSchema: Record<string, unknown> = {
-      ...(parsedUiSchema || {}),
-    };
+    const nextUiSchema: Record<string, unknown> = { ...(parsedUiSchema || {}) };
     const nextProperties = nextSchema.properties as Record<string, unknown>;
     const nextRequired = new Set(
       Array.isArray(parsedSchema.required)
@@ -408,6 +399,18 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
 
     nextSchema.required = Array.from(nextRequired);
 
+    // Update pages
+    const nextPages = [...layoutState.pages];
+    // Remove field from all pages first
+    nextPages.forEach(p => {
+      p.fields = p.fields.filter(f => f !== editingFieldKey && f !== fieldKey);
+    });
+    // Add to selected page
+    if (nextPages[fieldEditor.pageIndex]) {
+      nextPages[fieldEditor.pageIndex].fields.push(fieldKey);
+    }
+
+    setLayoutState(prev => ({ ...prev, pages: nextPages }));
     persistSchemaUpdate(nextSchema, nextUiSchema);
     resetFieldEditor();
     toast.success(editingFieldKey ? 'Campo atualizado com sucesso.' : 'Campo adicionado com sucesso.');
@@ -480,50 +483,49 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
   const addLayoutSection = () => {
     setLayoutState((current) => ({
       ...current,
-      sections: [
-        ...current.sections,
+      pages: [
+        ...current.pages,
         {
-          id: createSectionId(),
-          title: `Secção ${current.sections.length + 1}`,
+          title: `Página ${current.pages.length + 1}`,
           description: '',
+          fields: [],
         },
       ],
     }));
   };
 
-  const updateLayoutSection = (sectionId: string, updates: Partial<FormLayoutSection>) => {
+  const updateLayoutSection = (index: number, updates: Partial<FormPage>) => {
     setLayoutState((current) => ({
       ...current,
-      sections: current.sections.map((section) => (
-        section.id === sectionId ? { ...section, ...updates } : section
+      pages: current.pages.map((page, i) => (
+        i === index ? { ...page, ...updates } : page
       )),
     }));
   };
 
-  const removeLayoutSection = (sectionId: string) => {
+  const removeLayoutSection = (index: number) => {
     setLayoutState((current) => ({
       ...current,
-      sections: current.sections.length > 1
-        ? current.sections.filter((section) => section.id !== sectionId)
-        : current.sections,
+      pages: current.pages.length > 1
+        ? current.pages.filter((_, i) => i !== index)
+        : current.pages,
     }));
   };
 
-  const moveLayoutSection = (sectionId: string, direction: -1 | 1) => {
+  const moveLayoutSection = (index: number, direction: -1 | 1) => {
     setLayoutState((current) => {
-      const index = current.sections.findIndex((section) => section.id === sectionId);
       const targetIndex = index + direction;
 
-      if (index === -1 || targetIndex < 0 || targetIndex >= current.sections.length) {
+      if (targetIndex < 0 || targetIndex >= current.pages.length) {
         return current;
       }
 
-      const nextSections = [...current.sections];
-      [nextSections[index], nextSections[targetIndex]] = [nextSections[targetIndex], nextSections[index]];
+      const nextPages = [...current.pages];
+      [nextPages[index], nextPages[targetIndex]] = [nextPages[targetIndex], nextPages[index]];
 
       return {
         ...current,
-        sections: nextSections,
+        pages: nextPages,
       };
     });
   };
@@ -559,34 +561,18 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     resetFieldEditor();
   };
 
-  const fillWithMockup = () => {
-    setSchemaText(toPrettyJson(candidaturaMockupSchema));
-    setUiSchemaText(toPrettyJson(candidaturaMockupUiSchema));
-  };
 
-  const handleEdit = (form: FormularioResponse) => {
+  const handleEdit = (form: FormResponse) => {
     setEditingFormId(form.id);
     setName(form.name);
     setSchemaText(toPrettyJson(form.schema));
     setUiSchemaText(toPrettyJson(form.uiSchema || BASE_FORM_UI_SCHEMA));
-    const layout = form.schema?.['x-layout'] as Partial<FormLayoutState> | undefined;
-    if (layout) {
-      setLayoutState({
-        title: typeof form.schema.title === 'string' ? form.schema.title : layout.title || DEFAULT_FORM_LAYOUT.title,
-        description: typeof form.schema.description === 'string' ? form.schema.description : layout.description || DEFAULT_FORM_LAYOUT.description,
-        accentColor: typeof layout.accentColor === 'string' ? layout.accentColor : DEFAULT_FORM_LAYOUT.accentColor,
-        sections: Array.isArray(layout.sections) && layout.sections.length > 0
-          ? layout.sections
-              .map((section, index) => ({
-                id: typeof section?.id === 'string' ? section.id : createSectionId(),
-                title: typeof section?.title === 'string' ? section.title : `Secção ${index + 1}`,
-                description: typeof section?.description === 'string' ? section.description : '',
-              }))
-          : DEFAULT_FORM_LAYOUT.sections,
-      });
-    } else {
-      resetLayoutState();
-    }
+    setLayoutState({
+      title: typeof form.schema.title === 'string' ? form.schema.title : DEFAULT_FORM_LAYOUT.title,
+      pages: Array.isArray(form.pages) && form.pages.length > 0
+        ? form.pages
+        : DEFAULT_FORM_LAYOUT.pages,
+    });
     resetFieldEditor();
   };
 
@@ -610,22 +596,23 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
       return;
     }
 
-    const schemaWithLayout = buildSchemaWithLayout(schema);
 
     try {
       setSaving(true);
       if (editingFormId) {
         await candidaturasApi.atualizarFormulario(editingFormId, {
           name: normalizedName,
-          schema: schemaWithLayout,
+          schema: schema,
           uiSchema,
+          pages: layoutState.pages,
         });
         toast.success('Formulário atualizado com sucesso.');
       } else {
         await candidaturasApi.criarFormulario({
           name: normalizedName,
-          schema: schemaWithLayout,
+          schema: schema,
           uiSchema,
+          pages: layoutState.pages,
         });
         toast.success('Formulário criado com sucesso.');
       }
@@ -646,6 +633,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
     try {
       await candidaturasApi.apagarFormulario(formToDelete.id);
       toast.success('Formulário removido com sucesso.');
+
       if (editingFormId === formToDelete.id) {
         resetEditor();
       }
@@ -672,7 +660,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
 
         <div className="space-y-3">
           {sortedForms.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ainda não existem formulários.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">{t('applications.flow.messages.unavailableForms')}</p>
           ) : (
             sortedForms.map((form) => (
               <div
@@ -705,9 +693,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
             {isEditing ? 'Editar Formulário' : 'Criar Formulário'}
           </h2>
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={fillWithMockup}>
-              Usar Mockup Completo
-            </Button>
               <Button type="button" variant="outline" size="sm" onClick={beginNewForm}>
               <Plus className="w-4 h-4" />
               Novo
@@ -724,7 +709,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
           </TabsList>
 
           <TabsContent value="layout" className="space-y-4 mt-0">
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 p-4 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Título do formulário</label>
                 <Input
@@ -735,54 +719,35 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Descrição / introdução</label>
-                <Textarea
-                  value={layoutState.description}
-                  onChange={(event) => setLayoutState((current) => ({ ...current, description: event.target.value }))}
-                  className="mt-1 min-h-[120px]"
-                  placeholder="Texto de introdução para o utilizador"
-                />
-              </div>
-
               <div className="grid gap-4 md:grid-cols-[1fr_180px]">
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Cor principal</label>
-                  <Input
-                    type="color"
-                    value={layoutState.accentColor}
-                    onChange={(event) => setLayoutState((current) => ({ ...current, accentColor: event.target.value }))}
-                    className="mt-1 h-11 p-1"
-                  />
-                </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Resumo</p>
                   <p className="mt-1 text-sm text-gray-900 dark:text-white">{fields.length} campo(s)</p>
-                  <p className="text-sm text-gray-900 dark:text-white">{layoutState.sections.length} secção(ões)</p>
+                  <p className="text-sm text-gray-900 dark:text-white">{layoutState.pages.length} página(s)</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Secções do layout</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Organize o formulário como uma sequência de blocos, à semelhança do Google Forms.</p>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Páginas do formulário</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Organize o formulário em múltiplas páginas.</p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addLayoutSection}>
                   <Plus className="w-4 h-4" />
-                  Adicionar secção
+                  Adicionar página
                 </Button>
               </div>
 
               <div className="space-y-3">
-                {layoutState.sections.map((section, index) => (
-                  <div key={section.id} className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/40 p-3 space-y-3">
+                {layoutState.pages.map((page, index) => (
+                  <div key={index} className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950/40 p-3 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 grid gap-3 md:grid-cols-2">
                         <div>
-                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Título da secção</label>
+                          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Título da página</label>
                           <Input
-                            value={section.title}
-                            onChange={(event) => updateLayoutSection(section.id, { title: event.target.value })}
+                            value={page.title}
+                            onChange={(event) => updateLayoutSection(index, { title: event.target.value })}
                             className="mt-1"
                             placeholder="Ex: Dados do encarregado"
                           />
@@ -790,21 +755,21 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
                         <div>
                           <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Descrição</label>
                           <Input
-                            value={section.description}
-                            onChange={(event) => updateLayoutSection(section.id, { description: event.target.value })}
+                            value={page.description}
+                            onChange={(event) => updateLayoutSection(index, { description: event.target.value })}
                             className="mt-1"
-                            placeholder="Breve explicação da secção"
+                            placeholder="Breve explicação da página"
                           />
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(section.id, -1)} disabled={index === 0}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(index, -1)} disabled={index === 0}>
                           <ArrowUp className="w-4 h-4" />
                         </Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(section.id, 1)} disabled={index === layoutState.sections.length - 1}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => moveLayoutSection(index, 1)} disabled={index === layoutState.pages.length - 1}>
                           <ArrowDown className="w-4 h-4" />
                         </Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => removeLayoutSection(section.id)} disabled={layoutState.sections.length === 1}>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => removeLayoutSection(index)} disabled={layoutState.pages.length === 1}>
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       </div>
@@ -812,7 +777,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
                   </div>
                 ))}
               </div>
-            </div>
           </TabsContent>
 
           <TabsContent value="fields" className="space-y-4 mt-0">
@@ -868,14 +832,17 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
 
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Chave técnica</label>
-                  <Input
-                    value={fieldEditor.key}
-                    onChange={(event) => setFieldEditor((prev) => ({ ...prev, key: event.target.value }))}
-                    placeholder="ex: guardianPhone"
-                    className="mt-1"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Sem espaços. Esta chave identifica o campo no schema.</p>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Página / Secção</label>
+                  <Select value={String(fieldEditor.pageIndex)} onValueChange={(value) => setFieldEditor((prev) => ({ ...prev, pageIndex: parseInt(value) }))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Selecione a página" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {layoutState.pages.map((page, i) => (
+                        <SelectItem key={i} value={String(i)}>{page.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
@@ -955,19 +922,17 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
           <TabsContent value="preview" className="space-y-4 mt-0">
             <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/50 p-4 md:p-6 shadow-sm">
               <div
-                className="rounded-2xl p-5 text-white"
-                style={{ background: `linear-gradient(135deg, ${layoutState.accentColor}, #111827)` }}
+                className="rounded-2xl p-5 text-white bg-purple-600"
               >
                 <p className="text-xs uppercase tracking-[0.25em] opacity-70">Pré-visualização</p>
                 <h3 className="mt-2 text-2xl font-semibold">{layoutState.title}</h3>
-                <p className="mt-2 max-w-2xl text-sm opacity-90">{layoutState.description}</p>
               </div>
 
               <div className="mt-5 space-y-4">
                 {previewSections.map((section, index) => (
                   <div key={section.id} className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-background p-4 md:p-5">
                     <div className="flex items-start gap-3">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white" style={{ backgroundColor: layoutState.accentColor }}>
+                      <div className="flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white bg-purple-600">
                         {index + 1}
                       </div>
                       <div>
@@ -977,7 +942,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      {(index === 0 ? fields : []).map((field) => (
+                      {section.fieldDetails.map((field) => (
                         <div key={field.key} className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 px-4 py-3">
                           <div className="flex items-center justify-between gap-3">
                             <div>
@@ -988,8 +953,8 @@ export function AdminFormsManagementPage({ onFormsChanged }: Readonly<AdminForms
                           </div>
                         </div>
                       ))}
-                      {index === 0 && fields.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Ainda não existem campos nesta secção.</p>
+                      {section.fieldDetails.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">Ainda não existem campos nesta página.</p>
                       ) : null}
                     </div>
                   </div>

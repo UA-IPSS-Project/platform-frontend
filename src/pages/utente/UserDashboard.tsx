@@ -26,6 +26,8 @@ import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import { useFormTypes } from '@/hooks/useFormTypes';
+import { type FormTypeResponse } from '@/services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +57,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const navigate = useNavigate();
   const location = useLocation();
   const [userData, setUserData] = useState(user);
+  const { formTypes } = useFormTypes();
 
   const {
     allAppointments,
@@ -106,8 +109,16 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
     if (path.endsWith('/history')) return 'history';
     if (path.endsWith('/profile')) return 'profile';
     if (path.endsWith('/notifications')) return 'notificacoes';
-    if (path.includes('/creche') || path.includes('/catl') || path.includes('/erpi')) return 'candidaturas';
-    if (path.includes('/dashboard')) return 'appointments'; // default
+    if (path.endsWith('/settings')) return 'settings';
+    
+    // Match /dashboard/:view or /dashboard/:view/:id
+    const dashboardMatch = path.match(/\/dashboard\/([^/]+)/);
+    if (dashboardMatch) {
+      const view = dashboardMatch[1];
+      // If it's a known non-candidatura view, it will be caught above or returned here
+      return view;
+    }
+    
     return 'appointments';
   };
 
@@ -268,12 +279,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
       <NavDropdown
         label={t('sidebar.applications')}
-        items={[
-          { id: 'creche', label: t('sidebar.creche') },
-          { id: 'catl', label: 'CATL' },
-          { id: 'erpi', label: 'ERPI' },
-        ]}
-        isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
+        items={formTypes.map((ft: FormTypeResponse) => ({ id: ft.id.toLowerCase(), label: ft.name }))}
+        isActive={['candidaturas', ...formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase())].includes(currentView)}
         onSelect={(id) => navigateWithGuard(`/dashboard/${id}`)}
       />
     </>

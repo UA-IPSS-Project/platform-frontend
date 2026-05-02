@@ -7,18 +7,17 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
-import { candidaturaMockupSchema } from '../../components/rjsf/schemas/candidaturaMockup.schema';
-import { candidaturaMockupUiSchema } from '../../components/rjsf/ui/candidaturaMockup.uiSchema';
 import { rjsfWidgets } from '../../components/rjsf/widgets/RjsfWidgets';
 import { RjsfFieldTemplate } from '../../components/rjsf/templates/RjsfFieldTemplate';
 import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard';
 import { CandidaturaStatusChangeDialog } from '../../components/candidaturas/CandidaturaStatusChangeDialog';
 import { CandidaturasStatusBadge } from '../../components/candidaturas/CandidaturasStatusBadge';
-import { getMockCandidaturaById, getMockFormularioById, updateMockCandidatura } from './candidaturaMockData';
+import { candidaturasApi, type CandidaturaEstado } from '../../services/api';
 
 const toStatusLabel = (estado: string, t: (key: string) => string): string => {
   if (estado === 'APROVADA') return t('applications.flow.status.approved');
   if (estado === 'REJEITADA') return t('applications.flow.status.rejected');
+  if (estado === 'LISTA_ESPERA') return t('applications.flow.status.waiting_list');
   return t('applications.flow.status.pending');
 };
 
@@ -35,8 +34,8 @@ export function CandidaturaDetailPage() {
 
   const candidaturaId = useMemo(() => {
     if (routeCandidaturaId) return routeCandidaturaId;
-    const match = location.pathname.match(/^\/dashboard\/(?:creche|catl|erpi)\/([^/]+)$/i);
-    return match?.[1] || '';
+    const match = location.pathname.match(/^\/dashboard\/([^/]+)\/([^/]+)$/i);
+    return match?.[2] || '';
   }, [routeCandidaturaId, location.pathname]);
 
   const [loading, setLoading] = useState(true);
@@ -52,8 +51,8 @@ export function CandidaturaDetailPage() {
   const canEdit = estado === 'PENDENTE' && user?.role !== 'SECRETARIA';
   const canChangeStatus = user?.role === 'SECRETARIA';
 
-  const schema = useMemo<RJSFSchema>(() => schemaFromApi || candidaturaMockupSchema, [schemaFromApi]);
-  const uiSchema = useMemo(() => uiSchemaFromApi || candidaturaMockupUiSchema, [uiSchemaFromApi]);
+  const schema = useMemo<RJSFSchema>(() => schemaFromApi || ({ type: 'object', properties: {} } as RJSFSchema), [schemaFromApi]);
+  const uiSchema = useMemo(() => uiSchemaFromApi || {}, [uiSchemaFromApi]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -64,26 +63,20 @@ export function CandidaturaDetailPage() {
 
       try {
         setLoading(true);
-        const candidatura = getMockCandidaturaById(candidaturaId);
-
-        // API lookup kept here for reference only while the candidaturas area uses local mocks.
-        // const candidatura = await candidaturasApi.obterCandidaturaPorId(candidaturaId);
+        const candidatura = await candidaturasApi.obterCandidaturaPorId(candidaturaId);
 
         if (!candidatura) {
-          throw new Error('Candidatura mock não encontrada');
+          throw new Error('Candidatura não encontrada');
         }
 
         setEstado(candidatura.estado);
         setFormId(candidatura.formId);
         setFormData(candidatura.respostas || {});
 
-        const form = getMockFormularioById(candidatura.formId);
+        const form = await candidaturasApi.obterFormularioPorId(candidatura.formId);
 
-        // API lookup kept here for reference only while the candidaturas area uses local mocks.
-        // const form = await candidaturasApi.obterFormularioPorId(candidatura.formId);
-
-        setSchemaFromApi((form?.schema as RJSFSchema) || candidaturaMockupSchema);
-        setUiSchemaFromApi(form?.uiSchema || candidaturaMockupUiSchema);
+        setSchemaFromApi((form?.schema as RJSFSchema) || ({ type: 'object', properties: {} } as RJSFSchema));
+        setUiSchemaFromApi(form?.uiSchema || {});
       } catch (error) {
         toast.error(t('applications.detail.messages.loadError'));
       } finally {
@@ -100,21 +93,10 @@ export function CandidaturaDetailPage() {
     try {
       setSaving(true);
 
-      const updated = updateMockCandidatura(candidaturaId, {
+      await candidaturasApi.atualizarCandidatura(candidaturaId, {
         formId,
         respostas: formData,
       });
-
-      // API update kept here for reference only while the candidaturas area uses local mocks.
-      // await candidaturasApi.atualizarCandidatura(candidaturaId, {
-      //   formId,
-      //   respostas: formData,
-      //   atualizadoPor: user?.id,
-      // });
-
-      if (!updated) {
-        throw new Error('Candidatura mock não encontrada');
-      }
 
       toast.success(t('applications.detail.messages.saveSuccess'));
       setEditing(false);
@@ -125,18 +107,11 @@ export function CandidaturaDetailPage() {
     }
   };
 
-  const handleChangeStatus = async (newStatus: 'PENDENTE' | 'APROVADA' | 'REJEITADA') => {
+  const handleChangeStatus = async (newStatus: CandidaturaEstado) => {
     if (!candidaturaId) return;
 
     try {
-      const updated = updateMockCandidatura(candidaturaId, { estado: newStatus });
-
-      // API update kept here for reference only while the candidaturas area uses local mocks.
-      // await candidaturasApi.atualizarEstado(candidaturaId, { estado: newStatus });
-
-      if (!updated) {
-        throw new Error('Candidatura mock não encontrada');
-      }
+      await candidaturasApi.atualizarEstado(candidaturaId, { estado: newStatus as any });
 
       setEstado(newStatus);
       setEditing(false);
@@ -174,7 +149,7 @@ export function CandidaturaDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{t('applications.detail.labels.status')}:</span>
-          <CandidaturasStatusBadge status={estado as 'PENDENTE' | 'APROVADA' | 'REJEITADA'} label={toStatusLabel(estado, t)} />
+          <CandidaturasStatusBadge status={estado as any} label={toStatusLabel(estado, t)} />
         </div>
       </div>
 
@@ -210,7 +185,7 @@ export function CandidaturaDetailPage() {
         <CandidaturaStatusChangeDialog
           open={statusDialogOpen}
           candidaturaCode={candidaturaId}
-          currentStatus={estado as 'PENDENTE' | 'APROVADA' | 'REJEITADA'}
+          currentStatus={estado as any}
           onOpenChange={setStatusDialogOpen}
           onConfirm={handleChangeStatus}
         />

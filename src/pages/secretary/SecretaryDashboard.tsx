@@ -34,6 +34,8 @@ import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
+import { useFormTypes } from '@/hooks/useFormTypes';
+import { type FormTypeResponse } from '@/services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,7 +65,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const { t } = useTranslation();
   const location = useLocation();
 
-  const candidaturaDetailMatch = location.pathname.match(/^\/dashboard\/(creche|catl|erpi)\/([^/]+)$/i);
+  const { formTypes } = useFormTypes();
+  const formTypeKeys = formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase());
+  const candidaturaDetailMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/([^/]+)$`, 'i'));
   const isCandidaturaDetailView = Boolean(candidaturaDetailMatch);
 
   const {
@@ -289,7 +293,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {view === 'catl' && t('dashboard.applicationsCatl')}
           {view === 'erpi' && t('dashboard.applicationsErpi')}
           {view === 'reports' && 'Relatórios'}
-            {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'forms-management', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+          {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'forms-management', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
         <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>
@@ -330,12 +334,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
       <NavDropdown
         label={t('sidebar.applications')}
-        items={[
-          { id: 'creche', label: t('sidebar.creche') },
-          { id: 'catl', label: 'CATL' },
-          { id: 'erpi', label: 'ERPI' },
-        ]}
-        isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
+        items={formTypes.map((ft: FormTypeResponse) => ({ id: ft.id.toLowerCase(), label: ft.name }))}
+        isActive={['candidaturas', ...formTypeKeys].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         className="hidden lg:block"
       />
@@ -563,38 +563,26 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <Button type="button" className="h-auto py-6" onClick={() => navigateTo('creche')}>
-                    <span className="flex flex-col items-start text-left">
-                      <span className="text-base font-semibold">Creche</span>
-                      <span className="text-xs opacity-80">{t('dashboard.crecheApplicationsDescription')}</span>
-                    </span>
-                  </Button>
-
-                  <Button type="button" variant="outline" className="h-auto py-6" onClick={() => navigateTo('catl')}>
-                    <span className="flex flex-col items-start text-left">
-                      <span className="text-base font-semibold">CATL</span>
-                      <span className="text-xs opacity-80">{t('dashboard.catlApplicationsDescription')}</span>
-                    </span>
-                  </Button>
-
-                  <Button type="button" variant="outline" className="h-auto py-6" onClick={() => navigateTo('erpi')}>
-                    <span className="flex flex-col items-start text-left">
-                      <span className="text-base font-semibold">ERPI</span>
-                      <span className="text-xs opacity-80">{t('dashboard.erpiApplicationsDescription')}</span>
-                    </span>
-                  </Button>
+                  {formTypes.map(ft => (
+                    <Button key={ft.id} type="button" variant={ft.id.toLowerCase() === 'creche' ? 'default' : 'outline'} className="h-auto py-6" onClick={() => navigateTo(ft.id.toLowerCase() as ViewType)}>
+                      <span className="flex flex-col items-start text-left">
+                        <span className="text-base font-semibold">{ft.name}</span>
+                        <span className="text-xs opacity-80">{t(`dashboard.${ft.id.toLowerCase()}ApplicationsDescription`, ft.name)}</span>
+                      </span>
+                    </Button>
+                  ))}
                 </div>
               </div>
             ) : currentView === 'reports' ? (
               <ReportsPage />
-            ) : ['creche', 'catl', 'erpi'].includes(currentView) ? (
+            ) : formTypeKeys.includes(currentView) ? (
               <CandidaturasByTypePage
                 mode="secretaria"
                 candidaturaType={currentView}
                 currentUserName={userData.name}
               />
             ) : currentView === 'settings' ? (
-              <SettingsPage 
+              <SettingsPage
                 isDarkMode={isDarkMode}
                 onToggleDarkMode={onToggleDarkMode}
               />
