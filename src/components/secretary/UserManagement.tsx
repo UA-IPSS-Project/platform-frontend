@@ -88,6 +88,9 @@ export function UserManagement() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
+    const [isAnonymizing, setIsAnonymizing] = useState(false);
+    const [showAnonymizeDialog, setShowAnonymizeDialog] = useState(false);
+    const [userToAnonymize, setUserToAnonymize] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({
         nome: '',
         email: '',
@@ -299,6 +302,22 @@ export function UserManagement() {
             toast.error(t('userManagement.details.errors.approve'));
         } finally {
             setIsApproving(false);
+        }
+    };
+
+    const handleAnonymize = async () => {
+        if (!userToAnonymize) return;
+        setIsAnonymizing(true);
+        try {
+            await utilizadoresApi.anonimizarUtilizador(userToAnonymize.id);
+            toast.success('Utilizador anonimizado com sucesso');
+            setShowAnonymizeDialog(false);
+            setUserToAnonymize(null);
+            fetchUtentes();
+        } catch (error) {
+            toast.error('Erro ao anonimizar utilizador');
+        } finally {
+            setIsAnonymizing(false);
         }
     };
 
@@ -800,14 +819,28 @@ export function UserManagement() {
                                                     </span>
                                                 </td>
                                                 <td className="py-4 pr-4 text-right">
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-9 px-4 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all font-bold"
-                                                        onClick={() => handleOpenDetails(utente)}
-                                                    >
-                                                        <Eye className="w-4 h-4 mr-2" />
-                                                        {t('common.view')}
-                                                    </Button>
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Button
+                                                            size="sm"
+                                                            className="h-9 px-4 bg-blue-500/10 text-blue-600 hover:bg-blue-600 hover:text-white transition-all font-bold"
+                                                            onClick={() => handleOpenDetails(utente)}
+                                                        >
+                                                            <Eye className="w-4 h-4 mr-2" />
+                                                            {t('common.view')}
+                                                        </Button>
+                                                        {utente.deleteRequested && (
+                                                            <Button
+                                                                size="sm"
+                                                                className="h-9 px-4 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all font-bold"
+                                                                onClick={() => {
+                                                                    setUserToAnonymize(utente);
+                                                                    setShowAnonymizeDialog(true);
+                                                                }}
+                                                            >
+                                                                Anonimizar
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1370,6 +1403,37 @@ export function UserManagement() {
                             className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         >
                             {t('userManagement.yesCreateNewAccount')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Anonymize User Dialog */}
+            <AlertDialog open={showAnonymizeDialog} onOpenChange={setShowAnonymizeDialog}>
+                <AlertDialogContent className="bg-card border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Anonimizar Utilizador?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Está prestes a anonimizar permanentemente o utilizador <strong>{userToAnonymize?.nome}</strong> (NIF: {userToAnonymize?.nif}).
+                            <br /><br />
+                            Esta ação irá:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>Substituir dados pessoais por valores anónimos</li>
+                                <li>Desativar a conta permanentemente</li>
+                                <li>Preservar histórico de marcações (anonimizado)</li>
+                            </ul>
+                            <br />
+                            <strong className="text-destructive">Esta ação é irreversível.</strong> Tem a certeza?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isAnonymizing}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleAnonymize}
+                            disabled={isAnonymizing}
+                            className="bg-destructive hover:bg-destructive/90 text-white"
+                        >
+                            {isAnonymizing ? 'A processar...' : 'Sim, Anonimizar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

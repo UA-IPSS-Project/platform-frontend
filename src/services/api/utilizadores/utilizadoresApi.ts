@@ -91,4 +91,21 @@ export const utilizadoresApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+
+    // Direito ao Esquecimento (RGPD Art.º 17)
+    solicitarEliminacao: () =>
+        apiRequest<void>('/api/utilizadores/me/delete-request', {
+            method: 'POST',
+        }),
+
+    anonimizarUtilizador: (id: number) =>
+        apiRequest<void>(`/api/utilizadores/${id}/anonimizar`, {
+            method: 'POST',
+        }),
+
+    // Direito de Portabilidade (RGPD Art.º 20)
+    exportarDados: () =>
+        apiRequest<any>('/api/utilizadores/me/export', {
+            method: 'GET',
+        }),
 };
