@@ -8,6 +8,7 @@ export interface DocumentoDTO {
     utenteNome?: string | null;
     utenteNif?: string | null;
     sequencia: number;
+    finalidade?: string | null;
 }
 
 export interface PesquisaDocumentosParams {

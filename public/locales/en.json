@@ -209,6 +209,23 @@
         "paragraphs": [
           "IPSS Florinhas do Vouga reserves the right to update this Policy whenever necessary, and changes will be published on the website."
         ]
+      },
+      {
+        "title": "Disclaimer",
+        "paragraphs": [
+          "The platform is provided \"as is\", without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.",
+          "IPSS Florinhas do Vouga does not guarantee that the platform will always be available, error-free, virus-free, or that its features will meet all users' expectations.",
+          "In case of temporary service unavailability due to technical reasons, scheduled maintenance, or unforeseen circumstances, the Institution shall not be liable for any direct or indirect damages resulting from such unavailability.",
+          "Users acknowledge that use of the platform is at their own risk and should take appropriate precautions, including maintaining backup copies of their data."
+        ]
+      },
+      {
+        "title": "Applicable Law and Jurisdiction",
+        "paragraphs": [
+          "This Privacy Policy and Terms of Use are governed by Portuguese law, namely the General Data Protection Regulation (GDPR - EU Regulation 2016/679) and Law no. 58/2019 of August 8.",
+          "For the resolution of any disputes arising from the interpretation or application of these terms, the courts of Aveiro, Portugal, shall have exclusive jurisdiction, with express waiver of any other.",
+          "In case of conflict between the Portuguese version and translations into other languages, the Portuguese version shall always prevail."
+        ]
       }
     ]
   },

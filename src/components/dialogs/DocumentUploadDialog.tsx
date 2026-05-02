@@ -15,6 +15,15 @@ interface DocumentUploadDialogProps {
   isClient?: boolean;
 }
 
+const FINALIDADES_PREDEFINIDAS = [
+  'Comprovativo de residência',
+  'Atestado médico',
+  'Documento de identificação',
+  'Comprovativo de rendimentos',
+  'Autorização parental',
+  'Outro'
+];
+
 export function DocumentUploadDialog({
   open,
   onClose,
@@ -24,6 +33,7 @@ export function DocumentUploadDialog({
 }: DocumentUploadDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [finalidade, setFinalidade] = useState('');
 
   const MAX_FILES = 10;
   const MAX_TOTAL_SIZE_MB = 20;
@@ -46,10 +56,11 @@ export function DocumentUploadDialog({
 
     setIsUploading(true);
     try {
-      const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
+      const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles, finalidade || undefined);
       if (isClient) toast.success(`${uploadedDocs.length} documento(s) enviado(s) com sucesso!`);
       onSuccess?.(uploadedDocs);
       setSelectedFiles([]);
+      setFinalidade('');
       onClose();
     } catch (error) {
       console.error('Erro ao enviar documentos:', error);
@@ -61,6 +72,7 @@ export function DocumentUploadDialog({
 
   const handleSkip = () => {
     setSelectedFiles([]);
+    setFinalidade('');
     onClose();
   };
 
@@ -82,6 +94,30 @@ export function DocumentUploadDialog({
             onChange={setSelectedFiles}
             isUploading={isUploading}
           />
+
+          {/* Campo Finalidade */}
+          <div className="space-y-2">
+            <label htmlFor="finalidade" className="text-sm font-medium text-foreground">
+              Finalidade do documento (opcional)
+            </label>
+            <select
+              id="finalidade"
+              value={finalidade}
+              onChange={(e) => setFinalidade(e.target.value)}
+              disabled={isUploading}
+              className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Selecione a finalidade...</option>
+              {FINALIDADES_PREDEFINIDAS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Indique o propósito do documento para conformidade RGPD
+            </p>
+          </div>
 
           {/* Botões de ação */}
           <div className="flex gap-3 pt-2">

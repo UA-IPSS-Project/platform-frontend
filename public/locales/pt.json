@@ -209,6 +209,23 @@
         "paragraphs": [
           "A IPSS Florinhas do Vouga reserva-se o direito de actualizar a presente Política sempre que necessário, sendo as alterações publicadas no website."
         ]
+      },
+      {
+        "title": "Isenção de Responsabilidade",
+        "paragraphs": [
+          "A plataforma é disponibilizada \"tal como está\" (as is), sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não se limitando a, garantias de comercialização, adequação a um fim específico ou não violação.",
+          "A IPSS Florinhas do Vouga não garante que a plataforma estará sempre disponível, livre de erros ou vírus, ou que as funcionalidades corresponderão às expectativas de todos os utilizadores.",
+          "Em caso de indisponibilidade temporária do serviço por motivos técnicos, manutenção programada ou circunstâncias imprevistas, a Instituição não será responsável por quaisquer danos diretos ou indiretos resultantes dessa indisponibilidade.",
+          "O utilizador reconhece que a utilização da plataforma é feita por sua conta e risco, devendo tomar as precauções adequadas, incluindo a manutenção de cópias de segurança dos seus dados."
+        ]
+      },
+      {
+        "title": "Lei Aplicável e Jurisdição",
+        "paragraphs": [
+          "A presente Política de Privacidade e Termos de Uso são regidos pela legislação portuguesa, nomeadamente pelo Regulamento Geral sobre a Protecção de Dados (RGPD - Regulamento UE 2016/679) e pela Lei n.º 58/2019, de 8 de agosto.",
+          "Para a resolução de quaisquer litígios emergentes da interpretação ou aplicação destes termos, será competente o foro da comarca de Aveiro, com expressa renúncia a qualquer outro.",
+          "Em caso de conflito entre a versão portuguesa e traduções para outros idiomas, prevalecerá sempre a versão em língua portuguesa."
+        ]
       }
     ]
   },
