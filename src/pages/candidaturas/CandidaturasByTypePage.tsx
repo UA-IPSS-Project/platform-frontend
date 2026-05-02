@@ -8,12 +8,11 @@ import { CandidaturasFilters } from '../../components/candidaturas/CandidaturasF
 import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard';
 import { CandidaturasStatusBadge } from '../../components/candidaturas/CandidaturasStatusBadge';
 import { useAuth } from '../../contexts/AuthContext';
-import { getMockCandidaturasForType, getMockFormularioForType, updateMockCandidatura } from './candidaturaMockData';
 import {
   candidaturasApi,
   type CandidaturaEstado,
   type CandidaturaResponse,
-  type FormularioResponse,
+  type FormResponse,
 } from '../../services/api';
 
 interface CandidaturasByTypePageProps {
@@ -24,15 +23,13 @@ interface CandidaturasByTypePageProps {
 }
 
 const getCandidateName = (candidatura: CandidaturaResponse): string => {
-  const nome = candidatura.respostas?.nome;
+  if (candidatura.nome?.trim()) return candidatura.nome;
   const childName = candidatura.respostas?.childName;
-
-  if (typeof nome === 'string' && nome.trim()) return nome;
   if (typeof childName === 'string' && childName.trim()) return childName;
   return 'Sem nome';
 };
 
-const getDisplayStatus = (candidatura: CandidaturaResponse): CandidaturaEstado | 'LISTA_DE_ESPERA' => {
+const getDisplayStatus = (candidatura: CandidaturaResponse): CandidaturaEstado => {
   return getCatlStatus(candidatura) ?? candidatura.estado;
 };
 
@@ -51,9 +48,15 @@ const toUiStatus = (candidatura: CandidaturaResponse, t: (key: string) => string
     };
   }
 
-  if (status === 'LISTA_DE_ESPERA') {
+  if (status === 'LISTA_ESPERA') {
     return {
-      label: 'Lista de espera',
+      label: t('applications.flow.status.waiting_list'),
+    };
+  }
+
+  if (status === 'RASCUNHO') {
+    return {
+      label: t('applications.flow.status.draft'),
     };
   }
 
@@ -70,51 +73,31 @@ const formatDate = (isoDate?: string): string => {
   return date.toLocaleDateString('pt-PT');
 };
 
-const toDayRange = (day: string): { dataInicio: string; dataFim: string } => {
-  const start = new Date(`${day}T00:00:00.000Z`);
-  const end = new Date(`${day}T23:59:59.999Z`);
-  return {
-    dataInicio: start.toISOString(),
-    dataFim: end.toISOString(),
-  };
-};
 
-const isWithinDayRange = (value: string | undefined, day: string): boolean => {
-  if (!value) return false;
 
-  const range = toDayRange(day);
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return false;
-
-  return date >= new Date(range.dataInicio) && date <= new Date(range.dataFim);
-};
 
 const getRespostaString = (candidatura: CandidaturaResponse, key: string): string | undefined => {
   const value = candidatura.respostas?.[key];
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 };
 
-const getBirthDate = (candidatura: CandidaturaResponse): string | undefined =>
-  getRespostaString(candidatura, 'birthDate');
+const getCatlStatus = (candidatura: CandidaturaResponse): CandidaturaEstado | null => {
+  const explicitStatus = getRespostaString(candidatura, 'estado') ?? getRespostaString(candidatura, 'status');
+  if (!explicitStatus) return null;
 
-const getAgeFromBirthDate = (birthDate?: string): number | null => {
-  if (!birthDate) return null;
-
-  const parsedBirthDate = new Date(`${birthDate}T00:00:00.000Z`);
-  if (Number.isNaN(parsedBirthDate.getTime())) return null;
-
-  const today = new Date();
-  let age = today.getUTCFullYear() - parsedBirthDate.getUTCFullYear();
-  const monthDiff = today.getUTCMonth() - parsedBirthDate.getUTCMonth();
-
-  if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < parsedBirthDate.getUTCDate())) {
-    age -= 1;
+  const normalized = explicitStatus.trim().toUpperCase();
+  if (normalized === 'PENDENTE' || normalized === 'APROVADA' || normalized === 'REJEITADA' || normalized === 'LISTA_ESPERA') {
+    return normalized as CandidaturaEstado;
   }
 
-  return age;
+  return null;
 };
 
 const getSignatureState = (candidatura: CandidaturaResponse): 'COM_ASSINATURA' | 'SEM_ASSINATURA' | null => {
+  if (typeof candidatura.assinado === 'boolean') {
+    return candidatura.assinado ? 'COM_ASSINATURA' : 'SEM_ASSINATURA';
+  }
+
   const directSignature = candidatura.respostas?.assinatura;
   if (typeof directSignature === 'string') {
     const normalized = directSignature.trim().toLowerCase();
@@ -134,43 +117,6 @@ const getSignatureState = (candidatura: CandidaturaResponse): 'COM_ASSINATURA' |
   return null;
 };
 
-const getGenderFromResposta = (candidatura: CandidaturaResponse): 'F' | 'M' | null => {
-  const explicit = getRespostaString(candidatura, 'gender') ?? getRespostaString(candidatura, 'sexo') ?? getRespostaString(candidatura, 'sex');
-  if (!explicit) return null;
-  const n = explicit.trim().toLowerCase();
-  if (n.startsWith('f') || n.includes('mulher') || n.includes('feminino')) return 'F';
-  if (n.startsWith('m') || n.includes('homem') || n.includes('masculino')) return 'M';
-  return null;
-};
-
-
-
-const getCatlStatus = (candidatura: CandidaturaResponse): 'PENDENTE' | 'LISTA_DE_ESPERA' | 'APROVADA' | 'REJEITADA' | null => {
-  const explicitStatus = getRespostaString(candidatura, 'estado') ?? getRespostaString(candidatura, 'status');
-  if (!explicitStatus) return null;
-
-  const normalized = explicitStatus.trim().toUpperCase();
-  if (normalized === 'PENDENTE' || normalized === 'APROVADA' || normalized === 'REJEITADA' || normalized === 'LISTA_DE_ESPERA') {
-    return normalized;
-  }
-
-  return null;
-};
-
-const sortCandidaturasByDate = (
-  candidaturasList: CandidaturaResponse[],
-  direction: 'dataAsc' | 'dataDesc',
-): CandidaturaResponse[] => {
-  const factor = direction === 'dataAsc' ? 1 : -1;
-
-  return [...candidaturasList].sort((left, right) => {
-    const leftDate = left.criadoEm ? new Date(left.criadoEm).getTime() : 0;
-    const rightDate = right.criadoEm ? new Date(right.criadoEm).getTime() : 0;
-
-    return (leftDate - rightDate) * factor;
-  });
-};
-
 const sanitizeNameFilter = (value: string): string => {
   return value
     .replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s-]/g, '')
@@ -182,15 +128,6 @@ const sanitizeNifFilter = (value: string): string => {
   return value.replace(/\D/g, '').slice(0, 9);
 };
 
-const sanitizeAgeFilter = (value: string): string => {
-  const digitsOnly = value.replace(/\D/g, '');
-  if (!digitsOnly) return '';
-
-  const parsed = Number.parseInt(digitsOnly, 10);
-  if (Number.isNaN(parsed) || parsed < 0) return '';
-
-  return String(parsed);
-};
 
 export function CandidaturasByTypePage({
   mode,
@@ -202,46 +139,29 @@ export function CandidaturasByTypePage({
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [forms, setForms] = useState<FormularioResponse[]>([]);
+  const [forms, setForms] = useState<FormResponse[]>([]);
   const [selectedFormId, setSelectedFormId] = useState<string>('');
   const [candidaturas, setCandidaturas] = useState<CandidaturaResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [nameFilter, setNameFilter] = useState('');
   const [nifFilter, setNifFilter] = useState('');
-  const [ageFilter, setAgeFilter] = useState('');
-  const [genderFilter, setGenderFilter] = useState('');
-  const [signatureFilter, setSignatureFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [sortFilter, setSortFilter] = useState('criterios');
   const [appliedNameFilter, setAppliedNameFilter] = useState('');
   const [appliedNifFilter, setAppliedNifFilter] = useState('');
-  const [appliedGenderFilter, setAppliedGenderFilter] = useState('');
-  const [appliedAgeFilter, setAppliedAgeFilter] = useState('');
-  const [appliedSignatureFilter, setAppliedSignatureFilter] = useState('');
   const [appliedStatusFilter, setAppliedStatusFilter] = useState('');
-  const [appliedDateFilter, setAppliedDateFilter] = useState('');
-  const [appliedSortFilter, setAppliedSortFilter] = useState('criterios');
   const [nifError, setNifError] = useState('');
 
   const [selectedCandidatura, setSelectedCandidatura] = useState<CandidaturaResponse | null>(null);
 
   const normalizedType = candidaturaType.trim().toUpperCase();
-  const isCatl = normalizedType === 'CATL';
-  const isFilteredType = normalizedType === 'CATL' || normalizedType === 'CRECHE' || normalizedType === 'ERPI';
   const canChangeStatus = mode === 'secretaria' && user?.role === 'SECRETARIA';
 
   const loadForms = async () => {
     try {
-      const mockForm = getMockFormularioForType(normalizedType);
-      setForms(mockForm ? [mockForm] : []);
-      setSelectedFormId(mockForm?.id || '');
-
-      // API lookup kept here for reference only while the candidaturas area uses local mocks.
-      // const data = await candidaturasApi.listarFormularios(normalizedType);
-      // setForms(Array.isArray(data) ? data : []);
-      // setSelectedFormId(data[0]?.id || '');
+      const data = await candidaturasApi.listarFormularios(normalizedType);
+      setForms(Array.isArray(data) ? data : []);
+      setSelectedFormId(data[0]?.id || '');
     } catch (error) {
       toast.error(t('applications.flow.messages.loadFormsError'));
     }
@@ -260,68 +180,12 @@ export function CandidaturasByTypePage({
     try {
       setLoading(true);
 
-      const mockData = getMockCandidaturasForType(normalizedType, mode === 'utente' ? currentUserId : undefined);
-      let nextCandidaturas = mockData.filter((item) => item.formId === selectedFormId);
-
-      if (mode === 'secretaria' && appliedStatusFilter) {
-        nextCandidaturas = nextCandidaturas.filter((item) => {
-          if (appliedStatusFilter === 'LISTA_DE_ESPERA') {
-            return getCatlStatus(item) === 'LISTA_DE_ESPERA';
-          }
-
-          return item.estado === appliedStatusFilter;
-        });
-      }
-
-      if (mode === 'secretaria' && appliedDateFilter) {
-        nextCandidaturas = nextCandidaturas.filter((item) => isWithinDayRange(item.criadoEm, appliedDateFilter));
-      }
-
-      if (isFilteredType && appliedNifFilter) {
-        const normalizedNif = appliedNifFilter.replace(/\D/g, '');
-        nextCandidaturas = nextCandidaturas.filter((item) => {
-          const nif = getRespostaString(item, 'guardianNif');
-          return typeof nif === 'string' && nif.replace(/\D/g, '').includes(normalizedNif);
-        });
-      }
-
-      if (isFilteredType && appliedAgeFilter && normalizedType !== 'ERPI') {
-        const targetAge = Number.parseInt(appliedAgeFilter, 10);
-        if (!Number.isNaN(targetAge)) {
-          nextCandidaturas = nextCandidaturas.filter((item) => getAgeFromBirthDate(getBirthDate(item)) === targetAge);
-        }
-      }
-
-      if (isFilteredType && appliedSignatureFilter) {
-        nextCandidaturas = nextCandidaturas.filter((item) => getSignatureState(item) === appliedSignatureFilter);
-      }
-
-      const isErpi = normalizedType === 'ERPI';
-      if (isErpi && appliedGenderFilter) {
-        nextCandidaturas = nextCandidaturas.filter((item) => getGenderFromResposta(item) === appliedGenderFilter);
-      }
-
-      
-
-      if (isFilteredType && appliedSortFilter === 'dataAsc') {
-        nextCandidaturas = sortCandidaturasByDate(nextCandidaturas, 'dataAsc');
-      }
-
-      if (isFilteredType && appliedSortFilter === 'dataDesc') {
-        nextCandidaturas = sortCandidaturasByDate(nextCandidaturas, 'dataDesc');
-      }
-
-      // API search kept here for reference only while the candidaturas area uses local mocks.
-      // const data = await candidaturasApi.listarCandidaturas({
-      //   formId: selectedFormId,
-      //   estado: appliedStatusFilter as CandidaturaEstado,
-      //   dataInicio: appliedDateFilter ? toDayRange(appliedDateFilter).dataInicio : undefined,
-      //   dataFim: appliedDateFilter ? toDayRange(appliedDateFilter).dataFim : undefined,
-      //   criadoPor: mode === 'utente' ? currentUserId : undefined,
-      // });
-      // setCandidaturas(Array.isArray(data) ? data : []);
-
-      setCandidaturas(nextCandidaturas);
+      const data = await candidaturasApi.listarCandidaturas({
+        estado: appliedStatusFilter as CandidaturaEstado,
+        nif: appliedNifFilter,
+        nome: appliedNameFilter,
+      });
+      setCandidaturas(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(t('applications.flow.messages.loadApplicationsError'));
     } finally {
@@ -331,7 +195,7 @@ export function CandidaturasByTypePage({
 
   useEffect(() => {
     void loadCandidaturas();
-  }, [selectedFormId, mode, currentUserId, appliedNameFilter, appliedNifFilter, appliedAgeFilter, appliedSignatureFilter, appliedStatusFilter, appliedDateFilter, appliedSortFilter, appliedGenderFilter, isCatl]);
+  }, [selectedFormId, mode, currentUserId, appliedNameFilter, appliedNifFilter, appliedStatusFilter]);
 
   const visibleCandidaturas = useMemo(() => {
     const normalizedName = appliedNameFilter.trim().toLowerCase();
@@ -350,31 +214,16 @@ export function CandidaturasByTypePage({
     setNifError('');
     setAppliedNameFilter(nameFilter);
     setAppliedNifFilter(nifFilter);
-    setAppliedGenderFilter(genderFilter);
-    setAppliedAgeFilter(ageFilter);
-    setAppliedSignatureFilter(signatureFilter);
     setAppliedStatusFilter(statusFilter);
-    setAppliedDateFilter(dateFilter);
-    setAppliedSortFilter(sortFilter);
   };
 
   const handleClearFilters = () => {
     setNameFilter('');
     setNifFilter('');
-    setGenderFilter('');
-    setAgeFilter('');
-    setSignatureFilter('');
     setStatusFilter('');
-    setDateFilter('');
-    setSortFilter('criterios');
     setAppliedNameFilter('');
     setAppliedNifFilter('');
-    setAppliedGenderFilter('');
-    setAppliedAgeFilter('');
-    setAppliedSignatureFilter('');
     setAppliedStatusFilter('');
-    setAppliedDateFilter('');
-    setAppliedSortFilter('criterios');
   };
 
   const handleNameFilterChange = (value: string) => {
@@ -391,28 +240,12 @@ export function CandidaturasByTypePage({
     }
   };
 
-  const handleAgeFilterChange = (value: string) => {
-    setAgeFilter(sanitizeAgeFilter(value));
-  };
-
-  const handleGenderFilterChange = (value: string) => {
-    setGenderFilter(value);
-  };
 
   const handleChangeStatus = async (newStatus: CandidaturaEstado) => {
     if (!selectedCandidatura) return;
 
     try {
-      if (mode === 'secretaria') {
-        // API update kept here for reference only while the candidaturas area uses local mocks.
-        // await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
-        const updated = updateMockCandidatura(selectedCandidatura.id, { estado: newStatus });
-        if (!updated) {
-          throw new Error('Candidatura mock não encontrada');
-        }
-      } else {
-        await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
-      }
+      await candidaturasApi.atualizarEstado(selectedCandidatura.id, { estado: newStatus });
       toast.success(t('applications.flow.messages.statusUpdatedSuccess'));
       setSelectedCandidatura(null);
       await loadCandidaturas();
@@ -435,29 +268,20 @@ export function CandidaturasByTypePage({
               <option key={form.id} value={form.id}>{form.name}</option>
             ))}
           </select>
+        ) : forms.length === 0 ? (
+          <span className="text-sm text-muted-foreground font-normal italic">({t('applications.flow.messages.unavailableForms')})</span>
         ) : null}
       </div>
 
       <CandidaturasFilters
         mode={mode}
-        isCatl={isCatl}
         candidaturaType={normalizedType}
         nameFilter={nameFilter}
         onNameFilterChange={handleNameFilterChange}
         nifFilter={nifFilter}
         onNifFilterChange={handleNifFilterChange}
-        genderFilter={genderFilter}
-        onGenderFilterChange={handleGenderFilterChange}
-        ageFilter={ageFilter}
-        onAgeFilterChange={handleAgeFilterChange}
-        signatureFilter={signatureFilter}
-        onSignatureFilterChange={setSignatureFilter}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        dateFilter={dateFilter}
-        onDateFilterChange={setDateFilter}
-        sortFilter={sortFilter}
-        onSortFilterChange={setSortFilter}
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         onNewCandidatura={

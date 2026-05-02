@@ -539,13 +539,27 @@
         "candidateName": "Nome do Candidato",
         "candidateNamePlaceholder": "Pesquisar por nome",
         "candidateStatus": "Estado do Candidato",
-        "applicationDate": "Data da Candidatura"
+        "applicationDate": "Data da Candidatura",
+        "nif": "NIF",
+        "nifPlaceholder": "9 dígitos",
+        "age": "Idade",
+        "agePlaceholder": "Ex: 25",
+        "signature": "Assinatura",
+        "signaturePlaceholder": "Todos",
+        "signed": "Assinado",
+        "unsigned": "Não assinado",
+        "sort": "Ordenação",
+        "sortCriteria": "Critérios",
+        "sortDateDesc": "Data: mais recentes",
+        "sortDateAsc": "Data: mais antigas"
       },
       "status": {
         "all": "Todos",
         "pending": "Pendente",
         "approved": "Aprovada",
-        "rejected": "Rejeitada"
+        "rejected": "Rejeitada",
+        "waiting_list": "Lista de Espera",
+        "draft": "Rascunho"
       },
       "labels": {
         "titleByType": "Candidaturas {{type}}",
@@ -567,6 +581,7 @@
       },
       "messages": {
         "loadFormsError": "Não foi possível carregar os formulários de candidatura.",
+        "unavailableForms": "formulários indisponíveis",
         "loadApplicationsError": "Não foi possível carregar as candidaturas.",
         "loadingApplications": "A carregar candidaturas...",
         "statusUpdatedSuccess": "Estado da candidatura atualizado com sucesso.",

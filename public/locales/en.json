@@ -539,13 +539,27 @@
         "candidateName": "Candidate Name",
         "candidateNamePlaceholder": "Search by name",
         "candidateStatus": "Candidate Status",
-        "applicationDate": "Application Date"
+        "applicationDate": "Application Date",
+        "nif": "NIF",
+        "nifPlaceholder": "9 digits",
+        "age": "Age",
+        "agePlaceholder": "Ex: 25",
+        "signature": "Signature",
+        "signaturePlaceholder": "All",
+        "signed": "Signed",
+        "unsigned": "Not signed",
+        "sort": "Sorting",
+        "sortCriteria": "Criteria",
+        "sortDateDesc": "Date: newest first",
+        "sortDateAsc": "Date: oldest first"
       },
       "status": {
         "all": "All",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "waiting_list": "Waiting List",
+        "draft": "Draft"
       },
       "labels": {
         "titleByType": "Applications {{type}}",
@@ -567,6 +581,7 @@
       },
       "messages": {
         "loadFormsError": "Could not load application forms.",
+        "unavailableForms": "unavailable forms",
         "loadApplicationsError": "Could not load applications.",
         "loadingApplications": "Loading applications...",
         "statusUpdatedSuccess": "Application status updated successfully.",
