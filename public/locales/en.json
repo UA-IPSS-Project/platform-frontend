@@ -1512,5 +1512,26 @@
       "status_development": "In development",
       "lastChecked": "Last checked seconds ago"
     }
+  },
+  "privacy": {
+    "common": {
+      "rights": "You have the right to access, rectify, delete and export your personal data. Contact secretaria@florinhasdovouga.pt to exercise your rights."
+    },
+    "document": {
+      "title": "Privacy Notice - Document Upload",
+      "description": "The documents you upload will be stored securely and encrypted. They will be used exclusively for the indicated purpose and processing of your appointment. Data will be retained for the legal retention period configured by the institution."
+    },
+    "appointment": {
+      "title": "Privacy Notice - Appointment",
+      "description": "The personal data collected (name, tax ID, contact, date of birth) will be used for managing your appointment and service communication. The data controller is Associação Florinhas do Vouga, Tax ID 501234567."
+    },
+    "registration": {
+      "title": "Privacy Notice - Registration",
+      "description": "Your personal data will be processed in accordance with GDPR. We only collect data necessary for creating and managing your account. Data will be stored securely and will not be shared with third parties without your consent."
+    },
+    "requisition": {
+      "title": "Privacy Notice - Requisition",
+      "description": "The data provided will be used to process your requisition for materials, transport or maintenance. Information will be shared only with staff responsible for processing the request."
+    }
   }
 }

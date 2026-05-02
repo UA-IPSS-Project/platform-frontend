@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import { FileUpload } from '../shared/FileUpload';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { toast } from 'sonner';
 import { documentosApi, DocumentoDTO } from '../../services/api';
 
@@ -118,6 +119,9 @@ export function DocumentUploadDialog({
               Indique o propósito do documento para conformidade RGPD
             </p>
           </div>
+
+          {/* Aviso de Privacidade */}
+          <PrivacyNotice context="document" />
 
           {/* Botões de ação */}
           <div className="flex gap-3 pt-2">

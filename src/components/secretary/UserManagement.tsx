@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, User, ChevronDown, ChevronUp, Lock, RefreshCw, Check, Eye, ShieldCheck, Loader2, MapPin, Briefcase, Mail, Phone, Calendar, Building2, UserCircle } from 'lucide-react';
+import { Search, UserPlus, Send, ChevronLeft, ChevronRight, Users, User, ChevronDown, ChevronUp, Lock, RefreshCw, Check, Eye, ShieldCheck, Loader2, MapPin, Briefcase, Mail, Phone, Calendar, Building2, UserCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { GlassCard } from '../ui/glass-card';
 import { DatePickerField } from '../ui/date-picker-field';
@@ -1325,38 +1325,47 @@ export function UserManagement() {
                         </div>
                     </ScrollArea>
 
-                    <DialogFooter className="p-4 bg-muted/30 border-t border-border/40 flex flex-row justify-between items-center gap-2">
-                        <div className="flex gap-2">
-                            {selectedUser?.funcao === 'UTENTE' && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setUserToAnonymize(selectedUser);
-                                        setShowAnonymizeDialog(true);
-                                    }}
-                                    className="h-8 px-4 text-xs font-bold border-destructive text-destructive hover:bg-destructive hover:text-white"
-                                >
-                                    Anonimizar e Eliminar
-                                </Button>
-                            )}
-                        </div>
-                        <div className="flex gap-2">
+                    {selectedUser?.funcao === 'UTENTE' && (
+                        <div className="px-6 py-4 border-t border-destructive/10 bg-destructive/5 space-y-3">
+                            <div className="flex flex-col gap-1">
+                                <h4 className="text-sm font-bold text-destructive flex items-center gap-2">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    Zona de Perigo
+                                </h4>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    Ações irreversíveis sobre a conta do utilizador. Proceda com cautela.
+                                </p>
+                            </div>
                             <Button
-                                variant="ghost"
-                                onClick={requestClose}
-                                className="h-8 px-4 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                                variant="outline"
+                                onClick={() => {
+                                    setUserToAnonymize(selectedUser);
+                                    setShowAnonymizeDialog(true);
+                                }}
+                                className="w-full border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all duration-200 font-bold h-9 text-xs bg-background"
                             >
-                                {t('common.cancel')}
-                            </Button>
-                            <Button
-                                onClick={handleEditSave}
-                                disabled={isSaving}
-                                className="h-8 px-6 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-2 shadow-lg shadow-primary/20"
-                            >
-                                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-4 h-4" />}
-                                {t('userManagement.details.saveChanges')}
+                                <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                Anonimizar e Eliminar Utilizador
                             </Button>
                         </div>
+                    )}
+
+                    <DialogFooter className="p-4 bg-muted/30 border-t border-border/40 flex flex-row justify-end items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            onClick={requestClose}
+                            className="h-8 px-4 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                        >
+                            {t('common.cancel')}
+                        </Button>
+                        <Button
+                            onClick={handleEditSave}
+                            disabled={isSaving}
+                            className="h-8 px-6 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold gap-2 shadow-lg shadow-primary/20"
+                        >
+                            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-4 h-4" />}
+                            {t('userManagement.details.saveChanges')}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -1422,12 +1431,12 @@ export function UserManagement() {
                             <strong>Esta ação irá:</strong>
                             <ul className="list-disc list-inside mt-2 space-y-1">
                                 <li>Substituir todos os dados pessoais por valores anónimos</li>
-                                <li>Eliminar completamente o registo da base de dados</li>
-                                <li>Preservar histórico de marcações (anonimizado)</li>
-                                <li>Registar a ação nos logs de auditoria</li>
+                                <li>Eliminar o registo de utilizador da base de dados</li>
+                                <li>Preservar o histórico de marcações de forma anónima</li>
+                                <li>Registar esta operação nos logs de auditoria</li>
                             </ul>
                             <br />
-                            <strong className="text-destructive">⚠️ Esta ação é IRREVERSÍVEL e cumpre o RGPD Art.º 17 (Direito ao Esquecimento).</strong>
+                            <strong className="text-destructive">Esta ação é irreversível e não pode ser desfeita.</strong>
                             <br /><br />
                             Tem a certeza que deseja continuar?
                         </AlertDialogDescription>

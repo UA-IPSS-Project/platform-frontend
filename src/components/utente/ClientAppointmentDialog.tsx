@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { FileUpload } from '../shared/FileUpload';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { apiRequest, marcacoesApi, documentosApi, type Assunto } from '../../services/api';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
@@ -173,6 +174,8 @@ export function ClientAppointmentDialog({
               isUploading={isLoading}
             />
           </div>
+
+          <PrivacyNotice context="appointment" />
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={requestClose} className="flex-1">
