@@ -103,6 +103,11 @@ export const utilizadoresApi = {
             method: 'POST',
         }),
 
+    anonimizarEEliminarUtilizador: (id: number) =>
+        apiRequest<void>(`/api/utilizadores/${id}/anonimizar-eliminar`, {
+            method: 'DELETE',
+        }),
+
     // Direito de Portabilidade (RGPD Art.º 20)
     exportarDados: () =>
         apiRequest<any>('/api/utilizadores/me/export', {
