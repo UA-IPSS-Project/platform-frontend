@@ -1,21 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import Form from '@rjsf/core';
-import validator from '@rjsf/validator-ajv8';
-import type { RJSFSchema } from '@rjsf/utils';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/glass-card';
-import { candidaturaMockupSchema } from './schemas/candidaturaMockup.schema';
-import { candidaturaMockupUiSchema } from './ui/candidaturaMockup.uiSchema';
-import { rjsfWidgets } from './widgets/RjsfWidgets';
-import { RjsfFieldTemplate } from './templates/RjsfFieldTemplate';
-import { FormularioResponse } from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
-import { createMockCandidaturaForType, getMockFormularioForType } from '../../pages/candidaturas/candidaturaMockData';
-
-const templates = {
-  FieldTemplate: RjsfFieldTemplate,
-};
+import { candidaturasApi, FormResponse } from '@/services/api';
+import { WizardForm } from './WizardForm';
 
 interface RjsfCandidaturaFormProps {
   onSuccess?: () => void;
@@ -30,24 +18,20 @@ export function RjsfCandidaturaForm({
   showTitle = true,
   candidaturaType,
 }: RjsfCandidaturaFormProps) {
-  const { user } = useAuth();
   const [formData, setFormData] = useState<Record<string, unknown>>({});
-  const [formularioAtivo, setFormularioAtivo] = useState<FormularioResponse | null>(null);
+  const [formularioAtivo, setFormularioAtivo] = useState<FormResponse | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentCandidaturaId, setCurrentCandidaturaId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadFormulario = async () => {
       try {
-        const mockForm = candidaturaType ? getMockFormularioForType(candidaturaType) : null;
-        setFormularioAtivo(mockForm);
-
-        // API lookup kept here for reference only while the candidaturas area uses local mocks.
-        // const forms = await candidaturasApi.listarFormularios(candidaturaType);
-        // if (forms.length > 0) {
-        //   setFormularioAtivo(forms[0]);
-        // } else {
-        //   setFormularioAtivo(null);
-        // }
+        const forms = await candidaturasApi.listarFormularios(candidaturaType);
+        if (forms.length > 0) {
+          setFormularioAtivo(forms[0]);
+        } else {
+          setFormularioAtivo(null);
+        }
       } catch (error) {
         toast.error('Não foi possível carregar o formulário, será usado o mock local.');
       }
@@ -55,16 +39,6 @@ export function RjsfCandidaturaForm({
 
     loadFormulario();
   }, [candidaturaType]);
-
-  const schema = useMemo<RJSFSchema>(
-    () => (formularioAtivo?.schema as RJSFSchema) || candidaturaMockupSchema,
-    [formularioAtivo]
-  );
-
-  const uiSchema = useMemo(
-    () => formularioAtivo?.uiSchema || candidaturaMockupUiSchema,
-    [formularioAtivo]
-  );
 
   const handleSubmit = async (data: { formData?: Record<string, unknown> }) => {
     const submittedData = data.formData || {};
@@ -77,14 +51,12 @@ export function RjsfCandidaturaForm({
     try {
       setIsSubmitting(true);
 
-      createMockCandidaturaForType(candidaturaType || '', submittedData, user?.id);
-
-      // API submission kept here for reference only while the candidaturas area uses local mocks.
-      // await candidaturasApi.criarCandidatura({
-      //   formId: formularioAtivo.id,
-      //   respostas: submittedData,
-      //   criadoPor: user?.id,
-      // });
+      await candidaturasApi.criarCandidatura({
+        formId: formularioAtivo.id,
+        nif: (submittedData.guardianNif as string) || (submittedData.nif as string) || '',
+        nome: (submittedData.childName as string) || (submittedData.nome as string) || 'Sem nome',
+        respostas: submittedData,
+      });
 
       toast.success('Candidatura enviada com sucesso');
       setFormData(submittedData);
@@ -94,6 +66,32 @@ export function RjsfCandidaturaForm({
       toast.error('Não foi possível submeter a candidatura.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async (submittedData: Record<string, unknown>) => {
+    if (!formularioAtivo?.id) return;
+
+    try {
+      if (currentCandidaturaId) {
+        await candidaturasApi.atualizarCandidatura(currentCandidaturaId, {
+          respostas: submittedData,
+          estado: 'RASCUNHO',
+        });
+        console.info('[Draft] Updated draft:', currentCandidaturaId);
+      } else {
+        const newCand = await candidaturasApi.criarCandidatura({
+          formId: formularioAtivo.id,
+          nif: (submittedData.guardianNif as string) || (submittedData.nif as string) || '000000000',
+          nome: (submittedData.childName as string) || (submittedData.nome as string) || 'Rascunho',
+          respostas: submittedData,
+          estado: 'RASCUNHO',
+        });
+        setCurrentCandidaturaId(newCand.id);
+        console.info('[Draft] Created new draft:', newCand.id);
+      }
+    } catch (error) {
+      console.error('Erro ao guardar rascunho:', error);
     }
   };
 
@@ -110,25 +108,22 @@ export function RjsfCandidaturaForm({
         </div>
       )}
 
-      <Form<any, RJSFSchema, any>
-        schema={schema}
-        uiSchema={uiSchema}
-        formData={formData}
-        validator={validator as any}
-        widgets={rjsfWidgets}
-        templates={templates}
-        showErrorList={false}
-        onChange={(event: { formData?: Record<string, unknown> }) =>
-          setFormData(event.formData || {})
-        }
-        onSubmit={handleSubmit}
-      >
-        <div className="pt-2 flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'A submeter...' : 'Submeter Candidatura'}
+
+      {formularioAtivo ? (
+        <WizardForm
+          form={formularioAtivo}
+          onSubmit={(data) => handleSubmit({ formData: data })}
+          onSaveDraft={handleSaveDraft}
+          isSubmitting={isSubmitting}
+        />
+      ) : (
+        <div className="py-10 text-center space-y-4">
+          <p className="text-muted-foreground italic">Formulários indisponíveis para este tipo.</p>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Voltar
           </Button>
         </div>
-      </Form>
+      )}
 
       {showPreview && (
         <GlassCard className="p-4">

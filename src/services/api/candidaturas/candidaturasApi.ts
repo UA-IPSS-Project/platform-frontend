@@ -1,24 +1,24 @@
 import { apiRequest } from '../core/client';
 import {
-  AtualizarCandidaturaRequest,
-  AtualizarEstadoCandidaturaRequest,
-  AtualizarFormularioRequest,
+  CandidaturaStatusUpdate,
+  CandidaturaUpdate,
+  FormUpdate,
   CandidaturaResponse,
-  CriarCandidaturaRequest,
-  CriarFormularioRequest,
-  FormularioResponse,
+  CandidaturaCreate,
+  FormCreate,
+  FormResponse,
+  FormTypeResponse,
   ListarCandidaturasFilters,
 } from './types';
 
 const toQueryString = (filters: ListarCandidaturasFilters = {}): string => {
   const params = new URLSearchParams();
 
+  if (filters.nif) params.append('nif', filters.nif);
   if (filters.nome) params.append('nome', filters.nome);
   if (filters.estado) params.append('estado', filters.estado);
-  if (filters.dataInicio) params.append('dataInicio', filters.dataInicio);
-  if (filters.dataFim) params.append('dataFim', filters.dataFim);
-  if (filters.formId) params.append('formId', filters.formId);
-  if (typeof filters.criadoPor === 'number') params.append('criadoPor', String(filters.criadoPor));
+  if (typeof filters.assinado === 'boolean') params.append('assinado', String(filters.assinado));
+  if (typeof filters.idade === 'number') params.append('idade', String(filters.idade));
 
   const query = params.toString();
   return query ? `?${query}` : '';
@@ -33,19 +33,21 @@ export const candidaturasApi = {
   listarFormularios: (name?: string) => {
     const formName = normalizeName(name);
     const query = formName ? `?name=${encodeURIComponent(formName)}` : '';
-    return apiRequest<FormularioResponse[]>(`/api/forms${query}`);
+    return apiRequest<FormResponse[]>(`/api/forms${query}`);
   },
 
-  obterFormularioPorId: (id: string) => apiRequest<FormularioResponse>(`/api/forms/${id}`),
+  listarTiposFormularios: () => apiRequest<FormTypeResponse[]>('/api/forms/types'),
 
-  criarFormulario: (payload: CriarFormularioRequest) =>
-    apiRequest<FormularioResponse>('/api/forms', {
+  obterFormularioPorId: (id: string) => apiRequest<FormResponse>(`/api/forms/${id}`),
+
+  criarFormulario: (payload: FormCreate) =>
+    apiRequest<FormResponse>('/api/forms', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  atualizarFormulario: (id: string, payload: AtualizarFormularioRequest) =>
-    apiRequest<FormularioResponse>(`/api/forms/${id}`, {
+  atualizarFormulario: (id: string, payload: FormUpdate) =>
+    apiRequest<FormResponse>(`/api/forms/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
@@ -66,20 +68,20 @@ export const candidaturasApi = {
 
   obterCandidaturaPorId: (id: string) => apiRequest<CandidaturaResponse>(`/api/candidaturas/${id}`),
 
-  criarCandidatura: (payload: CriarCandidaturaRequest) =>
+  criarCandidatura: (payload: CandidaturaCreate) =>
     apiRequest<CandidaturaResponse>('/api/candidaturas', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
 
-  atualizarCandidatura: (id: string, payload: AtualizarCandidaturaRequest) =>
+  atualizarCandidatura: (id: string, payload: CandidaturaUpdate) =>
     apiRequest<CandidaturaResponse>(`/api/candidaturas/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
 
-  atualizarEstado: (id: string, payload: AtualizarEstadoCandidaturaRequest) =>
-    apiRequest<CandidaturaResponse>(`/api/candidaturas/${id}/estado`, {
+  atualizarEstado: (id: string, payload: CandidaturaStatusUpdate) =>
+    apiRequest<CandidaturaResponse>(`/api/candidaturas/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),

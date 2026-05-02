@@ -1,59 +1,81 @@
-export type CandidaturaEstado = 'PENDENTE' | 'APROVADA' | 'REJEITADA';
+export type CandidaturaEstado = 'PENDENTE' | 'LISTA_ESPERA' | 'APROVADA' | 'REJEITADA' | 'RASCUNHO';
 
-export interface FormularioResponse {
+export interface FormPage {
+  title: string;
+  description?: string;
+  fields: string[];
+}
+
+export interface FormResponse {
   id: string;
   name: string;
   schema: Record<string, unknown>;
   uiSchema?: Record<string, unknown>;
+  pages?: FormPage[];
   criadoPor?: number;
   criadoEm?: string;
   atualizadoPor?: number;
   atualizadoEm?: string;
+}
+
+export interface FormTypeResponse {
+  id: string;
+  name: string;
 }
 
 export interface CandidaturaResponse {
   id: string;
   formId: string;
+  nif: string;
+  nome: string;
   respostas: Record<string, unknown>;
   estado: CandidaturaEstado;
   criadoPor?: number;
   criadoEm?: string;
+  assinado?: boolean;
+  ranking?: number;
   atualizadoPor?: number;
   atualizadoEm?: string;
 }
 
 export interface ListarCandidaturasFilters {
+  nif?: string;
   nome?: string;
   estado?: CandidaturaEstado;
-  dataInicio?: string;
-  dataFim?: string;
-  formId?: string;
-  criadoPor?: number;
+  assinado?: boolean;
+  idade?: number;
 }
 
-export interface CriarFormularioRequest {
+
+export interface FormCreate {
   name: string;
   schema: Record<string, unknown>;
   uiSchema?: Record<string, unknown>;
-  criadoPor?: number;
+  pages?: FormPage[];
 }
 
-export interface AtualizarFormularioRequest extends CriarFormularioRequest {
-  atualizadoPor?: number;
+export interface FormUpdate {
+  name: string;
+  schema: Record<string, unknown>;
+  uiSchema?: Record<string, unknown>;
+  pages?: FormPage[];
 }
 
-export interface CriarCandidaturaRequest {
+export interface CandidaturaCreate {
   formId: string;
+  nif: string;
+  nome: string;
   respostas: Record<string, unknown>;
-  criadoPor?: number;
+  estado?: CandidaturaEstado;
 }
 
-export interface AtualizarCandidaturaRequest {
-  formId: string;
+export interface CandidaturaUpdate {
+  formId?: string;
   respostas: Record<string, unknown>;
-  atualizadoPor?: number;
+  estado?: CandidaturaEstado;
 }
 
-export interface AtualizarEstadoCandidaturaRequest {
+export interface CandidaturaStatusUpdate {
   estado: CandidaturaEstado;
+  assinado?: boolean;
 }

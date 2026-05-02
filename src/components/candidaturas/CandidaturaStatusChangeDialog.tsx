@@ -88,6 +88,7 @@ export function CandidaturaStatusChangeDialog({
               className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
             >
               <option value="PENDENTE">{t('applications.flow.status.pending')}</option>
+              <option value="LISTA_ESPERA">Lista de espera</option>
               <option value="APROVADA">{t('applications.flow.status.approved')}</option>
               <option value="REJEITADA">{t('applications.flow.status.rejected')}</option>
             </select>
@@ -108,7 +109,7 @@ export function CandidaturaStatusChangeDialog({
             <AlertDialogTitle>{t('applications.flow.statusDialog.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
               {t('applications.flow.statusDialog.confirmDescription', {
-                status: t(`applications.flow.status.${nextStatus === 'PENDENTE' ? 'pending' : nextStatus === 'APROVADA' ? 'approved' : 'rejected'}`).toLowerCase(),
+                status: nextStatus === 'LISTA_ESPERA' ? 'lista de espera' : t(`applications.flow.status.${nextStatus === 'PENDENTE' ? 'pending' : nextStatus === 'APROVADA' ? 'approved' : 'rejected'}`).toLowerCase(),
                 candidaturaCode,
               })}
             </AlertDialogDescription>
