@@ -9,6 +9,7 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
 import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
+import { apiRequest } from '../../services/api/core/client';
 
 
 function SlotsManagement({
@@ -144,8 +145,7 @@ export function SecretaryAdminArea() {
     const loadRetencaoDocumentos = async () => {
         setIsLoadingRetencao(true);
         try {
-            const response = await fetch('/api/config/documento/retencao');
-            const data = await response.json();
+            const data = await apiRequest<{ anos: number }>('/api/config/documento/retencao', { method: 'GET' });
             setRetencaoAnos(data.anos);
             setSavedRetencaoAnos(data.anos);
         } catch (error) {
@@ -163,7 +163,7 @@ export function SecretaryAdminArea() {
 
         setIsSavingRetencao(true);
         try {
-            await fetch('/api/config/documento/retencao', {
+            await apiRequest('/api/config/documento/retencao', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ anos: retencaoAnos }),

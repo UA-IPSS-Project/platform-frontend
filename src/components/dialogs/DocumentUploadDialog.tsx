@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -17,12 +18,12 @@ interface DocumentUploadDialogProps {
 }
 
 const FINALIDADES_PREDEFINIDAS = [
-  'Comprovativo de residência',
-  'Atestado médico',
-  'Documento de identificação',
-  'Comprovativo de rendimentos',
-  'Autorização parental',
-  'Outro'
+  { code: 'residence_proof',       translationKey: 'documentUpload.purposes.residenceProof' },
+  { code: 'medical_certificate',   translationKey: 'documentUpload.purposes.medicalCertificate' },
+  { code: 'id_document',           translationKey: 'documentUpload.purposes.idDocument' },
+  { code: 'income_proof',          translationKey: 'documentUpload.purposes.incomeProof' },
+  { code: 'parental_authorization',translationKey: 'documentUpload.purposes.parentalAuthorization' },
+  { code: 'other',                 translationKey: 'documentUpload.purposes.other' },
 ];
 
 export function DocumentUploadDialog({
@@ -32,6 +33,7 @@ export function DocumentUploadDialog({
   onSuccess,
   isClient = false
 }: DocumentUploadDialogProps) {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [finalidade, setFinalidade] = useState('');
@@ -110,8 +112,8 @@ export function DocumentUploadDialog({
             >
               <option value="">Selecione a finalidade...</option>
               {FINALIDADES_PREDEFINIDAS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
+                <option key={opt.code} value={opt.code}>
+                  {t(opt.translationKey)}
                 </option>
               ))}
             </select>

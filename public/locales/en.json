@@ -1513,6 +1513,16 @@
       "lastChecked": "Last checked seconds ago"
     }
   },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Proof of residence",
+      "medicalCertificate": "Medical certificate",
+      "idDocument": "Identity document",
+      "incomeProof": "Proof of income",
+      "parentalAuthorization": "Parental authorization",
+      "other": "Other"
+    }
+  },
   "privacy": {
     "common": {
       "rights": "You have the right to access, rectify, delete and export your personal data. Contact secretaria@florinhasdovouga.pt to exercise your rights."

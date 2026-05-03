@@ -1530,6 +1530,16 @@
       "lastChecked": "Última verificação há segundos"
     }
   },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Comprovativo de residência",
+      "medicalCertificate": "Atestado médico",
+      "idDocument": "Documento de identificação",
+      "incomeProof": "Comprovativo de rendimentos",
+      "parentalAuthorization": "Autorização parental",
+      "other": "Outro"
+    }
+  },
   "privacy": {
     "common": {
       "rights": "Tem direito a aceder, retificar, apagar e exportar os seus dados pessoais. Contacte secretaria@florinhasdovouga.pt para exercer os seus direitos."
