@@ -2,9 +2,10 @@ export interface DocumentoDTO {
     id: number;
     marcacaoId: number;
     nomeOriginal: string;
-    tipoMime: string;
+    tipo: string;       // backend field name
+    tipoMime?: string;  // alias kept for compatibility
     tamanho: number;
-    uploadedEm: string; // Backend envia como "uploadedEm"
+    uploadedEm: string;
     utenteNome?: string | null;
     utenteNif?: string | null;
     sequencia: number;

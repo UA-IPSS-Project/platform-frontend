@@ -35,7 +35,7 @@ export function ClientAppointmentDialog({
   const [subjects, setSubjects] = useState<Assunto[]>([]);
   const [subject, setSubject] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [finalidade, setFinalidade] = useState('');
+  const [finalidades, setFinalidades] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingClose, setPendingClose] = useState(false);
 
@@ -111,7 +111,7 @@ export function ClientAppointmentDialog({
 
       if (selectedFiles.length > 0) {
         try {
-          await documentosApi.uploadDocumentos(response.id, selectedFiles, finalidade || undefined);
+          await documentosApi.uploadDocumentos(response.id, selectedFiles, finalidades);
         } catch (uploadError) {
           console.error('Error uploading files:', uploadError);
         }
@@ -176,29 +176,32 @@ export function ClientAppointmentDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="client-finalidade" className="text-foreground">
-              {t('documentUpload.label', 'Finalidade do documento (opcional)')}
-            </Label>
-            <select
-              id="client-finalidade"
-              value={finalidade}
-              onChange={(e) => setFinalidade(e.target.value)}
-              disabled={isLoading}
-              className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">{t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')}</option>
-              <option value="residence_proof">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</option>
-              <option value="medical_certificate">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</option>
-              <option value="id_document">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</option>
-              <option value="income_proof">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</option>
-              <option value="parental_authorization">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</option>
-              <option value="other">{t('documentUpload.purposes.other', 'Outro')}</option>
-            </select>
-            <p className="text-xs text-muted-foreground">
-              {t('documentUpload.purposeHint', 'Indique o propósito do documento para conformidade RGPD')}
-            </p>
-          </div>
+          {selectedFiles.length > 0 && (
+            <div className="space-y-3">
+              <Label className="text-foreground">
+                {t('documentUpload.label', 'Finalidade por documento (opcional)')}
+              </Label>
+              {selectedFiles.map((file) => (
+                <div key={file.name} className="space-y-1">
+                  <span className="text-xs text-muted-foreground truncate block">{file.name}</span>
+                  <select
+                    value={finalidades[file.name] || ''}
+                    onChange={(e) => setFinalidades(prev => ({ ...prev, [file.name]: e.target.value }))}
+                    disabled={isLoading}
+                    className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">{t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')}</option>
+                    <option value="residence_proof">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</option>
+                    <option value="medical_certificate">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</option>
+                    <option value="id_document">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</option>
+                    <option value="income_proof">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</option>
+                    <option value="parental_authorization">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</option>
+                    <option value="other">{t('documentUpload.purposes.other', 'Outro')}</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
 
           <PrivacyNotice context="appointment" />
 

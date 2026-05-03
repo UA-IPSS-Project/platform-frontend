@@ -569,7 +569,8 @@ function cleanFilename(name: string) {
 
 
   // Função utilitária para saber se o documento tem preview
-  function hasPreview(nomeOriginal: string): boolean {
+  function hasPreview(nomeOriginal: string, tipo?: string): boolean {
+    if (tipo && ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(tipo)) return true;
     if (!nomeOriginal) return false;
     const ext = nomeOriginal.split('.').pop()?.toLowerCase();
     return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
@@ -744,7 +745,7 @@ function cleanFilename(name: string) {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPreview(doc.nomeOriginal) ? (
+                        {hasPreview(doc.nomeOriginal, doc.tipo) ? (
                           <>
                             <button
                               type="button"

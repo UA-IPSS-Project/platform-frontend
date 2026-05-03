@@ -53,7 +53,8 @@ function formatSize(bytes: number) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-function hasPreview(nomeOriginal: string): boolean {
+function hasPreview(nomeOriginal: string, tipo?: string): boolean {
+  if (tipo && ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(tipo)) return true;
   if (!nomeOriginal) return false;
   const ext = nomeOriginal.split('.').pop()?.toLowerCase();
   return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
@@ -382,7 +383,7 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
 
                         {/* Action buttons */}
                         <div className="flex-shrink-0 pt-0.5 flex items-center gap-1">
-                          {hasPreview(doc.nomeOriginal) && (
+                          {hasPreview(doc.nomeOriginal, doc.tipo) && (
                             <Button
                               variant="ghost"
                               size="icon"
