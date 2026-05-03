@@ -746,9 +746,7 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPreview(doc) ? (
-                          <>
-                        {hasPreview(doc.nomeOriginal) && (
+                        {hasPreview(doc) && (
                           <button
                             type="button"
                             onClick={() => documentosApi.previewDocumento(doc.id)}
@@ -789,7 +787,6 @@ export function AppointmentDetailsDialog({
                                 <Trash2 className="w-4 h-4" />
                                 {t('appointmentDetails.removeDocument', 'Apagar')}
                               </button>
-                              {/* Só mostra o botão de documento inválido se NÃO for utente */}
                               {!isClient && (
                                 <button
                                   type="button"
@@ -815,8 +812,6 @@ export function AppointmentDetailsDialog({
                             </button>
                           )
                         )}
-
-
                       </div>
                     </div>
                   ))}
