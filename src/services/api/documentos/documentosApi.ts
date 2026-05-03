@@ -8,12 +8,16 @@ export const documentosApi = {
         window.open(url, '_blank', 'noopener');
     },
     // Upload de documento(s) para uma marcação
-    uploadDocumentos: async (marcacaoId: number, files: File[]): Promise<DocumentoDTO[]> => {
+    uploadDocumentos: async (marcacaoId: number, files: File[], finalidades?: Record<string, string>): Promise<DocumentoDTO[]> => {
         const uploadedDocs: DocumentoDTO[] = [];
 
         for (const file of files) {
             const formData = new FormData();
             formData.append('file', file);
+            const finalidade = finalidades?.[file.name];
+            if (finalidade) {
+                formData.append('finalidade', finalidade);
+            }
 
             const xsrfToken = getCookie('XSRF-TOKEN');
             const headers: Record<string, string> = {};

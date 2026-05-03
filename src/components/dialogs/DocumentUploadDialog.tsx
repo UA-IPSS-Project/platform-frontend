@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 import { FileUpload } from '../shared/FileUpload';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { toast } from 'sonner';
 import { documentosApi, DocumentoDTO } from '../../services/api';
 
@@ -15,6 +17,15 @@ interface DocumentUploadDialogProps {
   isClient?: boolean;
 }
 
+const FINALIDADES_PREDEFINIDAS = [
+  { code: 'residence_proof',       translationKey: 'documentUpload.purposes.residenceProof' },
+  { code: 'medical_certificate',   translationKey: 'documentUpload.purposes.medicalCertificate' },
+  { code: 'id_document',           translationKey: 'documentUpload.purposes.idDocument' },
+  { code: 'income_proof',          translationKey: 'documentUpload.purposes.incomeProof' },
+  { code: 'parental_authorization',translationKey: 'documentUpload.purposes.parentalAuthorization' },
+  { code: 'other',                 translationKey: 'documentUpload.purposes.other' },
+];
+
 export function DocumentUploadDialog({
   open,
   onClose,
@@ -22,8 +33,13 @@ export function DocumentUploadDialog({
   onSuccess,
   isClient = false
 }: DocumentUploadDialogProps) {
+  const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [finalidades, setFinalidades] = useState<Record<string, string>>({});
+
+  const setFinalidade = (fileName: string, value: string) =>
+    setFinalidades(prev => ({ ...prev, [fileName]: value }));
 
   const MAX_FILES = 10;
   const MAX_TOTAL_SIZE_MB = 20;
@@ -46,10 +62,11 @@ export function DocumentUploadDialog({
 
     setIsUploading(true);
     try {
-      const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles);
+      const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles, finalidades);
       if (isClient) toast.success(`${uploadedDocs.length} documento(s) enviado(s) com sucesso!`);
       onSuccess?.(uploadedDocs);
       setSelectedFiles([]);
+      setFinalidades({});
       onClose();
     } catch (error) {
       console.error('Erro ao enviar documentos:', error);
@@ -61,6 +78,7 @@ export function DocumentUploadDialog({
 
   const handleSkip = () => {
     setSelectedFiles([]);
+    setFinalidades({});
     onClose();
   };
 
@@ -82,6 +100,32 @@ export function DocumentUploadDialog({
             onChange={setSelectedFiles}
             isUploading={isUploading}
           />
+
+          {/* Finalidade por documento */}
+          {selectedFiles.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-foreground">Finalidade por documento (opcional)</p>
+              {selectedFiles.map((file) => (
+                <div key={file.name} className="space-y-1">
+                  <label className="text-xs text-muted-foreground truncate block">{file.name}</label>
+                  <select
+                    value={finalidades[file.name] || ''}
+                    onChange={(e) => setFinalidade(file.name, e.target.value)}
+                    disabled={isUploading}
+                    className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">Selecione a finalidade...</option>
+                    {FINALIDADES_PREDEFINIDAS.map((opt) => (
+                      <option key={opt.code} value={opt.code}>{t(opt.translationKey)}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Aviso de Privacidade - apenas para clientes */}
+          {isClient && <PrivacyNotice context="document" />}
 
           {/* Botões de ação */}
           <div className="flex gap-3 pt-2">

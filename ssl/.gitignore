@@ -1,0 +1,6 @@
+# Certificados SSL (não versionar por segurança)
+ssl/
+*.pem
+*.key
+*.crt
+*.csr

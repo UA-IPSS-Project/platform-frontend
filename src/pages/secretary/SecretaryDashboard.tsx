@@ -21,6 +21,7 @@ import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
 import { SettingsPage } from '../SettingsPage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { ReportsPage } from './ReportsPage';
+import { AuditPage } from '../AuditPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -344,8 +345,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         items={[
           { id: 'management', label: t('userManagement.title') },
           { id: 'admin-area', label: t('userManagement.title2') },
+          { id: 'audit', label: 'Auditoria' },
         ]}
-        isActive={['management', 'admin-area'].includes(currentView)}
+        isActive={['management', 'admin-area', 'audit'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         onLabelClick={() => navigateTo('management')}
       />
@@ -539,6 +541,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                   },
                 }}
               />
+            ) : currentView === 'audit' ? (
+              <AuditPage />
             ) : currentView === 'reports' ? (
               <ReportsPage />
             ) : currentView === 'settings' ? (

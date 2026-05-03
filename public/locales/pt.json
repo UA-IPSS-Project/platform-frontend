@@ -209,6 +209,23 @@
         "paragraphs": [
           "A IPSS Florinhas do Vouga reserva-se o direito de actualizar a presente Política sempre que necessário, sendo as alterações publicadas no website."
         ]
+      },
+      {
+        "title": "Isenção de Responsabilidade",
+        "paragraphs": [
+          "A plataforma é disponibilizada \"tal como está\" (as is), sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não se limitando a, garantias de comercialização, adequação a um fim específico ou não violação.",
+          "A IPSS Florinhas do Vouga não garante que a plataforma estará sempre disponível, livre de erros ou vírus, ou que as funcionalidades corresponderão às expectativas de todos os utilizadores.",
+          "Em caso de indisponibilidade temporária do serviço por motivos técnicos, manutenção programada ou circunstâncias imprevistas, a Instituição não será responsável por quaisquer danos diretos ou indiretos resultantes dessa indisponibilidade.",
+          "O utilizador reconhece que a utilização da plataforma é feita por sua conta e risco, devendo tomar as precauções adequadas, incluindo a manutenção de cópias de segurança dos seus dados."
+        ]
+      },
+      {
+        "title": "Lei Aplicável e Jurisdição",
+        "paragraphs": [
+          "A presente Política de Privacidade e Termos de Uso são regidos pela legislação portuguesa, nomeadamente pelo Regulamento Geral sobre a Protecção de Dados (RGPD - Regulamento UE 2016/679) e pela Lei n.º 58/2019, de 8 de agosto.",
+          "Para a resolução de quaisquer litígios emergentes da interpretação ou aplicação destes termos, será competente o foro da comarca de Aveiro, com expressa renúncia a qualquer outro.",
+          "Em caso de conflito entre a versão portuguesa e traduções para outros idiomas, prevalecerá sempre a versão em língua portuguesa."
+        ]
       }
     ]
   },
@@ -1526,6 +1543,37 @@
       "development_label": "Desenvolvimento",
       "status_development": "Em desenvolvimento",
       "lastChecked": "Última verificação há segundos"
+    }
+  },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Comprovativo de residência",
+      "medicalCertificate": "Atestado médico",
+      "idDocument": "Documento de identificação",
+      "incomeProof": "Comprovativo de rendimentos",
+      "parentalAuthorization": "Autorização parental",
+      "other": "Outro"
+    }
+  },
+  "privacy": {
+    "common": {
+      "rights": "Tem direito a aceder, retificar, apagar e exportar os seus dados pessoais. Contacte secretaria@florinhasdovouga.pt para exercer os seus direitos."
+    },
+    "document": {
+      "title": "Aviso de Privacidade - Upload de Documentos",
+      "description": "Os documentos que enviar serão armazenados de forma segura e encriptada. Serão utilizados exclusivamente para a finalidade indicada e processamento da sua marcação. Os dados serão conservados pelo prazo legal de retenção configurado pela instituição."
+    },
+    "appointment": {
+      "title": "Aviso de Privacidade - Marcação",
+      "description": "Os dados pessoais recolhidos (nome, NIF, contacto, data de nascimento) serão utilizados para gestão da sua marcação e comunicação de serviços. O responsável pelo tratamento é a Associação Florinhas do Vouga, NIF 501234567."
+    },
+    "registration": {
+      "title": "Aviso de Privacidade - Registo",
+      "description": "Os seus dados pessoais serão tratados de acordo com o RGPD. Recolhemos apenas os dados necessários para a criação e gestão da sua conta. Os dados serão armazenados de forma segura e não serão partilhados com terceiros sem o seu consentimento."
+    },
+    "requisition": {
+      "title": "Aviso de Privacidade - Requisição",
+      "description": "Os dados fornecidos serão utilizados para processar a sua requisição de materiais, transportes ou manutenção. As informações serão partilhadas apenas com os funcionários responsáveis pelo processamento do pedido."
     }
   }
 }

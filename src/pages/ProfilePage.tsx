@@ -137,6 +137,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const [expanded, setExpanded] = useState({
     personal: true,
@@ -270,6 +272,39 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     await loadUserData({ restoreDraft: false });
     setIsEditing(false);
   }, [loadUserData, storageKey]);
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await utilizadoresApi.solicitarEliminacao();
+      toast.success('Pedido de eliminação enviado. A secretaria irá processar o seu pedido em breve.');
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('Erro ao solicitar eliminação:', error);
+      toast.error('Erro ao solicitar eliminação de conta');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const dados = await utilizadoresApi.exportarDados();
+      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `meus-dados-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Dados exportados com sucesso');
+    } catch (error) {
+      console.error('Erro ao exportar dados:', error);
+      toast.error('Erro ao exportar dados');
+    }
+  };
 
   // Computed: whether the user has unsaved changes
   const hasUnsavedChanges = isEditing && JSON.stringify(formData) !== JSON.stringify(baseData);
@@ -493,6 +528,47 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
               </div>
             )}
           </div>
+
+          {/* Zona de Perigo - Eliminação de Conta */}
+          {isEmployee === false && !isEditing && (
+            <div className="mt-8 pt-6 border-t border-border space-y-4">
+              {/* Exportação de Dados (RGPD Art.º 20) */}
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                  Direito de Portabilidade
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Exportar todos os seus dados pessoais em formato JSON conforme RGPD Art.º 20.
+                </p>
+                <Button
+                  onClick={handleExportData}
+                  variant="outline"
+                  className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white"
+                  size="sm"
+                >
+                  Exportar Dados
+                </Button>
+              </div>
+
+              {/* Zona de Perigo - Eliminação de Conta */}
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-destructive mb-2">
+                  Zona de Perigo
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Solicitar a eliminação permanente da sua conta. Esta ação está sujeita a aprovação da secretaria conforme RGPD.
+                </p>
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  variant="outline"
+                  className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                  size="sm"
+                >
+                  Solicitar Eliminação de Conta
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -500,6 +576,32 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         open={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
       />
+
+      {/* Diálogo de Confirmação de Eliminação */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Solicitar Eliminação de Conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá enviar um pedido à secretaria para eliminar permanentemente a sua conta e dados pessoais, conforme o Direito ao Esquecimento (RGPD Art.º 17).
+              <br /><br />
+              A secretaria irá processar o seu pedido no prazo de 1 mês. Após aprovação, os seus dados serão anonimizados e não poderá recuperar a conta.
+              <br /><br />
+              Tem a certeza que deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {isDeleting ? 'A processar...' : 'Sim, Solicitar Eliminação'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showUnsavedDialog} onOpenChange={(open) => { if (!open) cancelDiscard(); }}>
         <AlertDialogContent>

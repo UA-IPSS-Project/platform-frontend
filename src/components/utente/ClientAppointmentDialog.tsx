@@ -8,6 +8,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { FileUpload } from '../shared/FileUpload';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { apiRequest, marcacoesApi, documentosApi, type Assunto } from '../../services/api';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
@@ -34,6 +35,7 @@ export function ClientAppointmentDialog({
   const [subjects, setSubjects] = useState<Assunto[]>([]);
   const [subject, setSubject] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [finalidades, setFinalidades] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingClose, setPendingClose] = useState(false);
 
@@ -109,7 +111,7 @@ export function ClientAppointmentDialog({
 
       if (selectedFiles.length > 0) {
         try {
-          await documentosApi.uploadDocumentosBulk(response.id, selectedFiles);
+          await documentosApi.uploadDocumentos(response.id, selectedFiles, finalidades);
         } catch (uploadError) {
           console.error('Error uploading files:', uploadError);
         }
@@ -173,6 +175,38 @@ export function ClientAppointmentDialog({
               isUploading={isLoading}
             />
           </div>
+
+          {selectedFiles.length > 0 && (
+            <div className="space-y-3">
+              <Label className="text-foreground">
+                {t('documentUpload.label', 'Finalidade por documento (opcional)')}
+              </Label>
+              {selectedFiles.map((file) => (
+                <div key={file.name} className="space-y-1">
+                  <span className="text-xs text-muted-foreground truncate block">{file.name}</span>
+                  <Select
+                    value={finalidades[file.name] || ''}
+                    onValueChange={(val) => setFinalidades(prev => ({ ...prev, [file.name]: val }))}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="bg-card border-border text-foreground">
+                      <SelectValue placeholder={t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      <SelectItem value="residence_proof" className="text-popover-foreground">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</SelectItem>
+                      <SelectItem value="medical_certificate" className="text-popover-foreground">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</SelectItem>
+                      <SelectItem value="id_document" className="text-popover-foreground">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</SelectItem>
+                      <SelectItem value="income_proof" className="text-popover-foreground">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</SelectItem>
+                      <SelectItem value="parental_authorization" className="text-popover-foreground">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</SelectItem>
+                      <SelectItem value="other" className="text-popover-foreground">{t('documentUpload.purposes.other', 'Outro')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <PrivacyNotice context="appointment" />
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={requestClose} className="flex-1">
