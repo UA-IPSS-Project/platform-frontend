@@ -184,20 +184,23 @@ export function ClientAppointmentDialog({
               {selectedFiles.map((file) => (
                 <div key={file.name} className="space-y-1">
                   <span className="text-xs text-muted-foreground truncate block">{file.name}</span>
-                  <select
+                  <Select
                     value={finalidades[file.name] || ''}
-                    onChange={(e) => setFinalidades(prev => ({ ...prev, [file.name]: e.target.value }))}
+                    onValueChange={(val) => setFinalidades(prev => ({ ...prev, [file.name]: val }))}
                     disabled={isLoading}
-                    className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">{t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')}</option>
-                    <option value="residence_proof">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</option>
-                    <option value="medical_certificate">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</option>
-                    <option value="id_document">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</option>
-                    <option value="income_proof">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</option>
-                    <option value="parental_authorization">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</option>
-                    <option value="other">{t('documentUpload.purposes.other', 'Outro')}</option>
-                  </select>
+                    <SelectTrigger className="bg-card border-border text-foreground">
+                      <SelectValue placeholder={t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      <SelectItem value="residence_proof" className="text-popover-foreground">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</SelectItem>
+                      <SelectItem value="medical_certificate" className="text-popover-foreground">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</SelectItem>
+                      <SelectItem value="id_document" className="text-popover-foreground">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</SelectItem>
+                      <SelectItem value="income_proof" className="text-popover-foreground">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</SelectItem>
+                      <SelectItem value="parental_authorization" className="text-popover-foreground">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</SelectItem>
+                      <SelectItem value="other" className="text-popover-foreground">{t('documentUpload.purposes.other', 'Outro')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               ))}
             </div>

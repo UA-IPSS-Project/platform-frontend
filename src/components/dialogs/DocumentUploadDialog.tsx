@@ -124,8 +124,8 @@ export function DocumentUploadDialog({
             </div>
           )}
 
-          {/* Aviso de Privacidade */}
-          <PrivacyNotice context="document" />
+          {/* Aviso de Privacidade - apenas para clientes */}
+          {isClient && <PrivacyNotice context="document" />}
 
           {/* Botões de ação */}
           <div className="flex gap-3 pt-2">
