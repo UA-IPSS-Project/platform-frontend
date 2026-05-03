@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { FileUpload } from '../shared/FileUpload';
-import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { DatePickerField } from '../ui/date-picker-field';
 import { utilizadoresApi, UtilizadorInfo, documentosApi, apiRequest, marcacoesApi, type Assunto } from '../../services/api';
 import { AlertCircleIcon } from '../shared/CustomIcons';
@@ -491,8 +490,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 isUploading={isLoading}
               />
             </div>
-
-            <PrivacyNotice context="appointment" />
 
             <div className="flex gap-3 pt-4">
               <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-border" disabled={isLoading}>
