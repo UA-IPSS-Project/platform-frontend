@@ -90,7 +90,6 @@ export function UserManagement() {
     const [isApproving, setIsApproving] = useState(false);
     const [isAnonymizing, setIsAnonymizing] = useState(false);
     const [showAnonymizeDialog, setShowAnonymizeDialog] = useState(false);
-    const [userToAnonymize, setUserToAnonymize] = useState<any | null>(null);
     const [editForm, setEditForm] = useState({
         nome: '',
         email: '',
@@ -306,13 +305,12 @@ export function UserManagement() {
     };
 
     const handleAnonymize = async () => {
-        if (!userToAnonymize) return;
+        if (!selectedUser) return;
         setIsAnonymizing(true);
         try {
-            await utilizadoresApi.anonimizarEEliminarUtilizador(userToAnonymize.id);
+            await utilizadoresApi.anonimizarEEliminarUtilizador(selectedUser.id);
             toast.success('Utilizador anonimizado e eliminado com sucesso');
             setShowAnonymizeDialog(false);
-            setUserToAnonymize(null);
             setIsDetailsOpen(false);
             fetchUtentes();
         } catch (error) {
@@ -1339,7 +1337,6 @@ export function UserManagement() {
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    setUserToAnonymize(selectedUser);
                                     setShowAnonymizeDialog(true);
                                 }}
                                 className="w-full border-destructive/20 text-destructive hover:bg-destructive hover:text-white transition-all duration-200 font-bold h-9 text-xs bg-background"
@@ -1426,7 +1423,7 @@ export function UserManagement() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Anonimizar e Eliminar Utilizador?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            Está prestes a <strong>anonimizar e eliminar permanentemente</strong> o utilizador <strong>{userToAnonymize?.nome}</strong> (NIF: {userToAnonymize?.nif}).
+                            Está prestes a <strong>anonimizar e eliminar permanentemente</strong> o utilizador <strong>{selectedUser?.nome}</strong> (NIF: {selectedUser?.nif}).
                             <br /><br />
                             <strong>Esta ação irá:</strong>
                             <ul className="list-disc list-inside mt-2 space-y-1">

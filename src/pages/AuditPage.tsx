@@ -17,10 +17,10 @@ export function AuditPage() {
         size: 50,
     });
 
-    const fetchLogs = async () => {
+    const fetchLogs = async (page = currentPage) => {
         setLoading(true);
         try {
-            const response = await auditApi.getLogs({ ...filters, page: currentPage });
+            const response = await auditApi.getLogs({ ...filters, page });
             setLogs(response.content);
             setTotalPages(response.totalPages);
         } catch (error) {
@@ -32,11 +32,12 @@ export function AuditPage() {
     };
 
     useEffect(() => {
-        fetchLogs();
+        fetchLogs(currentPage);
     }, [currentPage]);
 
     const handleSearch = () => {
         setCurrentPage(0);
+        fetchLogs(0);
     };
 
     const formatDate = (dateString: string) => {
@@ -76,14 +77,14 @@ export function AuditPage() {
                     <div>
                         <label className="text-sm font-medium mb-2 block">Ação</label>
                         <Select
-                            value={filters.action || ''}
-                            onValueChange={(value) => setFilters({ ...filters, action: value || undefined })}
+                            value={filters.action || 'all'}
+                            onValueChange={(value) => setFilters({ ...filters, action: value === 'all' ? undefined : value })}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Todas" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Todas</SelectItem>
+                                <SelectItem value="all">Todas</SelectItem>
                                 <SelectItem value="CRIAR_CONTA">Criar Conta</SelectItem>
                                 <SelectItem value="APROVAR_FUNCIONARIO">Aprovar Funcionário</SelectItem>
                                 <SelectItem value="ATUALIZAR_PERFIL">Atualizar Perfil</SelectItem>
@@ -100,14 +101,14 @@ export function AuditPage() {
                     <div>
                         <label className="text-sm font-medium mb-2 block">Tipo de Entidade</label>
                         <Select
-                            value={filters.entityType || ''}
-                            onValueChange={(value) => setFilters({ ...filters, entityType: value || undefined })}
+                            value={filters.entityType || 'all'}
+                            onValueChange={(value) => setFilters({ ...filters, entityType: value === 'all' ? undefined : value })}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Todas" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">Todas</SelectItem>
+                                <SelectItem value="all">Todas</SelectItem>
                                 <SelectItem value="UTILIZADOR">Utilizador</SelectItem>
                                 <SelectItem value="FUNCIONARIO">Funcionário</SelectItem>
                                 <SelectItem value="DOCUMENTO">Documento</SelectItem>
