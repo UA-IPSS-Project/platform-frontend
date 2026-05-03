@@ -37,7 +37,6 @@ export function AuditPage() {
 
     const handleSearch = () => {
         setCurrentPage(0);
-        fetchLogs();
     };
 
     const formatDate = (dateString: string) => {
