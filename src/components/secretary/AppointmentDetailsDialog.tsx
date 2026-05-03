@@ -133,35 +133,35 @@ export function AppointmentDetailsDialog({
   };
 
   function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-}
-
-function cleanFilename(name: string) {
-  if (!name) return "";
-  const dotIndex = name.lastIndexOf(".");
-  const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
-  const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
-
-  const parts = baseName.split("_");
-  if (parts.length >= 4) {
-    // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
-    const nif = parts[0];
-    const contador = parts[parts.length - 2];
-    const assuntoParts = parts.slice(1, parts.length - 2);
-    const assunto = assuntoParts.join("_");
-    
-    // Na vista de marcação, apenas NIF_ASSUNTO_1 (sem data, pois já está no título)
-    return `${nif}_${assunto}_${contador}${extension}`;
-  } else if (parts.length === 3) {
-    // Formato legado: NIF_TIPO_UUID
-    return `${parts[0]}_${parts[1]}${extension}`;
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
   }
-  return name;
-}
+
+  function cleanFilename(name: string) {
+    if (!name) return "";
+    const dotIndex = name.lastIndexOf(".");
+    const baseName = dotIndex !== -1 ? name.substring(0, dotIndex) : name;
+    const extension = dotIndex !== -1 ? name.substring(dotIndex) : "";
+
+    const parts = baseName.split("_");
+    if (parts.length >= 4) {
+      // Novo formato: NIF_ASSUNTO_DATA_UUID (ASSUNTO pode ter underscores)
+      const nif = parts[0];
+      const contador = parts[parts.length - 2];
+      const assuntoParts = parts.slice(1, parts.length - 2);
+      const assunto = assuntoParts.join("_");
+
+      // Na vista de marcação, apenas NIF_ASSUNTO_1 (sem data, pois já está no título)
+      return `${nif}_${assunto}_${contador}${extension}`;
+    } else if (parts.length === 3) {
+      // Formato legado: NIF_TIPO_UUID
+      return `${parts[0]}_${parts[1]}${extension}`;
+    }
+    return name;
+  }
 
   const handleDocToggle = (index: number) => {
     setSelectedDocs(prev => {
@@ -748,102 +748,72 @@ function cleanFilename(name: string) {
                       <div className="flex items-center gap-2">
                         {hasPreview(doc) ? (
                           <>
+                        {hasPreview(doc.nomeOriginal) && (
+                          <button
+                            type="button"
+                            onClick={() => documentosApi.previewDocumento(doc.id)}
+                            className="p-2 hover:bg-muted rounded"
+                            title={t('appointmentDetails.previewDocument', 'Visualizar')}
+                            aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                          >
+                            <EyeIcon className="w-4 h-4 text-status-info" />
+                          </button>
+                        )}
+
+                        {isEditable ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                className="p-2 hover:bg-muted rounded"
+                                title={t('appointmentDetails.moreOptions', 'Mais opções')}
+                                aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
+                              >
+                                <MenuIcon className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-popover border-border shadow-xl rounded-xl z-50" align="end">
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadDocumento(doc)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
+                              >
+                                <Download className="w-4 h-4 text-primary" />
+                                {t('appointmentDetails.download', 'Transferir')}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoverDocumento(doc)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                {t('appointmentDetails.removeDocument', 'Apagar')}
+                              </button>
+                              {/* Só mostra o botão de documento inválido se NÃO for utente */}
+                              {!isClient && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleNotificarDocumentoInvalido(doc)}
+                                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded-lg transition-colors"
+                                >
+                                  <BellIcon className="w-4 h-4" />
+                                  {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
+                                </button>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          !isClient && (
                             <button
                               type="button"
-                              onClick={() => documentosApi.previewDocumento(doc.id)}
+                              onClick={() => handleDownloadDocumento(doc)}
                               className="p-2 hover:bg-muted rounded"
-                              title={t('appointmentDetails.previewDocument', 'Visualizar')}
-                              aria-label={t('appointmentDetails.previewDocument', 'Visualizar')}
+                              title={t('appointmentDetails.download', 'Transferir')}
+                              aria-label={t('appointmentDetails.download', 'Transferir')}
                             >
-                              <EyeIcon className="w-4 h-4 text-status-info" />
+                              <Download className="w-4 h-4 text-muted-foreground" />
                             </button>
-                            {isEditable && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="p-2 hover:bg-muted rounded"
-                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                  >
-                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-48 p-1.5 flex flex-col gap-1 bg-popover border-border shadow-xl rounded-xl z-50" align="end">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded-lg transition-colors"
-                                  >
-                                    <Download className="w-4 h-4 text-primary" />
-                                    {t('appointmentDetails.download', 'Transferir')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded-lg transition-colors"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    {t('appointmentDetails.removeDocument', 'Apagar')}
-                                  </button>
-                                  {/* Só mostra o botão de documento inválido se NÃO for utente */}
-                                  {!isClient && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded-lg transition-colors"
-                                    >
-                                      <BellIcon className="w-4 h-4" />
-                                      {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
-                                    </button>
-                                  )}
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            {isEditable && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    className="p-2 hover:bg-muted rounded"
-                                    title={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                    aria-label={t('appointmentDetails.moreOptions', 'Mais opções')}
-                                  >
-                                    <MenuIcon className="w-4 h-4 text-muted-foreground" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-40 p-1 flex flex-col gap-1" align="end">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDownloadDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-popover-foreground hover:bg-accent rounded"
-                                  >
-                                    <Download className="w-4 h-4" />
-                                    {t('appointmentDetails.download', 'Transferir')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoverDocumento(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-error hover:bg-status-error-soft rounded"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    {t('appointmentDetails.removeDocument', 'Apagar')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleNotificarDocumentoInvalido(doc)}
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-status-warning hover:bg-status-warning-soft rounded"
-                                  >
-                                    <BellIcon className="w-4 h-4" />
-                                    {t('appointmentDetails.notifyInvalidDocument', 'Notificar como inválido')}
-                                  </button>
-                                </PopoverContent>
-                              </Popover>
-                            )}
-                          </>
+                          )
                         )}
 
 
@@ -1180,11 +1150,10 @@ function cleanFilename(name: string) {
                       key={slot}
                       type="button"
                       onClick={() => setRescheduleTime(slot)}
-                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                        rescheduleTime === slot
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${rescheduleTime === slot
                           ? 'bg-status-warning text-primary-foreground border-status-warning'
                           : 'bg-muted/40 border-border text-foreground/80 hover:border-status-warning/60 hover:bg-status-warning-soft/40'
-                      }`}
+                        }`}
                     >
                       {slot}
                     </button>

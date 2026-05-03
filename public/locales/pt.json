@@ -794,6 +794,21 @@
     }
   },
   "requisitions": {
+    "periodica": {
+      "label": "Requisição Periódica",
+      "frequencia": {
+        "label": "Frequência",
+        "DIARIA": "Diária",
+        "SEMANAL": "Semanal",
+        "MENSAL": "Mensal"
+      },
+      "dataInicio": "Data de Início",
+      "dataFim": "Data de Fim (Opcional)",
+      "dataFimHint": "Selecionar data",
+      "errors": {
+        "dataInicioRequired": "A data de início é obrigatória para requisições periódicas."
+      }
+    },
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
     "labels": {
       "allStatuses": "Todos os estados",

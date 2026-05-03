@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../components/ui/button';
+import { maskNif } from '../utils/maskNif';
 import { Input } from '../components/ui/input';
 import { DatePickerField, formatDateInput, parseDateInput } from '../components/ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -158,7 +159,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
         if (!isClient) {
           row.push(
             escapeField(apt.patientName || ''),
-            apt.patientNIF || '',
+            apt.patientNIF ? maskNif(apt.patientNIF) : '',
             apt.patientContact || '',
             apt.patientEmail || ''
           );
@@ -238,7 +239,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
 
       if (!isClient) {
         tableContent += `<td style="padding:6px;">${apt.patientName || ''}</td>`;
-        tableContent += `<td style="padding:6px;">${apt.patientNIF || ''}</td>`;
+        tableContent += `<td style="padding:6px;">${apt.patientNIF ? maskNif(apt.patientNIF) : ''}</td>`;
         tableContent += `<td style="padding:6px;">${apt.patientContact || ''}</td>`;
         tableContent += `<td style="padding:6px;">${apt.patientEmail || ''}</td>`;
       }
@@ -341,7 +342,7 @@ export function HistoryPage({ appointments, onBack, onViewAppointment, isDarkMod
           <td>${apt.time}</td>
           <td>${formattedDate}</td>
           <td>${apt.attendantName || '-'}</td>
-          ${!isClient ? `<td>${apt.patientName || ''}</td><td>${apt.patientNIF || ''}</td>` : ''}
+          ${!isClient ? `<td>${apt.patientName || ''}</td><td>${apt.patientNIF ? maskNif(apt.patientNIF) : ''}</td>` : ''}
           <td>${apt.subject || ''}</td>
           <td class="${statusClass}">${status}</td>
         </tr>

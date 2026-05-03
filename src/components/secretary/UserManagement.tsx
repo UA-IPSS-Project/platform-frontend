@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { utilizadoresApi } from '../../services/api';
+import { maskNif } from '../../utils/maskNif';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -710,7 +711,7 @@ export function UserManagement() {
                                         currentUsers.map((user: any, index) => (
                                             <tr key={index} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors group">
                                                 <td className="py-4 pl-4 font-bold text-base">{user.nome}</td>
-                                                <td className="py-4 text-muted-foreground font-medium">{user.nif}</td>
+                                                <td className="py-4 text-muted-foreground font-medium">{maskNif(user.nif)}</td>
                                                 <td className="py-4">
                                                     <span className="bg-muted px-2 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider">
                                                         {user.funcao ? (
@@ -811,7 +812,7 @@ export function UserManagement() {
                                         currentUtentes.map((utente: any, index) => (
                                             <tr key={index} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors group">
                                                 <td className="py-4 pl-4 font-bold text-base">{utente.nome}</td>
-                                                <td className="py-4 text-muted-foreground font-medium">{utente.nif}</td>
+                                                <td className="py-4 text-muted-foreground font-medium">{maskNif(utente.nif)}</td>
                                                 <td className="py-4">
                                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold ${utente.active ? 'bg-status-success/15 text-status-success' : 'bg-muted/30 text-muted-foreground'}`}>
                                                         {utente.active ? t('userManagement.active') : t('userManagement.pending')}

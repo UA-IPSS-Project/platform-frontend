@@ -776,6 +776,11 @@ export function SharedRequisitionsPage({
       return;
     }
 
+    if (createForm.isPeriodica && !createForm.periodicaDataInicio) {
+      toast.error(t('requisitions.periodica.errors.dataInicioRequired'));
+      return;
+    }
+
     setIsConfirmModalOpen(true);
   }, [currentUserId, createForm, validateAndSetField, t]);
 
@@ -789,6 +794,7 @@ export function SharedRequisitionsPage({
       const payloadBase = {
         descricao: createForm.descricao.trim() || undefined,
         prioridade: createForm.prioridade,
+        ...(createForm.periodicaConfig != null ? { periodica: createForm.periodicaConfig } : {}),
       };
 
       if (createForm.tipo === 'MATERIAL') {
@@ -1321,6 +1327,14 @@ export function SharedRequisitionsPage({
           onChangeTipo={createForm.setTipo}
           prioridade={createForm.prioridade}
           onChangePrioridade={createForm.setPrioridade}
+          isPeriodica={createForm.isPeriodica}
+          onChangeIsPeriodica={createForm.setIsPeriodica}
+          periodicaFrequencia={createForm.periodicaFrequencia}
+          onChangePeriodicaFrequencia={createForm.setPeriodicaFrequencia}
+          periodicaDataInicio={createForm.periodicaDataInicio}
+          onChangePeriodicaDataInicio={createForm.setPeriodicaDataInicio}
+          periodicaDataFim={createForm.periodicaDataFim}
+          onChangePeriodicaDataFim={createForm.setPeriodicaDataFim}
           descricaoError={createForm.createErrors.descricao}
           inputFieldClassName={inputFieldClassName}
           textareaFieldClassName={textareaFieldClassName}
