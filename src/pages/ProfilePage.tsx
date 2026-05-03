@@ -530,7 +530,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
           </div>
 
           {/* Zona de Perigo - Eliminação de Conta */}
-          {!isEmployee && !isEditing && (
+          {isEmployee === false && !isEditing && (
             <div className="mt-8 pt-6 border-t border-border space-y-4">
               {/* Exportação de Dados (RGPD Art.º 20) */}
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
