@@ -113,4 +113,24 @@ export const utilizadoresApi = {
         apiRequest<any>('/api/utilizadores/me/export', {
             method: 'GET',
         }),
+
+    // Termos de Uso — Versionamento (RGPD)
+    checkTermsStatus: () =>
+        apiRequest<{ currentVersion: number; userVersion: number | null; needsAcceptance: boolean }>(
+            '/api/utilizadores/me/terms-status',
+            { method: 'GET' }
+        ),
+
+    acceptTerms: (version: number) =>
+        apiRequest<void>(`/api/utilizadores/me/accept-terms?version=${version}`, {
+            method: 'POST',
+        }),
+
+    updateTermsVersion: (newVersion: number, changeDescription?: string) => {
+        const params = new URLSearchParams({ newVersion: String(newVersion) });
+        if (changeDescription) params.set('changeDescription', changeDescription);
+        return apiRequest<void>(`/api/utilizadores/admin/terms-version?${params}`, {
+            method: 'POST',
+        });
+    },
 };

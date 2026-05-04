@@ -1558,5 +1558,14 @@
       "title": "Privacy Notice - Requisition",
       "description": "The data provided will be used to process your requisition for materials, transport or maintenance. Information will be shared only with staff responsible for processing the request."
     }
+  },
+  "termsReacceptance": {
+    "title": "Terms of Use Updated",
+    "description": "Our Terms of Use have been updated. Please review and accept the new terms to continue using the platform.",
+    "acceptCheckbox": "I have read and accept the new Terms of Use",
+    "acceptButton": "Accept and Continue",
+    "mustAccept": "You must accept the terms to continue",
+    "accepted": "Terms accepted successfully",
+    "acceptError": "Error accepting terms. Please try again."
   }
 }

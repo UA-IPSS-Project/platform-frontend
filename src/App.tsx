@@ -15,6 +15,8 @@ import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { LanguageToggle } from './components/shared/LanguageToggle';
+import { TermsReacceptanceModal } from './components/dialogs/TermsReacceptanceModal';
+import { useTermsCheck } from './hooks/useTermsCheck';
 
 function App() {
   const getInitialTheme = () => {
@@ -28,6 +30,8 @@ function App() {
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+  const { needsAcceptance, currentVersion, accept } = useTermsCheck(isAuthenticated);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -273,6 +277,12 @@ function App() {
           </div>
 
         </div>
+
+        <TermsReacceptanceModal
+          isOpen={isAuthenticated && needsAcceptance}
+          version={currentVersion}
+          onAccept={accept}
+        />
 
         <Toaster 
           richColors 

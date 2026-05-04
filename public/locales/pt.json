@@ -1575,6 +1575,15 @@
       "title": "Aviso de Privacidade - Requisição",
       "description": "Os dados fornecidos serão utilizados para processar a sua requisição de materiais, transportes ou manutenção. As informações serão partilhadas apenas com os funcionários responsáveis pelo processamento do pedido."
     }
+  },
+  "termsReacceptance": {
+    "title": "Termos de Uso Atualizados",
+    "description": "Os nossos Termos de Uso foram atualizados. Por favor, reveja e aceite os novos termos para continuar a utilizar a plataforma.",
+    "acceptCheckbox": "Li e aceito os novos Termos de Uso",
+    "acceptButton": "Aceitar e Continuar",
+    "mustAccept": "Deve aceitar os termos para continuar",
+    "accepted": "Termos aceites com sucesso",
+    "acceptError": "Erro ao aceitar os termos. Tente novamente."
   }
 }
 
