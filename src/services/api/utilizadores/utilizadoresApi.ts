@@ -133,4 +133,20 @@ export const utilizadoresApi = {
             method: 'POST',
         });
     },
+    
+    getPublicTermsContent: (lang: string) =>
+        apiRequest<{ content: string }>(`/api/utilizadores/terms-content?lang=${lang}`, {
+            method: 'GET',
+        }),
+
+    getTermsContent: (lang: string) =>
+        apiRequest<{ content: string }>(`/api/utilizadores/admin/terms-content?lang=${lang}`, {
+            method: 'GET',
+        }),
+
+    updateTermsContent: (lang: string, content: string) =>
+        apiRequest<void>(`/api/utilizadores/admin/terms-content?lang=${lang}`, {
+            method: 'PUT',
+            body: JSON.stringify({ content }),
+        }),
 };
