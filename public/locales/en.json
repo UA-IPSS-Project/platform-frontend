@@ -606,6 +606,8 @@
     "confirmPasswordRequired": "Password confirmation is required",
     "passwordsDoNotMatch": "Passwords do not match",
     "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "confirmAge": "I declare that I am 18 years of age or older",
+    "mustConfirmAge": "You must confirm that you are 18 or older to register",
     "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
     "fixFormErrors": "Please fix form errors",
     "fixErrorsBeforeContinue": "Fix the errors before continuing",
