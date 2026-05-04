@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Package, Truck, Wrench, Settings2, Save, FileText, ScrollText } from 'lucide-react';
+import { CalendarDays, Package, Truck, Wrench, Settings2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -8,10 +8,7 @@ import { Label } from '../../components/ui/label';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
-import { TermsEditorModal } from '../../components/dialogs/TermsEditorModal';
 import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
-import { apiRequest } from '../../services/api/core/client';
-import { utilizadoresApi } from '../../services/api/utilizadores/utilizadoresApi';
 
 
 function SlotsManagement({
@@ -45,10 +42,8 @@ function SlotsManagement({
                     </p>
                 </div>
 
-                {/* Single slot — horizontal card with prominent value display */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                     <div className="flex flex-col sm:flex-row items-stretch">
-                        {/* Left: icon + title + description */}
                         <div className="flex items-center gap-4 p-6 sm:flex-1">
                             <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                                 <CalendarDays className="w-6 h-6" />
@@ -59,11 +54,9 @@ function SlotsManagement({
                             </div>
                         </div>
 
-                        {/* Divider */}
                         <div className="hidden sm:block w-px bg-border my-4" />
                         <div className="block sm:hidden h-px bg-border mx-6" />
 
-                        {/* Right: current value display + input */}
                         <div className="flex items-center gap-6 p-6 sm:w-72">
                             <div className="text-center min-w-[3rem]">
                                 <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
@@ -103,15 +96,10 @@ function SlotsManagement({
     );
 }
 
-
 export function SecretaryAdminArea() {
     const { t } = useTranslation();
-    const [slotCapacities, setSlotCapacities] = useState({
-        SECRETARIA: 1,
-    });
-    const [savedCapacities, setSavedCapacities] = useState({
-        SECRETARIA: 1,
-    });
+    const [slotCapacities, setSlotCapacities] = useState({ SECRETARIA: 1 });
+    const [savedCapacities, setSavedCapacities] = useState({ SECRETARIA: 1 });
     const [catalogCounts, setCatalogCounts] = useState({
         materiais: 0,
         transportes: 0,
@@ -120,15 +108,6 @@ export function SecretaryAdminArea() {
     });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
-
-    const [retencaoAnos, setRetencaoAnos] = useState(5);
-    const [savedRetencaoAnos, setSavedRetencaoAnos] = useState(5);
-    const [isLoadingRetencao, setIsLoadingRetencao] = useState(false);
-    const [isSavingRetencao, setIsSavingRetencao] = useState(false);
-
-    const [currentTermsVersion, setCurrentTermsVersion] = useState(1);
-    const [isLoadingTerms, setIsLoadingTerms] = useState(false);
-    const [termsEditorOpen, setTermsEditorOpen] = useState(false);
 
     const loadSlotCapacities = async () => {
         setIsLoadingSlots(true);
@@ -144,57 +123,8 @@ export function SecretaryAdminArea() {
         }
     };
 
-    const loadTermsVersion = async () => {
-        setIsLoadingTerms(true);
-        try {
-            const status = await utilizadoresApi.checkTermsStatus();
-            setCurrentTermsVersion(status.currentVersion);
-        } catch {
-            // silencioso
-        } finally {
-            setIsLoadingTerms(false);
-        }
-    };
-
-    const loadRetencaoDocumentos = async () => {
-        setIsLoadingRetencao(true);
-        try {
-            const data = await apiRequest<{ anos: number }>('/api/config/documento/retencao', { method: 'GET' });
-            setRetencaoAnos(data.anos);
-            setSavedRetencaoAnos(data.anos);
-        } catch (error) {
-            toast.error('Erro ao carregar configuração de retenção');
-        } finally {
-            setIsLoadingRetencao(false);
-        }
-    };
-
-    const handleSaveRetencao = async () => {
-        if (retencaoAnos < 1 || retencaoAnos > 50) {
-            toast.error('Prazo deve estar entre 1 e 50 anos');
-            return;
-        }
-
-        setIsSavingRetencao(true);
-        try {
-            await apiRequest('/api/config/documento/retencao', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ anos: retencaoAnos }),
-            });
-            toast.success('Prazo de retenção atualizado com sucesso');
-            setSavedRetencaoAnos(retencaoAnos);
-        } catch (error) {
-            toast.error('Erro ao atualizar prazo de retenção');
-        } finally {
-            setIsSavingRetencao(false);
-        }
-    };
-
     useEffect(() => {
         loadSlotCapacities();
-        loadRetencaoDocumentos();
-        loadTermsVersion();
     }, []);
 
     useEffect(() => {
@@ -313,105 +243,6 @@ export function SecretaryAdminArea() {
                 t={t}
             />
 
-            <GlassCard className="p-6">
-                <div className="flex flex-col gap-6">
-                    <div>
-                        <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                            <FileText className="w-4 h-4" />
-                            Gestão de Retenção (RGPD)
-                        </div>
-                        <h2 className="mt-2 text-xl font-semibold text-foreground">Retenção de Documentos</h2>
-                        <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                            Configure o prazo de retenção automática de documentos. Após este período, os documentos serão automaticamente removidos para cumprir com o RGPD.
-                        </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-                        <div className="flex flex-col sm:flex-row items-stretch">
-                            <div className="flex items-center gap-4 p-6 sm:flex-1">
-                                <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                    <FileText className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-semibold text-foreground">Prazo de Expiração</h3>
-                                    <p className="text-sm text-muted-foreground mt-0.5">Tempo máximo de permanência dos ficheiros no sistema</p>
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block w-px bg-border my-4" />
-                            <div className="block sm:hidden h-px bg-border mx-6" />
-
-                            <div className="flex items-center gap-6 p-6 sm:w-72">
-                                <div className="text-center min-w-[3rem]">
-                                    <p className="text-5xl font-bold text-primary leading-none">{savedRetencaoAnos}</p>
-                                    <p className="text-xs text-muted-foreground mt-1.5">Anos Atuais</p>
-                                </div>
-                                <div className="flex-1 space-y-1.5">
-                                    <Label htmlFor="retencao-anos" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                        Anos
-                                    </Label>
-                                    <Input
-                                        id="retencao-anos"
-                                        type="number"
-                                        min={1}
-                                        max={50}
-                                        value={retencaoAnos}
-                                        onChange={(e) => setRetencaoAnos(Number(e.target.value))}
-                                        disabled={isLoadingRetencao}
-                                        className="bg-background text-center text-lg font-semibold"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3 items-center">
-                        <p className="text-xs text-muted-foreground bg-accent/50 px-3 py-1.5 rounded-full border border-border">
-                            Execução diária às 02h00
-                        </p>
-                        <Button
-                            onClick={handleSaveRetencao}
-                            disabled={isSavingRetencao || retencaoAnos === savedRetencaoAnos}
-                            className="gap-2"
-                        >
-                            <Save className="w-4 h-4" />
-                            {isSavingRetencao ? 'A guardar...' : 'Guardar Configuração'}
-                        </Button>
-                    </div>
-                </div>
-            </GlassCard>
-
-            <GlassCard className="p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
-                            <ScrollText className="w-4 h-4" />
-                            Termos de Uso — Versionamento (RGPD)
-                        </div>
-                        <p className="text-sm text-muted-foreground max-w-xl">
-                            {isLoadingTerms
-                                ? 'A carregar...'
-                                : <>Versão atual: <strong className="text-foreground">v{currentTermsVersion}</strong>. Edite o conteúdo e publique — a versão é incrementada automaticamente e todos os utilizadores são notificados.</>
-                            }
-                        </p>
-                    </div>
-                    <Button
-                        onClick={() => setTermsEditorOpen(true)}
-                        disabled={isLoadingTerms}
-                        className="gap-2 shrink-0 ml-4"
-                    >
-                        <ScrollText className="w-4 h-4" />
-                        Editar e Publicar
-                    </Button>
-                </div>
-            </GlassCard>
-
-            <TermsEditorModal
-                isOpen={termsEditorOpen}
-                onClose={() => setTermsEditorOpen(false)}
-                currentVersion={currentTermsVersion}
-                onPublished={(v) => setCurrentTermsVersion(v)}
-            />
             <GlassCard className="p-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
