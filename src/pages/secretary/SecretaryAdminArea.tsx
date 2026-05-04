@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Package, Truck, Wrench, Settings2, Save, FileText } from 'lucide-react';
+import { CalendarDays, Package, Truck, Wrench, Settings2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -9,7 +9,6 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
 import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
-import { apiRequest } from '../../services/api/core/client';
 
 
 function SlotsManagement({
@@ -43,10 +42,8 @@ function SlotsManagement({
                     </p>
                 </div>
 
-                {/* Single slot — horizontal card with prominent value display */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                     <div className="flex flex-col sm:flex-row items-stretch">
-                        {/* Left: icon + title + description */}
                         <div className="flex items-center gap-4 p-6 sm:flex-1">
                             <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                                 <CalendarDays className="w-6 h-6" />
@@ -57,11 +54,9 @@ function SlotsManagement({
                             </div>
                         </div>
 
-                        {/* Divider */}
                         <div className="hidden sm:block w-px bg-border my-4" />
                         <div className="block sm:hidden h-px bg-border mx-6" />
 
-                        {/* Right: current value display + input */}
                         <div className="flex items-center gap-6 p-6 sm:w-72">
                             <div className="text-center min-w-[3rem]">
                                 <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
@@ -103,12 +98,8 @@ function SlotsManagement({
 
 export function SecretaryAdminArea() {
     const { t } = useTranslation();
-    const [slotCapacities, setSlotCapacities] = useState({
-        SECRETARIA: 1,
-    });
-    const [savedCapacities, setSavedCapacities] = useState({
-        SECRETARIA: 1,
-    });
+    const [slotCapacities, setSlotCapacities] = useState({ SECRETARIA: 1 });
+    const [savedCapacities, setSavedCapacities] = useState({ SECRETARIA: 1 });
     const [catalogCounts, setCatalogCounts] = useState({
         materiais: 0,
         transportes: 0,
@@ -117,11 +108,6 @@ export function SecretaryAdminArea() {
     });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
-
-    const [retencaoAnos, setRetencaoAnos] = useState(5);
-    const [savedRetencaoAnos, setSavedRetencaoAnos] = useState(5);
-    const [isLoadingRetencao, setIsLoadingRetencao] = useState(false);
-    const [isSavingRetencao, setIsSavingRetencao] = useState(false);
 
     const loadSlotCapacities = async () => {
         setIsLoadingSlots(true);
@@ -139,43 +125,7 @@ export function SecretaryAdminArea() {
 
     useEffect(() => {
         loadSlotCapacities();
-        loadRetencaoDocumentos();
     }, []);
-
-    const loadRetencaoDocumentos = async () => {
-        setIsLoadingRetencao(true);
-        try {
-            const data = await apiRequest<{ anos: number }>('/api/config/documento/retencao', { method: 'GET' });
-            setRetencaoAnos(data.anos);
-            setSavedRetencaoAnos(data.anos);
-        } catch (error) {
-            toast.error('Erro ao carregar configuração de retenção');
-        } finally {
-            setIsLoadingRetencao(false);
-        }
-    };
-
-    const handleSaveRetencao = async () => {
-        if (retencaoAnos < 1 || retencaoAnos > 50) {
-            toast.error('Prazo deve estar entre 1 e 50 anos');
-            return;
-        }
-
-        setIsSavingRetencao(true);
-        try {
-            await apiRequest('/api/config/documento/retencao', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ anos: retencaoAnos }),
-            });
-            toast.success('Prazo de retenção atualizado com sucesso');
-            setSavedRetencaoAnos(retencaoAnos);
-        } catch (error) {
-            toast.error('Erro ao atualizar prazo de retenção');
-        } finally {
-            setIsSavingRetencao(false);
-        }
-    };
 
     useEffect(() => {
         const loadCatalogCounts = async () => {
@@ -190,8 +140,8 @@ export function SecretaryAdminArea() {
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(manutencaoItems) 
-                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size 
+                    tiposManutencao: Array.isArray(manutencaoItems)
+                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size
                         : 0,
                     assuntosAtivos: Array.isArray(assuntos) ? assuntos.length : 0,
                 });
@@ -282,6 +232,7 @@ export function SecretaryAdminArea() {
                     </GlassCard>
                 ))}
             </div>
+
             <SlotsManagement
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
@@ -294,58 +245,13 @@ export function SecretaryAdminArea() {
 
             <GlassCard className="p-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
-                    <FileText className="w-4 h-4" />
-                    Retenção de Documentos (RGPD)
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
-                    Configure o prazo de retenção automática de documentos. Após este período, os documentos serão automaticamente removidos.
-                </p>
-
-                <div className="space-y-4">
-                    <div className="flex items-end gap-4">
-                        <div className="flex-1 max-w-xs">
-                            <Label htmlFor="retencao-anos" className="text-sm font-medium mb-2 block">
-                                Prazo de Retenção (anos)
-                            </Label>
-                            <Input
-                                id="retencao-anos"
-                                type="number"
-                                min="1"
-                                max="50"
-                                value={retencaoAnos}
-                                onChange={(e) => setRetencaoAnos(Number(e.target.value))}
-                                disabled={isLoadingRetencao}
-                                className="h-11"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Valor atual: {savedRetencaoAnos} anos
-                            </p>
-                        </div>
-                        <Button
-                            onClick={handleSaveRetencao}
-                            disabled={isSavingRetencao || retencaoAnos === savedRetencaoAnos}
-                            className="h-11"
-                        >
-                            {isSavingRetencao ? 'A guardar...' : 'Guardar'}
-                        </Button>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <p className="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>Nota:</strong> Os documentos são automaticamente removidos às 2h da manhã quando ultrapassam o prazo de retenção. Esta configuração aplica-se apenas a novos documentos.
-                        </p>
-                    </div>
-                </div>
-            </GlassCard>
-
-            <GlassCard className="p-6">
-                <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
                     {t('dashboard.admin.assuntos.sectionTitle')}
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
                     {t('dashboard.admin.assuntos.sectionDescription')}
                 </p>
-                
+
                 <SubjectManagement />
             </GlassCard>
 
@@ -357,7 +263,7 @@ export function SecretaryAdminArea() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-4">
                     {t('dashboard.admin.catalogs.description')}
                 </p>
-                
+
                 <h2 className="text-xl font-semibold text-foreground mb-6">
                     {t('dashboard.admin.catalogs.managementTitle')}
                 </h2>

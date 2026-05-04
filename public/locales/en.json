@@ -606,6 +606,8 @@
     "confirmPasswordRequired": "Password confirmation is required",
     "passwordsDoNotMatch": "Passwords do not match",
     "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "confirmAge": "I declare that I am 18 years of age or older",
+    "mustConfirmAge": "You must confirm that you are 18 or older to register",
     "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
     "fixFormErrors": "Please fix form errors",
     "fixErrorsBeforeContinue": "Fix the errors before continuing",
@@ -1536,6 +1538,12 @@
       "incomeProof": "Proof of income",
       "parentalAuthorization": "Parental authorization",
       "other": "Other"
+    },
+    "clinicalConsent": {
+      "warning": "This document contains health data (special category — GDPR art. 9)",
+      "description": "Processing health data requires your explicit consent. This data will be used exclusively for social and health support within Florinhas do Vouga services, and will not be shared with third parties without your consent.",
+      "checkbox": "I expressly consent to the processing of my health data for the stated purposes (GDPR art. 9(2)(a))",
+      "required": "Explicit consent is required for documents containing health data"
     }
   },
   "privacy": {
@@ -1558,5 +1566,14 @@
       "title": "Privacy Notice - Requisition",
       "description": "The data provided will be used to process your requisition for materials, transport or maintenance. Information will be shared only with staff responsible for processing the request."
     }
+  },
+  "termsReacceptance": {
+    "title": "Terms of Use Updated",
+    "description": "Our Terms of Use have been updated. Please review and accept the new terms to continue using the platform.",
+    "acceptCheckbox": "I have read and accept the new Terms of Use",
+    "acceptButton": "Accept and Continue",
+    "mustAccept": "You must accept the terms to continue",
+    "accepted": "Terms accepted successfully",
+    "acceptError": "Error accepting terms. Please try again."
   }
 }

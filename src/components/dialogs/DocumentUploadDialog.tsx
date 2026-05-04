@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { Loader2 } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { FileUpload } from '../shared/FileUpload';
 import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { toast } from 'sonner';
@@ -26,6 +27,9 @@ const FINALIDADES_PREDEFINIDAS = [
   { code: 'other',                 translationKey: 'documentUpload.purposes.other' },
 ];
 
+// Finalidades que contêm dados de categorias especiais (art.º 9.º RGPD)
+const CLINICAL_PURPOSES = new Set(['medical_certificate']);
+
 export function DocumentUploadDialog({
   open,
   onClose,
@@ -37,12 +41,22 @@ export function DocumentUploadDialog({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [finalidades, setFinalidades] = useState<Record<string, string>>({});
+  const [clinicalConsent, setClinicalConsent] = useState(false);
 
-  const setFinalidade = (fileName: string, value: string) =>
-    setFinalidades(prev => ({ ...prev, [fileName]: value }));
+  const setFinalidade = (fileName: string, value: string) => {
+    setFinalidades(prev => {
+      const next = { ...prev, [fileName]: value };
+      const hasClinical = Object.values(next).some(f => CLINICAL_PURPOSES.has(f));
+      if (!hasClinical) setClinicalConsent(false);
+      return next;
+    });
+  };
+
+  const hasClinicalDocument = Object.values(finalidades).some(f => CLINICAL_PURPOSES.has(f));
 
   const MAX_FILES = 10;
   const MAX_TOTAL_SIZE_MB = 20;
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
       if (isClient) toast.error('Selecione pelo menos um ficheiro');
@@ -60,6 +74,11 @@ export function DocumentUploadDialog({
       return;
     }
 
+    if (hasClinicalDocument && !clinicalConsent) {
+      toast.error(t('documentUpload.clinicalConsent.required'));
+      return;
+    }
+
     setIsUploading(true);
     try {
       const uploadedDocs = await documentosApi.uploadDocumentos(marcacaoId, selectedFiles, finalidades);
@@ -67,6 +86,7 @@ export function DocumentUploadDialog({
       onSuccess?.(uploadedDocs);
       setSelectedFiles([]);
       setFinalidades({});
+      setClinicalConsent(false);
       onClose();
     } catch (error) {
       console.error('Erro ao enviar documentos:', error);
@@ -79,6 +99,7 @@ export function DocumentUploadDialog({
   const handleSkip = () => {
     setSelectedFiles([]);
     setFinalidades({});
+    setClinicalConsent(false);
     onClose();
   };
 
@@ -124,6 +145,32 @@ export function DocumentUploadDialog({
             </div>
           )}
 
+          {/* Consentimento explícito para dados clínicos (RGPD art.º 9.º) */}
+          {hasClinicalDocument && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-900 dark:text-amber-100 font-medium">
+                  {t('documentUpload.clinicalConsent.warning')}
+                </p>
+              </div>
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                {t('documentUpload.clinicalConsent.description')}
+              </p>
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="clinical-consent"
+                  checked={clinicalConsent}
+                  onCheckedChange={(v) => setClinicalConsent(Boolean(v))}
+                  disabled={isUploading}
+                />
+                <label htmlFor="clinical-consent" className="text-sm text-amber-900 dark:text-amber-100 cursor-pointer leading-snug">
+                  {t('documentUpload.clinicalConsent.checkbox')}
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Aviso de Privacidade - apenas para clientes */}
           {isClient && <PrivacyNotice context="document" />}
 
@@ -142,7 +189,7 @@ export function DocumentUploadDialog({
               type="button"
               onClick={handleUpload}
               className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              disabled={isUploading || selectedFiles.length === 0}
+              disabled={isUploading || selectedFiles.length === 0 || (hasClinicalDocument && !clinicalConsent)}
             >
               {isUploading ? (
                 <>

@@ -17,6 +17,7 @@ import { capitalizeFirstLetter } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -521,6 +522,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 ))}
               </div>
             )}
+
+            <PrivacyNotice context="appointment" />
 
             <div className="flex gap-3 pt-4">
               <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-border" disabled={isLoading}>

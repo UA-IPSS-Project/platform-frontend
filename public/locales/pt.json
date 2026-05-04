@@ -609,6 +609,8 @@
     "confirmPasswordRequired": "Confirmação de palavra-passe é obrigatória",
     "passwordsDoNotMatch": "As palavras-passe não coincidem",
     "mustAcceptTermsRegister": "Deve aceitar os termos de uso para se registar",
+    "confirmAge": "Declaro ter 18 ou mais anos de idade",
+    "mustConfirmAge": "Deve confirmar que tem 18 ou mais anos para se registar",
     "mustAcceptTermsActivate": "Deve aceitar os termos de uso para ativar a conta",
     "fixFormErrors": "Por favor, corrija os erros no formulário",
     "fixErrorsBeforeContinue": "Corrija os erros antes de continuar",
@@ -1553,6 +1555,12 @@
       "incomeProof": "Comprovativo de rendimentos",
       "parentalAuthorization": "Autorização parental",
       "other": "Outro"
+    },
+    "clinicalConsent": {
+      "warning": "Este documento contém dados de saúde (categoria especial — RGPD art.º 9.º)",
+      "description": "O tratamento de dados de saúde requer o seu consentimento explícito. Estes dados serão utilizados exclusivamente para fins de acompanhamento social e de saúde no âmbito dos serviços da Florinhas do Vouga, e não serão partilhados com terceiros sem o seu consentimento.",
+      "checkbox": "Consinto expressamente o tratamento dos meus dados de saúde para os fins indicados (RGPD art.º 9.º, n.º 2, alínea a))",
+      "required": "É necessário dar consentimento explícito para documentos com dados de saúde"
     }
   },
   "privacy": {
@@ -1575,6 +1583,15 @@
       "title": "Aviso de Privacidade - Requisição",
       "description": "Os dados fornecidos serão utilizados para processar a sua requisição de materiais, transportes ou manutenção. As informações serão partilhadas apenas com os funcionários responsáveis pelo processamento do pedido."
     }
+  },
+  "termsReacceptance": {
+    "title": "Termos de Uso Atualizados",
+    "description": "Os nossos Termos de Uso foram atualizados. Por favor, reveja e aceite os novos termos para continuar a utilizar a plataforma.",
+    "acceptCheckbox": "Li e aceito os novos Termos de Uso",
+    "acceptButton": "Aceitar e Continuar",
+    "mustAccept": "Deve aceitar os termos para continuar",
+    "accepted": "Termos aceites com sucesso",
+    "acceptError": "Erro ao aceitar os termos. Tente novamente."
   }
 }
 
