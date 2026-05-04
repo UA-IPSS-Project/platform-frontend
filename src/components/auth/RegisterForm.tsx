@@ -4,7 +4,6 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
-import { PrivacyNotice } from '../shared/PrivacyNotice';
 import { ArrowLeft, Check, X, Eye, EyeOff } from 'lucide-react';
 import { DatePickerField } from '../ui/date-picker-field';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -578,8 +577,6 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
             <p className="text-status-error text-sm pl-1">{errors.ageConfirmed}</p>
           )}
         </div>
-
-        <PrivacyNotice context="registration" />
 
         <Button
           type="submit"
