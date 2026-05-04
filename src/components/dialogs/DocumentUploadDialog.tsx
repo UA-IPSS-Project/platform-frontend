@@ -44,11 +44,12 @@ export function DocumentUploadDialog({
   const [clinicalConsent, setClinicalConsent] = useState(false);
 
   const setFinalidade = (fileName: string, value: string) => {
-    setFinalidades(prev => ({ ...prev, [fileName]: value }));
-    // Reset consent if no clinical files remain
-    const updatedFinalidades = { ...finalidades, [fileName]: value };
-    const hasClinical = Object.values(updatedFinalidades).some(f => CLINICAL_PURPOSES.has(f));
-    if (!hasClinical) setClinicalConsent(false);
+    setFinalidades(prev => {
+      const next = { ...prev, [fileName]: value };
+      const hasClinical = Object.values(next).some(f => CLINICAL_PURPOSES.has(f));
+      if (!hasClinical) setClinicalConsent(false);
+      return next;
+    });
   };
 
   const hasClinicalDocument = Object.values(finalidades).some(f => CLINICAL_PURPOSES.has(f));

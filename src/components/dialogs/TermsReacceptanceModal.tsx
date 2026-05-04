@@ -34,7 +34,12 @@ export function TermsReacceptanceModal({ isOpen, version, onAccept }: Readonly<P
   const sections = t('termsModal.sections', { returnObjects: true }) as TermsSection[];
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setBackendContent(null);
+      return;
+    }
+
+    setBackendContent(null);
 
     const loadContent = async () => {
       setIsContentLoading(true);

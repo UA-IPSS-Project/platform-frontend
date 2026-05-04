@@ -562,7 +562,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
               <Checkbox
                 id="ageConfirmed"
                 checked={formData.ageConfirmed}
-                onCheckedChange={(checked) => handleChange('ageConfirmed', checked === true ? 'true' : 'false')}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, ageConfirmed: checked === true }))}
                 className={`mt-1 shrink-0 ${errors.ageConfirmed ? 'border-status-error' : ''}`}
               />
               <label

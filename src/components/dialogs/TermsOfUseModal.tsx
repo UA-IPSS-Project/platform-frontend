@@ -30,8 +30,11 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
   useEffect(() => {
     if (!open) {
       setHasReachedEnd(false);
+      setBackendContent(null);
       return;
     }
+
+    setBackendContent(null);
 
     const loadContent = async () => {
       setIsLoading(true);
