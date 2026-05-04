@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { utilizadoresApi } from '../../services/api/utilizadores/utilizadoresApi';
 
 interface TermsOfUseModalProps {
   open: boolean;
@@ -17,9 +18,13 @@ interface TermsSection {
 }
 
 export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<TermsOfUseModalProps>) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  const [backendContent, setBackendContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
   const sections = t('termsModal.sections', { returnObjects: true }) as TermsSection[];
 
   useEffect(() => {
@@ -28,6 +33,22 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
       return;
     }
 
+    const loadContent = async () => {
+      setIsLoading(true);
+      try {
+        const data = await utilizadoresApi.getPublicTermsContent(i18n.language);
+        if (data.content && data.content.trim().length > 0) {
+          setBackendContent(data.content);
+        }
+      } catch {
+        // Fallback to i18n
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContent();
+
     const element = scrollContainerRef.current;
     if (!element) return;
 
@@ -35,7 +56,7 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
     if (fitsWithoutScroll) {
       setHasReachedEnd(true);
     }
-  }, [open]);
+  }, [open, i18n.language]);
 
   const handleTermsScroll = (event: React.UIEvent<HTMLDivElement>) => {
     if (hasReachedEnd) return;
@@ -75,45 +96,58 @@ export function TermsOfUseModal({ open, onOpenChange, onAccept }: Readonly<Terms
             className="h-[60vh] px-6 py-4 overflow-y-auto"
             onScroll={handleTermsScroll}
           >
-            <div className="space-y-5 text-sm text-foreground pr-4">
-              {sections.map((section, index) => (
-                <section key={section.title} className="bg-card rounded-lg p-4 border border-border">
-                  <h3 className="font-semibold text-base text-primary mb-3 flex items-center gap-2">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold">{index + 1}</span>
-                    {' '}
-                    {section.title}
-                  </h3>
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <p>{t('common.loading')}</p>
+              </div>
+            ) : (
+              <div className="space-y-5 text-sm text-foreground pr-4">
+                {backendContent ? (
+                  <div className="whitespace-pre-wrap leading-relaxed text-base bg-card rounded-xl p-8 border border-border shadow-sm">
+                    {backendContent}
+                  </div>
+                ) : (
+                  sections.map((section, index) => (
+                    <section key={section.title} className="bg-card rounded-lg p-4 border border-border">
+                      <h3 className="font-semibold text-base text-primary mb-3 flex items-center gap-2">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold">{index + 1}</span>
+                        {' '}
+                        {section.title}
+                      </h3>
 
-                  {section.paragraphs.map((paragraph) => (
-                    <p key={paragraph} className="leading-relaxed mt-2 first:mt-0">
-                      {paragraph}
-                    </p>
-                  ))}
-
-                  {section.bullets && section.bullets.length > 0 && (
-                    <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
-                      {section.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
+                      {section.paragraphs.map((paragraph) => (
+                        <p key={paragraph} className="leading-relaxed mt-2 first:mt-0">
+                          {paragraph}
+                        </p>
                       ))}
-                    </ul>
-                  )}
-                </section>
-              ))}
 
-              <section className="bg-accent/50 rounded-lg p-4 border border-border">
-                <p className="leading-relaxed">
-                  {t('termsModal.officialLink.label')}
-                </p>
-                <a
-                  href={t('termsModal.officialLink.url')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-2 text-primary hover:opacity-80 hover:underline break-all"
-                >
-                  {t('termsModal.officialLink.url')}
-                </a>
-              </section>
-          </div>
+                      {section.bullets && section.bullets.length > 0 && (
+                        <ul className="list-disc list-inside space-y-1 ml-4 mt-2">
+                          {section.bullets.map((bullet) => (
+                            <li key={bullet}>{bullet}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  ))
+                )}
+
+                <section className="bg-accent/50 rounded-lg p-4 border border-border">
+                  <p className="leading-relaxed">
+                    {t('termsModal.officialLink.label')}
+                  </p>
+                  <a
+                    href={t('termsModal.officialLink.url')}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 text-primary hover:opacity-80 hover:underline break-all"
+                  >
+                    {t('termsModal.officialLink.url')}
+                  </a>
+                </section>
+              </div>
+            )}
           </div>
           
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none z-10" />
