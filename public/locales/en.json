@@ -1536,6 +1536,12 @@
       "incomeProof": "Proof of income",
       "parentalAuthorization": "Parental authorization",
       "other": "Other"
+    },
+    "clinicalConsent": {
+      "warning": "This document contains health data (special category — GDPR art. 9)",
+      "description": "Processing health data requires your explicit consent. This data will be used exclusively for social and health support within Florinhas do Vouga services, and will not be shared with third parties without your consent.",
+      "checkbox": "I expressly consent to the processing of my health data for the stated purposes (GDPR art. 9(2)(a))",
+      "required": "Explicit consent is required for documents containing health data"
     }
   },
   "privacy": {

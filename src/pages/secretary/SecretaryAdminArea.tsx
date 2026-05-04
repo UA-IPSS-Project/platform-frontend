@@ -1,18 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarDays, Package, Truck, Wrench, Settings2, Save, FileText, ScrollText, Languages, Eye, Edit3 } from 'lucide-react';
+import { CalendarDays, Package, Truck, Wrench, Settings2, Save, FileText, ScrollText } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
 import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
+import { TermsEditorModal } from '../../components/dialogs/TermsEditorModal';
 import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
 import { apiRequest } from '../../services/api/core/client';
 import { utilizadoresApi } from '../../services/api/utilizadores/utilizadoresApi';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 
 
 function SlotsManagement({
@@ -104,97 +103,6 @@ function SlotsManagement({
     );
 }
 
-interface TermsContentProps {
-    pt: string;
-    en: string;
-    isSaving: boolean;
-    onSave: (lang: 'pt' | 'en', content: string) => void;
-}
-
-function TermsContentEditor({ pt, en, isSaving, onSave }: Readonly<TermsContentProps>) {
-    const [localPt, setLocalPt] = useState(pt);
-    const [localEn, setLocalEn] = useState(en);
-    const [activeTab, setActiveTab] = useState<'pt' | 'en'>('pt');
-
-    useEffect(() => { setLocalPt(pt); }, [pt]);
-    useEffect(() => { setLocalEn(en); }, [en]);
-
-    return (
-        <GlassCard className="p-6">
-            <div className="flex flex-col gap-6">
-                <div>
-                    <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                        <Languages className="w-4 h-4" />
-                        Conteúdo dos Termos (Multilingue)
-                    </div>
-                    <h2 className="mt-2 text-xl font-semibold text-foreground">Editor de Conteúdo</h2>
-                    <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                        Edite o texto integral dos Termos de Uso. Recomendamos o uso de parágrafos claros. O conteúdo será exibido no modal de aceitação.
-                    </p>
-                </div>
-
-                <Tabs defaultValue="pt" onValueChange={(v) => setActiveTab(v as 'pt' | 'en')}>
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="pt" className="gap-2">
-                            <span className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 flex items-center justify-center text-[10px] font-bold">PT</span>
-                            Português
-                        </TabsTrigger>
-                        <TabsTrigger value="en" className="gap-2">
-                            <span className="w-4 h-4 rounded-full overflow-hidden flex-shrink-0 bg-slate-200 flex items-center justify-center text-[10px] font-bold">EN</span>
-                            English
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="pt" className="space-y-4 outline-none">
-                        <div className="relative group">
-                            <div className="absolute top-3 right-3 opacity-20 group-focus-within:opacity-100 transition-opacity">
-                                <Edit3 className="w-4 h-4" />
-                            </div>
-                            <Textarea
-                                value={localPt}
-                                onChange={(e) => setLocalPt(e.target.value)}
-                                placeholder="Insira os termos em Português..."
-                                className="min-h-[300px] font-mono text-sm leading-relaxed p-6 bg-slate-50/50 dark:bg-slate-900/50"
-                            />
-                        </div>
-                        <div className="flex justify-end">
-                            <Button 
-                                onClick={() => onSave('pt', localPt)}
-                                disabled={isSaving || localPt === pt}
-                                className="gap-2"
-                            >
-                                <Save className="w-4 h-4" />
-                                {isSaving ? 'A guardar...' : 'Guardar Português'}
-                            </Button>
-                        </div>
-                    </TabsContent>
-                    <TabsContent value="en" className="space-y-4 outline-none">
-                        <div className="relative group">
-                            <div className="absolute top-3 right-3 opacity-20 group-focus-within:opacity-100 transition-opacity">
-                                <Edit3 className="w-4 h-4" />
-                            </div>
-                            <Textarea
-                                value={localEn}
-                                onChange={(e) => setLocalEn(e.target.value)}
-                                placeholder="Enter terms in English..."
-                                className="min-h-[300px] font-mono text-sm leading-relaxed p-6 bg-slate-50/50 dark:bg-slate-900/50"
-                            />
-                        </div>
-                        <div className="flex justify-end">
-                            <Button 
-                                onClick={() => onSave('en', localEn)}
-                                disabled={isSaving || localEn === en}
-                                className="gap-2"
-                            >
-                                <Save className="w-4 h-4" />
-                                {isSaving ? 'A guardar...' : 'Guardar English'}
-                            </Button>
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </div>
-        </GlassCard>
-    );
-}
 
 export function SecretaryAdminArea() {
     const { t } = useTranslation();
@@ -219,13 +127,8 @@ export function SecretaryAdminArea() {
     const [isSavingRetencao, setIsSavingRetencao] = useState(false);
 
     const [currentTermsVersion, setCurrentTermsVersion] = useState(1);
-    const [newTermsVersion, setNewTermsVersion] = useState(2);
-    const [termsChangeDescription, setTermsChangeDescription] = useState('');
     const [isLoadingTerms, setIsLoadingTerms] = useState(false);
-    const [isSavingTerms, setIsSavingTerms] = useState(false);
-
-    const [termsContent, setTermsContent] = useState({ pt: '', en: '' });
-    const [isSavingTermsContent, setIsSavingTermsContent] = useState(false);
+    const [termsEditorOpen, setTermsEditorOpen] = useState(false);
 
     const loadSlotCapacities = async () => {
         setIsLoadingSlots(true);
@@ -241,67 +144,15 @@ export function SecretaryAdminArea() {
         }
     };
 
-    const loadTermsContent = async () => {
-        try {
-            const [ptData, enData] = await Promise.all([
-                utilizadoresApi.getTermsContent('pt'),
-                utilizadoresApi.getTermsContent('en'),
-            ]);
-            setTermsContent({ pt: ptData.content, en: enData.content });
-        } catch {
-            // Silencioso
-        }
-    };
-
-    useEffect(() => {
-        loadSlotCapacities();
-        loadRetencaoDocumentos();
-        loadTermsVersion();
-        loadTermsContent();
-    }, []);
-
     const loadTermsVersion = async () => {
         setIsLoadingTerms(true);
         try {
             const status = await utilizadoresApi.checkTermsStatus();
             setCurrentTermsVersion(status.currentVersion);
-            setNewTermsVersion(status.currentVersion + 1);
         } catch {
-            // silencioso — não crítico
+            // silencioso
         } finally {
             setIsLoadingTerms(false);
-        }
-    };
-
-    const handleUpdateTermsVersion = async () => {
-        if (newTermsVersion <= currentTermsVersion) {
-            toast.error(`Nova versão deve ser superior à atual (${currentTermsVersion})`);
-            return;
-        }
-        setIsSavingTerms(true);
-        try {
-            await utilizadoresApi.updateTermsVersion(newTermsVersion, termsChangeDescription);
-            toast.success(`Termos atualizados para v${newTermsVersion}. Utilizadores notificados por email.`);
-            setCurrentTermsVersion(newTermsVersion);
-            setNewTermsVersion(newTermsVersion + 1);
-            setTermsChangeDescription('');
-        } catch {
-            toast.error('Erro ao atualizar versão dos termos');
-        } finally {
-            setIsSavingTerms(false);
-        }
-    };
-
-    const handleSaveTermsContent = async (lang: 'pt' | 'en', content: string) => {
-        setIsSavingTermsContent(true);
-        try {
-            await utilizadoresApi.updateTermsContent(lang, content);
-            toast.success(`Conteúdo (${lang.toUpperCase()}) atualizado com sucesso`);
-            setTermsContent(prev => ({ ...prev, [lang]: content }));
-        } catch {
-            toast.error(`Erro ao atualizar conteúdo (${lang.toUpperCase()})`);
-        } finally {
-            setIsSavingTermsContent(false);
         }
     };
 
@@ -341,6 +192,12 @@ export function SecretaryAdminArea() {
     };
 
     useEffect(() => {
+        loadSlotCapacities();
+        loadRetencaoDocumentos();
+        loadTermsVersion();
+    }, []);
+
+    useEffect(() => {
         const loadCatalogCounts = async () => {
             try {
                 const [materiais, transportes, manutencaoItems, assuntos] = await Promise.all([
@@ -353,8 +210,8 @@ export function SecretaryAdminArea() {
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(manutencaoItems) 
-                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size 
+                    tiposManutencao: Array.isArray(manutencaoItems)
+                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size
                         : 0,
                     assuntosAtivos: Array.isArray(assuntos) ? assuntos.length : 0,
                 });
@@ -445,7 +302,7 @@ export function SecretaryAdminArea() {
                     </GlassCard>
                 ))}
             </div>
-            
+
             <SlotsManagement
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
@@ -525,88 +382,36 @@ export function SecretaryAdminArea() {
             </GlassCard>
 
             <GlassCard className="p-6">
-                <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between">
                     <div>
-                        <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1">
                             <ScrollText className="w-4 h-4" />
-                            Política de Privacidade (RGPD)
+                            Termos de Uso — Versionamento (RGPD)
                         </div>
-                        <h2 className="mt-2 text-xl font-semibold text-foreground">Versionamento dos Termos de Uso</h2>
-                        <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
-                            Ao publicar uma nova versão, todos os utilizadores serão notificados e obrigados a re-aceitar os termos no próximo acesso à plataforma.
+                        <p className="text-sm text-muted-foreground max-w-xl">
+                            {isLoadingTerms
+                                ? 'A carregar...'
+                                : <>Versão atual: <strong className="text-foreground">v{currentTermsVersion}</strong>. Edite o conteúdo e publique — a versão é incrementada automaticamente e todos os utilizadores são notificados.</>
+                            }
                         </p>
                     </div>
-
-                    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-                        <div className="flex flex-col sm:flex-row items-stretch">
-                            <div className="flex items-center gap-4 p-6 sm:flex-1">
-                                <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                    <ScrollText className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-base font-semibold text-foreground">Nova Versão</h3>
-                                    <div className="mt-3">
-                                        <Label htmlFor="terms-change-desc" className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                                            Descrição das alterações (enviada por email)
-                                        </Label>
-                                        <Textarea
-                                            id="terms-change-desc"
-                                            placeholder="Descreva as principais alterações para os utilizadores..."
-                                            value={termsChangeDescription}
-                                            onChange={(e) => setTermsChangeDescription(e.target.value)}
-                                            rows={2}
-                                            className="resize-none text-sm"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="hidden sm:block w-px bg-border my-4" />
-                            <div className="block sm:hidden h-px bg-border mx-6" />
-
-                            <div className="flex items-center gap-6 p-6 sm:w-72">
-                                <div className="text-center min-w-[3rem]">
-                                    <p className="text-5xl font-bold text-amber-600 leading-none">{currentTermsVersion}</p>
-                                    <p className="text-xs text-muted-foreground mt-1.5">Versão Atual</p>
-                                </div>
-                                <div className="flex-1 space-y-1.5">
-                                    <Label htmlFor="new-terms-version" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                        Próxima v
-                                    </Label>
-                                    <Input
-                                        id="new-terms-version"
-                                        type="number"
-                                        min={currentTermsVersion + 1}
-                                        value={newTermsVersion}
-                                        onChange={(e) => setNewTermsVersion(Number(e.target.value))}
-                                        disabled={isLoadingTerms}
-                                        className="bg-background text-center text-lg font-semibold border-amber-200 dark:border-amber-900 focus-visible:ring-amber-500"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handleUpdateTermsVersion}
-                            disabled={isSavingTerms || isLoadingTerms || newTermsVersion <= currentTermsVersion}
-                            className="gap-2 bg-amber-600 hover:bg-amber-700 text-white"
-                        >
-                            <ScrollText className="w-4 h-4" />
-                            {isSavingTerms ? 'A publicar...' : `Publicar v${newTermsVersion} e Notificar`}
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={() => setTermsEditorOpen(true)}
+                        disabled={isLoadingTerms}
+                        className="gap-2 shrink-0 ml-4"
+                    >
+                        <ScrollText className="w-4 h-4" />
+                        Editar e Publicar
+                    </Button>
                 </div>
             </GlassCard>
 
-            <TermsContentEditor 
-                pt={termsContent.pt} 
-                en={termsContent.en} 
-                isSaving={isSavingTermsContent} 
-                onSave={handleSaveTermsContent} 
+            <TermsEditorModal
+                isOpen={termsEditorOpen}
+                onClose={() => setTermsEditorOpen(false)}
+                currentVersion={currentTermsVersion}
+                onPublished={(v) => setCurrentTermsVersion(v)}
             />
-
             <GlassCard className="p-6">
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
                     <Settings2 className="w-4 h-4" />
@@ -615,7 +420,7 @@ export function SecretaryAdminArea() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
                     {t('dashboard.admin.assuntos.sectionDescription')}
                 </p>
-                
+
                 <SubjectManagement />
             </GlassCard>
 
@@ -627,7 +432,7 @@ export function SecretaryAdminArea() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-4">
                     {t('dashboard.admin.catalogs.description')}
                 </p>
-                
+
                 <h2 className="text-xl font-semibold text-foreground mb-6">
                     {t('dashboard.admin.catalogs.managementTitle')}
                 </h2>

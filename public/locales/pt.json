@@ -1553,6 +1553,12 @@
       "incomeProof": "Comprovativo de rendimentos",
       "parentalAuthorization": "Autorização parental",
       "other": "Outro"
+    },
+    "clinicalConsent": {
+      "warning": "Este documento contém dados de saúde (categoria especial — RGPD art.º 9.º)",
+      "description": "O tratamento de dados de saúde requer o seu consentimento explícito. Estes dados serão utilizados exclusivamente para fins de acompanhamento social e de saúde no âmbito dos serviços da Florinhas do Vouga, e não serão partilhados com terceiros sem o seu consentimento.",
+      "checkbox": "Consinto expressamente o tratamento dos meus dados de saúde para os fins indicados (RGPD art.º 9.º, n.º 2, alínea a))",
+      "required": "É necessário dar consentimento explícito para documentos com dados de saúde"
     }
   },
   "privacy": {

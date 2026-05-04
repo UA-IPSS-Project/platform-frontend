@@ -149,4 +149,11 @@ export const utilizadoresApi = {
             method: 'PUT',
             body: JSON.stringify({ content }),
         }),
+
+    // Publicar nova versão: guarda PT+EN + incrementa versão atomicamente
+    publishTerms: (contentPt: string, contentEn: string, changeDescription?: string) =>
+        apiRequest<{ version: number }>('/api/utilizadores/admin/terms-publish', {
+            method: 'POST',
+            body: JSON.stringify({ contentPt, contentEn, changeDescription }),
+        }),
 };
