@@ -174,7 +174,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
     setIsAuthenticated(true);
 
-    localStorage.setItem('lastActivity', Date.now().toString()); // Only non-sensitive activity timestamp
+    updateActivity();
+    localStorage.removeItem('user'); // Remove legacy sensitive data from older versions
 
     // Clear legacy dashboard views
     localStorage.removeItem('userDashboardView');
@@ -184,7 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogoutState = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
     localStorage.removeItem('lastActivity');
     localStorage.removeItem('token'); // Clear legacy token if exists
   };
