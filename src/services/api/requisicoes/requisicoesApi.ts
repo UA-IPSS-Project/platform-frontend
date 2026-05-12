@@ -1,4 +1,4 @@
-import { apiRequest } from '../core/client';
+import { apiRequest, Page } from '../core/client';
 import {
   AtualizarEstadoRequisicaoRequest,
   CriarMaterialCatalogoRequest,
@@ -17,7 +17,7 @@ import {
   CriarManutencaoItemCatalogoRequest,
 } from './types';
 
-const toQueryString = (filters: RequisicaoFilters = {}): string => {
+const toQueryString = (filters: RequisicaoFilters = {}, page = 0, size = 20): string => {
   const params = new URLSearchParams();
   if (filters.estado) params.append('estado', filters.estado);
   if (filters.tipo) params.append('tipo', filters.tipo);
@@ -25,18 +25,19 @@ const toQueryString = (filters: RequisicaoFilters = {}): string => {
   if (filters.criadoPorNome) params.append('criadoPorNome', filters.criadoPorNome);
   if (filters.dataInicio) params.append('dataInicio', filters.dataInicio);
   if (filters.dataFim) params.append('dataFim', filters.dataFim);
-  const query = params.toString();
-  return query ? `?${query}` : '';
+  params.append('page', page.toString());
+  params.append('size', size.toString());
+  return `?${params.toString()}`;
 };
 
 export const requisicoesApi = {
-  listar: (estado?: RequisicaoEstado) => {
-    const query = toQueryString(estado ? { estado } : {});
-    return apiRequest<RequisicaoResponse[]>(`/api/requisicoes${query}`);
+  listar: (estado?: RequisicaoEstado, page = 0, size = 20) => {
+    const query = toQueryString(estado ? { estado } : {}, page, size);
+    return apiRequest<Page<RequisicaoResponse>>(`/api/requisicoes${query}`);
   },
 
-  procurar: (filters: RequisicaoFilters = {}) =>
-    apiRequest<RequisicaoResponse[]>(`/api/requisicoes/procurar${toQueryString(filters)}`),
+  procurar: (filters: RequisicaoFilters = {}, page = 0, size = 20) =>
+    apiRequest<Page<RequisicaoResponse>>(`/api/requisicoes/procurar${toQueryString(filters, page, size)}`),
 
   obterPorId: (id: number) => apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}`),
 

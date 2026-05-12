@@ -130,7 +130,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         startIsoString = format(s, "yyyy-MM-dd'T'HH:mm:ss");
       }
       const data = await marcacoesApi.obterPassadas(startIsoString, format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss"), authUser.id);
-      setHistoryAppointments(data.map(mapApiToAppointment));
+      const items = Array.isArray(data) ? data : (data as any).content ?? [];
+      setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
     }

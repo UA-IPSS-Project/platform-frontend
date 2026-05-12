@@ -132,10 +132,11 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
         marcacaoDesde: marcacaoDesde ? normalizarInicioDia(marcacaoDesde) : undefined,
         marcacaoAte: marcacaoAte ? normalizarFimDia(marcacaoAte) : undefined,
       });
-      setResultados(Array.isArray(dados) ? dados : []);
+      const items = Array.isArray(dados) ? dados : (dados as any).content ?? [];
+      setResultados(items);
       setPaginaAtual(1);
       if (showToast) {
-        toast.success(t('documents.messages.searchDone', { count: Array.isArray(dados) ? dados.length : 0 }));
+        toast.success(t('documents.messages.searchDone', { count: items.length }));
       }
     } catch (error: any) {
       toast.error(error?.message || t('documents.errors.search'));
@@ -153,7 +154,8 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
     try {
       setLoading(true);
       const dados = await documentosApi.pesquisarDocumentos({});
-      setResultados(Array.isArray(dados) ? dados : []);
+      const items = Array.isArray(dados) ? dados : (dados as any).content ?? [];
+      setResultados(items);
       setPaginaAtual(1);
     } catch (error: any) {
       toast.error(error?.message || t('documents.errors.load'));

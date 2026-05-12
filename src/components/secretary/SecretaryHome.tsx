@@ -62,11 +62,12 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
         const [marcacoes, utentes, requisicoes] = await Promise.all([
           marcacoesApi.contarHoje(),
           utilizadoresApi.contarUtentesAtivos(),
-          requisicoesApi.listar('ABERTO')
+          requisicoesApi.listar('ABERTO' as any)
         ]);
         setMarcacoesHoje(marcacoes.toString());
         setUtentesAtivos(utentes.toString());
-        setRequisicoesPendentes(requisicoes.length.toString());
+        const reqItems = Array.isArray(requisicoes) ? requisicoes : (requisicoes as any).content ?? [];
+        setRequisicoesPendentes(reqItems.length.toString());
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);
         setMarcacoesHoje('0');

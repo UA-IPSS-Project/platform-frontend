@@ -181,8 +181,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
                 format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
             );
-            const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
-            setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
+            const items = Array.isArray(data) ? data : (data as any).content ?? [];
+            const mapped = items.map(mapApiToAppointment);
+            setHistoryAppointments(mapped.filter((a: any) => a.balnearioDetails !== undefined));
         } catch {
             toast.error('Erro ao carregar histórico');
         }

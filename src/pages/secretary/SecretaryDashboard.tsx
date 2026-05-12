@@ -184,7 +184,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
         format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
       );
-      setHistoryAppointments((Array.isArray(data) ? data : []).map(mapApiToAppointment));
+      const items = Array.isArray(data) ? data : (data as any).content ?? [];
+      setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
     }

@@ -39,12 +39,13 @@ export default function BalnearioHome({ onNavigate, notifications = [] }: Balnea
                 const [estatisticasBalneario, estatisticasConsumo, todasRequisicoes] = await Promise.all([
                     marcacoesApi.obterEstatisticasFrequenciaBalneario('DIA'),
                     armazemApi.obterEstatisticas('DIA'),
-                    requisicoesApi.listar('ABERTO')
+                    requisicoesApi.listar('ABERTO' as any)
                 ]);
 
                 setMarcacoesHoje(estatisticasBalneario.totalMarcacoes?.toString() || '0');
                 setConsumosHoje(estatisticasConsumo.totalGeral?.toString() || '0');
-                setRequisicoesPendentes(todasRequisicoes.length.toString());
+                const reqItems = Array.isArray(todasRequisicoes) ? todasRequisicoes : (todasRequisicoes as any).content ?? [];
+                setRequisicoesPendentes(reqItems.length.toString());
             } catch (error) {
                 console.error('Erro ao carregar estatísticas do balneário:', error);
                 setMarcacoesHoje('0');

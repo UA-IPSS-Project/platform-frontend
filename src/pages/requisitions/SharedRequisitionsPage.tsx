@@ -201,7 +201,7 @@ export function SharedRequisitionsPage({
         dataInicio: dataInicio || undefined,
         dataFim: dataFim || undefined,
       });
-      const listaScope = applyScopeFilter(Array.isArray(data) ? data : []);
+      const listaScope = applyScopeFilter(Array.isArray(data) ? data : (data as any)?.content ?? []);
       const lista = isSecretaryView && criadoPorTipo
         ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
         : listaScope;
@@ -217,7 +217,7 @@ export function SharedRequisitionsPage({
     if (activeSection !== 'list') return;
     try {
       const data = await requisicoesApi.procurar({});
-      const lista = applyScopeFilter(Array.isArray(data) ? data : []);
+      const lista = applyScopeFilter(Array.isArray(data) ? data : (data as any)?.content ?? []);
       setMonthlyRequisicoes(lista);
     } catch (error: any) {
       console.error('Failed to fetch monthly requisitions:', error);
@@ -251,7 +251,7 @@ export function SharedRequisitionsPage({
         const todasRequisicoes = await requisicoesApi.procurar({
           tipo: 'TRANSPORTE'
         });
-        setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : []);
+        setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : (todasRequisicoes as any)?.content ?? []);
       } catch (error: any) {
         console.error('Failed to fetch accepted transport requisitions:', error);
       }
@@ -1127,7 +1127,7 @@ export function SharedRequisitionsPage({
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
           selectedRequisicao,
-          Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [],
+          Array.isArray(outrasRequisicoes) ? outrasRequisicoes : (outrasRequisicoes as any)?.content ?? [],
         );
 
         if (resultadoConflitos) {
@@ -1269,7 +1269,7 @@ export function SharedRequisitionsPage({
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
-          const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : [];
+          const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : (outrasRequisicoes as any)?.content ?? [];
 
           // Get ALL conflicting requests
           const todosOsConflitos = calcularTodosOsConflitosTransporte(
