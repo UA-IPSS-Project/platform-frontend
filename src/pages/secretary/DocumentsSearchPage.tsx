@@ -18,6 +18,7 @@ import {
 import { documentosApi, DocumentoDTO } from '../../services/api';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { unwrapPage } from '../../utils/pagination';
 
 interface DocumentsSearchPageProps {
   onBack: () => void;
@@ -132,10 +133,11 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
         marcacaoDesde: marcacaoDesde ? normalizarInicioDia(marcacaoDesde) : undefined,
         marcacaoAte: marcacaoAte ? normalizarFimDia(marcacaoAte) : undefined,
       });
-      setResultados(Array.isArray(dados) ? dados : []);
+      const items = unwrapPage(dados);
+      setResultados(items);
       setPaginaAtual(1);
       if (showToast) {
-        toast.success(t('documents.messages.searchDone', { count: Array.isArray(dados) ? dados.length : 0 }));
+        toast.success(t('documents.messages.searchDone', { count: items.length }));
       }
     } catch (error: any) {
       toast.error(error?.message || t('documents.errors.search'));
@@ -153,7 +155,8 @@ export function DocumentsSearchPage({ onBack }: DocumentsSearchPageProps) {
     try {
       setLoading(true);
       const dados = await documentosApi.pesquisarDocumentos({});
-      setResultados(Array.isArray(dados) ? dados : []);
+      const items = unwrapPage(dados);
+      setResultados(items);
       setPaginaAtual(1);
     } catch (error: any) {
       toast.error(error?.message || t('documents.errors.load'));

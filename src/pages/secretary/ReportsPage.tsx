@@ -11,6 +11,7 @@ import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
 import { EmailReportDialog } from '../../components/reports/EmailReportDialog';
+import { unwrapPage } from '../../utils/pagination';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
 const formatDate = (date: Date) => {
@@ -169,13 +170,14 @@ export function ReportsPage() {
       selected.has('balneario') ? marcacoesApi.consultarAgenda(startISO, endISO, 'BALNEARIO') : Promise.resolve([]),
       (selected.has('material') || selected.has('transporte') || selected.has('manutencao'))
         ? requisicoesApi.listar()
-        : Promise.resolve([]),
+        : Promise.resolve({ content: [], totalPages: 0, totalElements: 0, size: 20, number: 0, empty: true }),
       loadImage('/assets/LogoSemTexto.png').catch(() => null),
     ]);
 
     const startMs = new Date(startISO).getTime();
     const endMs = new Date(endISO).getTime();
-    const filteredReqs = requisicoes.filter(r => {
+    const allReqs = unwrapPage(requisicoes);
+    const filteredReqs = allReqs.filter((r: any) => {
       if (!r.criadoEm) return true;
       const t = new Date(r.criadoEm).getTime();
       return t >= startMs && t <= endMs;

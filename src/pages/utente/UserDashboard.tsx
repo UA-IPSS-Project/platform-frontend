@@ -24,6 +24,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
 import {
+import { unwrapPage } from '../../utils/pagination';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -130,7 +131,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         startIsoString = format(s, "yyyy-MM-dd'T'HH:mm:ss");
       }
       const data = await marcacoesApi.obterPassadas(startIsoString, format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss"), authUser.id);
-      setHistoryAppointments(data.map(mapApiToAppointment));
+      const items = unwrapPage(data);
+      setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
     }
