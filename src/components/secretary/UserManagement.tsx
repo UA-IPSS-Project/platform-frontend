@@ -1123,7 +1123,7 @@ export function UserManagement() {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Lock className="w-3.5 h-3.5" />
-                                        {editForm.nif}
+                                        {maskNif(editForm.nif)}
                                     </div>
                                 </div>
                             </div>
@@ -1374,7 +1374,7 @@ export function UserManagement() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('userManagement.userAlreadyExistsTitle')}</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            {t('userManagement.userAlreadyExistsDescription', { nif: existingUserForDialog?.nif })}
+                            {t('userManagement.userAlreadyExistsDescription', { nif: maskNif(existingUserForDialog?.nif) })}
                             <br /><br />
                             <strong>{t('requisitions.ui.name')}:</strong> {existingUserForDialog?.nome}
                             <br />
@@ -1424,7 +1424,7 @@ export function UserManagement() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Anonimizar e Eliminar Utilizador?</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            Está prestes a <strong>anonimizar e eliminar permanentemente</strong> o utilizador <strong>{selectedUser?.nome}</strong> (NIF: {selectedUser?.nif}).
+                            Está prestes a <strong>anonimizar e eliminar permanentemente</strong> o utilizador <strong>{selectedUser?.nome}</strong> (NIF: {maskNif(selectedUser?.nif)}).
                             <br /><br />
                             <strong>Esta ação irá:</strong>
                             <ul className="list-disc list-inside mt-2 space-y-1">
