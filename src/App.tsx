@@ -24,7 +24,7 @@ function App() {
     const stored = localStorage.getItem('theme');
     if (stored === 'dark') return true;
     if (stored === 'light') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false; // default: light
   };
 
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
@@ -116,6 +116,11 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Clear dashboard view history so next login starts at home page
+    localStorage.removeItem('secretaryDashboardViewHistory');
+    localStorage.removeItem('balnearioDashboardViewHistory');
+    localStorage.removeItem('escolaDashboardView');
+    localStorage.removeItem('internoDashboardView');
     logout();
     navigate('/login');
   };

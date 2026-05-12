@@ -185,9 +185,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogoutState = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
     localStorage.removeItem('lastActivity');
     localStorage.removeItem('token'); // Clear legacy token if exists
+    // Clear dashboard view history so next login starts at home page
+    localStorage.removeItem('secretaryDashboardViewHistory');
+    localStorage.removeItem('balnearioDashboardViewHistory');
+    localStorage.removeItem('escolaDashboardView');
+    localStorage.removeItem('internoDashboardView');
   };
 
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
