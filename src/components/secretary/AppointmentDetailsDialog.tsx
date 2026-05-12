@@ -12,6 +12,7 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload } from 'lucide-react';
+import { maskNif } from '../../utils/maskNif';
 
 // EyeIcon SVG inline (usado para preview)
 function EyeIcon({ className }: { className?: string }) {
@@ -644,7 +645,7 @@ export function AppointmentDetailsDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm mb-2"># NIF</Label>
-                <p className="text-foreground">{appointment.patientNIF}</p>
+                <p className="text-foreground">{maskNif(appointment.patientNIF)}</p>
               </div>
 
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
