@@ -1374,7 +1374,7 @@ export function UserManagement() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('userManagement.userAlreadyExistsTitle')}</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            {t('userManagement.userAlreadyExistsDescription', { nif: existingUserForDialog?.nif })}
+                            {t('userManagement.userAlreadyExistsDescription', { nif: maskNif(existingUserForDialog?.nif) })}
                             <br /><br />
                             <strong>{t('requisitions.ui.name')}:</strong> {existingUserForDialog?.nome}
                             <br />
