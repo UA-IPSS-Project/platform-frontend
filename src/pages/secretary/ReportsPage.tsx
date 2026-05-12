@@ -11,6 +11,7 @@ import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
 import { EmailReportDialog } from '../../components/reports/EmailReportDialog';
+import { unwrapPage } from '../../utils/pagination';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
 const formatDate = (date: Date) => {
@@ -175,7 +176,7 @@ export function ReportsPage() {
 
     const startMs = new Date(startISO).getTime();
     const endMs = new Date(endISO).getTime();
-    const allReqs = Array.isArray(requisicoes) ? requisicoes : (requisicoes as any).content ?? [];
+    const allReqs = unwrapPage(requisicoes);
     const filteredReqs = allReqs.filter((r: any) => {
       if (!r.criadoEm) return true;
       const t = new Date(r.criadoEm).getTime();

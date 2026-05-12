@@ -11,6 +11,7 @@ import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
 import { EmailReportDialog } from '../../components/reports/EmailReportDialog';
+import { unwrapPage } from '../../utils/pagination';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
 const formatDate = (date: Date) => {
@@ -172,7 +173,7 @@ export function BalnearioReportsPage() {
     const endMs = new Date(endISO).getTime();
 
     // Filter requisitions by date and specifically by ROLE (BALNEARIO)
-    const allReqItems = Array.isArray(allRequisitions) ? allRequisitions : (allRequisitions as any).content ?? [];
+    const allReqItems = unwrapPage(allRequisitions);
     const filteredReqs = allReqItems.filter((r: any) => {
       // Date filter
       const createdAt = r.criadoEm ? new Date(r.criadoEm).getTime() : 0;

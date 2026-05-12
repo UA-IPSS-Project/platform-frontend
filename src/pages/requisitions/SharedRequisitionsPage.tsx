@@ -72,6 +72,7 @@ import { RequisitionsCreateManutencaoForm } from '../../components/shared/requis
 import { RequisitionsCreateCommonFields } from '../../components/shared/requisitions/RequisitionsCreateCommonFields';
 import { RequisitionsCreateMaterialForm } from '../../components/shared/requisitions/RequisitionsCreateMaterialForm';
 import { RequisitionsCreateTransportForm } from '../../components/shared/requisitions/RequisitionsCreateTransportForm';
+import { unwrapPage } from '../../utils/pagination';
 
 /* eslint-disable sonarjs/cognitive-complexity */
 /* eslint-disable sonarjs/no-nested-functions */
@@ -201,7 +202,7 @@ export function SharedRequisitionsPage({
         dataInicio: dataInicio || undefined,
         dataFim: dataFim || undefined,
       });
-      const listaScope = applyScopeFilter(Array.isArray(data) ? data : (data as any)?.content ?? []);
+      const listaScope = applyScopeFilter(unwrapPage(data));
       const lista = isSecretaryView && criadoPorTipo
         ? listaScope.filter((item) => item.criadoPor?.tipo === criadoPorTipo)
         : listaScope;
@@ -217,7 +218,7 @@ export function SharedRequisitionsPage({
     if (activeSection !== 'list') return;
     try {
       const data = await requisicoesApi.procurar({});
-      const lista = applyScopeFilter(Array.isArray(data) ? data : (data as any)?.content ?? []);
+      const lista = applyScopeFilter(unwrapPage(data));
       setMonthlyRequisicoes(lista);
     } catch (error: any) {
       console.error('Failed to fetch monthly requisitions:', error);
@@ -251,7 +252,7 @@ export function SharedRequisitionsPage({
         const todasRequisicoes = await requisicoesApi.procurar({
           tipo: 'TRANSPORTE'
         });
-        setTodasRequisicoesTransporteAceites(Array.isArray(todasRequisicoes) ? todasRequisicoes : (todasRequisicoes as any)?.content ?? []);
+        setTodasRequisicoesTransporteAceites(unwrapPage(todasRequisicoes));
       } catch (error: any) {
         console.error('Failed to fetch accepted transport requisitions:', error);
       }
@@ -1127,7 +1128,7 @@ export function SharedRequisitionsPage({
         const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
         const resultadoConflitos = calcularConflitosTransporte(
           selectedRequisicao,
-          Array.isArray(outrasRequisicoes) ? outrasRequisicoes : (outrasRequisicoes as any)?.content ?? [],
+          unwrapPage(outrasRequisicoes),
         );
 
         if (resultadoConflitos) {
@@ -1269,7 +1270,7 @@ export function SharedRequisitionsPage({
       if (selectedRequisicao?.tipo === 'TRANSPORTE') {
         try {
           const outrasRequisicoes = await requisicoesApi.procurar({ tipo: 'TRANSPORTE' });
-          const requisicoesList = Array.isArray(outrasRequisicoes) ? outrasRequisicoes : (outrasRequisicoes as any)?.content ?? [];
+          const requisicoesList = unwrapPage(outrasRequisicoes);
 
           // Get ALL conflicting requests
           const todosOsConflitos = calcularTodosOsConflitosTransporte(

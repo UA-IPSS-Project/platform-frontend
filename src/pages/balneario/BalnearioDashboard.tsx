@@ -32,6 +32,7 @@ import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
 import {
+import { unwrapPage } from '../../utils/pagination';
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -181,7 +182,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
                 format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
             );
-            const items = Array.isArray(data) ? data : (data as any).content ?? [];
+            const items = unwrapPage(data);
             const mapped = items.map(mapApiToAppointment);
             setHistoryAppointments(mapped.filter((a: any) => a.balnearioDetails !== undefined));
         } catch {

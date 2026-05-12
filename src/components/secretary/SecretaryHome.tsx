@@ -14,6 +14,7 @@ import { marcacoesApi, utilizadoresApi, requisicoesApi, Notificacao } from '../.
 import { useIsMobile } from '../ui/use-mobile';
 import { formatDistanceToNow } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { unwrapPage } from '../../utils/pagination';
 
 interface SecretaryHomeProps {
   isDarkMode: boolean;
@@ -62,11 +63,11 @@ export default function SecretaryHome({ isDarkMode, onNavigate, notifications = 
         const [marcacoes, utentes, requisicoes] = await Promise.all([
           marcacoesApi.contarHoje(),
           utilizadoresApi.contarUtentesAtivos(),
-          requisicoesApi.listar('ABERTO' as any)
+          requisicoesApi.listar('ABERTO')
         ]);
         setMarcacoesHoje(marcacoes.toString());
         setUtentesAtivos(utentes.toString());
-        const reqItems = Array.isArray(requisicoes) ? requisicoes : (requisicoes as any).content ?? [];
+        const reqItems = unwrapPage(requisicoes);
         setRequisicoesPendentes(reqItems.length.toString());
       } catch (error) {
         console.error('Erro ao carregar estatísticas:', error);

@@ -32,6 +32,7 @@ import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
 import {
+import { unwrapPage } from '../../utils/pagination';
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -184,7 +185,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
         format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
       );
-      const items = Array.isArray(data) ? data : (data as any).content ?? [];
+      const items = unwrapPage(data);
       setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');

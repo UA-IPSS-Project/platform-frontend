@@ -14,6 +14,7 @@ import { useIsMobile } from '../ui/use-mobile';
 import { marcacoesApi, armazemApi, requisicoesApi, Notificacao } from '../../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { unwrapPage } from '../../utils/pagination';
 
 interface BalnearioHomeProps {
     isDarkMode: boolean;
@@ -39,12 +40,12 @@ export default function BalnearioHome({ onNavigate, notifications = [] }: Balnea
                 const [estatisticasBalneario, estatisticasConsumo, todasRequisicoes] = await Promise.all([
                     marcacoesApi.obterEstatisticasFrequenciaBalneario('DIA'),
                     armazemApi.obterEstatisticas('DIA'),
-                    requisicoesApi.listar('ABERTO' as any)
+                    requisicoesApi.listar('ABERTO')
                 ]);
 
                 setMarcacoesHoje(estatisticasBalneario.totalMarcacoes?.toString() || '0');
                 setConsumosHoje(estatisticasConsumo.totalGeral?.toString() || '0');
-                const reqItems = Array.isArray(todasRequisicoes) ? todasRequisicoes : (todasRequisicoes as any).content ?? [];
+                const reqItems = unwrapPage(todasRequisicoes);
                 setRequisicoesPendentes(reqItems.length.toString());
             } catch (error) {
                 console.error('Erro ao carregar estatísticas do balneário:', error);
