@@ -31,8 +31,8 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
-import {
 import { unwrapPage } from '../../utils/pagination';
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
