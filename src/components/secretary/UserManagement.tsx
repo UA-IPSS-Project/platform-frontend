@@ -170,18 +170,27 @@ export function UserManagement() {
 
     useEffect(() => {
         setCurrentPage(1);
+        const t = setTimeout(() => fetchUsers(searchQuery), 300);
+        return () => clearTimeout(t);
     }, [searchQuery]);
+
+    useEffect(() => {
+        setCurrentPageUtentes(1);
+        const t = setTimeout(() => fetchUtentes(searchQueryUtentes), 300);
+        return () => clearTimeout(t);
+    }, [searchQueryUtentes]);
 
     useEffect(() => {
         fetchUsers();
         fetchUtentes();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (nome?: string) => {
         setIsLoading(true);
         try {
-            const data = await utilizadoresApi.listarFuncionarios();
-            const sorted = [...data].sort((a, b) => {
+            const data = await utilizadoresApi.listarFuncionarios(nome || undefined, undefined, 0, 200);
+            const list = Array.isArray(data) ? data : data.content ?? [];
+            const sorted = [...list].sort((a, b) => {
                 if (a.active !== b.active) return a.active ? 1 : -1;
                 return (b.id || 0) - (a.id || 0);
             });
@@ -193,11 +202,12 @@ export function UserManagement() {
         }
     };
 
-    const fetchUtentes = async () => {
+    const fetchUtentes = async (nome?: string) => {
         setIsLoadingUtentes(true);
         try {
-            const data = await utilizadoresApi.listarUtentes();
-            const sorted = [...data].sort((a, b) => {
+            const data = await utilizadoresApi.listarUtentes(nome || undefined, 0, 200);
+            const list = Array.isArray(data) ? data : data.content ?? [];
+            const sorted = [...list].sort((a, b) => {
                 if (a.active !== b.active) return a.active ? 1 : -1;
                 return (b.id || 0) - (a.id || 0);
             });
@@ -553,17 +563,9 @@ export function UserManagement() {
         }
     };
 
-    // Filter users (Employees)
-    const filteredUsers = users.filter(user =>
-        user.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.nif.includes(searchQuery)
-    );
-
-    // Filter utentes
-    const filteredUtentesList = utentes.filter(u =>
-        u.nome.toLowerCase().includes(searchQueryUtentes.toLowerCase()) ||
-        u.nif.includes(searchQueryUtentes)
-    );
+    // Server-side filtering: users/utentes already filtered by searchQuery
+    const filteredUsers = users;
+    const filteredUtentesList = utentes;
 
     const pendingCount = users.filter(u => u.active === false).length;
 
