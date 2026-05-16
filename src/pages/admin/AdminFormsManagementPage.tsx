@@ -315,6 +315,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
   const [deleteFromEditorOpen, setDeleteFromEditorOpen] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const initializedRef = useRef(false);
+  const savedSnapshotRef = useRef<string>('');
 
   // Derived
   const sortedForms = [...forms].sort((a, b) => a.name.localeCompare(b.name, 'pt-PT'));
@@ -333,6 +334,9 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
     if (expandedPages.size > 0) return [...expandedPages][0];
     return 0;
   };
+
+  const makeSnapshot = (name: string, status: FormStatus, pgs: EditorPage[]) =>
+    JSON.stringify({ name: name.trim(), status, pages: toApiPages(pgs) });
 
   // ── Data loading ──────────────────────────────────────────────────────────
 
@@ -369,6 +373,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
           ? toEditorPages(form.pages)
           : [createDefaultPage(0)];
       setPages(editorPages);
+      savedSnapshotRef.current = makeSnapshot(form.name, form.status ?? 'RASCUNHO', editorPages);
       if (form.status === 'ATIVO') {
         try {
           const draft = await candidaturasApi.obterRascunhoFormulario(form.id);
@@ -379,7 +384,9 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
       setEditingFormId(null);
       setFormName('');
       setFormStatus('RASCUNHO');
-      setPages([createDefaultPage(0)]);
+      const defaultPages = [createDefaultPage(0)];
+      setPages(defaultPages);
+      savedSnapshotRef.current = makeSnapshot('', 'RASCUNHO', defaultPages);
     }
     setSelection(null);
     setExpandedPages(new Set([0]));
@@ -402,6 +409,8 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
 
   const performAutoSave = useCallback(async () => {
     if (!editingFormId) return;
+    const currentSnapshot = makeSnapshot(formName, formStatus, pages);
+    if (currentSnapshot === savedSnapshotRef.current) return;
     const name = formName.trim() || 'SEM NOME';
     const apiPages = toApiPages(pages);
     if (formStatus === 'ATIVO') {
@@ -409,6 +418,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
     } else {
       await candidaturasApi.atualizarFormulario(editingFormId, { name, status: formStatus, pages: apiPages });
     }
+    savedSnapshotRef.current = currentSnapshot;
   }, [editingFormId, formName, formStatus, pages]);
 
   const { touch } = useAutoSave({
@@ -428,10 +438,13 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
 
   const loadDraftContent = () => {
     if (!draftBanner) return;
-    setFormName(draftBanner.name ?? '');
-    if (draftBanner.pages && draftBanner.pages.length > 0) {
-      setPages(toEditorPages(draftBanner.pages));
-    }
+    const draftName = draftBanner.name ?? '';
+    const draftPages = draftBanner.pages && draftBanner.pages.length > 0
+      ? toEditorPages(draftBanner.pages)
+      : pages;
+    setFormName(draftName);
+    setPages(draftPages);
+    savedSnapshotRef.current = makeSnapshot(draftName, formStatus, draftPages);
     setDraftBanner(null);
   };
 
@@ -729,16 +742,23 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
       toast.error('O nome do formulário é obrigatório.');
       return;
     }
+    const currentSnapshot = makeSnapshot(formName, formStatus, pages);
+    if (editingFormId && currentSnapshot === savedSnapshotRef.current) {
+      toast.info('Não há alterações para guardar.');
+      return;
+    }
     try {
       setSaving(true);
       const apiPages = toApiPages(pages);
       if (editingFormId && formStatus === 'ATIVO') {
         await candidaturasApi.guardarRascunhoFormulario(editingFormId, { name: normalizedName, pages: apiPages });
         toast.success('Rascunho guardado com sucesso.');
+        savedSnapshotRef.current = currentSnapshot;
         setAutoSaveStatus('saved');
       } else if (editingFormId) {
         await candidaturasApi.atualizarFormulario(editingFormId, { name: normalizedName, status: formStatus, pages: apiPages });
         toast.success('Formulário atualizado com sucesso.');
+        savedSnapshotRef.current = currentSnapshot;
         closeEditor();
         await loadForms();
         await onFormsChanged?.();
@@ -807,35 +827,26 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
               Ainda não existem formulários.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {sortedForms.map(form => (
                 <div
                   key={form.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-2"
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-gray-900 dark:text-white">{form.name}</p>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[form.status].className}`}>
-                        {STATUS_CONFIG[form.status].label}
-                      </span>
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
-                      {form.criadoEm && (
-                        <span>
-                          Criado{form.criadoPorNome ? ` por ${form.criadoPorNome}` : ''}{' '}
-                          em {new Date(form.criadoEm).toLocaleString('pt-PT')}
-                        </span>
-                      )}
-                      {form.atualizadoEm && (
-                        <span>
-                          Atualizado{form.atualizadoPorNome ? ` por ${form.atualizadoPorNome}` : ''}{' '}
-                          em {new Date(form.atualizadoEm).toLocaleString('pt-PT')}
-                        </span>
-                      )}
-                    </div>
+                  <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-sm text-gray-900 dark:text-white">{form.name}</p>
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[form.status].className}`}>
+                      {STATUS_CONFIG[form.status].label}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                      {form.atualizadoEm
+                        ? `Atualizado em ${new Date(form.atualizadoEm).toLocaleDateString('pt-PT')}`
+                        : form.criadoEm
+                          ? `Criado em ${new Date(form.criadoEm).toLocaleDateString('pt-PT')}`
+                          : null}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <Button size="sm" variant="outline" onClick={() => void openEditor(form)}>
                       Editar
                     </Button>
