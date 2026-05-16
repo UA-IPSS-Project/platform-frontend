@@ -11,11 +11,11 @@ jobs:
     steps:
       - name: Deploy Frontend Direct on VM
         run: |
-          set -e
+          set -euo pipefail
           # Entrar na pasta do frontend e atualizar o código
           cd /home/florinhasuser/ipss-digital/platform-frontend
-          git fetch origin
-          git reset --hard origin/main
+          git fetch --no-tags origin
+          git checkout --force "$GITHUB_SHA"
           
           # Voltar à pasta mãe e reconstruir
           cd ../platform-backend
