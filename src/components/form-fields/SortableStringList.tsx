@@ -11,7 +11,7 @@ interface Props {
 export function SortableStringList({
   items,
   onChange,
-  addLabel = '+ Adicionar item',
+  addLabel = 'Adicionar item',
   itemPlaceholder = '',
 }: Props) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);

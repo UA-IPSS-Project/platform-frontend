@@ -112,7 +112,7 @@ export function GridTableConfig({ config, onChange }: FormFieldConfigPanelProps)
         <SortableStringList
           items={columns}
           onChange={cols => onChange({ ...config, columns: cols })}
-          addLabel="+ Adicionar coluna"
+          addLabel="Adicionar coluna"
           itemPlaceholder="Nome da coluna"
         />
       </div>

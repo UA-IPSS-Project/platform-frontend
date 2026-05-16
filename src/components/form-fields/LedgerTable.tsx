@@ -81,7 +81,7 @@ export function LedgerTableConfig({ config, onChange }: FormFieldConfigPanelProp
         <SortableStringList
           items={rows}
           onChange={r => onChange({ ...config, rows: r })}
-          addLabel="+ Adicionar fonte"
+          addLabel="Adicionar fonte"
           itemPlaceholder="Ex: Trabalho dependente"
         />
       </div>

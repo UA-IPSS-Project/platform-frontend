@@ -72,7 +72,7 @@ export function StructuredTableConfig({ config, onChange }: FormFieldConfigPanel
         <SortableStringList
           items={rows}
           onChange={r => onChange({ ...config, rows: r })}
-          addLabel="+ Adicionar linha"
+          addLabel="Adicionar linha"
           itemPlaceholder="Ex: Situação profissional"
         />
       </div>
@@ -84,7 +84,7 @@ export function StructuredTableConfig({ config, onChange }: FormFieldConfigPanel
         <SortableStringList
           items={columns}
           onChange={cols => onChange({ ...config, columns: cols })}
-          addLabel="+ Adicionar coluna"
+          addLabel="Adicionar coluna"
           itemPlaceholder="Ex: Requerente"
         />
       </div>
