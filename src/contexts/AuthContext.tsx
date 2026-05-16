@@ -1,8 +1,24 @@
 import { createContext, useState, useContext, useEffect, useRef, ReactNode } from 'react';
-import { API_BASE_URL, authApi, AuthResponse } from '../services/api';
+import { UserManager, WebStorageStateStore, User as OidcUser } from 'oidc-client-ts';
+
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8180';
+const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'florinhas';
+const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'florinhas-frontend';
+
+const userManager = new UserManager({
+  authority: `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}`,
+  client_id: KEYCLOAK_CLIENT_ID,
+  redirect_uri: `${window.location.origin}/auth/callback`,
+  post_logout_redirect_uri: `${window.location.origin}/login`,
+  response_type: 'code',
+  scope: 'openid profile email roles',
+  userStore: new WebStorageStateStore({ store: window.sessionStorage }),
+  automaticSilentRenew: true,
+  silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
+});
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   nome: string;
   role: 'UTENTE' | 'SECRETARIA' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
@@ -14,299 +30,141 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (identifier: string, password: string, type: 'funcionario' | 'utente') => Promise<void>;
-  registerUtente: (data: UtenteRegisterData) => Promise<void>;
-  registerFuncionario: (data: FuncionarioRegisterData) => Promise<void>;
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
-  updatePassword: (password: string, termsAccepted: boolean) => Promise<void>;
-}
-
-interface UtenteRegisterData {
-  nome: string;
-  email: string;
-  password: string;
-  nif: string;
-  telefone?: string;
-  dataNasc: string; // ISO format: YYYY-MM-DD
-  termsAccepted: boolean;
-}
-
-interface FuncionarioRegisterData {
-  nome: string;
-  email: string;
-  password: string;
-  nif: string;
-  contacto?: string;
-  funcao: string;
-  dataNasc: string; // ISO format: YYYY-MM-DD
-  termsAccepted: boolean;
+  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function mapOidcUser(oidcUser: OidcUser): User {
+  const roles: string[] = (oidcUser.profile['roles'] as string[]) ?? [];
+  const knownRoles = ['SECRETARIA', 'BALNEARIO', 'ESCOLA', 'INTERNO', 'UTENTE'] as const;
+  const role = knownRoles.find(r => roles.includes(r)) ?? 'UTENTE';
+
+  return {
+    id: oidcUser.profile.sub,
+    email: oidcUser.profile.email ?? '',
+    nome: oidcUser.profile.name ?? oidcUser.profile.preferred_username ?? '',
+    role,
+    active: true,
+    requiresPasswordSetup: false,
+  };
+}
+
+function clearDashboardState() {
+  [
+    'lastActivity', 'token', 'user',
+    'secretaryDashboardViewHistory', 'balnearioDashboardViewHistory',
+    'escolaDashboardView', 'internoDashboardView',
+    'secretaryDashboardView', 'balnearioDashboardView', 'adminDashboardView',
+  ].forEach(k => localStorage.removeItem(k));
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const isCheckingAuth = useRef(false);
+  const inactivityTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+  const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
-  const checkAuth = async (retryCount = 0) => {
-    if (isCheckingAuth.current && retryCount === 0) return;
-    isCheckingAuth.current = true;
-    
-    console.log('[Auth] checkAuth called - retryCount:', retryCount, 'current user:', user?.role);
-    try {
-      // Verify session with backend (sends cookie automatically)
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        credentials: 'include' // Important
-      });
+  const updateActivity = () => localStorage.setItem('lastActivity', Date.now().toString());
 
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('[Auth] checkAuth SUCCESS - role:', userData.role);
-        const updatedUser: User = {
-          id: userData.id,
-          email: userData.email,
-          nome: userData.nome,
-          role: userData.role,
-          nif: userData.nif,
-          telefone: userData.telefone,
-          active: userData.active,
-          requiresPasswordSetup: Boolean(userData.requiresPasswordSetup),
-        };
-        setUser(updatedUser);
-        setIsAuthenticated(true);
-        updateActivity();
-        setIsLoading(false); // Success - stop loading
-      } else {
-        console.log('[Auth] checkAuth FAILED - status:', response.status, 'retryCount:', retryCount);
-        // Retry once after 500ms if this is the first attempt
-        // This handles page reload timing issues where cookies aren't immediately available
-        if (retryCount === 0) {
-          console.log('[Auth] Initial check failed, retrying in 500ms...');
-          // CRITICAL: Don't clear user state during retry - keep existing auth state
-          setTimeout(() => checkAuth(1), 500);
-          return; // Don't call handleLogoutState yet - and don't clear isLoading
-        }
-        // After retry, session is truly invalid
-        console.log('[Auth] Auth failed after retry - logging out');
-        handleLogoutState();
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Auth verification failed:', error);
-      // Same retry logic for network errors
-      if (retryCount === 0) {
-        console.log('[Auth] Network error, retrying in 500ms...');
-        setTimeout(() => checkAuth(1), 500);
-        return;
-      }
-      handleLogoutState();
-      setIsLoading(false);
-    } finally {
-      isCheckingAuth.current = false;
+  const handleOidcUser = (oidcUser: OidcUser | null) => {
+    if (oidcUser && !oidcUser.expired) {
+      setUser(mapOidcUser(oidcUser));
+      setIsAuthenticated(true);
+      updateActivity();
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 
-  const updateActivity = () => {
-    const now = Date.now().toString();
-    localStorage.setItem('lastActivity', now);
-  };
-
   useEffect(() => {
-    checkAuth();
+    // Handle PKCE callback
+    if (window.location.pathname === '/auth/callback') {
+      userManager.signinRedirectCallback()
+        .then(oidcUser => {
+          handleOidcUser(oidcUser);
+          // Restore pre-login path or go to root (App routing handles role redirect)
+          const returnTo = sessionStorage.getItem('returnTo') ?? '/';
+          sessionStorage.removeItem('returnTo');
+          window.history.replaceState({}, '', returnTo);
+        })
+        .catch(() => window.location.replace('/login'))
+        .finally(() => setIsLoading(false));
+      return;
+    }
+
+    // Restore existing session
+    userManager.getUser().then(oidcUser => {
+      handleOidcUser(oidcUser);
+      setIsLoading(false);
+    });
+
+    // Token renewal events
+    userManager.events.addUserLoaded(oidcUser => handleOidcUser(oidcUser));
+    userManager.events.addUserUnloaded(() => { setUser(null); setIsAuthenticated(false); });
+    userManager.events.addSilentRenewError(() => logout());
+
+    return () => userManager.events.removeUserLoaded(handleOidcUser);
   }, []);
 
+  // Inactivity timeout
   useEffect(() => {
-    // Activity listeners
+    if (!isAuthenticated) return;
+
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
-
-    // Throttle Update Activity to run max once every minute
-    let lastUpdateLocal = 0;
-    const handleActivity = () => {
+    let last = 0;
+    const onActivity = () => {
       const now = Date.now();
-      if (now - lastUpdateLocal > 60000) { // 1 minute throttle
-        if (isAuthenticated) {
-          updateActivity();
-          lastUpdateLocal = now;
-        }
-      }
+      if (now - last > 60_000) { updateActivity(); last = now; }
     };
+    events.forEach(e => window.addEventListener(e, onActivity));
 
-    events.forEach(event => window.addEventListener(event, handleActivity));
-
-    // Periodic check for inactivity interval
-    const intervalId = setInterval(() => {
-      if (isAuthenticated) {
-        const savedLastActivity = localStorage.getItem('lastActivity');
-        if (savedLastActivity) {
-          const lastActivityTime = parseInt(savedLastActivity);
-          const now = Date.now();
-          if (now - lastActivityTime > INACTIVITY_TIMEOUT) {
-            logout();
-          }
-        }
-      }
-    }, 60000); // Check every minute
+    inactivityTimer.current = setInterval(() => {
+      const saved = localStorage.getItem('lastActivity');
+      if (saved && Date.now() - parseInt(saved) > INACTIVITY_TIMEOUT) logout();
+    }, 60_000);
 
     return () => {
-      events.forEach(event => window.removeEventListener(event, handleActivity));
-      clearInterval(intervalId);
+      events.forEach(e => window.removeEventListener(e, onActivity));
+      if (inactivityTimer.current) clearInterval(inactivityTimer.current);
     };
   }, [isAuthenticated]);
 
-  const handleAuthSuccess = (data: any) => {
-    const userData: User = {
-      id: data.id,
-      email: data.email,
-      nome: data.nome,
-      role: data.role,
-      nif: data.nif,
-      telefone: data.telefone,
-      active: data.active,
-      requiresPasswordSetup: Boolean(data.requiresPasswordSetup),
-    };
-
-    setUser(userData);
-    setIsAuthenticated(true);
-
-    updateActivity();
-    localStorage.removeItem('user'); // Remove legacy sensitive data from older versions
-
-    // Clear legacy dashboard views
-    localStorage.removeItem('userDashboardView');
-    localStorage.removeItem('secretaryDashboardView');
-  };
-
-  const handleLogoutState = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('lastActivity');
-    localStorage.removeItem('token'); // Clear legacy token if exists
-  };
-
-  const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
-    try {
-      let data: AuthResponse;
-
-      if (type === 'funcionario') {
-        data = await authApi.loginFuncionario({ email: identifier, password });
-      } else {
-        data = await authApi.loginUtente({ nif: identifier, password });
-      }
-
-      handleAuthSuccess(data);
-
-    } catch (error: any) {
-      console.error('Erro no login:', error);
-      throw error;
-    }
-  };
-
-  const registerUtente = async (data: UtenteRegisterData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register/utente`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao registar');
-      }
-
-      const responseData = await response.json();
-      handleAuthSuccess(responseData);
-    } catch (error) {
-      console.error('Erro no registo:', error);
-      throw error;
-    }
-  };
-
-  const registerFuncionario = async (data: FuncionarioRegisterData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register/funcionario`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erro ao registar');
-      }
-
-      const responseData = await response.json();
-
-      if (responseData.active === false && responseData.role === 'FUNCIONARIO') {
-        return;
-      }
-
-      handleAuthSuccess(responseData);
-    } catch (error) {
-      console.error('Erro no registo:', error);
-      throw error;
-    }
-  };
-
-  const updatePassword = async (password: string, termsAccepted: boolean) => {
-    try {
-      // Use authApi to ensure correct endpoint and CSRF headers are sent
-      await authApi.updatePassword(password, termsAccepted);
-
-      if (user) {
-        const updated = { ...user, active: true, requiresPasswordSetup: false };
-        setUser(updated);
-      }
-    } catch (error) {
-      console.error('Erro ao definir password:', error);
-      throw error;
-    }
+  const login = async () => {
+    sessionStorage.setItem('returnTo', window.location.pathname);
+    await userManager.signinRedirect();
   };
 
   const logout = async () => {
-    // Optimistic logout: Clear state immediately to prevent race conditions (e.g. dashboard intervals firing)
-    handleLogoutState();
-
-    try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include' // Cookies
-      });
-    } catch (e) {
-      console.error("Logout error (server side might not have cleared cookie):", e);
-    }
+    clearDashboardState();
+    setUser(null);
+    setIsAuthenticated(false);
+    await userManager.signoutRedirect();
   };
 
-  const value: AuthContextType = {
-    user,
-    login,
-    registerUtente,
-    registerFuncionario,
-    logout,
-    isAuthenticated,
-    isLoading,
-    updatePassword,
+  const getAccessToken = async (): Promise<string | null> => {
+    const oidcUser = await userManager.getUser();
+    return oidcUser?.access_token ?? null;
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isLoading, getAccessToken }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
+
+export { userManager };

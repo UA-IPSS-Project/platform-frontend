@@ -2,9 +2,7 @@ import { useState, useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LoginForm } from './components/auth/LoginForm';
-import { RegisterForm } from './components/auth/RegisterForm';
-import NewPasswordForm from './components/auth/NewPasswordForm';
+import AuthCallback from './pages/auth/AuthCallback';
 import { UserDashboard } from './pages/utente/UserDashboard';
 import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
 import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
@@ -18,6 +16,20 @@ import { LanguageToggle } from './components/shared/LanguageToggle';
 import { TermsReacceptanceModal } from './components/dialogs/TermsReacceptanceModal';
 import { useTermsCheck } from './hooks/useTermsCheck';
 
+// Triggers Keycloak PKCE redirect on render
+function LoginRedirect() {
+  const { login } = useAuth();
+  useEffect(() => { login(); }, []);
+  return null;
+}
+
+// Triggers Keycloak PKCE redirect on render
+function LoginRedirect() {
+  const { login } = useAuth();
+  useEffect(() => { login(); }, []);
+  return null;
+}
+
 function App() {
   const getInitialTheme = () => {
     if (typeof window === 'undefined') return false;
@@ -27,7 +39,6 @@ function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   };
 
-  const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
 
@@ -47,77 +58,14 @@ function App() {
     return () => root.classList.remove('dark');
   }, [isDarkMode]);
 
-  // CSRF Token Preflight: Generate XSRF-TOKEN cookie on app load
-  // This ensures the token is available for subsequent POST requests (e.g., login)
-  // Runs once on component mount
-  useEffect(() => {
-    const generateCsrfToken = async () => {
-      try {
-        await fetch('/api/auth/me', {
-          credentials: 'include',
-          method: 'GET',
-        });
-        console.debug('[CSRF] Preflight GET successful - XSRF-TOKEN cookie generated');
-      } catch (error) {
-        // Silently ignore errors - token generation is a best-effort operation
-        // User may not be authenticated yet, which is fine
-        console.debug('[CSRF] Preflight GET failed (expected if not authenticated):', error);
-      }
-    };
-
-    generateCsrfToken();
-  }, []); // Empty dependency array: run once on mount
-
-  // Protected Route Component
   const ProtectedRoute = ({ children }: { children: any }) => {
     if (isLoading) return null;
-
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace />;
-    }
-
-    if (user && !user.active) {
-      // Two inactive scenarios:
-      // 1) First login with temporary password -> force password setup
-      // 2) Self-registered employee pending secretary approval -> show pending message
-      if (user.requiresPasswordSetup) {
-        return <Navigate to="/set-password" replace />;
-      }
-
-      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA'].includes(user.role)) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-card/95 backdrop-blur-md p-8 rounded-lg shadow-xl border border-border max-w-md w-full text-center">
-              <div className="w-16 h-16 bg-primary/15 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-foreground mb-4">Conta Pendente</h2>
-              <p className="text-muted-foreground mb-8">
-                A sua conta aguarda aprovação da secretaria. Por favor, aguarde ou contacte os serviços administrativos.
-              </p>
-              <button
-                onClick={handleLogout}
-                className="w-full bg-primary text-primary-foreground font-medium px-4 py-3 rounded-md hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-              >
-                Voltar ao Login
-              </button>
-            </div>
-          </div>
-        );
-      }
-
-      // For non-staff users, inactive means first-login completion.
-      return <Navigate to="/set-password" replace />;
-    }
-
+    if (!isAuthenticated) return <LoginRedirect />;
     return children;
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    logout(); // signoutRedirect to Keycloak handled inside AuthContext
   };
 
   if (isLoading) {
@@ -170,28 +118,19 @@ function App() {
                 className="min-h-screen"
               >
                 <Routes location={location}>
+                  {/* Keycloak PKCE callback */}
+                  <Route path="/auth/callback" element={<AuthCallback />} />
+
+                  {/* /login redirects to Keycloak */}
                   <Route path="/login" element={
-                    isAuthenticated ? <Navigate to="/dashboard" replace /> :
-                      <div className="min-h-screen flex items-center justify-center p-4">
-                        <LoginForm
-                          isDarkMode={isDarkMode}
-                          onNavigateToRegister={(type) => {
-                            setRegisterInitialType(type ?? 'user');
-                            navigate('/register');
-                          }}
-                        />
-                      </div>
+                    isAuthenticated
+                      ? <Navigate to="/dashboard" replace />
+                      : <LoginRedirect />
                   } />
 
-                  <Route path="/register" element={
-                    isAuthenticated ? <Navigate to="/dashboard" replace /> :
-                      <div className="min-h-screen flex items-center justify-center p-4">
-                        <RegisterForm
-                          onNavigateToLogin={() => navigate('/login')}
-                          initialAccountType={registerInitialType}
-                        />
-                      </div>
-                  } />
+                  {/* /register and /set-password no longer exist — managed by Keycloak */}
+                  <Route path="/register" element={<Navigate to="/login" replace />} />
+                  <Route path="/set-password" element={<Navigate to="/dashboard" replace />} />
 
                   {/* Rota 404 - Not Found */}
                   <Route path="*" element={
@@ -209,16 +148,7 @@ function App() {
                     </div>
                   } />
 
-                  <Route path="/set-password" element={
-                    isAuthenticated ? (
-                      <div className="min-h-screen flex items-center justify-center p-4">
-                        <NewPasswordForm
-                          onSuccess={() => navigate('/dashboard')}
-                          isDarkMode={isDarkMode}
-                        />
-                      </div>
-                    ) : <Navigate to="/login" replace />
-                  } />
+
 
                   <Route path="/dashboard/*" element={
                     <ProtectedRoute>

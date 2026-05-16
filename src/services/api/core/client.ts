@@ -1,5 +1,6 @@
 // API Base URL
 import i18n from '../../../i18n';
+import { userManager } from '../../../contexts/AuthContext';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -21,35 +22,20 @@ const isLikelyHtmlResponse = (text: string, contentType: string | null): boolean
     return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html') || trimmed.includes('<body');
 };
 
-// Helper to get cookie by name
+// Helper to get cookie by name (kept for non-auth uses)
 export const getCookie = (name: string): string | null => {
-    if (!document.cookie) {
-        return null;
-    }
-
-
-    const xsrfCookies = document.cookie.split(';')
-        .map(c => c.trim())
-        .filter(c => c.startsWith(name + '='));
-
-    if (xsrfCookies.length === 0) {
-        return null;
-    }
-    const value = decodeURIComponent(xsrfCookies[0].substring(name.length + 1));
-    return value;
+    if (!document.cookie) return null;
+    const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith(name + '='));
+    return match ? decodeURIComponent(match.substring(name.length + 1)) : null;
 };
 
-// Helper function to build headers
-export const buildHeaders = (): HeadersInit => {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
-
-    const xsrfToken = getCookie('XSRF-TOKEN');
-    if (xsrfToken) {
-        headers['X-XSRF-TOKEN'] = xsrfToken;
+// Build headers with Keycloak Bearer token
+export const buildHeaders = async (): Promise<Record<string, string>> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const oidcUser = await userManager.getUser();
+    if (oidcUser?.access_token) {
+        headers['Authorization'] = `Bearer ${oidcUser.access_token}`;
     }
-
     return headers;
 };
 
@@ -61,7 +47,7 @@ export async function apiRequest<T>(
     const url = `${API_BASE_URL}${endpoint}`;
 
     const headers = {
-        ...buildHeaders(),
+        ...await buildHeaders(),
         ...options.headers,
     } as Record<string, string>;
 
@@ -72,7 +58,6 @@ export async function apiRequest<T>(
 
     const config: RequestInit = {
         ...options,
-        credentials: 'include', // IMPORTANT: Send cookies with request
         headers,
     };
 
