@@ -1,5 +1,8 @@
 import { createContext, useState, useContext, useEffect, useRef, ReactNode } from 'react';
 import { UserManager, WebStorageStateStore, User as OidcUser } from 'oidc-client-ts';
+import { useNavigate } from 'react-router-dom';
+import { authApi } from '../services/api/auth/authApi';
+import { UtenteRegisterRequest, FuncionarioRegisterRequest } from '../services/api/auth/types';
 
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8180';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'florinhas';
@@ -11,7 +14,7 @@ const userManager = new UserManager({
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: `${window.location.origin}/login`,
   response_type: 'code',
-  scope: 'openid profile email roles',
+  scope: 'openid', // Simplified to troubleshoot invalid_scope
   userStore: new WebStorageStateStore({ store: window.sessionStorage }),
   automaticSilentRenew: true,
   silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
@@ -32,6 +35,8 @@ interface AuthContextType {
   user: User | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  registerUtente: (data: UtenteRegisterRequest) => Promise<any>;
+  registerFuncionario: (data: FuncionarioRegisterRequest) => Promise<any>;
   isAuthenticated: boolean;
   isLoading: boolean;
   getAccessToken: () => Promise<string | null>;
@@ -68,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const inactivityTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigate = useNavigate();
 
   const INACTIVITY_TIMEOUT = 15 * 60 * 1000;
 
@@ -87,15 +93,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Handle PKCE callback
     if (window.location.pathname === '/auth/callback') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
+
+      if (error) {
+        console.error('Auth error from callback:', error, errorDescription);
+        setIsLoading(false);
+        navigate(`/login?error=${encodeURIComponent(error)}`, { replace: true });
+        return;
+      }
+
       userManager.signinRedirectCallback()
         .then(oidcUser => {
           handleOidcUser(oidcUser);
-          // Restore pre-login path or go to root (App routing handles role redirect)
-          const returnTo = sessionStorage.getItem('returnTo') ?? '/';
+          const storedReturnTo = sessionStorage.getItem('returnTo') ?? '/dashboard';
+          const returnTo = ['/login', '/register', '/auth/callback', '/']
+            .includes(storedReturnTo)
+            ? '/dashboard'
+            : storedReturnTo;
           sessionStorage.removeItem('returnTo');
-          window.history.replaceState({}, '', returnTo);
+          navigate(returnTo, { replace: true });
         })
-        .catch(() => window.location.replace('/login'))
+        .catch((err) => {
+          console.error('Error in signinRedirectCallback:', err);
+          navigate('/login', { replace: true });
+        })
         .finally(() => setIsLoading(false));
       return;
     }
@@ -138,7 +161,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [isAuthenticated]);
 
   const login = async () => {
-    sessionStorage.setItem('returnTo', window.location.pathname);
+    const currentPath = window.location.pathname;
+    const returnTo = ['/login', '/register', '/auth/callback', '/']
+      .includes(currentPath)
+      ? '/dashboard'
+      : currentPath;
+    sessionStorage.setItem('returnTo', returnTo);
     await userManager.signinRedirect();
   };
 
@@ -154,8 +182,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return oidcUser?.access_token ?? null;
   };
 
+  const registerUtente = async (data: UtenteRegisterRequest) => {
+    return authApi.registerUtente(data);
+  };
+
+  const registerFuncionario = async (data: FuncionarioRegisterRequest) => {
+    return authApi.registerFuncionario(data);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, isLoading, getAccessToken }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      login, 
+      logout, 
+      registerUtente, 
+      registerFuncionario, 
+      isAuthenticated, 
+      isLoading, 
+      getAccessToken 
+    }}>
       {children}
     </AuthContext.Provider>
   );

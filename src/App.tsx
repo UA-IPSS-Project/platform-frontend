@@ -3,6 +3,9 @@ import { Moon, Sun } from 'lucide-react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthCallback from './pages/auth/AuthCallback';
+import AuthSilentRenew from './pages/auth/AuthSilentRenew';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import { UserDashboard } from './pages/utente/UserDashboard';
 import { SecretaryDashboard } from './pages/secretary/SecretaryDashboard';
 import { BalnearioDashboard } from './pages/balneario/BalnearioDashboard';
@@ -15,20 +18,6 @@ import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { LanguageToggle } from './components/shared/LanguageToggle';
 import { TermsReacceptanceModal } from './components/dialogs/TermsReacceptanceModal';
 import { useTermsCheck } from './hooks/useTermsCheck';
-
-// Triggers Keycloak PKCE redirect on render
-function LoginRedirect() {
-  const { login } = useAuth();
-  useEffect(() => { login(); }, []);
-  return null;
-}
-
-// Triggers Keycloak PKCE redirect on render
-function LoginRedirect() {
-  const { login } = useAuth();
-  useEffect(() => { login(); }, []);
-  return null;
-}
 
 function App() {
   const getInitialTheme = () => {
@@ -60,7 +49,7 @@ function App() {
 
   const ProtectedRoute = ({ children }: { children: any }) => {
     if (isLoading) return null;
-    if (!isAuthenticated) return <LoginRedirect />;
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
     return children;
   };
 
@@ -83,8 +72,6 @@ function App() {
         <div className="min-h-screen relative overflow-hidden transition-colors duration-300">
           <AbstractBackground isDarkMode={isDarkMode} />
 
-          {/* Theme Toggle - Only show specific pages or always? Keeping logic: not on dashboard if dashboard handles it */}
-          {/* Actually dashboards have their own toggles often, but global one is useful outside */}
           {(!isAuthenticated || location.pathname === '/set-password') && (
             <div className="absolute top-6 right-6 z-50 flex items-center gap-2">
               {(location.pathname === '/login' || location.pathname === '/register') && (
@@ -118,21 +105,18 @@ function App() {
                 className="min-h-screen"
               >
                 <Routes location={location}>
-                  {/* Keycloak PKCE callback */}
                   <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/auth/silent-renew" element={<AuthSilentRenew />} />
 
-                  {/* /login redirects to Keycloak */}
                   <Route path="/login" element={
                     isAuthenticated
                       ? <Navigate to="/dashboard" replace />
-                      : <LoginRedirect />
+                      : <LoginPage />
                   } />
 
-                  {/* /register and /set-password no longer exist — managed by Keycloak */}
-                  <Route path="/register" element={<Navigate to="/login" replace />} />
+                  <Route path="/register" element={<RegisterPage />} />
                   <Route path="/set-password" element={<Navigate to="/dashboard" replace />} />
 
-                  {/* Rota 404 - Not Found */}
                   <Route path="*" element={
                     <div className="min-h-screen flex items-center justify-center p-4">
                       <div className="backdrop-blur-md p-8 rounded-lg shadow-xl border border-border text-center max-w-md w-full bg-card/95">
@@ -147,8 +131,6 @@ function App() {
                       </div>
                     </div>
                   } />
-
-
 
                   <Route path="/dashboard/*" element={
                     <ProtectedRoute>
