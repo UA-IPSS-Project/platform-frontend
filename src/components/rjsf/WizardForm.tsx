@@ -1,32 +1,47 @@
 import { useState, useMemo } from 'react';
 import Form from '@rjsf/core';
 import validator from '@rjsf/validator-ajv8';
-import { RJSFSchema, UiSchema } from '@rjsf/utils';
+import { RJSFSchema } from '@rjsf/utils';
 import { FormResponse } from '@/services/api/candidaturas/types';
 import { StepIndicator } from './StepIndicator';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { rjsfWidgets } from './widgets/RjsfWidgets';
 import { RjsfFieldTemplate } from './templates/RjsfFieldTemplate';
+import { buildPageSchemas } from '@/utils/formAdapter';
 
 interface WizardFormProps {
   form: FormResponse;
+  initialData?: Record<string, unknown>;
   onSubmit: (data: Record<string, unknown>) => void;
   onSaveDraft?: (data: Record<string, unknown>) => void;
   isSubmitting?: boolean;
+  includeInternalPages?: boolean;
 }
 
 const templates = {
   FieldTemplate: RjsfFieldTemplate,
 };
 
-import { buildPageSchemas } from '@/utils/formAdapter';
-
-export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }: WizardFormProps) {
+export function WizardForm({
+  form,
+  initialData,
+  onSubmit,
+  onSaveDraft,
+  isSubmitting = false,
+  includeInternalPages = false,
+}: WizardFormProps) {
   const [currentPage, setCurrentPage] = useState(0);
-  const [formData, setFormData] = useState<Record<string, unknown>>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>(initialData ?? {});
 
-  const pageSchemas = useMemo(() => buildPageSchemas(form), [form]);
+  const pageSchemas = useMemo(
+    () => buildPageSchemas(form.pages ?? [], { includeInternalPages }),
+    [form.pages, includeInternalPages],
+  );
+
+  const hasNoVisibleFields =
+    pageSchemas.length === 1 && Object.keys(pageSchemas[0].schema.properties ?? {}).length === 0;
+
   const isLast = currentPage === pageSchemas.length - 1;
   const page = form.pages?.[currentPage] || { title: form.name, description: undefined, fields: [] };
   const { schema, uiSchema } = pageSchemas[currentPage];
@@ -39,7 +54,6 @@ export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }
     if (isLast) {
       onSubmit(merged);
     } else {
-      // Auto-save draft on page change
       if (onSaveDraft) {
         onSaveDraft(merged);
       }
@@ -50,6 +64,14 @@ export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }
   const handleBack = () => {
     setCurrentPage((p) => p - 1);
   };
+
+  if (hasNoVisibleFields) {
+    return (
+      <p className="text-sm text-muted-foreground py-8 text-center">
+        Este formulário não está disponível para o seu perfil.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -72,6 +94,19 @@ export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }
         widgets={rjsfWidgets}
         templates={templates}
         showErrorList={false}
+        noHtml5Validate
+        transformErrors={(errors) =>
+          errors.map((e) => {
+            if (e.name === 'required') return { ...e, message: 'Este campo é obrigatório' };
+            if (e.name === 'format' && e.params?.format === 'email') return { ...e, message: 'E-mail inválido' };
+            if (e.name === 'format' && e.params?.format === 'date') return { ...e, message: 'Data inválida' };
+            if (e.name === 'minLength') return { ...e, message: `Mínimo ${(e.params as any)?.limit} caracteres` };
+            if (e.name === 'maxLength') return { ...e, message: `Máximo ${(e.params as any)?.limit} caracteres` };
+            if (e.name === 'minimum') return { ...e, message: `Valor mínimo: ${(e.params as any)?.limit}` };
+            if (e.name === 'maximum') return { ...e, message: `Valor máximo: ${(e.params as any)?.limit}` };
+            return e;
+          })
+        }
         onChange={(e) => setFormData(e.formData)}
         onSubmit={handleNext}
       >
@@ -81,24 +116,11 @@ export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }
             variant="outline"
             onClick={handleBack}
             disabled={currentPage === 0 || isSubmitting}
-            className={currentPage === 0 ? "invisible" : ""}
+            className={currentPage === 0 ? 'invisible' : ''}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Anterior
           </Button>
-
-          {onSaveDraft && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onSaveDraft(formData)}
-              disabled={isSubmitting}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Guardar rascunho
-            </Button>
-          )}
 
           <Button type="submit" disabled={isSubmitting}>
             {isLast ? (

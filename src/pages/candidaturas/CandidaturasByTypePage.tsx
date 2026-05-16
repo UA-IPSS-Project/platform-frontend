@@ -190,6 +190,7 @@ export function CandidaturasByTypePage({
         estado: appliedStatusFilter as CandidaturaEstado || undefined,
         nif: appliedNifFilter || undefined,
         nome: appliedNameFilter || undefined,
+        utenteId: mode === 'utente' ? currentUserId : undefined,
       });
       setCandidaturas(Array.isArray(data) ? data : []);
     } catch {
@@ -229,7 +230,7 @@ export function CandidaturasByTypePage({
       });
       setCreateDialogOpen(false);
       toast.success('Candidatura criada com sucesso');
-      navigate(`/dashboard/${candidaturaType}/${created.id}`);
+      navigate(`/dashboard/${candidaturaType}/${created.id}/fill`);
     } catch {
       toast.error('Erro ao criar candidatura');
     } finally {
@@ -324,7 +325,9 @@ export function CandidaturasByTypePage({
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         onNewCandidatura={
-          mode === 'utente' ? () => navigate(`/dashboard/${candidaturaType}/new`) : undefined
+          mode === 'utente' && form?.status === 'ATIVO'
+            ? () => navigate(`/dashboard/${candidaturaType}/new`)
+            : undefined
         }
         disableApply={Boolean(nifError)}
       />
@@ -383,9 +386,11 @@ export function CandidaturasByTypePage({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            {currentUserName
-              ? t('applications.flow.messages.noResultsForUser', { name: currentUserName })
-              : t('applications.flow.messages.noResults')}
+            {mode === 'utente' && form?.status !== 'ATIVO'
+              ? 'Este formulário não está disponível de momento.'
+              : currentUserName
+                ? t('applications.flow.messages.noResultsForUser', { name: currentUserName })
+                : t('applications.flow.messages.noResults')}
           </p>
         )}
       </div>
