@@ -329,7 +329,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
       if (form.status === 'ATIVO') {
         try {
           const draft = await candidaturasApi.obterRascunhoFormulario(form.id);
-          if (draft) setDraftBanner(draft);
+          if (draft && draft.id) setDraftBanner(draft);
         } catch { /* ignore */ }
       }
     } else {
@@ -355,7 +355,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
 
   const performAutoSave = useCallback(async () => {
     if (!editingFormId) return;
-    const name = formName.trim().toUpperCase() || 'SEM NOME';
+    const name = formName.trim() || 'SEM NOME';
     const apiPages = toApiPages(pages);
     if (formStatus === 'ATIVO') {
       await candidaturasApi.guardarRascunhoFormulario(editingFormId, { name, pages: apiPages });
@@ -381,7 +381,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
 
   const loadDraftContent = () => {
     if (!draftBanner) return;
-    setFormName(draftBanner.name);
+    setFormName(draftBanner.name ?? '');
     if (draftBanner.pages && draftBanner.pages.length > 0) {
       setPages(toEditorPages(draftBanner.pages));
     }
@@ -552,7 +552,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
   // ── Save / Delete ─────────────────────────────────────────────────────────
 
   const handleSave = async () => {
-    const normalizedName = formName.trim().toUpperCase();
+    const normalizedName = formName.trim();
     if (!normalizedName) {
       toast.error('O nome do formulário é obrigatório.');
       return;
@@ -641,9 +641,23 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                   key={form.id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3"
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900 dark:text-white">{form.name}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{form.status}</p>
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
+                      {form.criadoEm && (
+                        <span>
+                          Criado{form.criadoPorNome ? ` por ${form.criadoPorNome}` : ''}{' '}
+                          em {new Date(form.criadoEm).toLocaleString('pt-PT')}
+                        </span>
+                      )}
+                      {form.atualizadoEm && (
+                        <span>
+                          Atualizado{form.atualizadoPorNome ? ` por ${form.atualizadoPorNome}` : ''}{' '}
+                          em {new Date(form.atualizadoEm).toLocaleString('pt-PT')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button size="sm" variant="outline" onClick={() => void openEditor(form)}>
@@ -914,6 +928,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
             {draftBanner.atualizadoEm
               ? new Date(draftBanner.atualizadoEm).toLocaleString('pt-PT')
               : '—'}
+            {draftBanner.atualizadoPorNome ? ` por ${draftBanner.atualizadoPorNome}` : ''}
             . Pretende carregar o rascunho?
           </span>
           <Button type="button" size="sm" variant="outline" onClick={loadDraftContent}>

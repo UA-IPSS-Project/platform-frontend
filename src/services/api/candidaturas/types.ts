@@ -27,8 +27,10 @@ export interface FormResponse {
   status: FormStatus;
   pages?: FormPage[];
   criadoPor?: number;
+  criadoPorNome?: string;
   criadoEm?: string;
   atualizadoPor?: number;
+  atualizadoPorNome?: string;
   atualizadoEm?: string;
 }
 
@@ -38,6 +40,7 @@ export interface FormDraftResponse {
   name: string;
   pages?: FormPage[];
   atualizadoPor?: number;
+  atualizadoPorNome?: string;
   atualizadoEm?: string;
 }
 
