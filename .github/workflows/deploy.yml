@@ -7,6 +7,9 @@ on:
 jobs:
   deploy:
     runs-on: [self-hosted, ipss-vm]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Deploy Frontend Direct on VM
