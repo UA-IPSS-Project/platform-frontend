@@ -15,11 +15,15 @@ import {
   LayoutGrid,
   List,
   Mail,
+  MoreVertical,
   Paperclip,
   Plus,
+  Power,
+  PowerOff,
   RefreshCw,
   Save,
   ScrollText,
+  Send,
   Table2,
   TableProperties,
   Trash2,
@@ -31,6 +35,13 @@ import {
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -102,6 +113,29 @@ interface ComponentDef {
   label: string;
   Icon: LucideIcon;
 }
+
+// ─── Status config ────────────────────────────────────────────────────────────
+
+const STATUS_CONFIG: Record<FormStatus, { label: string; className: string; bannerClassName: string; bannerText: string }> = {
+  RASCUNHO: {
+    label: 'Rascunho',
+    className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
+    bannerClassName: 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300',
+    bannerText: 'Este formulário está em rascunho e não está disponível para candidaturas.',
+  },
+  ATIVO: {
+    label: 'Ativo',
+    className: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800',
+    bannerClassName: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300',
+    bannerText: 'Este formulário está ativo e disponível para candidaturas. As alterações são guardadas como rascunho até serem publicadas.',
+  },
+  INATIVO: {
+    label: 'Inativo',
+    className: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800',
+    bannerClassName: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',
+    bannerText: 'Este formulário está inativo e não recebe candidaturas.',
+  },
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -275,6 +309,11 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
   const [dropTarget, setDropTarget] = useState<{ pageIndex: number; insertAt: number } | null>(null);
   const [autoSaveStatus, setAutoSaveStatus] = useState<SaveStatus>('idle');
   const [draftBanner, setDraftBanner] = useState<FormDraftResponse | null>(null);
+  const [originalForm, setOriginalForm] = useState<FormResponse | null>(null);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+  const [deleteFromEditorOpen, setDeleteFromEditorOpen] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const initializedRef = useRef(false);
 
   // Derived
@@ -317,6 +356,10 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
     initializedRef.current = false;
     setDraftBanner(null);
     setAutoSaveStatus('idle');
+    setOriginalForm(form ?? null);
+    setPublishDialogOpen(false);
+    setDeactivateDialogOpen(false);
+    setDeleteFromEditorOpen(false);
     if (form) {
       setEditingFormId(form.id);
       setFormName(form.name);
@@ -346,7 +389,11 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
   const closeEditor = () => {
     setEditingFormId(null);
     setDraftBanner(null);
+    setOriginalForm(null);
     setAutoSaveStatus('idle');
+    setPublishDialogOpen(false);
+    setDeactivateDialogOpen(false);
+    setDeleteFromEditorOpen(false);
     setViewMode('list');
     setSelection(null);
   };
@@ -549,6 +596,131 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
     );
   };
 
+  // ── Diff helper ───────────────────────────────────────────────────────────
+
+  const computeDiff = () => {
+    type OrigField = { key: string; label: string; page: string; type: string; required: boolean; placeholder: string; options: string[]; extraConfig: Record<string, unknown> };
+    type CurrField = { key: string; label: string; page: string; type: string; required: boolean; placeholder: string; options: string[]; extraConfig: Record<string, unknown> };
+    type FieldChange = { prop: string; from: string; to: string };
+    type ModifiedField = { key: string; label: string; page: string; type: string; changes: FieldChange[] };
+
+    const origFields: OrigField[] = (originalForm?.pages ?? []).flatMap(p =>
+      (p.fields ?? []).map(f => {
+        const cfg = (f.config ?? {}) as Record<string, unknown>;
+        return {
+          key: f.key,
+          label: String(cfg.label ?? f.key),
+          page: p.title,
+          type: f.componentType,
+          required: Boolean(cfg.required),
+          placeholder: String(cfg.placeholder ?? ''),
+          options: Array.isArray(cfg.options) ? (cfg.options as string[]) : [],
+          extraConfig: Object.fromEntries(Object.entries(cfg).filter(([k]) => !['label','placeholder','required','options'].includes(k))),
+        };
+      })
+    );
+    const currFields: CurrField[] = pages.flatMap(p =>
+      p.fields.map(f => ({
+        key: f.key,
+        label: f.label,
+        page: p.title,
+        type: f.componentType,
+        required: f.required,
+        placeholder: f.placeholder,
+        options: f.options,
+        extraConfig: f.extraConfig,
+      }))
+    );
+
+    const origByKey = new Map(origFields.map(f => [f.key, f]));
+    const currByKey = new Map(currFields.map(f => [f.key, f]));
+
+    const added = currFields.filter(f => !origByKey.has(f.key));
+    const removed = origFields.filter(f => !currByKey.has(f.key));
+
+    const modified: ModifiedField[] = [];
+    for (const curr of currFields) {
+      const orig = origByKey.get(curr.key);
+      if (!orig) continue;
+      const changes: FieldChange[] = [];
+      if (orig.label !== curr.label)
+        changes.push({ prop: 'Nome', from: orig.label, to: curr.label });
+      if (orig.type !== curr.type)
+        changes.push({ prop: 'Tipo', from: COMPONENT_LABELS[orig.type as ComponentType] ?? orig.type, to: COMPONENT_LABELS[curr.type as ComponentType] ?? curr.type });
+      if (orig.required !== curr.required)
+        changes.push({ prop: 'Obrigatório', from: orig.required ? 'Sim' : 'Não', to: curr.required ? 'Sim' : 'Não' });
+      if (orig.placeholder !== curr.placeholder && (orig.placeholder || curr.placeholder))
+        changes.push({ prop: 'Placeholder', from: orig.placeholder || '(vazio)', to: curr.placeholder || '(vazio)' });
+      if (JSON.stringify(orig.options) !== JSON.stringify(curr.options))
+        changes.push({ prop: 'Opções', from: orig.options.join(', ') || '(nenhuma)', to: curr.options.join(', ') || '(nenhuma)' });
+      if (JSON.stringify(orig.extraConfig) !== JSON.stringify(curr.extraConfig))
+        changes.push({ prop: 'Configuração', from: '', to: '' });
+      if (changes.length > 0)
+        modified.push({ key: curr.key, label: curr.label, page: curr.page, type: curr.type, changes });
+    }
+
+    const nameChanged = originalForm != null && originalForm.name !== formName.trim();
+    const hasChanges = added.length > 0 || removed.length > 0 || modified.length > 0 || nameChanged;
+    return { added, removed, modified, nameChanged, hasChanges };
+  };
+
+  // ── Publish / Deactivate ──────────────────────────────────────────────────
+
+  const handlePublish = async () => {
+    const normalizedName = formName.trim();
+    if (!normalizedName) { toast.error('O nome do formulário é obrigatório.'); return; }
+    try {
+      setPublishing(true);
+      const apiPages = toApiPages(pages);
+      if (editingFormId) {
+        await candidaturasApi.atualizarFormulario(editingFormId, { name: normalizedName, status: 'ATIVO', pages: apiPages });
+        if (formStatus === 'ATIVO') {
+          try { await candidaturasApi.apagarRascunhoFormulario(editingFormId); } catch { /* ignore */ }
+        }
+        toast.success(formStatus === 'ATIVO' ? 'Alterações publicadas com sucesso.' : formStatus === 'INATIVO' ? 'Formulário reativado com sucesso.' : 'Formulário publicado com sucesso.');
+      } else {
+        await candidaturasApi.criarFormulario({ name: normalizedName, status: 'ATIVO', pages: apiPages });
+        toast.success('Formulário publicado com sucesso.');
+      }
+      setPublishDialogOpen(false);
+      closeEditor();
+      await loadForms();
+      await onFormsChanged?.();
+    } catch (error: unknown) {
+      toast.error((error as { message?: string })?.message ?? 'Não foi possível publicar o formulário.');
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!editingFormId) return;
+    try {
+      await candidaturasApi.atualizarFormulario(editingFormId, { name: formName.trim(), status: 'INATIVO', pages: toApiPages(pages) });
+      toast.success('Formulário desativado com sucesso.');
+      setDeactivateDialogOpen(false);
+      closeEditor();
+      await loadForms();
+      await onFormsChanged?.();
+    } catch (error: unknown) {
+      toast.error((error as { message?: string })?.message ?? 'Não foi possível desativar o formulário.');
+    }
+  };
+
+  const handleDeleteFromEditor = async () => {
+    if (!editingFormId) return;
+    try {
+      await candidaturasApi.apagarFormulario(editingFormId);
+      toast.success('Formulário eliminado com sucesso.');
+      setDeleteFromEditorOpen(false);
+      closeEditor();
+      await loadForms();
+      await onFormsChanged?.();
+    } catch (error: unknown) {
+      toast.error((error as { message?: string })?.message ?? 'Não foi possível eliminar o formulário.');
+    }
+  };
+
   // ── Save / Delete ─────────────────────────────────────────────────────────
 
   const handleSave = async () => {
@@ -642,8 +814,12 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                   className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">{form.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{form.status}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-gray-900 dark:text-white">{form.name}</p>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[form.status].className}`}>
+                        {STATUS_CONFIG[form.status].label}
+                      </span>
+                    </div>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
                       {form.criadoEm && (
                         <span>
@@ -868,16 +1044,11 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
             placeholder="Nome do formulário (ex: CRECHE)"
             className="max-w-xs"
           />
-          <Select value={formStatus} onValueChange={v => setFormStatus(v as FormStatus)}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="RASCUNHO">Rascunho</SelectItem>
-              <SelectItem value="ATIVO">Ativo</SelectItem>
-              <SelectItem value="INATIVO">Inativo</SelectItem>
-            </SelectContent>
-          </Select>
+          {editingFormId && (
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${STATUS_CONFIG[formStatus].className}`}>
+              {STATUS_CONFIG[formStatus].label}
+            </span>
+          )}
         </div>
 
         {autoSaveStatus === 'saving' && (
@@ -912,12 +1083,91 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
           type="button"
           onClick={() => void handleSave()}
           disabled={saving}
-          className="bg-purple-600 text-white hover:bg-purple-700"
+          variant="outline"
         >
           <Save className="w-4 h-4" />
           {saving ? 'A guardar…' : editingFormId ? 'Guardar' : 'Criar'}
         </Button>
+
+        {/* Publish button — label varies by state */}
+        {(() => {
+          if (formStatus === 'ATIVO') {
+            return (
+              <Button
+                type="button"
+                onClick={() => setPublishDialogOpen(true)}
+                disabled={publishing}
+                className="bg-purple-600 text-white hover:bg-purple-700"
+              >
+                <Send className="w-4 h-4" />
+                {publishing ? 'A publicar…' : 'Publicar alterações'}
+              </Button>
+            );
+          }
+          if (formStatus === 'INATIVO') {
+            return (
+              <Button
+                type="button"
+                onClick={() => setPublishDialogOpen(true)}
+                disabled={publishing}
+                className="bg-green-600 text-white hover:bg-green-700"
+              >
+                <Power className="w-4 h-4" />
+                {publishing ? 'A reativar…' : 'Reativar'}
+              </Button>
+            );
+          }
+          // RASCUNHO
+          return (
+            <Button
+              type="button"
+              onClick={() => setPublishDialogOpen(true)}
+              disabled={publishing}
+              className="bg-purple-600 text-white hover:bg-purple-700"
+            >
+              <Send className="w-4 h-4" />
+              {publishing ? 'A publicar…' : editingFormId ? 'Publicar' : 'Criar e publicar'}
+            </Button>
+          );
+        })()}
+
+        {/* Actions dropdown */}
+        {editingFormId && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="px-2">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {formStatus === 'ATIVO' && (
+                <DropdownMenuItem onClick={() => setDeactivateDialogOpen(true)}>
+                  <PowerOff className="w-4 h-4" />
+                  Desativar formulário
+                </DropdownMenuItem>
+              )}
+              {formStatus === 'ATIVO' && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setDeleteFromEditorOpen(true)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar formulário
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
+
+      {/* ── Status banner ──────────────────────────────────────────────────── */}
+      {editingFormId && (
+        <div className={`rounded-lg border px-4 py-2.5 flex items-center gap-2 text-sm ${STATUS_CONFIG[formStatus].bannerClassName}`}>
+          {formStatus === 'ATIVO' && <Power className="w-4 h-4 shrink-0" />}
+          {formStatus === 'INATIVO' && <PowerOff className="w-4 h-4 shrink-0" />}
+          {formStatus === 'RASCUNHO' && <AlertCircle className="w-4 h-4 shrink-0" />}
+          <span>{STATUS_CONFIG[formStatus].bannerText}</span>
+        </div>
+      )}
 
       {/* ── Draft banner ───────────────────────────────────────────────────── */}
       {draftBanner && (
@@ -1376,6 +1626,148 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
           )}
         </aside>
       </div>
+
+      {/* ── Publish dialog ─────────────────────────────────────────────────── */}
+      {(() => {
+        const diff = formStatus === 'ATIVO' ? computeDiff() : null;
+        const title =
+          formStatus === 'ATIVO' ? 'Publicar alterações' :
+          formStatus === 'INATIVO' ? 'Reativar formulário' :
+          'Publicar formulário';
+
+        return (
+          <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+            <AlertDialogContent className="max-w-lg">
+              <AlertDialogHeader>
+                <AlertDialogTitle>{title}</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    {formStatus === 'RASCUNHO' && (
+                      <>
+                        <p>Vai publicar o formulário <strong>{formName}</strong>. Ficará disponível para candidaturas.</p>
+                        <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-3 space-y-2 max-h-48 overflow-y-auto">
+                          {pages.map((page, pi) => (
+                            <div key={pi}>
+                              <p className="font-medium text-gray-800 dark:text-gray-200 text-xs">{page.title} ({page.fields.length} {page.fields.length === 1 ? 'campo' : 'campos'})</p>
+                              {page.fields.map(f => (
+                                <p key={f.key} className="text-xs text-gray-500 dark:text-gray-400 pl-3">· {f.label} <span className="opacity-60">({COMPONENT_LABELS[f.componentType]})</span></p>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {formStatus === 'ATIVO' && diff && (
+                      <>
+                        <p>Vai publicar as seguintes alterações em <strong>{formName}</strong>:</p>
+                        {!diff.hasChanges && (
+                          <p className="text-xs text-gray-400 italic">Sem alterações detetadas face à versão publicada.</p>
+                        )}
+                        {diff.nameChanged && (
+                          <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                            <p className="text-xs text-amber-700 dark:text-amber-300">· Nome: <em>{originalForm?.name}</em> → <em>{formName}</em></p>
+                          </div>
+                        )}
+                        {diff.added.length > 0 && (
+                          <div className="rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-3 space-y-1 max-h-40 overflow-y-auto">
+                            <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-1">Adicionados ({diff.added.length})</p>
+                            {diff.added.map(f => (
+                              <p key={f.key} className="text-xs text-green-700 dark:text-green-300">
+                                + {f.label} <span className="opacity-60">({COMPONENT_LABELS[f.type as ComponentType]}) — {f.page}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {diff.removed.length > 0 && (
+                          <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 space-y-1 max-h-40 overflow-y-auto">
+                            <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">Removidos ({diff.removed.length})</p>
+                            {diff.removed.map(f => (
+                              <p key={f.key} className="text-xs text-red-700 dark:text-red-300">
+                                - {f.label} <span className="opacity-60">({COMPONENT_LABELS[f.type as ComponentType]}) — {f.page}</span>
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {diff.modified.length > 0 && (
+                          <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 space-y-2 max-h-48 overflow-y-auto">
+                            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">Modificados ({diff.modified.length})</p>
+                            {diff.modified.map(f => (
+                              <div key={f.key}>
+                                <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+                                  ~ {f.label} <span className="opacity-60 font-normal">({COMPONENT_LABELS[f.type as ComponentType]}) — {f.page}</span>
+                                </p>
+                                {f.changes.map(c => (
+                                  <p key={c.prop} className="text-xs text-amber-700 dark:text-amber-300 pl-3">
+                                    · {c.prop}{c.from ? <>: <em>{c.from}</em> → <em>{c.to}</em></> : ' alterada'}
+                                  </p>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {formStatus === 'INATIVO' && (
+                      <p>Vai reativar o formulário <strong>{formName}</strong>. Ficará novamente disponível para candidaturas.</p>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className={formStatus === 'INATIVO' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-purple-600 hover:bg-purple-700 text-white'}
+                  onClick={() => void handlePublish()}
+                >
+                  {formStatus === 'INATIVO' ? 'Reativar' : 'Publicar'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        );
+      })()}
+
+      {/* ── Deactivate dialog ──────────────────────────────────────────────── */}
+      <AlertDialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar formulário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vai desativar o formulário <strong>{formName}</strong>. Deixará de estar disponível para candidaturas. Pode reativá-lo a qualquer momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => void handleDeactivate()}
+            >
+              Desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete from editor dialog ──────────────────────────────────────── */}
+      <AlertDialog open={deleteFromEditorOpen} onOpenChange={setDeleteFromEditorOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar formulário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vai eliminar permanentemente o formulário <strong>{formName}</strong>. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => void handleDeleteFromEditor()}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
