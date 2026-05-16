@@ -52,6 +52,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     password: '',
     confirmPassword: '',
     termsAccepted: false,
+    ageConfirmed: false,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -127,6 +128,10 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
     if (!formData.termsAccepted) {
       newErrors.termsAccepted = t('auth.mustAcceptTermsRegister');
+    }
+
+    if (!formData.ageConfirmed) {
+      newErrors.ageConfirmed = t('auth.mustConfirmAge');
     }
 
     setErrors(newErrors);
@@ -548,6 +553,28 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
           </div>
           {errors.termsAccepted && (
             <p className="text-status-error text-sm pl-1">{errors.termsAccepted}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <div className="bg-muted/60 border border-border rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="ageConfirmed"
+                checked={formData.ageConfirmed}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, ageConfirmed: checked === true }))}
+                className={`mt-1 shrink-0 ${errors.ageConfirmed ? 'border-status-error' : ''}`}
+              />
+              <label
+                htmlFor="ageConfirmed"
+                className="text-sm text-foreground/85 leading-relaxed cursor-pointer select-none text-left"
+              >
+                {t('auth.confirmAge')}
+              </label>
+            </div>
+          </div>
+          {errors.ageConfirmed && (
+            <p className="text-status-error text-sm pl-1">{errors.ageConfirmed}</p>
           )}
         </div>
 

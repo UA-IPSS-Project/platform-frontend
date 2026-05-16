@@ -209,6 +209,23 @@
         "paragraphs": [
           "IPSS Florinhas do Vouga reserves the right to update this Policy whenever necessary, and changes will be published on the website."
         ]
+      },
+      {
+        "title": "Disclaimer",
+        "paragraphs": [
+          "The platform is provided \"as is\", without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.",
+          "IPSS Florinhas do Vouga does not guarantee that the platform will always be available, error-free, virus-free, or that its features will meet all users' expectations.",
+          "In case of temporary service unavailability due to technical reasons, scheduled maintenance, or unforeseen circumstances, the Institution shall not be liable for any direct or indirect damages resulting from such unavailability.",
+          "Users acknowledge that use of the platform is at their own risk and should take appropriate precautions, including maintaining backup copies of their data."
+        ]
+      },
+      {
+        "title": "Applicable Law and Jurisdiction",
+        "paragraphs": [
+          "This Privacy Policy and Terms of Use are governed by Portuguese law, namely the General Data Protection Regulation (GDPR - EU Regulation 2016/679) and Law no. 58/2019 of August 8.",
+          "For the resolution of any disputes arising from the interpretation or application of these terms, the courts of Aveiro, Portugal, shall have exclusive jurisdiction, with express waiver of any other.",
+          "In case of conflict between the Portuguese version and translations into other languages, the Portuguese version shall always prevail."
+        ]
       }
     ]
   },
@@ -678,6 +695,8 @@
     "confirmPasswordRequired": "Password confirmation is required",
     "passwordsDoNotMatch": "Passwords do not match",
     "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "confirmAge": "I declare that I am 18 years of age or older",
+    "mustConfirmAge": "You must confirm that you are 18 or older to register",
     "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
     "fixFormErrors": "Please fix form errors",
     "fixErrorsBeforeContinue": "Fix the errors before continuing",
@@ -1599,5 +1618,51 @@
       "status_development": "In development",
       "lastChecked": "Last checked seconds ago"
     }
+  },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Proof of residence",
+      "medicalCertificate": "Medical certificate",
+      "idDocument": "Identity document",
+      "incomeProof": "Proof of income",
+      "parentalAuthorization": "Parental authorization",
+      "other": "Other"
+    },
+    "clinicalConsent": {
+      "warning": "This document contains health data (special category — GDPR art. 9)",
+      "description": "Processing health data requires your explicit consent. This data will be used exclusively for social and health support within Florinhas do Vouga services, and will not be shared with third parties without your consent.",
+      "checkbox": "I expressly consent to the processing of my health data for the stated purposes (GDPR art. 9(2)(a))",
+      "required": "Explicit consent is required for documents containing health data"
+    }
+  },
+  "privacy": {
+    "common": {
+      "rights": "You have the right to access, rectify, delete and export your personal data. Contact secretaria@florinhasdovouga.pt to exercise your rights."
+    },
+    "document": {
+      "title": "Privacy Notice - Document Upload",
+      "description": "The documents you upload will be stored securely and encrypted. They will be used exclusively for the indicated purpose and processing of your appointment. Data will be retained for the legal retention period configured by the institution."
+    },
+    "appointment": {
+      "title": "Privacy Notice - Appointment",
+      "description": "The personal data collected (name, tax ID, contact, date of birth) will be used for managing your appointment and service communication. The data controller is Associação Florinhas do Vouga, Tax ID 501234567."
+    },
+    "registration": {
+      "title": "Privacy Notice - Registration",
+      "description": "Your personal data will be processed in accordance with GDPR. We only collect data necessary for creating and managing your account. Data will be stored securely and will not be shared with third parties without your consent."
+    },
+    "requisition": {
+      "title": "Privacy Notice - Requisition",
+      "description": "The data provided will be used to process your requisition for materials, transport or maintenance. Information will be shared only with staff responsible for processing the request."
+    }
+  },
+  "termsReacceptance": {
+    "title": "Terms of Use Updated",
+    "description": "Our Terms of Use have been updated. Please review and accept the new terms to continue using the platform.",
+    "acceptCheckbox": "I have read and accept the new Terms of Use",
+    "acceptButton": "Accept and Continue",
+    "mustAccept": "You must accept the terms to continue",
+    "accepted": "Terms accepted successfully",
+    "acceptError": "Error accepting terms. Please try again."
   }
 }

@@ -52,14 +52,17 @@ export const marcacoesApi = {
         );
     },
 
-    obterPassadas: (dataInicio?: string, dataFim?: string, utenteId?: number, estado?: string) => {
+    obterPassadas: (dataInicio?: string, dataFim?: string, utenteId?: number, estado?: string, page = 0, size = 20, assunto?: string, nomeUtente?: string) => {
         const params = new URLSearchParams();
         if (dataInicio) params.append('dataInicio', dataInicio);
         if (dataFim) params.append('dataFim', dataFim);
         if (utenteId) params.append('utenteId', utenteId.toString());
         if (estado) params.append('estado', estado);
-        const query = params.toString() ? `?${params.toString()}` : '';
-        return apiRequest<MarcacaoResponse[]>(`/api/marcacoes/passadas${query}`, {
+        if (assunto) params.append('assunto', assunto);
+        if (nomeUtente) params.append('nomeUtente', nomeUtente);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return apiRequest<Page<MarcacaoResponse>>(`/api/marcacoes/passadas?${params.toString()}`, {
             method: 'GET',
         });
     },

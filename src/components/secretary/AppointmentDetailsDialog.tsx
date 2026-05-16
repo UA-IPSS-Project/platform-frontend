@@ -12,6 +12,7 @@ import { Input } from '../ui/input';
 import { toast } from 'sonner';
 import { XIcon, FileTextIcon, AlertTriangleIcon, UserIcon, ClockIcon, PhoneIcon, MailIcon, BellIcon, MenuIcon } from '../shared/CustomIcons';
 import { Download, Trash2, Upload } from 'lucide-react';
+import { maskNif } from '../../utils/maskNif';
 
 // EyeIcon SVG inline (usado para preview)
 function EyeIcon({ className }: { className?: string }) {
@@ -569,9 +570,11 @@ export function AppointmentDetailsDialog({
 
 
   // Função utilitária para saber se o documento tem preview
-  function hasPreview(nomeOriginal: string): boolean {
-    if (!nomeOriginal) return false;
-    const ext = nomeOriginal.split('.').pop()?.toLowerCase();
+  function hasPreview(doc: DocumentoDTO): boolean {
+    const mime = doc.tipoMime || doc.tipo;
+    if (mime && ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(mime)) return true;
+    if (!doc.nomeOriginal) return false;
+    const ext = doc.nomeOriginal.split('.').pop()?.toLowerCase();
     return ['jpeg', 'jpg', 'png', 'pdf'].includes(ext || '');
   }
 
@@ -642,7 +645,7 @@ export function AppointmentDetailsDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
                 <Label className="text-sm mb-2"># NIF</Label>
-                <p className="text-foreground">{appointment.patientNIF}</p>
+                <p className="text-foreground">{maskNif(appointment.patientNIF)}</p>
               </div>
 
               <div className="bg-muted/50 rounded-lg p-4 border border-border">
@@ -744,7 +747,7 @@ export function AppointmentDetailsDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {hasPreview(doc.nomeOriginal) && (
+                        {hasPreview(doc) && (
                           <button
                             type="button"
                             onClick={() => documentosApi.previewDocumento(doc.id)}
@@ -785,7 +788,6 @@ export function AppointmentDetailsDialog({
                                 <Trash2 className="w-4 h-4" />
                                 {t('appointmentDetails.removeDocument', 'Apagar')}
                               </button>
-                              {/* Só mostra o botão de documento inválido se NÃO for utente */}
                               {!isClient && (
                                 <button
                                   type="button"
@@ -811,8 +813,6 @@ export function AppointmentDetailsDialog({
                             </button>
                           )
                         )}
-
-
                       </div>
                     </div>
                   ))}

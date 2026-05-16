@@ -31,6 +31,7 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
 import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
+import { unwrapPage } from '../../utils/pagination';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -181,8 +182,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
                 format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
             );
-            const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
-            setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
+            const items = unwrapPage(data);
+            const mapped = items.map(mapApiToAppointment);
+            setHistoryAppointments(mapped.filter((a: any) => a.balnearioDetails !== undefined));
         } catch {
             toast.error('Erro ao carregar histórico');
         }

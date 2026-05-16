@@ -1,4 +1,4 @@
-import { apiRequest, API_BASE_URL, getCookie } from '../core/client';
+import { apiRequest, API_BASE_URL, getCookie, Page } from '../core/client';
 import { DocumentoDTO, PesquisaDocumentosParams } from './types';
 export const documentosApi = {
     // Preview inline de documento (abre em nova aba)
@@ -8,12 +8,16 @@ export const documentosApi = {
         window.open(url, '_blank', 'noopener');
     },
     // Upload de documento(s) para uma marcação
-    uploadDocumentos: async (marcacaoId: number, files: File[]): Promise<DocumentoDTO[]> => {
+    uploadDocumentos: async (marcacaoId: number, files: File[], finalidades?: Record<string, string>): Promise<DocumentoDTO[]> => {
         const uploadedDocs: DocumentoDTO[] = [];
 
         for (const file of files) {
             const formData = new FormData();
             formData.append('file', file);
+            const finalidade = finalidades?.[file.name];
+            if (finalidade) {
+                formData.append('finalidade', finalidade);
+            }
 
             const xsrfToken = getCookie('XSRF-TOKEN');
             const headers: Record<string, string> = {};
@@ -113,7 +117,7 @@ export const documentosApi = {
         }),
 
     // Pesquisar documentos por metadados
-    pesquisarDocumentos: (params: PesquisaDocumentosParams = {}) => {
+    pesquisarDocumentos: (params: PesquisaDocumentosParams = {}, page = 0, size = 20) => {
         const searchParams = new URLSearchParams();
 
         if (params.nomeOriginal?.trim()) searchParams.append('nomeOriginal', params.nomeOriginal.trim());
@@ -123,11 +127,10 @@ export const documentosApi = {
         if (params.utenteNif?.trim()) searchParams.append('utenteNif', params.utenteNif.trim());
         if (params.marcacaoDesde?.trim()) searchParams.append('marcacaoDesde', params.marcacaoDesde.trim());
         if (params.marcacaoAte?.trim()) searchParams.append('marcacaoAte', params.marcacaoAte.trim());
+        searchParams.append('page', page.toString());
+        searchParams.append('size', size.toString());
 
-        const query = searchParams.toString();
-        const endpoint = query ? `/api/documentos/pesquisar?${query}` : '/api/documentos/pesquisar';
-
-        return apiRequest<DocumentoDTO[]>(endpoint, {
+        return apiRequest<Page<DocumentoDTO>>(`/api/documentos/pesquisar?${searchParams.toString()}`, {
             method: 'GET',
         });
     },

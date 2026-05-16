@@ -17,6 +17,7 @@ import { capitalizeFirstLetter } from '../../utils/formatters';
 import { useTranslation } from 'react-i18next';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
+import { PrivacyNotice } from '../shared/PrivacyNotice';
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -48,6 +49,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     description: '',
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [finalidades, setFinalidades] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isDirty = useMemo(() => {
@@ -273,7 +275,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
       if (selectedFiles.length > 0) {
         try {
-          await documentosApi.uploadDocumentos(response.id, selectedFiles);
+          await documentosApi.uploadDocumentos(response.id, selectedFiles, finalidades);
           toast.success(t('appointmentDialog.messages.documentsUploaded', { count: selectedFiles.length }));
         } catch (uploadError) {
           console.error('Erro ao enviar documentos:', uploadError);
@@ -490,6 +492,38 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
                 isUploading={isLoading}
               />
             </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-foreground text-sm font-medium">
+                  {t('documentUpload.label', 'Finalidade por documento (opcional)')}
+                </Label>
+                {selectedFiles.map((file) => (
+                  <div key={file.name} className="space-y-1">
+                    <span className="text-xs text-muted-foreground truncate block">{file.name}</span>
+                    <Select
+                      value={finalidades[file.name] || ''}
+                      onValueChange={(val) => setFinalidades(prev => ({ ...prev, [file.name]: val }))}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger className="bg-card border-border text-foreground">
+                        <SelectValue placeholder={t('documentUpload.purposePlaceholder', 'Selecione a finalidade...')} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border">
+                        <SelectItem value="residence_proof" className="text-popover-foreground">{t('documentUpload.purposes.residenceProof', 'Comprovativo de residência')}</SelectItem>
+                        <SelectItem value="medical_certificate" className="text-popover-foreground">{t('documentUpload.purposes.medicalCertificate', 'Certificado médico')}</SelectItem>
+                        <SelectItem value="id_document" className="text-popover-foreground">{t('documentUpload.purposes.idDocument', 'Documento de identificação')}</SelectItem>
+                        <SelectItem value="income_proof" className="text-popover-foreground">{t('documentUpload.purposes.incomeProof', 'Comprovativo de rendimentos')}</SelectItem>
+                        <SelectItem value="parental_authorization" className="text-popover-foreground">{t('documentUpload.purposes.parentalAuthorization', 'Autorização parental')}</SelectItem>
+                        <SelectItem value="other" className="text-popover-foreground">{t('documentUpload.purposes.other', 'Outro')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <PrivacyNotice context="appointment" />
 
             <div className="flex gap-3 pt-4">
               <Button type="button" variant="outline" onClick={requestClose} className="flex-1 border-border" disabled={isLoading}>

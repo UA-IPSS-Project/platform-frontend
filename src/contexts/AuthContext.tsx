@@ -174,8 +174,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
     setIsAuthenticated(true);
 
-    localStorage.setItem('user', JSON.stringify(userData)); // Optional: cache user info, but NOT token
-    localStorage.setItem('lastActivity', Date.now().toString());
+    updateActivity();
+    localStorage.removeItem('user'); // Remove legacy sensitive data from older versions
 
     // Clear legacy dashboard views
     localStorage.removeItem('userDashboardView');
@@ -185,9 +185,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogoutState = () => {
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('user');
     localStorage.removeItem('lastActivity');
     localStorage.removeItem('token'); // Clear legacy token if exists
+    // Clear dashboard view history so next login starts at home page
+    localStorage.removeItem('secretaryDashboardViewHistory');
+    localStorage.removeItem('balnearioDashboardViewHistory');
+    localStorage.removeItem('escolaDashboardView');
+    localStorage.removeItem('internoDashboardView');
   };
 
   const login = async (identifier: string, password: string, type: 'funcionario' | 'utente') => {
@@ -269,7 +273,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         const updated = { ...user, active: true, requiresPasswordSetup: false };
         setUser(updated);
-        localStorage.setItem('user', JSON.stringify(updated));
       }
     } catch (error) {
       console.error('Erro ao definir password:', error);

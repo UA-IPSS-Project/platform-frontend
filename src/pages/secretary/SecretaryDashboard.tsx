@@ -36,6 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useFormTypes } from '@/hooks/useFormTypes';
 import { type FormTypeResponse } from '@/services/api';
+import { unwrapPage } from '../../utils/pagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -203,7 +204,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
         format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
       );
-      setHistoryAppointments((Array.isArray(data) ? data : []).map(mapApiToAppointment));
+      const items = unwrapPage(data);
+      setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
     }

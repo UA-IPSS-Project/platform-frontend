@@ -14,6 +14,7 @@ import { useIsMobile } from '../ui/use-mobile';
 import { marcacoesApi, armazemApi, requisicoesApi, Notificacao } from '../../services/api';
 import { formatDistanceToNow } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { unwrapPage } from '../../utils/pagination';
 
 interface BalnearioHomeProps {
     isDarkMode: boolean;
@@ -44,7 +45,8 @@ export default function BalnearioHome({ onNavigate, notifications = [] }: Balnea
 
                 setMarcacoesHoje(estatisticasBalneario.totalMarcacoes?.toString() || '0');
                 setConsumosHoje(estatisticasConsumo.totalGeral?.toString() || '0');
-                setRequisicoesPendentes(todasRequisicoes.length.toString());
+                const reqItems = unwrapPage(todasRequisicoes);
+                setRequisicoesPendentes(reqItems.length.toString());
             } catch (error) {
                 console.error('Erro ao carregar estatísticas do balneário:', error);
                 setMarcacoesHoje('0');

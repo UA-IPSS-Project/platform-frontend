@@ -42,10 +42,8 @@ function SlotsManagement({
                     </p>
                 </div>
 
-                {/* Single slot — horizontal card with prominent value display */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                     <div className="flex flex-col sm:flex-row items-stretch">
-                        {/* Left: icon + title + description */}
                         <div className="flex items-center gap-4 p-6 sm:flex-1">
                             <div className="flex-shrink-0 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                                 <CalendarDays className="w-6 h-6" />
@@ -56,11 +54,9 @@ function SlotsManagement({
                             </div>
                         </div>
 
-                        {/* Divider */}
                         <div className="hidden sm:block w-px bg-border my-4" />
                         <div className="block sm:hidden h-px bg-border mx-6" />
 
-                        {/* Right: current value display + input */}
                         <div className="flex items-center gap-6 p-6 sm:w-72">
                             <div className="text-center min-w-[3rem]">
                                 <p className="text-5xl font-bold text-primary leading-none">{savedCapacities.SECRETARIA}</p>
@@ -102,12 +98,8 @@ function SlotsManagement({
 
 export function SecretaryAdminArea() {
     const { t } = useTranslation();
-    const [slotCapacities, setSlotCapacities] = useState({
-        SECRETARIA: 1,
-    });
-    const [savedCapacities, setSavedCapacities] = useState({
-        SECRETARIA: 1,
-    });
+    const [slotCapacities, setSlotCapacities] = useState({ SECRETARIA: 1 });
+    const [savedCapacities, setSavedCapacities] = useState({ SECRETARIA: 1 });
     const [catalogCounts, setCatalogCounts] = useState({
         materiais: 0,
         transportes: 0,
@@ -148,8 +140,8 @@ export function SecretaryAdminArea() {
                 setCatalogCounts({
                     materiais: Array.isArray(materiais) ? materiais.length : 0,
                     transportes: Array.isArray(transportes) ? transportes.length : 0,
-                    tiposManutencao: Array.isArray(manutencaoItems) 
-                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size 
+                    tiposManutencao: Array.isArray(manutencaoItems)
+                        ? new Set(manutencaoItems.map((i: ManutencaoItem) => i.categoria).filter(Boolean)).size
                         : 0,
                     assuntosAtivos: Array.isArray(assuntos) ? assuntos.length : 0,
                 });
@@ -240,6 +232,7 @@ export function SecretaryAdminArea() {
                     </GlassCard>
                 ))}
             </div>
+
             <SlotsManagement
                 isLoadingSlots={isLoadingSlots}
                 isSavingSlots={isSavingSlots}
@@ -258,7 +251,7 @@ export function SecretaryAdminArea() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-6">
                     {t('dashboard.admin.assuntos.sectionDescription')}
                 </p>
-                
+
                 <SubjectManagement />
             </GlassCard>
 
@@ -270,7 +263,7 @@ export function SecretaryAdminArea() {
                 <p className="mt-1 text-sm text-muted-foreground max-w-2xl mb-4">
                     {t('dashboard.admin.catalogs.description')}
                 </p>
-                
+
                 <h2 className="text-xl font-semibold text-foreground mb-6">
                     {t('dashboard.admin.catalogs.managementTitle')}
                 </h2>

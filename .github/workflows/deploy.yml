@@ -1,0 +1,28 @@
+name: Deploy Frontend to Azure VM
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, ipss-vm]
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Deploy Frontend Direct on VM
+        run: |
+          set -euo pipefail
+          # Entrar na pasta do frontend e atualizar o código
+          cd /home/florinhasuser/ipss-digital/platform-frontend
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Voltar à pasta mãe e reconstruir
+          cd ../platform-backend
+          docker compose up -d --build
+          
+          # Limpeza de imagens antigas
+          docker image prune -f

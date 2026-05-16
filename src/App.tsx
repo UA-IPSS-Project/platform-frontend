@@ -15,6 +15,8 @@ import AbstractBackground from './components/shared/AbstractBackground';
 import { useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { LanguageToggle } from './components/shared/LanguageToggle';
+import { TermsReacceptanceModal } from './components/dialogs/TermsReacceptanceModal';
+import { useTermsCheck } from './hooks/useTermsCheck';
 
 function App() {
   const getInitialTheme = () => {
@@ -22,12 +24,14 @@ function App() {
     const stored = localStorage.getItem('theme');
     if (stored === 'dark') return true;
     if (stored === 'light') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return false; // default: light
   };
 
   const [registerInitialType, setRegisterInitialType] = useState<'user' | 'employee'>('user');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(getInitialTheme);
   const { user, isAuthenticated, logout, isLoading } = useAuth();
+
+  const { needsAcceptance, currentVersion, accept } = useTermsCheck(isAuthenticated);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -112,6 +116,11 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Clear dashboard view history so next login starts at home page
+    localStorage.removeItem('secretaryDashboardViewHistory');
+    localStorage.removeItem('balnearioDashboardViewHistory');
+    localStorage.removeItem('escolaDashboardView');
+    localStorage.removeItem('internoDashboardView');
     logout();
     navigate('/login');
   };
@@ -273,6 +282,12 @@ function App() {
           </div>
 
         </div>
+
+        <TermsReacceptanceModal
+          isOpen={isAuthenticated && needsAcceptance}
+          version={currentVersion}
+          onAccept={accept}
+        />
 
         <Toaster 
           richColors 
