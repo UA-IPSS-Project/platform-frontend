@@ -111,3 +111,26 @@ export interface CandidaturaStatusUpdate {
   estado: CandidaturaEstado;
   assinado?: boolean;
 }
+
+export interface SecretaryDraftResponse {
+  id: string;
+  candidaturaId: string;
+  respostas: Record<string, unknown>;
+  atualizadoPor?: number;
+  atualizadoPorNome?: string;
+  atualizadoEm?: string;
+}
+
+export interface SecretaryDraftSave {
+  respostas: Record<string, unknown>;
+}
+
+export interface CandidaturaDocumentoDTO {
+  id: string;
+  candidaturaId: string;
+  nomeOriginal: string;
+  tipo: string;
+  tamanho: number;
+  uploadedEm: string;
+  uploadedPor?: number;
+}
