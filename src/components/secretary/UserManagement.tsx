@@ -1,6 +1,8 @@
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { utilizadoresApi } from '../../services/api';
 import { maskNif } from '../../utils/maskNif';
+import { useDebounce } from '../../hooks/useDebounce';
+import { PAGINATION } from '../../config/pagination';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -168,52 +170,50 @@ export function UserManagement() {
         }
     };
 
-    useEffect(() => {
-        setCurrentPage(1);
-        const t = setTimeout(() => fetchUsers(searchQuery), 300);
-        return () => clearTimeout(t);
-    }, [searchQuery]);
-
-    useEffect(() => {
-        setCurrentPageUtentes(1);
-        const t = setTimeout(() => fetchUtentes(searchQueryUtentes), 300);
-        return () => clearTimeout(t);
-    }, [searchQueryUtentes]);
+    useDebounce(() => { setCurrentPage(1); fetchUsers(searchQuery); }, [searchQuery]);
+    useDebounce(() => { setCurrentPageUtentes(1); fetchUtentes(searchQueryUtentes); }, [searchQueryUtentes]);
 
     useEffect(() => {
         fetchUsers();
         fetchUtentes();
     }, []);
 
+    const abortUsersRef = useRef<AbortController | null>(null);
+    const abortUtentesRef = useRef<AbortController | null>(null);
+
     const fetchUsers = async (nome?: string) => {
+        abortUsersRef.current?.abort();
+        abortUsersRef.current = new AbortController();
         setIsLoading(true);
         try {
-            const data = await utilizadoresApi.listarFuncionarios(nome || undefined, undefined, 0, 200);
+            const data = await utilizadoresApi.listarFuncionarios(nome || undefined, undefined, PAGINATION.DEFAULT_PAGE, PAGINATION.USERS_PAGE_SIZE);
             const list = Array.isArray(data) ? data : data.content ?? [];
             const sorted = [...list].sort((a, b) => {
                 if (a.active !== b.active) return a.active ? 1 : -1;
                 return (b.id || 0) - (a.id || 0);
             });
             setUsers(sorted);
-        } catch (error) {
-            console.error("Failed to fetch users", error);
+        } catch (error: any) {
+            if (error?.name !== 'AbortError') console.error("Failed to fetch users", error);
         } finally {
             setIsLoading(false);
         }
     };
 
     const fetchUtentes = async (nome?: string) => {
+        abortUtentesRef.current?.abort();
+        abortUtentesRef.current = new AbortController();
         setIsLoadingUtentes(true);
         try {
-            const data = await utilizadoresApi.listarUtentes(nome || undefined, 0, 200);
+            const data = await utilizadoresApi.listarUtentes(nome || undefined, PAGINATION.DEFAULT_PAGE, PAGINATION.USERS_PAGE_SIZE);
             const list = Array.isArray(data) ? data : data.content ?? [];
             const sorted = [...list].sort((a, b) => {
                 if (a.active !== b.active) return a.active ? 1 : -1;
                 return (b.id || 0) - (a.id || 0);
             });
             setUtentes(sorted);
-        } catch (error) {
-            console.error("Failed to fetch utentes", error);
+        } catch (error: any) {
+            if (error?.name !== 'AbortError') console.error("Failed to fetch utentes", error);
         } finally {
             setIsLoadingUtentes(false);
         }
