@@ -33,7 +33,7 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useFormTypes } from '@/hooks/useFormTypes';
 import { type FormTypeResponse } from '@/services/api';
 import {
@@ -64,6 +64,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const { user: authUser, isLoading: authLoading } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const { formTypes } = useFormTypes();
   const formTypeKeys = formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase());
@@ -157,6 +158,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
+      if (isCandidaturaDetailView) {
+        navigate('/dashboard');
+      }
       setViewHistory(prev => [...prev, view]);
     }
   };
@@ -171,6 +175,9 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
     setShowLeaveConfirm(false);
     if (pendingNavigation) {
+      if (isCandidaturaDetailView) {
+        navigate('/dashboard');
+      }
       setViewHistory(prev => [...prev, pendingNavigation]);
       setPendingNavigation(null);
     }
