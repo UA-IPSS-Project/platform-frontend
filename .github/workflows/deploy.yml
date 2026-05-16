@@ -6,24 +6,18 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, ipss-vm]
+
     steps:
-      - name: Deploy Frontend
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            # 1. Entrar apenas na pasta do frontend
-            cd /home/florinhasuser/ipss-digital/platform-frontend
-            
-            # 2. Puxar o código novo
-            git pull origin main
-            
-            # 3. Voltar à pasta mãe e reconstruir APENAS o frontend
-            cd ..
-            sudo docker-compose up -d --build frontend
-            
-            # 4. Limpeza
-            sudo docker image prune -f
+      - name: Deploy Frontend Direct on VM
+        run: |
+          # Entrar na pasta do frontend e atualizar o código
+          cd /home/florinhasuser/ipss-digital/platform-frontend
+          git pull origin main
+          
+          # Voltar à pasta mãe e reconstruir
+          cd ../platform-backend
+          docker compose up -d --build
+          
+          # Limpeza de imagens antigas
+          docker image prune -f
