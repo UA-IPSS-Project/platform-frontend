@@ -7,6 +7,8 @@ import {
   CandidaturaCreate,
   FormCreate,
   FormResponse,
+  FormDraftResponse,
+  FormDraftSave,
   FormTypeResponse,
   ListarCandidaturasFilters,
 } from './types';
@@ -54,6 +56,20 @@ export const candidaturasApi = {
 
   apagarFormulario: (id: string) =>
     apiRequest<void>(`/api/forms/${id}`, {
+      method: 'DELETE',
+    }),
+
+  obterRascunhoFormulario: (id: string) =>
+    apiRequest<FormDraftResponse | null>(`/api/forms/${id}/draft`),
+
+  guardarRascunhoFormulario: (id: string, payload: FormDraftSave) =>
+    apiRequest<FormDraftResponse>(`/api/forms/${id}/draft`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  apagarRascunhoFormulario: (id: string) =>
+    apiRequest<void>(`/api/forms/${id}/draft`, {
       method: 'DELETE',
     }),
 
