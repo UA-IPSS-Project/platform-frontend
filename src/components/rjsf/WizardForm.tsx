@@ -20,48 +20,7 @@ const templates = {
   FieldTemplate: RjsfFieldTemplate,
 };
 
-function buildPageSchemas(form: FormResponse) {
-  if (!form.pages || form.pages.length === 0) {
-    return [{
-      schema: form.schema as RJSFSchema,
-      uiSchema: (form.uiSchema || {}) as UiSchema,
-    }];
-  }
-
-  return form.pages.map((page) => {
-    const properties: Record<string, any> = {};
-    const schema = form.schema as any;
-
-    page.fields.forEach((key) => {
-      if (schema.properties && schema.properties[key]) {
-        properties[key] = schema.properties[key];
-      }
-    });
-
-    const required = (schema.required ?? []).filter((key: string) =>
-      page.fields.includes(key)
-    );
-
-    const uiSchema: Record<string, any> = {};
-    const originalUiSchema = (form.uiSchema || {}) as Record<string, any>;
-
-    page.fields.forEach((key) => {
-      if (key in originalUiSchema) {
-        uiSchema[key] = originalUiSchema[key];
-      }
-    });
-
-    return {
-      schema: {
-        type: 'object',
-        title: page.title,
-        properties,
-        ...(required.length ? { required } : {}),
-      } as RJSFSchema,
-      uiSchema: uiSchema as UiSchema,
-    };
-  });
-}
+import { buildPageSchemas } from '@/utils/formAdapter';
 
 export function WizardForm({ form, onSubmit, onSaveDraft, isSubmitting = false }: WizardFormProps) {
   const [currentPage, setCurrentPage] = useState(0);

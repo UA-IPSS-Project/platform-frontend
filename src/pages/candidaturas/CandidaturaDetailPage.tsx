@@ -13,6 +13,7 @@ import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard
 import { CandidaturaStatusChangeDialog } from '../../components/candidaturas/CandidaturaStatusChangeDialog';
 import { CandidaturasStatusBadge } from '../../components/candidaturas/CandidaturasStatusBadge';
 import { candidaturasApi, type CandidaturaEstado } from '../../services/api';
+import { buildFullFormSchema } from '../../utils/formAdapter';
 
 const toStatusLabel = (estado: string, t: (key: string) => string): string => {
   if (estado === 'APROVADA') return t('applications.flow.status.approved');
@@ -75,8 +76,14 @@ export function CandidaturaDetailPage() {
 
         const form = await candidaturasApi.obterFormularioPorId(candidatura.formId);
 
-        setSchemaFromApi((form?.schema as RJSFSchema) || ({ type: 'object', properties: {} } as RJSFSchema));
-        setUiSchemaFromApi(form?.uiSchema || {});
+        if (form?.pages) {
+          const { schema: generatedSchema, uiSchema: generatedUiSchema } = buildFullFormSchema(form.pages);
+          setSchemaFromApi(generatedSchema);
+          setUiSchemaFromApi(generatedUiSchema);
+        } else {
+          setSchemaFromApi({ type: 'object', properties: {} } as RJSFSchema);
+          setUiSchemaFromApi({});
+        }
       } catch (error) {
         toast.error(t('applications.detail.messages.loadError'));
       } finally {
