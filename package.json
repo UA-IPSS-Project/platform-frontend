@@ -38,7 +38,7 @@
             "framer-motion": "^11.11.11",
             "i18next": "^25.8.18",
             "i18next-browser-languagedetector": "^8.2.1",
-            "i18next-http-backend": "^3.0.2",
+            "i18next-http-backend": "^3.0.5",
             "input-otp": "^1.4.2",
             "jspdf": "^4.2.1",
             "jspdf-autotable": "^5.0.7",
@@ -65,7 +65,8 @@
             "lighthouse": "^12.3.0",
             "puppeteer": "^24.39.1",
             "tailwindcss": "^4.1.18",
-            "vite": "6.3.5"
+            "typescript": "^5.9.3",
+            "vite": "^6.4.2"
       },
       "scripts": {
             "dev": "vite",

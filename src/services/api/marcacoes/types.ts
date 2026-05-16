@@ -15,6 +15,21 @@ export interface MarcacaoRemotaRequest {
     linkReuniao: string;
 }
 
+export interface AttendanceData {
+    data: string;
+    quantidade: number;
+}
+
+export interface BalnearioAttendanceStats {
+    periodo: string;
+    totalPresencas: number;
+    totalMarcacoes: number;
+    totalFaltou: number;
+    totalAgendadas: number;
+    presencasPorDia: AttendanceData[];
+    presencasPorHora: Record<number, number>;
+}
+
 export interface MarcacaoResponse {
     id: number;
     version: number;
@@ -34,4 +49,10 @@ export interface MarcacaoResponse {
             telefone?: string;
         };
     };
+}
+
+export interface Assunto {
+    id: number;
+    nome: string;
+    ativo: boolean;
 }

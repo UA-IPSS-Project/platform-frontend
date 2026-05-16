@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
@@ -16,28 +16,33 @@ import {
     AlertDialogAction,
 } from '../ui/alert-dialog';
 import { armazemApi, ItemArmazemDTO, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
+import { marcacoesApi } from '../../services/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BalnearioCharts } from './BalnearioCharts';
 
 interface BalnearioConsumosPageProps {
     isDarkMode: boolean;
+    variant?: 'armazem' | 'estatisticas';
 }
 
-type TabType = 'armazem' | 'estatisticas';
+const BASE_CATEGORIES = [
+    { id: 'HIGIENE', labelKey: 'consumos.categories.higiene' },
+    { id: 'DETERGENTES', labelKey: 'consumos.categories.detergentes' },
+    { id: 'VESTUARIO', labelKey: 'consumos.categories.vestuario' },
+    { id: 'CALCADO', labelKey: 'consumos.categories.calcado' },
+];
 
-export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioConsumosPageProps) {
+export function BalnearioConsumosPage({ isDarkMode: _isDarkMode, variant = 'armazem' }: BalnearioConsumosPageProps) {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<TabType>('armazem');
     const [items, setItems] = useState<ItemArmazemDTO[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [editingItems, setEditingItems] = useState<Record<number, { quantidade: number; quantidadeMinima: number }>>({});
     const [savingItems, setSavingItems] = useState<Set<number>>(new Set());
     const [editingMinimos, setEditingMinimos] = useState(false);
 
-    // Unsaved changes warning
-    const [pendingTab, setPendingTab] = useState<TabType | null>(null);
-
     // Estatísticas
     const [stats, setStats] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [attendanceStats, setAttendanceStats] = useState<any>(null);
     const [statsPeriodo, setStatsPeriodo] = useState<'DIA' | 'SEMANA' | 'MES'>('MES');
     const [statsLoading, setStatsLoading] = useState(false);
     const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
@@ -57,24 +62,31 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
     const carregarEstatisticas = useCallback(async () => {
         try {
             setStatsLoading(true);
-            const data = await armazemApi.obterEstatisticas(statsPeriodo);
+            const [data, attendanceData] = await Promise.all([
+                armazemApi.obterEstatisticas(statsPeriodo),
+                marcacoesApi.obterEstatisticasFrequenciaBalneario(statsPeriodo)
+            ]);
             setStats(data);
-        } catch {
+            setAttendanceStats(attendanceData);
+        } catch (e) {
+            console.error(e);
             toast.error(t('consumos.statsError', 'Erro ao carregar estatísticas'));
         } finally {
             setStatsLoading(false);
         }
     }, [statsPeriodo, t]);
 
+    const actualTab = variant; // Using the passed variant directly
+
     useEffect(() => {
         carregarItens();
     }, [carregarItens]);
 
     useEffect(() => {
-        if (activeTab === 'estatisticas') {
+        if (actualTab === 'estatisticas') {
             carregarEstatisticas();
         }
-    }, [activeTab, carregarEstatisticas]);
+    }, [actualTab, carregarEstatisticas]);
 
     // Global unsaved changes warning (for browser reload/close)
     useEffect(() => {
@@ -164,53 +176,43 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         }
     };
 
-    // Tab switching with unsaved changes warning
-    const handleTabSwitch = (newTab: TabType) => {
-        if (newTab === activeTab) return;
-        if (activeTab === 'armazem' && (anyChanges || editingMinimos)) {
-            setPendingTab(newTab);
-        } else {
-            setActiveTab(newTab);
-        }
-    };
-
-    const confirmTabSwitch = () => {
-        if (pendingTab) {
-            setEditingItems({});
-            setEditingMinimos(false);
-            setActiveTab(pendingTab);
-            setPendingTab(null);
-        }
-    };
-
     const toggleCategory = (cat: string) => {
         setCollapsedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
     };
 
-    // =====================================================================
-    // GROUPING
-    // =====================================================================
+    const categories = useMemo(() => {
+        const itemCategories = Array.from(new Set(items.map(i => i.categoria.toUpperCase())));
+        const baseIds = BASE_CATEGORIES.map(bc => bc.id);
 
-    const groupedItems = items.reduce<Record<string, ItemArmazemDTO[]>>((acc, item) => {
-        if (!acc[item.categoria]) acc[item.categoria] = [];
-        acc[item.categoria].push(item);
-        return acc;
-    }, {
-        'HIGIENE': [],
-        'DETERGENTES': [],
-        'VESTUARIO': [],
-        'CALCADO': []
-    });
+        const allCategories = [...BASE_CATEGORIES];
+        itemCategories.forEach(cat => {
+            if (!baseIds.includes(cat)) {
+                allCategories.push({ id: cat, labelKey: '' });
+            }
+        });
+        // Only return categories that actually have items, or are base ones, and sort CALCADO last
+        return allCategories
+            .filter(cat => itemCategories.includes(cat.id) || baseIds.includes(cat.id))
+            .sort((a, b) => {
+                if (a.id === 'CALCADO') return 1;
+                if (b.id === 'CALCADO') return -1;
+                return a.id.localeCompare(b.id);
+            });
+    }, [items]);
 
-    const getCategoryLabel = (cat: string) => {
-        switch (cat) {
-            case 'DETERGENTES': return t('consumos.categories.detergentes', 'Detergentes');
-            case 'HIGIENE': return t('consumos.categories.higiene', 'Higiene');
-            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
-            case 'CALCADO': return t('consumos.categories.calcado', 'Calçado');
-            case 'VESTUARIO': return t('consumos.categories.vestuario', 'Vestuário');
-            default: return cat;
-        }
+    const groupedItems = useMemo(() => {
+        return items.reduce<Record<string, ItemArmazemDTO[]>>((acc, item) => {
+            const cat = item.categoria.toUpperCase();
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(item);
+            return acc;
+        }, {});
+    }, [items]);
+
+    const getCategoryLabel = (catId: string) => {
+        const cat = categories.find(c => c.id === catId.toUpperCase());
+        if (cat?.labelKey) return t(cat.labelKey);
+        return catId;
     };
 
     // =====================================================================
@@ -226,16 +228,16 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         const changed = hasItemChanges(item);
 
         return (
-            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-gray-100 dark:border-gray-700/30 last:border-b-0">
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {isCalcado ? `${t('consumos.size', 'Tamanho')} ${item.nome}` : t(`consumos.products.${item.nome}`, item.nome)}
+            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 py-3 border-b border-border last:border-b-0">
+                <span className="font-medium text-foreground">
+                    {isCalcado ? item.nome : t(`consumos.products.${item.nome}`, item.nome)}
                 </span>
 
                 {/* Quantity controls */}
                 <div className="flex items-center gap-2 w-40 justify-center">
                     <button
                         onClick={() => handleQuantidadeChange(item, -1)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         aria-label="Diminuir"
                     >
                         <Minus className="w-3.5 h-3.5" />
@@ -246,15 +248,15 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         onChange={(e) => handleQuantidadeInput(item, e.target.value)}
                         className={`w-16 h-8 text-center text-sm font-semibold border rounded-lg ${
                             estado === 'BAIXO'
-                                ? 'border-red-300 bg-red-50 text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                : 'border-gray-200 bg-white dark:border-gray-600 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
+                                ? 'border-[color:var(--status-error)]/40 bg-[color:var(--status-error-soft)] text-[color:var(--status-error)]'
+                                : 'border-border bg-background text-foreground'
                         }`}
                         min={0}
                     />
-                    <span className="text-xs text-gray-400 w-8">{item.unidade}</span>
+                    <span className="text-xs text-muted-foreground w-8">{item.unidade}</span>
                     <button
                         onClick={() => handleQuantidadeChange(item, 1)}
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
                         aria-label="Aumentar"
                     >
                         <Plus className="w-3.5 h-3.5" />
@@ -268,11 +270,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             type="number"
                             value={min}
                             onChange={(e) => handleMinimoChange(item, e.target.value)}
-                            className="w-16 h-8 text-center text-sm mx-auto border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800"
+                            className="w-16 h-8 text-center text-sm mx-auto border-border bg-background"
                             min={0}
                         />
                     ) : (
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{min} {item.unidade}</span>
+                        <span className="text-sm text-muted-foreground">{min} {item.unidade}</span>
                     )}
                 </div>
 
@@ -283,16 +285,16 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             size="sm"
                             onClick={() => handleSaveItem(item)}
                             disabled={isSaving}
-                            className="h-7 px-2 bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                            className="h-7 px-2 bg-primary hover:bg-primary/90 text-primary-foreground text-xs"
                         >
                             <Save className="w-3 h-3 mr-1" />
                             {isSaving ? '...' : t('consumos.save', 'Guardar')}
                         </Button>
                     ) : (
-                        <Badge className={`text-xs px-3 py-1 ${
+                        <Badge className={`text-xs px-3 py-1 font-bold rounded-md border-none ${
                             estado === 'OK'
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800'
+                                ? 'bg-emerald-600/90 text-white hover:bg-emerald-600'
+                                : 'bg-red-800/90 text-white hover:bg-red-800'
                         }`}>
                             {estado === 'OK' ? (
                                 <span>OK</span>
@@ -317,7 +319,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (isLoading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 </div>
             );
         }
@@ -326,7 +328,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
             <div className="space-y-6">
                 {/* Action bar */}
                 <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                         {t('consumos.armazemDescription', 'Gestão de inventário do balneário. Clique nos valores para editar.')}
                     </p>
                     <div className="flex items-center gap-2">
@@ -334,14 +336,14 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             variant={editingMinimos ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setEditingMinimos(!editingMinimos)}
-                            className={editingMinimos ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
+                            className={editingMinimos ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}
                         >
                             {editingMinimos ? t('consumos.exitEditing', 'Sair da edição') : t('consumos.editMinimos', 'Editar Mínimos')}
                         </Button>
                         {anyChanges && (
                             <Button
                                 onClick={handleSaveAll}
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 size="sm"
                             >
                                 <Save className="w-4 h-4 mr-1" />
@@ -352,25 +354,22 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                 </div>
 
                 {/* All categories rendered as white cards with table layout */}
-                {Object.keys(groupedItems).sort((a, b) => {
-                    if (a === 'CALCADO') return 1;
-                    if (b === 'CALCADO') return -1;
-                    return a.localeCompare(b);
-                }).map(categoria => {
-                    const catItems = groupedItems[categoria];
+                {categories.map(catData => {
+                    const categoria = catData.id;
+                    const catItems = groupedItems[categoria] || [];
                     const isCollapsed = collapsedCategories[categoria];
 
                     return (
-                        <div key={categoria} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm mb-6">
+                        <div key={categoria} className="bg-card rounded-2xl border border-border p-6 shadow-sm mb-6">
                             <div 
                                 className="flex items-center justify-between mb-5 cursor-pointer select-none group"
                                 onClick={() => toggleCategory(categoria)}
                             >
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 uppercase tracking-tight">
+                                <h2 className="text-2xl font-bold text-foreground uppercase tracking-tight">
                                     {getCategoryLabel(categoria)}
                                 </h2>
                                 <button
-                                    className="p-1.5 rounded-full bg-gray-50 dark:bg-gray-800 text-gray-500 group-hover:bg-gray-100 group-hover:text-gray-700 dark:group-hover:bg-gray-700 transition-colors"
+                                    className="p-1.5 rounded-full bg-muted/60 text-muted-foreground group-hover:bg-muted group-hover:text-foreground transition-colors"
                                 >
                                     {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
                                 </button>
@@ -380,32 +379,32 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                                     {/* Table Header */}
                                     <div className={categoria === 'CALCADO' ? "grid grid-cols-1 lg:grid-cols-2 gap-x-8" : ""}>
-                                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-border/70">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                                 {categoria === 'CALCADO' ? t('consumos.size', 'Tamanho') : t('consumos.product', 'Produto')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-40">
                                                 {t('consumos.quantity', 'Quantidade')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                 {t('consumos.minimum', 'Mínimo')}
                                             </span>
-                                            <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                 {t('consumos.status', 'Estado')}
                                             </span>
                                         </div>
                                         {categoria === 'CALCADO' && (
-                                            <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-gray-200/60 dark:border-gray-700/60">
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            <div className="hidden lg:grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-2 pb-2 border-b border-border/70">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                                     {t('consumos.size', 'Tamanho')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-40">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-40">
                                                     {t('consumos.quantity', 'Quantidade')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                     {t('consumos.minimum', 'Mínimo')}
                                                 </span>
-                                                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-center w-24">
+                                                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center w-24">
                                                     {t('consumos.status', 'Estado')}
                                                 </span>
                                             </div>
@@ -413,7 +412,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                     </div>
 
                                     {catItems.length === 0 ? (
-                                        <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        <div className="py-6 text-center text-sm text-muted-foreground">
                                             {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
                                         </div>
                                     ) : (
@@ -427,8 +426,8 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
                                     {/* Total count for calçado */}
                                     {categoria === 'CALCADO' && (
-                                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                        <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border">
+                                            <span className="text-sm text-muted-foreground">
                                                 {t('consumos.totalInStock', 'Total em stock')}: <strong>
                                                     {catItems.reduce((sum, item) => {
                                                         const editing = editingItems[item.id];
@@ -455,53 +454,39 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
         if (statsLoading) {
             return (
                 <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 </div>
             );
         }
 
         if (!stats) return null;
 
-        // Aggregate by category for summary cards
-        const catLabels: Record<string, string> = {
-            'HIGIENE': getCategoryLabel('HIGIENE'),
-            'DETERGENTES': getCategoryLabel('DETERGENTES'),
-            'VESTUARIO': getCategoryLabel('VESTUARIO'),
-            'CALCADO': getCategoryLabel('CALCADO'),
-        };
+        const catLabels: Record<string, string> = categories.reduce((acc, cat) => ({
+            ...acc,
+            [cat.id]: getCategoryLabel(cat.id)
+        }), {});
 
 
-        // Aggregate by category for category summary
-        const catTotals = {
-            'HIGIENE': stats.totaisPorCategoria['HIGIENE'] || 0,
-            'DETERGENTES': stats.totaisPorCategoria['DETERGENTES'] || 0,
-            'VESTUARIO': stats.totaisPorCategoria['VESTUARIO'] || 0,
-            'CALCADO': stats.totaisPorCategoria['CALCADO'] || 0,
-            ...Object.entries(stats.totaisPorCategoria)
-                .filter(([cat]) => !['HIGIENE', 'DETERGENTES', 'CALCADO', 'VESTUARIO'].includes(cat))
-                .reduce((acc, [cat, val]) => ({ ...acc, [cat]: val }), {})
-        } as Record<string, number>;
+        const catTotals = categories.reduce((acc, cat) => ({
+            ...acc,
+            [cat.id]: stats.totaisPorCategoria[cat.id] || 0
+        }), {} as Record<string, number>);
 
-        const getCatBarColorHex = (cat: string) => {
-            switch (cat) {
-                case 'HIGIENE': return '#EC4899';
-                case 'DETERGENTES': return '#22C55E';
-                case 'VESTUARIO': return '#3B82F6';
-                case 'CALCADO': return '#A855F7';
-                case 'VESTUARIO': return '#3B82F6';
-                default: return '#6B7280';
-            }
-        };
+        // Mesma paleta e mesmo índice que o gráfico circular de consumos por categoria
+        const PIE_COLORS = ['#a855f7', '#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#8b5cf6'];
+        const catColorMap: Record<string, string> = {};
+        Object.keys(stats.totaisPorCategoria).forEach((cat, idx) => {
+            catColorMap[cat] = PIE_COLORS[idx % PIE_COLORS.length];
+        });
+        const getCatColor = (cat: string) => catColorMap[cat] ?? PIE_COLORS[0];
 
         // Initialize with all items from the inventory to show 0 for unconsumed items
         const statsByCategory = items.reduce((acc, item) => {
-            if (!acc[item.categoria]) acc[item.categoria] = [];
-            acc[item.categoria].push({ nome: item.nome, quantidade: 0 });
+            const cat = item.categoria.toUpperCase();
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push({ nome: item.nome, quantidade: 0 });
             return acc;
-        }, {
-            'HIGIENE': [],
-            'DETERGENTES': [],
-        } as Record<string, { nome: string; quantidade: number }[]>);
+        }, {} as Record<string, { nome: string; quantidade: number }[]>);
 
         if (stats && stats.itens) {
             for (const statItem of stats.itens) {
@@ -527,47 +512,106 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                             variant={statsPeriodo === periodo ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setStatsPeriodo(periodo)}
-                            className={statsPeriodo === periodo ? 'bg-purple-600 hover:bg-purple-700 text-white' : ''}
+                            className={statsPeriodo === periodo ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : ''}
                         >
                             {periodo === 'DIA' ? t('consumos.day', 'Hoje') : periodo === 'SEMANA' ? t('consumos.week', 'Semana') : t('consumos.month', 'Mês')}
                         </Button>
                     ))}
-                </div>
+                </div>{/* Period selector */}
 
-                {/* Summary cards */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
-                                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">{stats.totalGeral}</p>
+                <div className="flex flex-col gap-8 mb-8">
+                    {/* DIV PRESENÇAS */}
+                    <div className="bg-card/50 rounded-2xl p-6 border border-border shadow-sm">
+                        <h2 className="text-2xl font-bold mb-6 text-foreground">Estatísticas de Presenças</h2>
+                        {/* Presenças Summary */}
+                        {attendanceStats && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('stats.totalAppointments', 'Marcações')}</p>
+                                    <p className="text-3xl font-bold text-foreground mt-1">{attendanceStats.totalMarcacoes}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-success)]">{t('stats.attended', 'Compareceu')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-success)] mt-1">{attendanceStats.totalPresencas}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider text-[color:var(--status-error)]">{t('stats.missed', 'Faltou')}</p>
+                                    <p className="text-3xl font-bold text-[color:var(--status-error)] mt-1">{attendanceStats.totalFaltas}</p>
+                                </div>
+                                <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider" style={{ color: '#3b82f6' }}>{t('stats.agendado', 'Agendado')}</p>
+                                    <p className="text-3xl font-bold mt-1" style={{ color: '#3b82f6' }}>{attendanceStats.totalAgendadas}</p>
+                                </div>
                             </div>
-                            {Object.entries(catTotals).map(([cat, total]) => (
-                                <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{catLabels[cat] || cat}</p>
-                                    <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{total}</p>
+                        )}
+                        
+                        {/* BalnearioCharts for Presenças */}
+                        {attendanceStats && (
+                            <BalnearioCharts 
+                                isDarkMode={_isDarkMode} 
+                                data={[
+                                    { name: 'Compareceu', value: attendanceStats.totalPresencas },
+                                    { name: 'Faltou', value: attendanceStats.totalFaltas },
+                                    { name: 'Agendado', value: attendanceStats.totalAgendadas }
+                                ]}
+                                barChartTitle="Comparação de Estados"
+                                pieChartTitle="Distribuição de Estados"
+                                customColors={['var(--status-success)', 'var(--status-error)', '#3b82f6']}
+                            />
+                        )}
+                    </div>
+
+                    {/* DIV CONSUMOS */}
+                    <div className="bg-card/50 rounded-2xl p-6 border border-border shadow-sm">
+                        <h2 className="text-2xl font-bold mb-6 text-foreground">Estatísticas de Consumos</h2>
+                        {/* Summary cards consumos */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">{t('consumos.totalConsumptions', 'Total Consumos')}</p>
+                                <p className="text-3xl font-bold text-primary mt-1">{stats.totalGeral}</p>
+                            </div>
+                            <div className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wider">Categorias Ativas</p>
+                                <p className="text-3xl font-bold text-foreground mt-1">{Object.keys(stats.totaisPorCategoria).length}</p>
+                            </div>
+                            {Object.entries(catTotals).slice(0, 2).map(([cat, total]) => (
+                                <div key={cat} className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider">{catLabels[cat] || cat}</p>
+                                    <p className="text-3xl font-bold text-foreground mt-1">{total}</p>
                                 </div>
                             ))}
                         </div>
 
+                        {/* BalnearioCharts for Consumos */}
+                        {stats && (
+                            <BalnearioCharts 
+                                isDarkMode={_isDarkMode} 
+                                data={Object.entries(stats.totaisPorCategoria).map(([name, value]) => ({ name: catLabels[name] || name, value }))}
+                                barChartTitle="Consumo por Categoria"
+                                pieChartTitle="Distribuição de Itens"
+                            />
+                        )}
+
                         {/* Modular Category Bar Charts */}
                         {Object.entries(statsByCategory).length === 0 ? (
-                            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 flex flex-col items-center justify-center h-48 mt-6">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
+                            <div className="bg-card rounded-xl border border-border p-6 flex flex-col items-center justify-center h-48 mt-6">
+                                <p className="text-sm text-muted-foreground">{t('consumos.noDataForPeriod', 'Sem dados de consumo para este período')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                                {Object.keys(statsByCategory).sort((a, b) => {
-                                    if (a === 'CALCADO') return 1;
-                                    if (b === 'CALCADO') return -1;
-                                    return a.localeCompare(b);
-                                }).map(cat => {
-                                    const items = statsByCategory[cat].sort((a,b) => b.quantidade - a.quantidade);
+                                {categories.map(catData => {
+                                    const cat = catData.id;
+                                    const catItemsSorted = (statsByCategory[cat] ?? []);
+                                    const items = cat === 'CALCADO'
+                                        ? [...catItemsSorted].sort((a, b) => parseInt(a.nome) - parseInt(b.nome))
+                                        : [...catItemsSorted].sort((a, b) => b.quantidade - a.quantidade);
                                     return (
-                                        <div key={cat} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm flex flex-col">
-                                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-6 uppercase tracking-tight">
+                                        <div key={cat} className="bg-card rounded-xl border border-border p-6 shadow-sm flex flex-col">
+                                            <h3 className="text-base font-bold text-foreground mb-6 uppercase tracking-tight">
                                                 {catLabels[cat] || cat}
                                             </h3>
                                             {items.length === 0 ? (
-                                                <div className="flex-1 flex items-center justify-center text-sm text-gray-400 py-10">
+                                                <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground py-10">
                                                     {t('consumos.noItemsConfigured', 'Nenhum produto configurado nesta categoria.')}
                                                 </div>
                                             ) : (
@@ -578,12 +622,12 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                         data={items} 
                                                         margin={{ top: 0, right: 20, left: 0, bottom: 0 }}
                                                     >
-                                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
+                                                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="var(--border)" />
                                                         <XAxis 
                                                             type="number"
                                                             axisLine={false}
                                                             tickLine={false}
-                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                                                             allowDecimals={false}
                                                         />
                                                         <YAxis 
@@ -592,15 +636,15 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                             tickFormatter={(nome) => cat === 'CALCADO' ? String(nome).replace(/N[º°]\s*/i, '').trim() : (t(`consumos.products.${nome}`, nome) as string)}
                                                             axisLine={false}
                                                             tickLine={false}
-                                                            tick={{ fontSize: 12, fill: '#6B7280' }}
+                                                            tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
                                                             width={cat === 'CALCADO' ? 60 : 100}
                                                         />
                                                         <Tooltip 
-                                                            cursor={{ fill: '#F3F4F6', opacity: 0.4 }}
-                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: '#111827' }}
-                                                            formatter={(value: number) => [<span className="font-bold text-purple-600">{value}</span>, t('consumos.quantity', 'Quantidade')]}
-                                                            labelFormatter={(nome) => cat === 'CALCADO' ? `Tamanho ${nome}` : t(`consumos.products.${nome}`, nome as string)}
-                                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#374151' }}
+                                                            cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                                                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', color: 'var(--foreground)', backgroundColor: 'var(--card)' }}
+                                                            formatter={(value: number) => [<span className="font-bold text-primary">{value}</span>, t('consumos.quantity', 'Quantidade')]}
+                                                            labelFormatter={(nome) => cat === 'CALCADO' ? `${nome}` : t(`consumos.products.${nome}`, nome as string)}
+                                                            labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: 'var(--foreground)' }}
                                                         />
                                                         <Bar 
                                                             dataKey="quantidade" 
@@ -608,7 +652,7 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                                             barSize={24}
                                                         >
                                                             {items.map((_, index) => (
-                                                                <Cell key={`cell-${index}`} fill={getCatBarColorHex(cat)} />
+                                                                <Cell key={`cell-${index}`} fill={getCatColor(cat)} />
                                                             ))}
                                                         </Bar>
                                                     </BarChart>
@@ -620,6 +664,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                                 })}
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* Additional Charts */}
             </div>
         );
     };
@@ -630,37 +678,11 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
 
     return (
         <div className="max-w-[1200px] mx-auto">
-            {/* Header with Tabs */}
-            <div className="flex justify-start mb-8">
-                <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1.5 w-[350px]">
-                    <button
-                        onClick={() => handleTabSwitch('armazem')}
-                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
-                            activeTab === 'armazem'
-                                ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                        }`}
-                    >
-                        {t('consumos.warehouse', 'Armazém')}
-                    </button>
-                    <button
-                        onClick={() => handleTabSwitch('estatisticas')}
-                        className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
-                            activeTab === 'estatisticas'
-                                ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                        }`}
-                    >
-                        {t('consumos.statistics', 'Estatísticas')}
-                    </button>
-                </div>
-            </div>
-
             {/* Tab Content */}
-            {activeTab === 'armazem' ? renderArmazem() : renderEstatisticas()}
+            {actualTab === 'armazem' ? renderArmazem() : renderEstatisticas()}
 
             {/* Unsaved changes warning dialog */}
-            <AlertDialog open={pendingTab !== null} onOpenChange={() => setPendingTab(null)}>
+            <AlertDialog open={false}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t('consumos.unsavedTitle', 'Modificações por guardar')}</AlertDialogTitle>
@@ -669,10 +691,10 @@ export function BalnearioConsumosPage({ isDarkMode: _isDarkMode }: BalnearioCons
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setPendingTab(null)}>
+                        <AlertDialogCancel>
                             {t('profile.unsaved.stay', 'Ficar')}
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmTabSwitch} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 text-white">
                             {t('profile.unsaved.discard', 'Descartar')}
                         </AlertDialogAction>
                     </AlertDialogFooter>

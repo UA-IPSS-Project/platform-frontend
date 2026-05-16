@@ -1,4 +1,5 @@
 import i18n from '../../i18n';
+import { formatarCategoria } from '../../utils/formatters';
 import { formatDateInput, parseDateInput } from '../../components/ui/date-picker-field';
 import {
   ManutencaoCategoria,
@@ -15,38 +16,40 @@ import {
 
 export const ESTADO_OPTIONS: Array<{ value: RequisicaoEstado | ''; label: string }> = [
   { value: '', label: 'requisitions.labels.allStatuses' },
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
+  { value: 'ABERTO', label: 'requisitions.labels.open' },
+  { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
+  { value: 'FECHADO', label: 'requisitions.labels.closed' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const ESTADO_SECRETARIA_OPTIONS: Array<{ value: RequisicaoEstado; label: string }> = [
-  { value: 'EM_ANALISE', label: 'requisitions.labels.inAnalysis' },
-  { value: 'ACEITE', label: 'requisitions.labels.accepted' },
-  { value: 'RECUSADA', label: 'requisitions.labels.rejected' },
+  { value: 'ABERTO', label: 'requisitions.labels.open' },
+  { value: 'EM_PROGRESSO', label: 'requisitions.labels.inProgress' },
+  { value: 'FECHADO', label: 'requisitions.labels.closed' },
+  { value: 'RECUSADO', label: 'requisitions.labels.unavailable' },
 ];
 
 export const getEstadosPermitidosTransicao = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
+  if (estadoAtual === 'ABERTO') {
+    return ['EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
   }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['ACEITE', 'RECUSADA'];
+  if (estadoAtual === 'EM_PROGRESSO') {
+    return ['FECHADO', 'RECUSADO'];
   }
   return [];
 };
 
 export const getEstadosVisiveisNoSeletor = (estadoAtual?: RequisicaoEstado): RequisicaoEstado[] => {
-  if (estadoAtual === 'ENVIADA') {
-    return ['EM_ANALISE'];
+  if (estadoAtual === 'ABERTO') {
+    return ['ABERTO', 'EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
   }
-  if (estadoAtual === 'EM_ANALISE') {
-    return ['EM_ANALISE', 'ACEITE', 'RECUSADA'];
+  if (estadoAtual === 'EM_PROGRESSO') {
+    return ['FECHADO', 'RECUSADO'];
   }
   if (estadoAtual) {
     return [estadoAtual];
   }
-  return ['EM_ANALISE'];
+  return ['ABERTO', 'EM_PROGRESSO', 'FECHADO', 'RECUSADO'];
 };
 
 export const PRIORIDADE_OPTIONS: Array<{ value: RequisicaoPrioridade; label: string }> = [
@@ -84,11 +87,22 @@ export const TRANSPORTE_CATEGORIA_OPTIONS: Array<{ value: TransporteCategoria; l
   { value: 'PESADO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryHeavyPassengers' },
   { value: 'LIGEIRO_DE_PASSAGEIROS', label: 'requisitions.labels.transportCategoryLightPassengers' },
   { value: 'LIGEIRO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryLightGoods' },
+  { value: 'LIGEIRO_MISTO', label: 'requisitions.labels.transportCategoryLightMixed' },
   { value: 'LIGEIRO_ESPECIAL', label: 'requisitions.labels.transportCategoryLightSpecial' },
+  { value: 'PESADO_DE_MERCADORIAS', label: 'requisitions.labels.transportCategoryHeavyGoods' },
+  { value: 'PESADO_MISTO', label: 'requisitions.labels.transportCategoryHeavyMixed' },
   { value: 'ADAPTADO', label: 'requisitions.labels.transportCategoryAdapted' },
-  { value: 'LIGEIRO', label: 'requisitions.labels.transportCategoryLight' },
-  { value: 'PESADO', label: 'requisitions.labels.transportCategoryHeavy' },
-  { value: 'PASSAGEIROS', label: 'requisitions.labels.passengers' },
+  { value: 'ESCOLAR', label: 'requisitions.labels.transportCategorySchool' },
+  { value: 'AMBULANCIA', label: 'requisitions.labels.transportCategoryAmbulance' },
+  { value: 'TRACTOR', label: 'requisitions.labels.transportCategoryTractor' },
+  { value: 'OUTRO', label: 'requisitions.labels.other' },
+];
+
+// Categorias de transporte para admin apenas - inclui ABATIDO_VENDIDO_DESCONTINUADO
+// ABATIDO_VENDIDO_DESCONTINUADO não deve aparecer na seleção de requisições normais
+export const TRANSPORTE_CATEGORIA_OPTIONS_ADMIN: Array<{ value: TransporteCategoria; label: string }> = [
+  ...TRANSPORTE_CATEGORIA_OPTIONS,
+  { value: 'ABATIDO_VENDIDO_DESCONTINUADO', label: 'requisitions.labels.transportCategoryAbateSold' },
 ];
 
 // NOTE: 'OUTROS' exclusivamente para retrocompatibilidade com dados históricos.
@@ -105,15 +119,17 @@ export const MANUTENCAO_CATEGORIA_OPTIONS: Array<{ value: ManutencaoCategoria; l
   { value: 'RC', label: 'requisitions.labels.maintenanceCategoryRC' },
   { value: 'PRE_ESCOLAR', label: 'requisitions.labels.maintenanceCategoryPreschool' },
   { value: 'CRECHE', label: 'requisitions.labels.maintenanceCategoryDaycare' },
+  { value: 'VEICULOS', label: 'requisitions.labels.maintenanceCategoryVehicles' },
 ];
 
-export const MANUTENCAO_CATEGORIA_ORDER: ManutencaoCategoria[] = ['CATL', 'RC', 'PRE_ESCOLAR', 'CRECHE'];
+export const MANUTENCAO_CATEGORIA_ORDER: ManutencaoCategoria[] = ['CATL', 'RC', 'PRE_ESCOLAR', 'CRECHE', 'VEICULOS'];
 
 export const MANUTENCAO_CATEGORIA_DISPLAY_LABELS: Record<ManutencaoCategoria, string> = {
   CATL: 'CATL',
   RC: 'R/C',
   PRE_ESCOLAR: 'Pré Escolar',
-  CRECHE: 'Crech',
+  CRECHE: 'Creche',
+  VEICULOS: 'Veículos',
 };
 
 export const MANUTENCAO_ESPACOS_POR_CATEGORIA: Record<ManutencaoCategoria, string[]> = {
@@ -199,6 +215,10 @@ export const formatPrioridade = (prioridade: RequisicaoPrioridade) => {
   return key ? i18n.t(key) : prioridade;
 };
 export const formatEstado = (estado: RequisicaoEstado) => {
+  // Traduzir RECUSADO para Indisponível
+  if (estado === 'RECUSADO') {
+    return i18n.t('requisitions.labels.unavailable');
+  }
   const key = ESTADO_OPTIONS.find((option) => option.value === estado)?.label;
   return key ? i18n.t(key) : estado;
 };
@@ -206,26 +226,26 @@ export const formatMaterialCategoria = (categoria?: MaterialCategoria | string) 
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = MATERIAL_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const formatManutencaoCategoria = (categoria?: ManutencaoCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = MANUTENCAO_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const formatManutencaoCategoriaDisplay = (categoria?: ManutencaoCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const typed = categoria as ManutencaoCategoria;
-  return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? categoria;
+  return MANUTENCAO_CATEGORIA_DISPLAY_LABELS[typed] ?? formatarCategoria(categoria);
 };
 export const formatTransporteCategoria = (categoria?: TransporteCategoria | string) => {
   if (!categoria) return i18n.t('requisitions.labels.noCategory');
   const option = TRANSPORTE_CATEGORIA_OPTIONS.find((opt) => opt.value === categoria);
   if (option) return i18n.t(option.label);
-  return categoria.replace(/_/g, ' ').toUpperCase();
+  return formatarCategoria(categoria);
 };
 
 export const toIsoFromDateOnly = (date?: Date): string | undefined => {
@@ -252,7 +272,6 @@ export type TransporteLike = RequisicaoResponse['transporte'] | TransporteResumo
 export type TransporteSelectionMode = 'auto' | 'manual';
 export type CreateField =
   | 'descricao'
-  | 'tempoLimite'
   | 'materialItens'
   | 'destino'
   | 'dataSaida'
@@ -261,8 +280,10 @@ export type CreateField =
   | 'horaRegresso'
   | 'numeroPassageiros'
   | 'transporteIds'
+  | 'condutor'
   | 'manutencaoItens';
 
+// Fields available in requisition creation form
 export const createEmptyMaterialLinha = () => ({
   rowId:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -350,7 +371,9 @@ export const formatLotacao = (lotacao?: number): string => {
 
 export const formatVehicleTitle = (transporte?: TransporteLike): string => {
   const nome = transporte && 'nome' in transporte ? transporte.nome : undefined;
-  return (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const title = (nome || transporte?.tipo || i18n.t('requisitions.labels.vehicle')).trim();
+  const matricula = transporte?.matricula;
+  return matricula ? `${title} · ${matricula}` : title;
 };
 
 export const formatTransporteDisplay = (transporte?: TransporteLike): string => {
@@ -359,7 +382,6 @@ export const formatTransporteDisplay = (transporte?: TransporteLike): string => 
   const parts = [
     transporte.codigo ?? (transporte.id ? `#${transporte.id}` : undefined),
     formatVehicleTitle(transporte),
-    transporte.matricula,
   ].filter(Boolean);
 
   return parts.join(' · ');

@@ -137,6 +137,8 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
   const [loading, setLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
   const [expanded, setExpanded] = useState({
     personal: true,
@@ -271,6 +273,39 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
     setIsEditing(false);
   }, [loadUserData, storageKey]);
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      await utilizadoresApi.solicitarEliminacao();
+      toast.success('Pedido de eliminação enviado. A secretaria irá processar o seu pedido em breve.');
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('Erro ao solicitar eliminação:', error);
+      toast.error('Erro ao solicitar eliminação de conta');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const dados = await utilizadoresApi.exportarDados();
+      const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `meus-dados-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Dados exportados com sucesso');
+    } catch (error) {
+      console.error('Erro ao exportar dados:', error);
+      toast.error('Erro ao exportar dados');
+    }
+  };
+
   // Computed: whether the user has unsaved changes
   const hasUnsavedChanges = isEditing && JSON.stringify(formData) !== JSON.stringify(baseData);
 
@@ -338,23 +373,23 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
 
   const renderField = (label: string, value: string, field: string, editable: boolean = true, placeholder: string = '', colSpan: string = '') => (
     <div className={colSpan}>
-      <Label className="text-sm text-gray-700 dark:text-gray-300 mb-1 block">{label}</Label>
+      <Label className="text-sm text-foreground mb-1 block">{label}</Label>
       {isEditing ? (
         editable ? (
           <Input
             value={value}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
             placeholder={placeholder}
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
+            className="bg-background border border-border text-foreground placeholder:text-muted-foreground"
           />
         ) : (
-          <div className="px-3 py-2 rounded bg-gray-300 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 cursor-not-allowed select-none">
-            {value || <span className="text-gray-400 italic">{placeholder}</span>}
+          <div className="px-3 py-2 rounded bg-muted text-muted-foreground border border-border cursor-not-allowed select-none">
+            {value || <span className="text-muted-foreground italic">{placeholder}</span>}
           </div>
         )
       ) : (
-        <div className="px-3 py-2 rounded bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-transparent">
-          {value || <span className="text-gray-400 italic">{placeholder}</span>}
+        <div className="px-3 py-2 rounded bg-muted/60 text-foreground border border-transparent">
+          {value || <span className="text-muted-foreground italic">{placeholder}</span>}
         </div>
       )}
     </div>
@@ -362,22 +397,22 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
 
   const renderSectionHeader = (title: string, sectionKey: keyof typeof expanded) => (
     <div
-      className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-2 rounded-lg transition-colors -ml-2"
+      className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-accent/60 p-2 rounded-lg transition-colors -ml-2"
       onClick={() => toggleSection(sectionKey)}
     >
       {expanded[sectionKey] ? (
-        <ChevronDown className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        <ChevronDown className="w-5 h-5 text-primary" />
       ) : (
-        <ChevronRight className="w-5 h-5 text-gray-500" />
+        <ChevronRight className="w-5 h-5 text-muted-foreground" />
       )}
-      <h2 className="text-gray-900 dark:text-gray-100 font-medium text-lg">{title}</h2>
+      <h2 className="text-foreground font-medium text-lg">{title}</h2>
     </div>
   );
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-120px)]">
-        <div className="text-gray-600 dark:text-gray-400">{t('profile.loading')}</div>
+        <div className="text-muted-foreground">{t('profile.loading')}</div>
       </div>
     );
   }
@@ -388,30 +423,30 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         {/* Back Button */}
         <button
           onClick={() => requestLeave(onBack)}
-          className="flex items-center gap-2 text-gray-900 dark:text-gray-100 hover:text-purple-600 dark:hover:text-purple-400 mb-6 transition-colors"
+          className="flex items-center gap-2 text-foreground hover:text-primary mb-6 transition-colors"
         >
           <ArrowLeftIcon className="w-5 h-5" />
           <span>{t('common.back')}</span>
         </button>
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-5 sm:p-8">
+        <div className="bg-card rounded-lg shadow-lg p-5 sm:p-8">
           {/* Header */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                <UserIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
+                <UserIcon className="w-8 h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl text-gray-900 dark:text-gray-100">{t('profile.title')}</h1>
-                <p className="text-sm text-purple-600 dark:text-purple-400">{formData.email}</p>
+                <h1 className="text-xl text-foreground">{t('profile.title')}</h1>
+                <p className="text-sm text-primary">{formData.email}</p>
               </div>
             </div>
             {!isEditing && (
               <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto justify-center border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="w-full sm:w-auto justify-center border-border text-foreground hover:bg-accent"
                   onClick={() => setShowPasswordDialog(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
@@ -419,7 +454,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                 </Button>
                 <Button
                   onClick={() => { setBaseData({ ...formData }); setIsEditing(true); }}
-                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground"
                   disabled={loading}
                 >
                   {t('common.edit')}
@@ -474,18 +509,18 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             )}
 
             {isEditing && (
-              <div className={`flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-800 ${isMobile ? 'flex-col' : 'justify-end'}`}>
+              <div className={`flex gap-2 pt-4 border-t border-border ${isMobile ? 'flex-col' : 'justify-end'}`}>
                 <Button
                   onClick={handleCancelEdit}
                   variant="outline"
-                  className={`border-gray-300 dark:border-gray-700 ${isMobile ? 'w-full' : ''}`}
+                  className={`border-border ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   {t('appointmentDialog.actions.cancel')}
                 </Button>
                 <Button
                   onClick={handleSave}
-                  className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
+                  className={`bg-primary hover:bg-primary/90 text-primary-foreground ${isMobile ? 'w-full' : ''}`}
                   disabled={loading}
                 >
                   {loading ? t('common.saving') : t('common.save')}
@@ -493,6 +528,47 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
               </div>
             )}
           </div>
+
+          {/* Zona de Perigo - Eliminação de Conta */}
+          {isEmployee === false && !isEditing && (
+            <div className="mt-8 pt-6 border-t border-border space-y-4">
+              {/* Exportação de Dados (RGPD Art.º 20) */}
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">
+                  Direito de Portabilidade
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Exportar todos os seus dados pessoais em formato JSON conforme RGPD Art.º 20.
+                </p>
+                <Button
+                  onClick={handleExportData}
+                  variant="outline"
+                  className="border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white"
+                  size="sm"
+                >
+                  Exportar Dados
+                </Button>
+              </div>
+
+              {/* Zona de Perigo - Eliminação de Conta */}
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-destructive mb-2">
+                  Zona de Perigo
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Solicitar a eliminação permanente da sua conta. Esta ação está sujeita a aprovação da secretaria conforme RGPD.
+                </p>
+                <Button
+                  onClick={() => setShowDeleteDialog(true)}
+                  variant="outline"
+                  className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                  size="sm"
+                >
+                  Solicitar Eliminação de Conta
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -500,6 +576,32 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
         open={showPasswordDialog}
         onClose={() => setShowPasswordDialog(false)}
       />
+
+      {/* Diálogo de Confirmação de Eliminação */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Solicitar Eliminação de Conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação irá enviar um pedido à secretaria para eliminar permanentemente a sua conta e dados pessoais, conforme o Direito ao Esquecimento (RGPD Art.º 17).
+              <br /><br />
+              A secretaria irá processar o seu pedido no prazo de 1 mês. Após aprovação, os seus dados serão anonimizados e não poderá recuperar a conta.
+              <br /><br />
+              Tem a certeza que deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {isDeleting ? 'A processar...' : 'Sim, Solicitar Eliminação'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={showUnsavedDialog} onOpenChange={(open) => { if (!open) cancelDiscard(); }}>
         <AlertDialogContent>
@@ -513,7 +615,7 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
             <AlertDialogCancel onClick={cancelDiscard}>{t('profile.unsaved.stay')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDiscard}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-destructive hover:bg-destructive/90 text-white"
             >
               {t('profile.unsaved.discard')}
             </AlertDialogAction>

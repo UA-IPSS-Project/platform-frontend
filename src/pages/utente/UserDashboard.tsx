@@ -8,6 +8,7 @@ import { WeeklySchedule } from '../../components/secretary/WeeklySchedule';
 import { TodayAppointments } from '../../components/secretary/TodayAppointments';
 import { HistoryPage } from '../HistoryPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
+import { SettingsPage } from '../SettingsPage';
 import { ClientAppointmentDialog } from '../../components/utente/ClientAppointmentDialog';
 import { AppointmentDetailsDialog } from '../../components/secretary/AppointmentDetailsDialog';
 import { ClockIcon } from '../../components/shared/CustomIcons';
@@ -22,6 +23,7 @@ import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
+import { unwrapPage } from '../../utils/pagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -129,7 +131,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         startIsoString = format(s, "yyyy-MM-dd'T'HH:mm:ss");
       }
       const data = await marcacoesApi.obterPassadas(startIsoString, format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss"), authUser.id);
-      setHistoryAppointments(data.map(mapApiToAppointment));
+      const items = unwrapPage(data);
+      setHistoryAppointments(items.map(mapApiToAppointment));
     } catch (error) {
       toast.error('Erro ao carregar histórico');
     }
@@ -243,8 +246,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const renderPlaceholder = (title: string) => (
     <div className="flex items-center justify-center h-[500px]">
       <div className="text-center">
-        <h2 className="text-xl text-gray-600 dark:text-gray-300 mb-2">{title}</h2>
-        <p className="text-gray-500 dark:text-gray-500">Em desenvolvimento</p>
+        <h2 className="text-xl text-foreground/80 mb-2">{title}</h2>
+        <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>
     </div>
   );
@@ -256,7 +259,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}
         onClick={() => navigateWithGuard('/dashboard')}
-        className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+        className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground/80 hover:bg-primary/10 hover:text-primary'}`}
       >
         {t('sidebar.secretary')}
       </Button>
@@ -340,10 +343,10 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       />
                     </div>
                   </div>
-                  <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                  <div className="mt-6 max-w-[1600px] mx-auto bg-card/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-primary">
                     <div className="flex items-center gap-3">
-                      <ClockIcon className="w-5 h-5 text-purple-600" />
-                      <p className="text-gray-800 dark:text-gray-200">{currentActivity}</p>
+                      <ClockIcon className="w-5 h-5 text-primary" />
+                      <p className="text-foreground/90">{currentActivity}</p>
                     </div>
                   </div>
                 </>
@@ -430,6 +433,11 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
                       setHighlightedSlot({ date: slotDate, time });
                       setTimeout(() => setHighlightedSlot(null), 5000);
                     },
+                    onNavigateToRequisition: (requisitionId) => {
+                      navigate('/dashboard/requisitions');
+                      setShowNotifications(false);
+                      console.log('Navegando para requisição utente:', requisitionId);
+                    },
                   }}
                 />
               } />
@@ -439,7 +447,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               <Route path="/balneario-sobre" element={renderPlaceholder('Balneário - Sobre')} />
               <Route path="/voluntariado" element={renderPlaceholder('Voluntariado - Inscrição')} />
               <Route path="/voluntariado-sobre" element={renderPlaceholder('Voluntariado - Sobre')} />
-              <Route path="/settings" element={renderPlaceholder('Definições')} />
+              <Route path="/settings" element={
+                <SettingsPage
+                  isDarkMode={isDarkMode}
+                  onToggleDarkMode={onToggleDarkMode}
+                />
+              } />
               <Route path="*" element={renderPlaceholder('Página não encontrada')} />
             </Routes>
           </motion.div>
@@ -518,7 +531,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
             }}>
               Ficar
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+            <AlertDialogAction onClick={confirmLeaveProfile} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
               Descartar
             </AlertDialogAction>
           </AlertDialogFooter>

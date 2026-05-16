@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { marcacoesApi } from '../services/api';
 import type { Appointment } from '../types';
@@ -9,7 +9,7 @@ export function useAppointments(userId: number | undefined, userNif: string | un
     const [blockedAppointments, setBlockedAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const loadAppointments = async () => {
+    const loadAppointments = useCallback(async () => {
         if (!userId) return;
 
         setIsLoading(true);
@@ -71,7 +71,7 @@ export function useAppointments(userId: number | undefined, userNif: string | un
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [userId, userNif]);
 
     useEffect(() => {
         loadAppointments();

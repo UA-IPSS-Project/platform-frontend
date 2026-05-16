@@ -22,6 +22,7 @@ export interface NotificationActionCallbacks {
   onNavigateToDocument?: (documentId: string) => void;
   onNavigateToHistory?: (appointmentId: string) => void;
   onNavigateToCancelledSlot?: (date: string, time: string) => void;
+  onNavigateToRequisition?: (requisitionId: string) => void;
 }
 
 /**
@@ -128,14 +129,48 @@ export function useNotificationAction(
           },
         };
 
+      case 'REQUISICAO': {
+        const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+        const canNavigateToRequisition = Boolean(requisitionId && callbacks?.onNavigateToRequisition);
+
+        return {
+          label: canNavigateToRequisition ? 'Ver Requisição' : 'Requisição indisponível',
+          variant: canNavigateToRequisition ? 'default' : 'outline',
+          execute: () => {
+            if (!canNavigateToRequisition) {
+              return;
+            }
+
+            callbacks!.onNavigateToRequisition!(String(requisitionId));
+          },
+        };
+      }
+
       // Caso genérico para tipos desconhecidos
       default:
+        // Tentar inferir se é requisição pelo título
+        if (notification.title?.toLowerCase().includes('requisição')) {
+          const requisitionId = notification.metadata?.requisicaoId || notification.metadata?.requisitionId;
+          const canNavigateToRequisition = Boolean(requisitionId && callbacks?.onNavigateToRequisition);
+
+          return {
+            label: canNavigateToRequisition ? 'Ver Requisição' : 'Requisição indisponível',
+            variant: canNavigateToRequisition ? 'default' : 'outline',
+            execute: () => {
+              if (!canNavigateToRequisition) {
+                return;
+              }
+
+              callbacks!.onNavigateToRequisition!(String(requisitionId));
+            },
+          };
+        }
+
         return {
           label: 'Ver Detalhes',
           variant: 'outline',
           execute: () => {
             console.log('Ação não mapeada para tipo:', notification.type);
-            // Comportamento padrão (pode ser redirecionar para uma página genérica)
           },
         };
     }

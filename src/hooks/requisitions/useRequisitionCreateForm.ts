@@ -1,14 +1,18 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../services/api';
 import { CreateField } from '../../pages/requisitions/sharedRequisitions.helpers';
-import { MaterialCategoria } from '../../services/api/requisicoes/types';
+import { MaterialCategoria, PeriodicidadeFrequencia, RequisicaoPeriodicaConfig } from '../../services/api/requisicoes/types';
 
 export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPrioridade?: RequisicaoPrioridade) {
   const [tipo, setTipo] = useState<RequisicaoTipo>(initialTipo ?? 'MATERIAL');
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState<RequisicaoPrioridade>(initialPrioridade ?? 'MEDIA');
-  const [tempoLimite, setTempoLimite] = useState<Date | undefined>();
-  const [tempoLimiteManuallyEdited, setTempoLimiteManuallyEdited] = useState(false);
+  
+  // Periodicidade state
+  const [isPeriodica, setIsPeriodica] = useState(false);
+  const [periodicaFrequencia, setPeriodicaFrequencia] = useState<PeriodicidadeFrequencia>('SEMANAL');
+  const [periodicaDataInicio, setPeriodicaDataInicio] = useState('');
+  const [periodicaDataFim, setPeriodicaDataFim] = useState('');
   
   const [createErrors, setCreateErrors] = useState<Partial<Record<CreateField, string>>>({});
   const [createTouched, setCreateTouched] = useState<Partial<Record<CreateField, boolean>>>({});
@@ -28,11 +32,9 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
   const [condutorTransporte, setCondutorTransporte] = useState('');
   const [selectedTransportIds, setSelectedTransportIds] = useState<string[]>([]);
   const [transportSelectionMode, setTransportSelectionMode] = useState<'auto' | 'manual'>('auto');
-  const [expandedTransporteCategorias, setExpandedTransporteCategorias] = useState<Partial<Record<string, boolean>>>({});
-  const [expandedTransporteDetalhes, setExpandedTransporteDetalhes] = useState<Record<number, boolean>>({});
 
   // Maintenance-specific state
-  const [selectedManutencaoItemIds, setSelectedManutencaoItemIds] = useState<number[]>([]);
+  const [selectedManutencaoItems, setSelectedManutencaoItems] = useState<Array<{ itemId: number; transporteId?: number }>>([]);
   const [expandedManutencaoCategorias, setExpandedManutencaoCategorias] = useState<Record<string, boolean>>({});
   const [manutencaoObservacoesPorCategoria, setManutencaoObservacoesPorCategoria] = useState<Record<string, string>>({});
 
@@ -55,8 +57,10 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
 
   const resetForm = useCallback(() => {
     setDescricao('');
-    setTempoLimite(undefined);
-    setTempoLimiteManuallyEdited(false);
+    setIsPeriodica(false);
+    setPeriodicaFrequencia('SEMANAL');
+    setPeriodicaDataInicio('');
+    setPeriodicaDataFim('');
     setMaterialLinhas([]);
     setDestinoTransporte('');
     setDataSaida('');
@@ -69,9 +73,7 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setTransportSelectionMode('auto');
     setExpandedMaterialItems({});
     setExpandedMaterialCategorias({});
-    setExpandedTransporteCategorias({});
-    setExpandedTransporteDetalhes({});
-    setSelectedManutencaoItemIds([]);
+    setSelectedManutencaoItems([]);
     setManutencaoObservacoesPorCategoria({});
     setCreateErrors({});
     setCreateTouched({});
@@ -85,6 +87,36 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setNovoMaterialCategoria('TECNOLOGIA');
     setNovoMaterialAtributo('');
     setNovoMaterialValorAtributo('');
+  }, []);
+
+  const toggleManutencaoCategoriaExpansion = useCallback((categoria: string) => {
+    setExpandedManutencaoCategorias(prev => ({
+      ...prev,
+      [categoria]: !prev[categoria]
+    }));
+  }, []);
+
+  const toggleManutencaoItem = useCallback((itemId: number, checked: boolean, transporteId?: number) => {
+    setSelectedManutencaoItems(prev => {
+      if (checked) {
+        // Check if already exists to avoid duplicates
+        const alreadyExists = prev.some(i => i.itemId === itemId && i.transporteId === transporteId);
+        if (alreadyExists) return prev;
+        return [...prev, { itemId, transporteId }];
+      }
+      return prev.filter(i => !(i.itemId === itemId && i.transporteId === transporteId));
+    });
+  }, []);
+
+  const updateManutencaoObservacaoCategoria = useCallback((categoria: string, observation: string) => {
+    setManutencaoObservacoesPorCategoria(prev => ({
+      ...prev,
+      [categoria]: observation
+    }));
+  }, []);
+
+  const onClearSelection = useCallback(() => {
+    setSelectedManutencaoItems([]);
   }, []);
 
   const setFieldTouched = useCallback((field: CreateField) => {
@@ -101,6 +133,54 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     });
   }, []);
 
+  const isDirty = useMemo(() => {
+    return (
+      tipo !== (initialTipo ?? 'MATERIAL') ||
+      prioridade !== (initialPrioridade ?? 'MEDIA') ||
+      descricao !== '' ||
+      isPeriodica !== false ||
+      materialLinhas.length > 0 ||
+      destinoTransporte !== '' ||
+      dataSaida !== '' ||
+      horaSaida !== '' ||
+      dataRegresso !== '' ||
+      horaRegresso !== '' ||
+      numeroPassageiros !== '' ||
+      condutorTransporte !== '' ||
+      selectedTransportIds.length > 0 ||
+      selectedManutencaoItems.length > 0 ||
+      Object.keys(manutencaoObservacoesPorCategoria).length > 0
+    );
+  }, [
+    tipo,
+    initialTipo,
+    prioridade,
+    initialPrioridade,
+    descricao,
+    isPeriodica,
+    materialLinhas,
+    destinoTransporte,
+    dataSaida,
+    horaSaida,
+    dataRegresso,
+    horaRegresso,
+    numeroPassageiros,
+    condutorTransporte,
+    selectedTransportIds,
+    selectedManutencaoItems,
+    manutencaoObservacoesPorCategoria,
+  ]);
+
+
+  const periodicaConfig = useMemo((): RequisicaoPeriodicaConfig | null => {
+    if (!isPeriodica || !periodicaDataInicio) return null;
+    return {
+      frequencia: periodicaFrequencia,
+      dataInicio: periodicaDataInicio,
+      dataFim: periodicaDataFim || null,
+    };
+  }, [isPeriodica, periodicaFrequencia, periodicaDataInicio, periodicaDataFim]);
+
   return {
     // General form state
     tipo,
@@ -109,10 +189,16 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setDescricao,
     prioridade,
     setPrioridade,
-    tempoLimite,
-    setTempoLimite,
-    tempoLimiteManuallyEdited,
-    setTempoLimiteManuallyEdited,
+    isPeriodica,
+    setIsPeriodica,
+    periodicaFrequencia,
+    setPeriodicaFrequencia,
+    periodicaDataInicio,
+    setPeriodicaDataInicio,
+    periodicaDataFim,
+    setPeriodicaDataFim,
+    periodicaConfig,
+    isDirty,
     // Validation
     createErrors,
     setCreateErrors,
@@ -146,13 +232,9 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     setSelectedTransportIds,
     transportSelectionMode,
     setTransportSelectionMode,
-    expandedTransporteCategorias,
-    setExpandedTransporteCategorias,
-    expandedTransporteDetalhes,
-    setExpandedTransporteDetalhes,
     // Maintenance state
-    selectedManutencaoItemIds,
-    setSelectedManutencaoItemIds,
+    selectedManutencaoItems,
+    setSelectedManutencaoItems,
     expandedManutencaoCategorias,
     setExpandedManutencaoCategorias,
     manutencaoObservacoesPorCategoria,
@@ -173,5 +255,10 @@ export function useRequisitionCreateForm(initialTipo?: RequisicaoTipo, initialPr
     // Actions
     resetForm,
     resetMaterialDialog,
+
+    toggleManutencaoCategoriaExpansion,
+    toggleManutencaoItem,
+    updateManutencaoObservacaoCategoria,
+    onClearSelection,
   };
 }

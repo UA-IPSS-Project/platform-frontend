@@ -21,6 +21,7 @@
   "appointmentDialog": {
     "durationLabel": "Appointment duration",
     "durationBalneario": "30 minutes",
+    "durationSecretary": "15 minutes",
     "title": "New Appointment",
     "description": "Fill in the user's details to create a new appointment",
     "at": "at",
@@ -67,15 +68,17 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Date of Birth *",
+      "birthDatePlaceholder": "dd/mm/yyyy",
       "name": "Name *",
+      "namePlaceholder": "Full name",
       "email": "Email *",
       "emailPlaceholder": "example@email.com",
       "contact": "Contact *",
       "contactPlaceholder": "912345678",
       "subject": "Subject *",
       "subjectPlaceholder": "Select subject",
-      "shortDescription": "Short description",
-      "shortDescriptionPlaceholder": "Briefly describe the reason for the appointment...",
+      "description": "Short description",
+      "descriptionPlaceholder": "Briefly describe the appointment reason...",
       "attachDocs": "Attach documents (optional)"
     },
     "subjects": {
@@ -206,6 +209,23 @@
         "paragraphs": [
           "IPSS Florinhas do Vouga reserves the right to update this Policy whenever necessary, and changes will be published on the website."
         ]
+      },
+      {
+        "title": "Disclaimer",
+        "paragraphs": [
+          "The platform is provided \"as is\", without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.",
+          "IPSS Florinhas do Vouga does not guarantee that the platform will always be available, error-free, virus-free, or that its features will meet all users' expectations.",
+          "In case of temporary service unavailability due to technical reasons, scheduled maintenance, or unforeseen circumstances, the Institution shall not be liable for any direct or indirect damages resulting from such unavailability.",
+          "Users acknowledge that use of the platform is at their own risk and should take appropriate precautions, including maintaining backup copies of their data."
+        ]
+      },
+      {
+        "title": "Applicable Law and Jurisdiction",
+        "paragraphs": [
+          "This Privacy Policy and Terms of Use are governed by Portuguese law, namely the General Data Protection Regulation (GDPR - EU Regulation 2016/679) and Law no. 58/2019 of August 8.",
+          "For the resolution of any disputes arising from the interpretation or application of these terms, the courts of Aveiro, Portugal, shall have exclusive jurisdiction, with express waiver of any other.",
+          "In case of conflict between the Portuguese version and translations into other languages, the Portuguese version shall always prevail."
+        ]
       }
     ]
   },
@@ -226,6 +246,7 @@
     "balneario": "Bathhouse",
     "school": "School",
     "requisitions": "Requests",
+    "createRequisition": "Create Request",
     "material": "Material",
     "maintenance": "Maintenance",
     "transport": "Transport",
@@ -236,7 +257,9 @@
     "management": "Management",
     "consumption": "Consumption",
     "administrativeArea": "Administrative Area",
-    "general": "General"
+    "general": "General",
+    "slots": "Slot Management",
+    "inventory": "Inventory Management"
   },
   "dashboard": {
     "secretary": "Secretary",
@@ -244,6 +267,7 @@
     "balneario": "Bathhouse",
     "appointments": "Appointments",
     "requisitions": "Requests",
+    "createRequisition": "Create Request",
     "material": "Material",
     "maintenance": "Maintenance",
     "transport": "Transport",
@@ -291,6 +315,7 @@
       "mainTitle": "Platform Management",
       "mainDescription": "All changes are reflected in real time for all users.",
       "administrationOnlyArea": "Administration-only area",
+      "inventoryDescription": "Inventory stock, categories and product details management.",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -317,19 +342,22 @@
       },
       "slots": {
         "operationalConfiguration": "Operational configuration",
-        "title": "Appointments capacity per slot",
-        "description": "Adjust the maximum number of appointments each schedule supports per time slot. Changes are applied immediately after saving.",
-        "secretaryScheduleTitle": "Secretary schedule",
-        "balnearioScheduleTitle": "Bathhouse schedule",
-        "secretaryScheduleDescription": "Define how many secretary appointments can coexist in the same time slot.",
-        "balnearioScheduleDescription": "Control operational occupancy of bathhouse appointment slots.",
+        "title": "Secretary Slot Capacity",
+        "description": "Configure the maximum number of users the secretary can attend to simultaneously per time slot.",
+        "balnearioTitle": "Bathhouse Slot Capacity",
+        "balnearioDescription": "Configure the maximum number of users the bathhouse can receive simultaneously per time slot.",
+        "secretaryScheduleTitle": "Secretary Schedule (15 min)",
+        "current": "current",
+        "secretaryScheduleDescription": "Defines how many appointments can coexist in the same 15-minute time slot.",
+        "balnearioScheduleTitle": "Bathhouse Schedule (30 min)",
+        "balnearioScheduleDescription": "Defines how many appointments can coexist in the same 30-minute time slot.",
         "maxPerSlot": "Maximum per slot",
         "saving": "Saving...",
         "saveConfiguration": "Save configuration"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretary/Bathhouse)",
+          "title": "Secretary Slots",
           "description": "capacity per time slot"
         },
         "materials": {
@@ -342,11 +370,25 @@
         },
         "maintenanceTypes": {
           "title": "Maintenance types",
-          "description": "available types"
+          "description": "categories in catalog"
+        },
+        "assuntos": {
+          "title": "Active Subjects",
+          "description": "available appointment types"
         }
       },
       "messages": {
-        "slotConfigUpdated": "Slot configuration updated successfully"
+        "slotConfigUpdated": "Slot configuration updated successfully",
+        "reportEmailSent": "Report sent successfully!"
+      },
+      "reportDialog": {
+        "title": "Send Report by Email",
+        "description": "Enter the email address where you want to send the generated report.",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "example@email.com",
+        "cancel": "Cancel",
+        "send": "Send Report",
+        "invalidEmail": "Please enter a valid email address."
       },
       "catalogs": {
         "title": "Catalog Configuration",
@@ -375,11 +417,19 @@
         "addElement": "2. Add Element",
         "verificationElement": "Verification Element",
         "createElement": "Create Element",
+        "categoriesCount": "{{count}} Categories",
+        "createCategory": "Create New Category",
+        "newCategoryDescription": "This will create a new category with 'GENERAL' items by default.",
+        "categoryPlaceholder": "Ex: ELECTRICITY",
+        "vehiclesDependencyHint": "⚠️ Vehicles depend on the Transport Catalog.",
+        "addSpacePlaceholder": "Add new space...",
+        "addElementPlaceholder": "Add new element...",
         "materials": "Materials",
         "transports": "Transports",
         "maintenance": "Maintenance",
         "spaces": "Spaces",
         "elements": "Elements",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material created successfully.",
           "transportCreated": "Transport created successfully.",
@@ -393,7 +443,9 @@
           "elementUpdated": "Element updated.",
           "spaceDeleted": "Space deleted.",
           "elementDeleted": "Element deleted.",
-          "categoryRemoved": "Category removed."
+          "categoryCreated": "Category created successfully!",
+          "categoryRemoved": "Category removed.",
+          "transportScrapSold": "Transport successfully marked as scrapped/sold."
         },
         "errors": {
           "requiredFields": "All fields are required.",
@@ -401,19 +453,76 @@
           "capacityPositive": "Capacity must be a number greater than zero.",
           "loadMaterials": "Error loading materials.",
           "loadTransports": "Error loading transports.",
-          "loadMaintenance": "Error loading maintenance items."
+          "loadMaintenance": "Error loading maintenance items.",
+          "codeRequired": "The internal code is required."
         },
         "confirm": {
           "deleteMaterial": "Are you sure you want to delete this material?",
-          "deleteTransport": "Are you sure you want to delete this transport?",
           "deleteSpace": "Delete space \"{{name}}\" and its items?",
           "deleteElement": "Delete element \"{{name}}\" in all spaces?",
-          "deleteCategory": "Delete ALL items in category \"{{name}}\"?"
-        }
+          "deleteCategory": "Delete ALL items in category \"{{name}}\"?",
+          "deleteCategoryMovesVehicles": "This action will move all {{count}} vehicle(s) in this category to \"Scrapped / Sold / Discontinued\". Vehicle data will be preserved.",
+          "scrapTransport": "Mark as Scrapped / Sold / Discontinued",
+          "scrapTransportDescription": "This vehicle will be marked as unavailable and will no longer be available for requests. Vehicle data will be preserved.",
+          "confirmScrap": "Mark as Unavailable"
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} items",
+        "removeCategory": "Remove Category",
+        "searchMaterials": "Search materials...",
+        "existingCategoriesList": "Existing Categories",
+        "noMaterialsFound": "No materials found.",
+        "noMaterialsRegistered": "No materials registered.",
+        "newCategoryNamePlaceholder": "New category name",
+        "materialNamePlaceholder": "Ex: Notebooks, Scissors...",
+        "attributePlaceholder": "Ex: Size, Color...",
+        "valuePlaceholder": "Ex: A4, Blue...",
+        "freeWrite": "Write freely",
+        "searchVerificationsPlaceholder": "Search verifications...",
+        "spaceNameRequired": "Space name is required.",
+        "elementNameRequired": "Element name is required.",
+        "noVerificationsFound": "No verifications found.",
+        "noVerificationsRegistered": "No verifications registered.",
+        "loadingCatalog": "Loading catalog...",
+        "totalFleet": "Total Fleet: {{count}}",
+        "nextCodeLabel": "Next Code",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Search vehicles (plate, brand...)",
+        "fleetByCategory": "Fleet by Category",
+        "internalCode": "Internal Code",
+        "seatsCount_one": "{{count}} Seat",
+        "seatsCount_other": "{{count}} Seats",
+        "noCategories": "No categories",
+        "noVehiclesInCategory": "No vehicles exist in this category yet"
       },
       "errors": {
         "loadSlotConfig": "Could not load slot configuration",
         "saveSlotConfig": "Could not save slot configuration"
+      },
+      "assuntos": {
+        "sectionTitle": "Appointment Subjects",
+        "sectionDescription": "Configure the types of appointments available for users and staff at the front desk.",
+        "confirmDeactivateTitle": "Deactivate Subject?",
+        "confirmDeactivateDescription": "By deactivating this subject, it will no longer be available for new appointments for both users and staff. Existing appointments will not be affected.",
+        "confirmDeactivateAction": "Deactivate",
+        "activateSuccess": "Subject activated",
+        "deactivateSuccess": "Subject deactivated",
+        "activateError": "Error activating subject",
+        "deactivateError": "Error deactivating subject",
+        "loadError": "Error loading subjects",
+        "createSuccess": "Subject created successfully",
+        "createError": "Error creating subject",
+        "updateSuccess": "Subject updated",
+        "updateError": "Error updating subject",
+        "deleteConfirm": "Are you sure you want to permanently delete this subject?",
+        "deleteSuccess": "Subject deleted",
+        "deleteError": "Error deleting subject",
+        "addTitle": "New Appointment Subject",
+        "fieldName": "Subject Name",
+        "addAction": "Add Subject",
+        "listTitle": "Managed Subjects",
+        "nameLabel": "Name",
+        "nameRequired": "Subject name is required"
       }
     },
     "userHome": {
@@ -437,15 +546,22 @@
   },
   "common": {
     "confirmLogout": "Are you sure you want to log out?",
+    "confirm": "Confirm",
     "back": "Back",
+    "view": "View",
     "edit": "Edit",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
-    "ok": "OK"
+    "ok": "OK",
+    "optional": "(optional)",
+    "refresh": "Refresh",
+    "vehicle": "vehicle",
+    "vehicles": "vehicles"
   },
   "notifications": {
     "title": "Notifications",
+    "new_notification": "New Notification",
     "unreadCount_one": "{{count}} unread notification",
     "unreadCount_other": "{{count}} unread notifications",
     "markAllRead": "Mark all as read",
@@ -490,6 +606,8 @@
     "confirmPasswordRequired": "Password confirmation is required",
     "passwordsDoNotMatch": "Passwords do not match",
     "mustAcceptTermsRegister": "You must accept terms of use to register",
+    "confirmAge": "I declare that I am 18 years of age or older",
+    "mustConfirmAge": "You must confirm that you are 18 or older to register",
     "mustAcceptTermsActivate": "You must accept terms of use to activate your account",
     "fixFormErrors": "Please fix form errors",
     "fixErrorsBeforeContinue": "Fix the errors before continuing",
@@ -530,7 +648,7 @@
     "roleSocialBath": "Balneário Social",
     "roleSchool": "Escola",
     "roleInternalServices": "Serviços Internos",
-    "acceptTermsPrefix": "I accept the"
+    "acceptTermsPrefix": "I confirm that I have read and I accept the"
   },
   "profile": {
     "title": "User Profile",
@@ -582,7 +700,7 @@
     "title": "Appointment History",
     "backToAppointments": "Back to Appointments",
     "status": {
-      "completed": "Completed",
+      "completed": "Ok",
       "warning": "Warning",
       "noShow": "No-show",
       "cancelled": "Cancelled"
@@ -675,12 +793,31 @@
     }
   },
   "requisitions": {
+    "periodica": {
+      "label": "Periodic Request",
+      "frequencia": {
+        "label": "Frequency",
+        "DIARIA": "Daily",
+        "SEMANAL": "Weekly",
+        "MENSAL": "Monthly"
+      },
+      "dataInicio": "Start Date",
+      "dataFim": "End Date (Optional)",
+      "dataFimHint": "Select date",
+      "errors": {
+        "dataInicioRequired": "Start date is mandatory for periodic requests."
+      }
+    },
     "summary": "{{total}} request(s) · {{urgent}} urgent",
     "labels": {
       "allStatuses": "All statuses",
+      "open": "Open",
+      "inProgress": "In progress",
+      "closed": "Closed",
       "inAnalysis": "In analysis",
       "accepted": "Accepted",
       "rejected": "Rejected",
+      "unavailable": "Unavailable",
       "low": "Low",
       "medium": "Medium",
       "high": "High",
@@ -694,6 +831,10 @@
       "transportCategoryLightGoods": "Light goods vehicle",
       "transportCategoryLightSpecial": "Special light vehicle",
       "transportCategoryAdapted": "Adapted",
+      "transportCategorySchool": "School transport",
+      "transportCategoryAmbulance": "Ambulance",
+      "transportCategoryTractor": "Tractor",
+      "transportCategoryAbateSold": "Scrapped / Sold / Discontinued",
       "transportCategoryLight": "Light vehicle",
       "transportCategoryHeavy": "Heavy vehicle",
       "passengers": "Passengers",
@@ -706,6 +847,7 @@
       "maintenanceCategoryRC": "Ground Floor",
       "maintenanceCategoryPreschool": "Preschool",
       "maintenanceCategoryDaycare": "Daycare",
+      "maintenanceCategoryVehicles": "Vehicles",
       "noCategory": "No category",
       "capacityNotDefined": "Capacity not defined",
       "seat": "seat",
@@ -722,7 +864,6 @@
       "managedBy": "Managed by",
       "date": "Date",
       "lastUpdate": "Last update",
-      "deadline": "Deadline",
       "materials": "Materials",
       "destination": "Destination",
       "vehicles": "Vehicles",
@@ -744,13 +885,10 @@
       "mainData": "Main data",
       "type": "Type",
       "priority": "Priority",
-      "deadlineDate": "Deadline date",
-      "deadlineOptional": "Deadline date (optional)",
-      "selectDate": "Select date",
-      "transportAutoDeadlineHint": "Automatically filled for the day before departure.",
       "description": "Description",
       "descriptionPlaceholder": "Describe the request",
       "describeRequest": "Describe the request",
+      "fillToCreate": "Fill in the fields below to create a new institutional request.",
       "detailsByType": "Details by type",
       "selectMaterials": "Select materials",
       "availableMaterials": "Available materials",
@@ -768,6 +906,12 @@
       "transportPlanningHint": "Fill route and expected occupancy to auto-suggest the most suitable fleet.",
       "destination": "Destination",
       "destinationPlaceholder": "Ex: Porto, Casa da Música",
+      "destinations": {
+        "school": "School",
+        "user": "User",
+        "exterior": "Excursion / Trip",
+        "stateVisit": "State Visit"
+      },
       "driverOptional": "Driver (optional)",
       "driverPlaceholder": "Ex: Internal driver or to be defined",
       "departureDate": "Departure date",
@@ -785,13 +929,15 @@
       "passengerCapacity": "Passenger capacity",
       "seatsCount": "{{count}} seats",
       "coverage": "Coverage",
-      "capacityHint": "Usable capacity reserves 1 seat for the driver in each vehicle.",
+      "capacityHint": "Capacity includes driver; extras count as passengers.",
+      "capacityHintDetail": "Usable capacity reserves 1 seat for the driver in each vehicle.",
       "unavailableVehiclesCount": "{{count}} vehicle(s) unavailable because they already have an accepted request in this time slot.",
       "currentSelection": "Current selection",
       "capacityLabel": "Capacity",
       "loadingVehicles": "Loading available vehicles...",
       "noVehiclesInCatalog": "No vehicles in catalog yet.",
       "vehiclesCount": "{{count}} vehicle(s)",
+      "driverRequired": "Driver *",
       "suggested": "Suggested",
       "unavailable": "Unavailable",
       "overlapWarning": "There is already an accepted request with an overlapping schedule.",
@@ -900,9 +1046,11 @@
     }
   },
   "userManagement": {
-    "title": "User Management",
+    "title": "Account Management",
     "title2": "Platform Management",
-    "subtitle": "Account creation and recovery",
+    "subtitle": "Register new users or recover existing accounts.",
+    "registeredEmployees": "Registered Employees",
+    "registeredUtentes": "Registered Users",
     "slotCapacityTitle": "Appointment Capacity per Slot",
     "slotCapacityHint": "Define how many appointments can exist in the same time slot for each agenda.",
     "secretarySlotsLabel": "Secretary (appointments per slot)",
@@ -910,7 +1058,14 @@
     "secretarySlotsAria": "Number of appointments per slot for the secretary",
     "balnearioSlotsAria": "Number of appointments per slot for the social bathhouse",
     "saveSlotConfig": "Save slot configuration",
-    "createAccount": "Create Account",
+    "employeesTitle": "Employee Management",
+    "employeesSubtitle": "Manage team access and approvals",
+    "usersTitle": "User Management",
+    "usersSubtitle": "List of all registered users",
+    "createAccountSubtitle": "Register a new user or employee",
+    "recoverAccountSubtitle": "Recover email or update access contact",
+    "searchByNif": "Search by NIF",
+    "userFoundSuccess": "User successfully found!",
     "recoverAccount": "Account Recovery",
     "clickToExpand": "Click to expand",
     "namePlaceholder": "First and last name",
@@ -970,6 +1125,26 @@
       "admin": "Administrator",
       "school": "School",
       "other": "Other"
+    },
+    "details": {
+      "title": "Manage User",
+      "description": "View and edit user information or perform administrative actions.",
+      "editTitle": "Edit Information",
+      "approveTitle": "Approve Account",
+      "approveDescription": "This employee is waiting for approval to access the platform.",
+      "approveAction": "Approve Employee",
+      "saveChanges": "Save Changes",
+      "deleting": "Deleting...",
+      "approving": "Approving...",
+      "success": {
+        "updated": "User updated successfully",
+        "approved": "Employee approved successfully"
+      },
+      "errors": {
+        "load": "Error loading user details",
+        "update": "Error updating user",
+        "approve": "Error approving employee"
+      }
     }
   },
   "appointmentDetails": {
@@ -997,7 +1172,7 @@
     "rescheduledSuccess": "Appointment rescheduled successfully",
     "rescheduledFailed": "Failed to save reschedule.",
     "scheduled": "Scheduled",
-    "completed": "Completed",
+    "completed": "Ok",
     "noShow": "No-show",
     "cancelled": "Cancelled",
     "viewAppointment": "View Appointment",
@@ -1050,7 +1225,7 @@
     "inProgress": "In Progress",
     "scheduled": "Scheduled",
     "warning": "Warning",
-    "completed": "Completed",
+    "completed": "Ok",
     "cancelled": "Cancelled",
     "noShow": "No-show",
     "reserved": "Reserved"
@@ -1106,9 +1281,7 @@
     "description": "Form for scheduling quick baths.",
     "patientName": "User Name",
     "patientNamePlaceholder": "Ex: John Smith",
-    "patientNeeds": "User Needs",
-    "hygiene": "Hygiene",
-    "laundry": "Laundry",
+    "laundry": "Detergents",
     "clothing": "Clothing",
     "additionalNotes": "Additional Notes",
     "notesPlaceholder": "Ex: Allergies, special care, clothing size...",
@@ -1212,6 +1385,15 @@
       "vestuario": "Clothing",
       "calcado": "Footwear"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolls",
+      "pares": "pairs",
+      "caixa": "box",
+      "saco": "bag"
+    },
     "products": {
       "Detergente Roupa": "Laundry Detergent",
       "Amaciador": "Fabric Softener",
@@ -1230,6 +1412,168 @@
       "Roupa Interior": "Underwear",
       "Meias": "Socks",
       "Agasalho/Casaco": "Coat/Jacket"
+    },
+    "inventory": {
+      "managementTitle": "Inventory Management",
+      "newItem": "New Item",
+      "editItem": "Edit Item",
+      "createItem": "New Warehouse Item",
+      "searchPlaceholder": "Search items...",
+      "noItemsFound": "No items found",
+      "tryChangingFilters": "Try changing filters or search.",
+      "totalItems": "Total Items",
+      "lowStock": "Low Stock",
+      "all": "All",
+      "form": {
+        "detailsDescription": "Configure product details and stock limits.",
+        "productName": "Product Name",
+        "currentStock": "Current Stock",
+        "minAlert": "Minimum Alert",
+        "specificAttributes": "Specific Attributes",
+        "brand": "Brand",
+        "size": "Size",
+        "volume": "Volume / Weight",
+        "unit": "Unit",
+        "description": "Description",
+        "detailsPlaceholder": "Additional details...",
+        "saveChanges": "Save Changes",
+        "saving": "Saving...",
+        "requiredFields": "Name and Category are required"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Category",
+        "stock": "Stock",
+        "status": "Status",
+        "actions": "Actions",
+        "min": "Min",
+        "marca": "Brand",
+        "tam": "Size",
+        "vol": "Vol",
+        "empty": "No items found in warehouse"
+      },
+      "deleteConfirm": {
+        "title": "Delete Product",
+        "description": "Are you sure you want to delete the product <1>{{name}}</1>? This action cannot be undone.",
+        "action": "Delete Product",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "loadError": "Error loading warehouse items",
+        "deleteSuccess": "Item removed successfully",
+        "deleteError": "Error removing item",
+        "saveSuccess": "Item saved successfully",
+        "saveError": "Error saving item"
+      }
     }
+  },
+  "maintenance": {
+    "labels": {
+      "itemsByCategory": "Items by Category",
+      "selectedItems": "{{count}} item(s) selected",
+      "clearSelection": "Clear selection",
+      "observations": "Observations by Category",
+      "space": "Space",
+      "item": "Verification Item",
+      "vehicle": "Vehicle"
+    },
+    "placeholders": {
+      "observations": "Additional notes for this category..."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Personalize your experience and manage system configurations.",
+    "sections": {
+      "interface": "Interface and Preferences",
+      "notifications": "Notification System",
+      "system": "System Status",
+      "data": "Data and Privacy"
+    },
+    "theme": {
+      "title": "Interface Theme",
+      "description": "Toggle between light and dark mode for better visual comfort.",
+      "dark": "Dark Mode",
+      "light": "Light Mode"
+    },
+    "language": {
+      "title": "System Language",
+      "description": "Select the language in which the platform should be displayed.",
+      "pt": "Portuguese (Português)",
+      "en": "English"
+    },
+    "sounds": {
+      "title": "Sound Alerts",
+      "description": "Enable or disable sounds for new notifications or system alerts.",
+      "enabled": "Sounds enabled",
+      "disabled": "Sounds disabled",
+      "test": "Test Alert"
+    },
+    "clearCache": {
+      "title": "Cache Cleanup",
+      "description": "Clears local data saved in the browser to resolve display issues.",
+      "action": "Clear Cache and Reload",
+      "success": "Cache cleared successfully!"
+    },
+    "messages": {
+      "languageChanged": "Language changed successfully!",
+      "themeChanged": "Theme updated!"
+    },
+    "systemStatus": {
+      "title": "Server Connectivity",
+      "description": "Real-time connection status to primary services.",
+      "online": "Services Online",
+      "offline": "Services Offline / Network Error",
+      "version": "Application Version",
+      "development_label": "Development",
+      "status_development": "In development",
+      "lastChecked": "Last checked seconds ago"
+    }
+  },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Proof of residence",
+      "medicalCertificate": "Medical certificate",
+      "idDocument": "Identity document",
+      "incomeProof": "Proof of income",
+      "parentalAuthorization": "Parental authorization",
+      "other": "Other"
+    },
+    "clinicalConsent": {
+      "warning": "This document contains health data (special category — GDPR art. 9)",
+      "description": "Processing health data requires your explicit consent. This data will be used exclusively for social and health support within Florinhas do Vouga services, and will not be shared with third parties without your consent.",
+      "checkbox": "I expressly consent to the processing of my health data for the stated purposes (GDPR art. 9(2)(a))",
+      "required": "Explicit consent is required for documents containing health data"
+    }
+  },
+  "privacy": {
+    "common": {
+      "rights": "You have the right to access, rectify, delete and export your personal data. Contact secretaria@florinhasdovouga.pt to exercise your rights."
+    },
+    "document": {
+      "title": "Privacy Notice - Document Upload",
+      "description": "The documents you upload will be stored securely and encrypted. They will be used exclusively for the indicated purpose and processing of your appointment. Data will be retained for the legal retention period configured by the institution."
+    },
+    "appointment": {
+      "title": "Privacy Notice - Appointment",
+      "description": "The personal data collected (name, tax ID, contact, date of birth) will be used for managing your appointment and service communication. The data controller is Associação Florinhas do Vouga, Tax ID 501234567."
+    },
+    "registration": {
+      "title": "Privacy Notice - Registration",
+      "description": "Your personal data will be processed in accordance with GDPR. We only collect data necessary for creating and managing your account. Data will be stored securely and will not be shared with third parties without your consent."
+    },
+    "requisition": {
+      "title": "Privacy Notice - Requisition",
+      "description": "The data provided will be used to process your requisition for materials, transport or maintenance. Information will be shared only with staff responsible for processing the request."
+    }
+  },
+  "termsReacceptance": {
+    "title": "Terms of Use Updated",
+    "description": "Our Terms of Use have been updated. Please review and accept the new terms to continue using the platform.",
+    "acceptCheckbox": "I have read and accept the new Terms of Use",
+    "acceptButton": "Accept and Continue",
+    "mustAccept": "You must accept the terms to continue",
+    "accepted": "Terms accepted successfully",
+    "acceptError": "Error accepting terms. Please try again."
   }
 }

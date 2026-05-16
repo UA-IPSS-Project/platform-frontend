@@ -1,4 +1,4 @@
-export type RequisicaoEstado = 'ENVIADA' | 'EM_ANALISE' | 'ACEITE' | 'RECUSADA' | 'CONCLUIDA' | 'CANCELADA';
+export type RequisicaoEstado = 'ABERTO' | 'EM_PROGRESSO' | 'FECHADO' | 'RECUSADO';
 export type RequisicaoPrioridade = 'BAIXA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 export type RequisicaoTipo = 'MATERIAL' | 'TRANSPORTE' | 'MANUTENCAO';
 
@@ -9,7 +9,11 @@ export interface FuncionarioResumo {
   tipo?: string;
 }
 
-export type TransporteCategoria = string;
+export type TransporteCategoria = 
+  | 'LIGEIRO_DE_PASSAGEIROS' | 'LIGEIRO_DE_MERCADORIAS' | 'LIGEIRO_MISTO' | 'LIGEIRO_ESPECIAL'
+  | 'PESADO_DE_PASSAGEIROS' | 'PESADO_DE_MERCADORIAS' | 'PESADO_MISTO'
+  | 'ADAPTADO' | 'ESCOLAR' | 'AMBULANCIA' | 'TRACTOR' | 'OUTRO'
+  | 'ABATIDO_VENDIDO_DESCONTINUADO';
 export type MaterialCategoria = string;
 export type ManutencaoCategoria = string;
 
@@ -18,8 +22,8 @@ export interface MaterialCatalogo {
   nome: string;
   descricao?: string | null;
   categoria: MaterialCategoria;
-  atributo: string;
-  valorAtributo: string;
+  atributo: string | null;
+  valorAtributo: string | null;
 }
 
 export interface TransporteCatalogo {
@@ -54,7 +58,6 @@ export interface RequisicaoResponse {
   estado: RequisicaoEstado;
   prioridade: RequisicaoPrioridade;
   tipo: RequisicaoTipo;
-  tempoLimite?: string | null;
   criadoEm?: string;
   ultimaAlteracaoEstadoEm?: string;
   criadoPor?: FuncionarioResumo;
@@ -82,6 +85,12 @@ export interface RequisicaoResponse {
       categoria?: ManutencaoCategoria;
       espaco?: string;
       itemVerificacao?: string;
+    };
+    transporte?: {
+      id: number;
+      matricula?: string;
+      marca?: string;
+      modelo?: string;
     };
     observacoes?: string;
   }>;
@@ -117,7 +126,7 @@ export interface RequisicaoResponse {
   dataHoraRegresso?: string;
   numeroPassageiros?: number;
   condutor?: string | null;
-  assunto?: string;
+  assunto?: string | null;
 }
 
 export interface RequisicaoFilters {
@@ -125,15 +134,23 @@ export interface RequisicaoFilters {
   tipo?: RequisicaoTipo;
   prioridade?: RequisicaoPrioridade;
   criadoPorNome?: string;
-  geridoPorNome?: string;
+  dataInicio?: string;
+  dataFim?: string;
+}
+
+export type PeriodicidadeFrequencia = 'DIARIA' | 'SEMANAL' | 'MENSAL';
+
+export interface RequisicaoPeriodicaConfig {
+  frequencia: PeriodicidadeFrequencia;
+  dataInicio: string;
+  dataFim?: string | null;
 }
 
 export interface CriarRequisicaoBaseRequest {
   descricao?: string;
   prioridade: RequisicaoPrioridade;
-  tempoLimite?: string;
-  criadoPorId: number;
   geridoPorId?: number;
+  periodica?: RequisicaoPeriodicaConfig | null;
 }
 
 export interface CriarRequisicaoMaterialRequest extends CriarRequisicaoBaseRequest {
@@ -154,6 +171,7 @@ export interface CriarRequisicaoTransporteRequest extends CriarRequisicaoBaseReq
 
 export interface ManutencaoItemRequestPayload {
   itemId: number;
+  transporteId?: number;
   observacoes?: string;
 }
 
@@ -164,7 +182,6 @@ export interface CriarManutencaoItemCatalogoRequest {
 }
 
 export interface CriarRequisicaoManutencaoRequest extends CriarRequisicaoBaseRequest {
-  assunto?: string;
   manutencaoItens?: ManutencaoItemRequestPayload[];
 }
 
@@ -176,8 +193,8 @@ export interface CriarMaterialCatalogoRequest {
   nome: string;
   descricao?: string;
   categoria: MaterialCategoria;
-  atributo: string;
-  valorAtributo: string;
+  atributo: string | null;
+  valorAtributo: string | null;
 }
 
 export interface CriarTransporteCatalogoRequest {

@@ -1,22 +1,9 @@
-import { DatePickerField } from '../../ui/date-picker-field';
 import { Textarea } from '../../ui/textarea';
+import { Checkbox } from '../../ui/checkbox';
+import { DatePickerField } from '../../ui/date-picker-field';
 import { RequisicaoPrioridade, RequisicaoTipo } from '../../../services/api';
 import { PRIORIDADE_OPTIONS, TIPO_OPTIONS } from '../../../pages/requisitions/sharedRequisitions.helpers';
-
-const toDateInputValue = (date?: Date): string => {
-  if (!date) return '';
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const fromDateInputValue = (value: string): Date | undefined => {
-  if (!value) return undefined;
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return undefined;
-  return new Date(year, month - 1, day);
-};
+import { PeriodicidadeFrequencia } from '../../../services/api/requisicoes/types';
 
 interface RequisitionsCreateCommonFieldsProps {
   descricao: string;
@@ -24,11 +11,16 @@ interface RequisitionsCreateCommonFieldsProps {
   onChangeTipo: (value: RequisicaoTipo) => void;
   prioridade: RequisicaoPrioridade;
   onChangePrioridade: (value: RequisicaoPrioridade) => void;
-  tempoLimite: Date | undefined;
-  onChangeTempoLimite: (value: Date | undefined) => void;
+  isPeriodica: boolean;
+  onChangeIsPeriodica: (value: boolean) => void;
+  periodicaFrequencia: PeriodicidadeFrequencia;
+  onChangePeriodicaFrequencia: (value: PeriodicidadeFrequencia) => void;
+  periodicaDataInicio: string;
+  onChangePeriodicaDataInicio: (value: string) => void;
+  periodicaDataFim: string;
+  onChangePeriodicaDataFim: (value: string) => void;
   tipo: RequisicaoTipo;
   descricaoError?: string;
-  tempoLimiteError?: string;
   inputFieldClassName: string;
   textareaFieldClassName: string;
   selectFieldClassName: string;
@@ -42,19 +34,23 @@ export function RequisitionsCreateCommonFields({
   onChangeTipo,
   prioridade,
   onChangePrioridade,
-  tempoLimite,
-  onChangeTempoLimite,
-  descricaoError,
-  tempoLimiteError,
-  textareaFieldClassName,
+  isPeriodica,
+  onChangeIsPeriodica,
+  periodicaFrequencia,
+  onChangePeriodicaFrequencia,
+  periodicaDataInicio,
+  onChangePeriodicaDataInicio,
+  periodicaDataFim,
+  onChangePeriodicaDataFim,
+  descricaoError,  inputFieldClassName,  textareaFieldClassName,
   selectFieldClassName,
   t,
 }: Readonly<RequisitionsCreateCommonFieldsProps>) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="req-create-tipo" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.type')}</label>
+          <label htmlFor="req-create-tipo" className="text-sm text-muted-foreground">{t('requisitions.ui.type')}</label>
           <select
             id="req-create-tipo"
             value={tipo}
@@ -68,7 +64,7 @@ export function RequisitionsCreateCommonFields({
         </div>
 
         <div>
-          <label htmlFor="req-create-prioridade" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.priority')}</label>
+          <label htmlFor="req-create-prioridade" className="text-sm text-muted-foreground">{t('requisitions.ui.priority')}</label>
           <select
             id="req-create-prioridade"
             value={prioridade}
@@ -80,21 +76,10 @@ export function RequisitionsCreateCommonFields({
             ))}
           </select>
         </div>
-
-        <div>
-          <label htmlFor="req-create-tempo-limite" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.deadlineOptional')}</label>
-          <DatePickerField
-            id="req-create-tempo-limite"
-            value={toDateInputValue(tempoLimite)}
-            onChange={(value) => onChangeTempoLimite(fromDateInputValue(value))}
-            buttonClassName={`mt-1 ${tempoLimiteError ? 'border-red-500' : ''}`}
-          />
-          {tempoLimiteError && <p className="text-red-500 text-xs mt-1">{tempoLimiteError}</p>}
-        </div>
       </div>
 
       <div>
-        <label htmlFor="req-create-descricao" className="text-sm text-gray-600 dark:text-gray-300">{t('requisitions.ui.description')}</label>
+        <label htmlFor="req-create-descricao" className="text-sm text-muted-foreground">{t('requisitions.ui.description')}</label>
         <Textarea
           id="req-create-descricao"
           className={textareaFieldClassName}
@@ -103,7 +88,62 @@ export function RequisitionsCreateCommonFields({
           placeholder={t('requisitions.ui.descriptionPlaceholder')}
           rows={3}
         />
-        {descricaoError && <p className="text-red-500 text-xs mt-1">{descricaoError}</p>}
+        {descricaoError && <p className="text-status-error text-xs mt-1">{descricaoError}</p>}
+      </div>
+
+      <div className="pt-2 border-t mt-4 border-input-border/30">
+        <label className="flex items-center space-x-2 text-sm font-medium cursor-pointer">
+          <Checkbox
+            checked={isPeriodica}
+            onCheckedChange={(checked) => onChangeIsPeriodica(checked === true)}
+          />
+          <span>{t('requisitions.periodica.label')}</span>
+        </label>
+
+        {isPeriodica && (
+          <div className="grid grid-cols-1 gap-3 mt-3 sm:grid-cols-3">
+            <div>
+              <label htmlFor="req-periodica-frequencia" className="text-sm text-muted-foreground">
+                {t('requisitions.periodica.frequencia.label')}
+              </label>
+              <select
+                id="req-periodica-frequencia"
+                value={periodicaFrequencia}
+                onChange={(e) => onChangePeriodicaFrequencia(e.target.value as PeriodicidadeFrequencia)}
+                className={selectFieldClassName}
+              >
+                <option value="DIARIA">{t('requisitions.periodica.frequencia.DIARIA')}</option>
+                <option value="SEMANAL">{t('requisitions.periodica.frequencia.SEMANAL')}</option>
+                <option value="MENSAL">{t('requisitions.periodica.frequencia.MENSAL')}</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="req-periodica-dataInicio" className="text-sm text-muted-foreground">
+                {t('requisitions.periodica.dataInicio')}
+              </label>
+              <DatePickerField
+                id="req-periodica-dataInicio"
+                value={periodicaDataInicio}
+                onChange={onChangePeriodicaDataInicio}
+                buttonClassName={inputFieldClassName}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="req-periodica-dataFim" className="text-sm text-muted-foreground">
+                {t('requisitions.periodica.dataFim')}
+              </label>
+              <DatePickerField
+                id="req-periodica-dataFim"
+                value={periodicaDataFim}
+                onChange={onChangePeriodicaDataFim}
+                placeholder={t('requisitions.periodica.dataFimHint')}
+                buttonClassName={inputFieldClassName}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

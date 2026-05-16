@@ -84,17 +84,17 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
   };
 
   return (
-    <GlassCard className="w-full max-w-md p-8 border border-white/20 dark:border-gray-700/30">
+    <GlassCard className="w-full max-w-md p-8 border border-border/40">
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <img
-            src={isDarkMode ? "/assets/LogoModoEscuro1.png" : "/assets/LogoSemTextoUltimo.png"}
+            src={'/assets/LogoSemTexto.png'}
             alt="Logo Florinhas"
             className="h-16 w-auto object-contain"
           />
         </div>
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">{t('auth.welcome')}</h1>
-        <p className="text-gray-600 dark:text-gray-400">{t('auth.platformSubtitle')}</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">{t('auth.welcome')}</h1>
+        <p className="text-muted-foreground">{t('auth.platformSubtitle')}</p>
 
         <div className="mt-6 flex items-center justify-center">
           <LightSwitch
@@ -107,11 +107,11 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="identifier" className="text-gray-700 dark:text-gray-300">
+          <Label htmlFor="identifier" className="text-foreground/85">
             {loginType === 'user' ? t('auth.nif') : t('auth.institutionalEmail')}
           </Label>
           {loginType === 'employee' ? (
-            <div className={`flex items-center gap-2 rounded-md border bg-gray-50 dark:bg-gray-700 px-3 h-10 transition-all focus-within:ring-2 focus-within:ring-purple-500 ${errors.identifier ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'}`}>
+            <div className={`flex items-center gap-2 rounded-md border bg-muted px-3 h-10 transition-all focus-within:ring-2 focus-within:ring-ring ${errors.identifier ? 'border-status-error' : 'border-border'}`}>
               <input
                 id="identifier"
                 type="text"
@@ -122,7 +122,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
                   setEmployeeEmailPrefix(prefix);
                   if (errors.identifier) setErrors({ ...errors, identifier: undefined });
                 }}
-                className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100 h-full min-w-0"
+                className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm placeholder:text-muted-foreground/70 text-foreground h-full min-w-0"
               />
               {isEditingDomain ? (
                 <input
@@ -140,14 +140,14 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
                     }
                     setIsEditingDomain(false);
                   }}
-                  className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm text-gray-500 dark:text-gray-400 font-medium w-44 shrink-0"
+                  className="bg-transparent border-0 outline-none focus:outline-none focus:ring-0 text-sm text-muted-foreground font-medium w-44 shrink-0"
                   autoFocus
                 />
               ) : (
                 <button
                   type="button"
                   onClick={() => setIsEditingDomain(true)}
-                  className="text-sm text-gray-500 dark:text-gray-400 font-medium shrink-0 whitespace-nowrap hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  className="text-sm text-muted-foreground font-medium shrink-0 whitespace-nowrap hover:text-foreground transition-colors"
                   aria-label={t('auth.institutionalEmail')}
                 >
                   {employeeEmailDomain}
@@ -166,23 +166,23 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
                 setIdentifier(value);
                 if (errors.identifier) setErrors({ ...errors, identifier: undefined });
               }}
-              className={`bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 ${errors.identifier ? 'border-red-500' : ''
+              className={`bg-muted border-border text-foreground placeholder:text-muted-foreground/70 ${errors.identifier ? 'border-status-error' : ''
                 }`}
             />
           )}
           {errors.identifier && (
-            <p className="text-red-500 text-sm">{errors.identifier}</p>
+            <p className="text-status-error text-sm">{errors.identifier}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password" className="text-gray-700 dark:text-gray-300">
+          <Label htmlFor="password" className="text-foreground/85">
             {t('auth.password')}
           </Label>
           <div className={`flex items-center w-full rounded-md border px-3 h-10 ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${errors.password
-            ? 'border-red-500 focus-within:ring-red-500/50'
-            : 'border-gray-200 dark:border-gray-600 focus-within:border-gray-900 dark:focus-within:border-gray-100'
-            } bg-gray-50 dark:bg-gray-700`}>
+            ? 'border-status-error focus-within:ring-status-error/50'
+            : 'border-border focus-within:border-foreground'
+            } bg-muted`}>
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -192,35 +192,35 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
                 setPassword(e.target.value);
                 if (errors.password) setErrors({ ...errors, password: undefined });
               }}
-              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-900 dark:text-gray-100"
+              className="flex-1 bg-transparent border-0 outline-none text-sm w-full h-full placeholder:text-muted-foreground/70 text-foreground"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+              className="ml-2 text-muted-foreground hover:text-foreground focus:outline-none"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
           {errors.password && (
-            <p className="text-red-500 text-sm">{errors.password}</p>
+            <p className="text-status-error text-sm">{errors.password}</p>
           )}
         </div>
 
         <Button
           type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-6 rounded-lg transition-colors duration-200"
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200"
         >
           {t('auth.login')}
         </Button>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-muted-foreground">
           {t('auth.noAccount')}{' '}
           <button
             onClick={() => onNavigateToRegister(loginType)}
-            className="text-purple-600 dark:text-purple-400 hover:underline"
+            className="text-primary hover:underline"
           >
             {t('auth.createAccount')}
           </button>

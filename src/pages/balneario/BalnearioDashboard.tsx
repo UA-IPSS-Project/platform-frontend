@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/button';
 import { Sidebar } from '../../components/layout/Sidebar';
+import { NavDropdown } from '../../components/layout/NavDropdown';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { NotificationsPage } from '../NotificationsPage';
 import { ProfilePage, getProfileDraftStorageKey } from '../ProfilePage';
@@ -17,6 +18,9 @@ import { ClockIcon } from '../../components/shared/CustomIcons';
 import { HistoryPage } from '../HistoryPage';
 import { BalnearioRequisitionsPage } from './BalnearioRequisitionsPage';
 import { BalnearioConsumosPage } from '../../components/balneario/BalnearioConsumosPage';
+import { BalnearioAdminArea } from './BalnearioAdminArea';
+import { BalnearioReportsPage } from './BalnearioReportsPage';
+import { SettingsPage } from '../SettingsPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { marcacoesApi } from '../../services/api';
@@ -26,6 +30,8 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppointments';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useTranslation } from 'react-i18next';
+import { armazemApi, ConsumoEstatisticaDTO } from '../../services/api/armazem/armazemApi';
+import { unwrapPage } from '../../utils/pagination';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -117,9 +123,16 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const [profileIsDirty, setProfileIsDirty] = useState(false);
     const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState<ViewType | null>(null);
+    const [, setStatsData] = useState<ConsumoEstatisticaDTO | null>(null);
+    const [, setLoadingStats] = useState(false);
 
     const handleProfileDirtyChange = useCallback((isDirty: boolean) => {
         setProfileIsDirty(isDirty);
+    }, []);
+
+    const [requisitionsIsDirty, setRequisitionsIsDirty] = useState(false);
+    const handleRequisitionsDirtyChange = useCallback((isDirty: boolean) => {
+        setRequisitionsIsDirty(isDirty);
     }, []);
     const [blockRefreshTrigger, setBlockRefreshTrigger] = useState(0);
 
@@ -127,7 +140,10 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const isCurrentWeekLoading = loadingWeeks[currentWeekKey] || false;
 
     const navigateTo = (view: ViewType) => {
-        if (currentView === 'profile' && profileIsDirty && view !== 'profile') {
+        const isProfileDirty = currentView === 'profile' && profileIsDirty;
+        const isRequisitionsDirty = (currentView === 'requisitions' || currentView === 'requisitions-create') && requisitionsIsDirty;
+
+        if ((isProfileDirty || isRequisitionsDirty) && view !== currentView) {
             setPendingNavigation(view);
             setShowLeaveConfirm(true);
         } else {
@@ -135,9 +151,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         }
     };
 
-    const confirmLeaveProfile = () => {
-        sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
-        setProfileIsDirty(false);
+    const confirmLeave = () => {
+        if (currentView === 'profile') {
+            sessionStorage.removeItem(getProfileDraftStorageKey(authUser?.id || 0));
+            setProfileIsDirty(false);
+        } else {
+            setRequisitionsIsDirty(false);
+        }
+
         setShowLeaveConfirm(false);
         if (pendingNavigation) {
             setViewHistory(prev => [...prev, pendingNavigation]);
@@ -161,15 +182,29 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 format(startOfDay, "yyyy-MM-dd'T'HH:mm:ss"),
                 format(endOfDay, "yyyy-MM-dd'T'HH:mm:ss")
             );
-            const mapped = (Array.isArray(data) ? data : []).map(mapApiToAppointment);
-            setHistoryAppointments(mapped.filter(a => a.balnearioDetails !== undefined));
+            const items = unwrapPage(data);
+            const mapped = items.map(mapApiToAppointment);
+            setHistoryAppointments(mapped.filter((a: any) => a.balnearioDetails !== undefined));
         } catch {
             toast.error('Erro ao carregar histórico');
         }
     };
 
+    const carregarEstatisticas = async () => {
+        setLoadingStats(true);
+        try {
+            const data = await armazemApi.obterEstatisticas('MES');
+            setStatsData(data);
+        } catch {
+            toast.error('Erro ao carregar estatísticas');
+        } finally {
+            setLoadingStats(false);
+        }
+    };
+
     useEffect(() => {
         if (currentView === 'history') carregarHistorico();
+        if (currentView === 'reports') carregarEstatisticas();
     }, [currentView, historyStartDate, historyEndDate]);
 
     useEffect(() => {
@@ -243,16 +278,17 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
     const renderPlaceholder = (view: ViewType) => (
         <div className="flex items-center justify-center h-[600px]">
             <div className="text-center">
-                <h2 className="text-2xl text-gray-600 dark:text-gray-400 mb-2">
+                <h2 className="text-2xl text-muted-foreground mb-2">
                     {view === 'requisitions' && 'Requisições'}
                     {view === 'appointments' && 'Marcações'}
                     {view === 'consumos' && 'Consumos'}
                     {view === 'reports' && 'Relatórios'}
                     {view === 'settings' && 'Definições'}
                     {view === 'administrative' && 'Área Administrativa'}
-                    {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+                    {view === 'management' && 'Gestão'}
+                    {!['home', 'requisitions', 'appointments', 'consumos', 'settings', 'profile', 'notificacoes', 'reports', 'administrative', 'management', 'admin-area'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-500">Página em desenvolvimento</p>
+                <p className="text-muted-foreground">Página em desenvolvimento</p>
             </div>
         </div>
     );
@@ -262,34 +298,50 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             <Button
                 variant={currentView === 'appointments' ? 'default' : 'ghost'}
                 onClick={() => navigateTo('appointments')}
-                className={`text-sm ${currentView === 'appointments' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
             >
                 {t('sidebar.appointments')}
             </Button>
 
-            <Button
-                variant={currentView === 'consumos' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('consumos')}
-                className={`text-sm ${currentView === 'consumos' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-            >
-                {t('sidebar.consumption')}
-            </Button>
-
-            <Button
-                variant={currentView === 'requisitions' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('requisitions')}
-                className={`text-sm ${currentView === 'requisitions' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
-            >
-                {t('sidebar.requisitions')}
-            </Button>
+            <NavDropdown
+                label={t('sidebar.consumption')}
+                items={[
+                    { id: 'consumos', label: t('consumos.warehouse') },
+                    { id: 'estatisticas', label: t('consumos.statistics') },
+                ]}
+                isActive={['consumos', 'estatisticas'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('consumos')}
+            />
+            <NavDropdown
+                label={t('sidebar.requisitions')}
+                items={[
+                    { id: 'requisitions', label: t('sidebar.requisitions') },
+                    { id: 'requisitions-create', label: t('sidebar.createRequisition') },
+                ]}
+                isActive={['requisitions', 'requisitions-create'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('requisitions')}
+            />
 
             <Button
                 variant={currentView === 'reports' ? 'default' : 'ghost'}
                 onClick={() => navigateTo('reports')}
-                className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'text-gray-700 dark:text-gray-200'}`}
+                className={`text-sm hidden lg:inline-flex ${currentView === 'reports' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
             >
                 {t('sidebar.reports')}
             </Button>
+
+            <NavDropdown
+                label={t('sidebar.management')}
+                items={[
+                    { id: 'admin-area-slots', label: t('sidebar.slots') },
+                    { id: 'admin-area-inventory', label: t('sidebar.inventory') },
+                ]}
+                isActive={['management', 'admin-area', 'admin-area-slots', 'admin-area-inventory'].includes(currentView)}
+                onSelect={(id) => navigateTo(id as ViewType)}
+                onLabelClick={() => navigateTo('admin-area-slots')}
+            />
         </>
     );
 
@@ -332,6 +384,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                             <BalnearioHome
                                 isDarkMode={isDarkMode}
                                 onNavigate={navigateTo}
+                                notifications={notifications}
                             />
                         ) : currentView === 'appointments' ? (
                             <>
@@ -367,10 +420,10 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                     </div>
                                 </div>
 
-                                <div className="mt-6 max-w-[1600px] mx-auto bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-purple-600">
+                                <div className="mt-6 max-w-[1600px] mx-auto bg-card backdrop-blur-sm rounded-lg p-4 shadow-lg border-l-4 border-primary">
                                     <div className="flex items-center gap-3">
-                                        <ClockIcon className="w-5 h-5 text-purple-600" />
-                                        <p className="text-gray-800 dark:text-gray-200">{getCurrentActivity(appointments, true)}</p>
+                                        <ClockIcon className="w-5 h-5 text-primary" />
+                                        <p className="text-foreground">{getCurrentActivity(appointments, true)}</p>
                                     </div>
                                 </div>
                             </>
@@ -437,13 +490,30 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                                     setHistoryEndDate(end);
                                 }}
                             />
-                        ) : currentView === 'requisitions' ? (
+                        ) : currentView === 'requisitions' || currentView === 'requisitions-create' ? (
                             <BalnearioRequisitionsPage
                                 isDarkMode={isDarkMode}
                                 currentUserId={authUser?.id || 0}
+                                initialSection={currentView === 'requisitions-create' ? 'create' : 'list'}
+                                onDirtyChange={handleRequisitionsDirtyChange}
                             />
-                        ) : currentView === 'consumos' ? (
-                            <BalnearioConsumosPage isDarkMode={isDarkMode} />
+                        ) : currentView === 'consumos' || currentView === 'estatisticas' ? (
+                            <BalnearioConsumosPage isDarkMode={isDarkMode} variant={currentView === 'estatisticas' ? 'estatisticas' : 'armazem'} />
+                        ) : currentView === 'reports' ? (
+                            <BalnearioReportsPage />
+                        ) : currentView === 'admin-area' || currentView === 'admin-area-slots' ? (
+                            <div className="py-8">
+                                <BalnearioAdminArea mode="slots" />
+                            </div>
+                        ) : currentView === 'admin-area-inventory' ? (
+                            <div className="py-8">
+                                <BalnearioAdminArea mode="inventory" />
+                            </div>
+                        ) : currentView === 'settings' ? (
+                            <SettingsPage
+                                isDarkMode={isDarkMode}
+                                onToggleDarkMode={onToggleDarkMode}
+                            />
                         ) : (
                             renderPlaceholder(currentView)
                         )}
@@ -531,12 +601,13 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => { setPendingNavigation(null); setShowLeaveConfirm(false); }}>Ficar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmLeaveProfile} className="bg-red-600 hover:bg-red-700 text-white">
+                        <AlertDialogAction onClick={confirmLeave} className="bg-destructive hover:bg-destructive/90 text-white">
                             Descartar
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
         </>
     );
 }

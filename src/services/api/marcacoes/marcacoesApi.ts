@@ -2,7 +2,9 @@ import { apiRequest, Page } from '../core/client';
 import {
     MarcacaoPresencialRequest,
     MarcacaoRemotaRequest,
-    MarcacaoResponse
+    MarcacaoResponse,
+    BalnearioAttendanceStats,
+    Assunto
 } from './types';
 
 export const marcacoesApi = {
@@ -50,14 +52,17 @@ export const marcacoesApi = {
         );
     },
 
-    obterPassadas: (dataInicio?: string, dataFim?: string, utenteId?: number, estado?: string) => {
+    obterPassadas: (dataInicio?: string, dataFim?: string, utenteId?: number, estado?: string, page = 0, size = 20, assunto?: string, nomeUtente?: string) => {
         const params = new URLSearchParams();
         if (dataInicio) params.append('dataInicio', dataInicio);
         if (dataFim) params.append('dataFim', dataFim);
         if (utenteId) params.append('utenteId', utenteId.toString());
         if (estado) params.append('estado', estado);
-        const query = params.toString() ? `?${params.toString()}` : '';
-        return apiRequest<MarcacaoResponse[]>(`/api/marcacoes/passadas${query}`, {
+        if (assunto) params.append('assunto', assunto);
+        if (nomeUtente) params.append('nomeUtente', nomeUtente);
+        params.append('page', page.toString());
+        params.append('size', size.toString());
+        return apiRequest<Page<MarcacaoResponse>>(`/api/marcacoes/passadas?${params.toString()}`, {
             method: 'GET',
         });
     },
@@ -135,5 +140,55 @@ export const marcacoesApi = {
         apiRequest<MarcacaoResponse>(`/api/marcacoes/balneario/${marcacaoId}/detalhes`, {
             method: 'PUT',
             body: JSON.stringify(data),
+        }),
+
+    // Registo de presença rápida para balneário (Walk-in)
+    registarPresencaRapidaBalneario: (data: {
+        nomeUtente: string;
+        produtosHigiene: boolean;
+        lavagemRoupa: boolean;
+        observacoes?: string;
+        data: string;
+        responsavelId: number;
+    }) =>
+        apiRequest<MarcacaoResponse>('/api/marcacoes/balneario/presenca-rapida', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    // Obter presenças e estatísticas do balneário
+    obterEstatisticasFrequenciaBalneario: (periodo: 'DIA' | 'SEMANA' | 'MES' = 'MES') =>
+        apiRequest<BalnearioAttendanceStats>(`/api/marcacoes/balneario/estatisticas?periodo=${periodo}`, {
+            method: 'GET',
+        }),
+
+    // --- Gestão de Assuntos ---
+    listarAssuntos: () =>
+        apiRequest<Assunto[]>('/api/assuntos', { method: 'GET' }),
+
+    listarAssuntosAdmin: () =>
+        apiRequest<Assunto[]>('/api/assuntos/admin', { method: 'GET' }),
+
+    criarAssunto: (assunto: Pick<Assunto, 'nome' | 'ativo'>) =>
+        apiRequest<Assunto>('/api/assuntos', {
+            method: 'POST',
+            body: JSON.stringify(assunto),
+        }),
+
+    atualizarAssunto: (id: number, assunto: Partial<Assunto>) =>
+        apiRequest<Assunto>(`/api/assuntos/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(assunto),
+        }),
+
+    atualizarEstadoAssunto: (id: number, ativo: boolean) =>
+        apiRequest<Assunto>(`/api/assuntos/${id}/ativo`, {
+            method: 'PATCH',
+            body: JSON.stringify({ ativo }),
+        }),
+
+    apagarAssunto: (id: number) =>
+        apiRequest<void>(`/api/assuntos/${id}`, {
+            method: 'DELETE',
         }),
 };

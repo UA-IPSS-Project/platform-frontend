@@ -50,7 +50,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
     };
 
     const RequirementItem = ({ fulfilled, text }: { fulfilled: boolean; text: string }) => (
-        <div className={`flex items-center gap-2 text-sm ${fulfilled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+        <div className={`flex items-center gap-2 text-sm ${fulfilled ? 'text-status-success' : 'text-muted-foreground'}`}>
             {fulfilled ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
             <span>{text}</span>
         </div>
@@ -61,7 +61,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Lock className="w-5 h-5 text-purple-600" />
+                        <Lock className="w-5 h-5 text-primary" />
                         {t('auth.changePasswordTitle')}
                     </DialogTitle>
                 </DialogHeader>
@@ -82,7 +82,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                             <button
                                 type="button"
                                 onClick={() => setShowNewPassword(!showNewPassword)}
-                                className="ml-2 text-gray-500 hover:text-gray-700 outline-none flex-shrink-0"
+                                className="ml-2 text-muted-foreground hover:text-foreground outline-none flex-shrink-0"
                             >
                                 {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
@@ -111,13 +111,13 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="ml-2 text-gray-500 hover:text-gray-700 outline-none flex-shrink-0"
+                                className="ml-2 text-muted-foreground hover:text-foreground outline-none flex-shrink-0"
                             >
                                 {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
                         {password && confirmPassword && password !== confirmPassword && (
-                            <p className="text-sm text-red-500 mt-1">{t('auth.passwordsDoNotMatch')}</p>
+                            <p className="text-sm text-status-error mt-1">{t('auth.passwordsDoNotMatch')}</p>
                         )}
                     </div>
 
@@ -132,7 +132,7 @@ export function ChangePasswordDialog({ open, onClose }: ChangePasswordDialogProp
                         </Button>
                         <Button
                             type="submit"
-                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
                             disabled={loading || !isValid}
                         >
                             {loading ? t('common.saving') : t('auth.saveChanges')}

@@ -83,11 +83,11 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           aria-label="Mês"
           value={displayMonth.getMonth()}
           onChange={(e) => handleMonthChange(e.target.value)}
-          className="flex h-9 w-[130px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+          className="flex h-9 w-[130px] items-center justify-between whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 appearance-none cursor-pointer transition-colors hover:bg-accent font-medium"
           style={{ backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down opacity-50"><path d="m6 9 6 6 6-6"/></svg>')`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center', paddingRight: '2rem' }}
         >
           {months.map((month, index) => (
-            <option key={index} value={index} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 py-2 cursor-pointer">
+            <option key={index} value={index} className="text-popover-foreground bg-popover py-2 cursor-pointer">
               {month}
             </option>
           ))}
@@ -106,8 +106,8 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           onBlur={handleYearInputBlur}
           title={yearError ?? "Insira um ano com 4 dígitos"}
           className={cn(
-            "flex h-9 w-[90px] items-center justify-center whitespace-nowrap rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-center",
-            yearError && "border-red-500 ring-1 ring-red-500"
+            "flex h-9 w-[90px] items-center justify-center whitespace-nowrap rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none hover:ring-2 hover:ring-ring disabled:cursor-not-allowed disabled:opacity-50 transition-colors hover:bg-accent font-medium text-center",
+            yearError && "border-status-error ring-1 ring-status-error"
           )}
         />
       </div>
@@ -116,7 +116,7 @@ function CustomCaption({ displayMonth }: CaptionProps) {
           id={yearErrorId}
           role="alert"
           aria-live="polite"
-          className="text-xs text-red-600 dark:text-red-400 text-center px-1"
+          className="text-xs text-status-error text-center px-1"
         >
           {yearError}
         </p>
@@ -132,7 +132,7 @@ function Calendar({
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
   return (
-    <GlassCard className="p-0 overflow-hidden w-full sm:w-auto dark:bg-gray-900/90 shadow-lg">
+    <GlassCard className="p-0 overflow-hidden w-full sm:w-auto shadow-lg">
       <DayPicker
         showOutsideDays={showOutsideDays}
         className={cn("p-4", className)}
@@ -155,7 +155,7 @@ function Calendar({
           ),
           day: cn(
             buttonVariants({ variant: "ghost" }),
-            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-violet-100 dark:hover:bg-violet-900/30",
+            "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent",
           ),
           day_range_start:
             "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
@@ -163,7 +163,7 @@ function Calendar({
             "day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
           day_selected:
             "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-          day_today: "bg-violet-50 dark:bg-violet-900/20 text-violet-900 dark:text-violet-100 font-semibold border border-violet-200 dark:border-violet-800",
+          day_today: "bg-status-info-soft/40 text-status-info font-semibold border border-status-info/40",
           day_outside:
             "day-outside text-muted-foreground aria-selected:text-muted-foreground opacity-30",
           day_disabled: "text-muted-foreground opacity-30",

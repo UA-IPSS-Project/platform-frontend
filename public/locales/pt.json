@@ -21,6 +21,7 @@
   "appointmentDialog": {
     "durationLabel": "Duração da marcação",
     "durationBalneario": "30 minutos",
+    "durationSecretary": "15 minutos",
     "title": "Novo Agendamento",
     "description": "Preencha os dados do utente para criar uma nova marcação",
     "at": "às",
@@ -67,15 +68,17 @@
       "nif": "NIF *",
       "nifPlaceholder": "123456789",
       "birthDate": "Data de Nascimento *",
+      "birthDatePlaceholder": "dd/mm/aaaa",
       "name": "Nome *",
+      "namePlaceholder": "Nome completo",
       "email": "Email *",
       "emailPlaceholder": "exemplo@email.com",
       "contact": "Contacto *",
       "contactPlaceholder": "912345678",
       "subject": "Assunto *",
       "subjectPlaceholder": "Selecione o assunto",
-      "shortDescription": "Descrição curta",
-      "shortDescriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
+      "description": "Descrição curta",
+      "descriptionPlaceholder": "Descreva brevemente o motivo da marcação...",
       "attachDocs": "Anexar documentos (opcional)"
     },
     "subjects": {
@@ -206,6 +209,23 @@
         "paragraphs": [
           "A IPSS Florinhas do Vouga reserva-se o direito de actualizar a presente Política sempre que necessário, sendo as alterações publicadas no website."
         ]
+      },
+      {
+        "title": "Isenção de Responsabilidade",
+        "paragraphs": [
+          "A plataforma é disponibilizada \"tal como está\" (as is), sem garantias de qualquer tipo, expressas ou implícitas, incluindo, mas não se limitando a, garantias de comercialização, adequação a um fim específico ou não violação.",
+          "A IPSS Florinhas do Vouga não garante que a plataforma estará sempre disponível, livre de erros ou vírus, ou que as funcionalidades corresponderão às expectativas de todos os utilizadores.",
+          "Em caso de indisponibilidade temporária do serviço por motivos técnicos, manutenção programada ou circunstâncias imprevistas, a Instituição não será responsável por quaisquer danos diretos ou indiretos resultantes dessa indisponibilidade.",
+          "O utilizador reconhece que a utilização da plataforma é feita por sua conta e risco, devendo tomar as precauções adequadas, incluindo a manutenção de cópias de segurança dos seus dados."
+        ]
+      },
+      {
+        "title": "Lei Aplicável e Jurisdição",
+        "paragraphs": [
+          "A presente Política de Privacidade e Termos de Uso são regidos pela legislação portuguesa, nomeadamente pelo Regulamento Geral sobre a Protecção de Dados (RGPD - Regulamento UE 2016/679) e pela Lei n.º 58/2019, de 8 de agosto.",
+          "Para a resolução de quaisquer litígios emergentes da interpretação ou aplicação destes termos, será competente o foro da comarca de Aveiro, com expressa renúncia a qualquer outro.",
+          "Em caso de conflito entre a versão portuguesa e traduções para outros idiomas, prevalecerá sempre a versão em língua portuguesa."
+        ]
       }
     ]
   },
@@ -226,6 +246,7 @@
     "balneario": "Balneário",
     "school": "Escola",
     "requisitions": "Requisições",
+    "createRequisition": "Criar Requisição",
     "material": "Material",
     "maintenance": "Manutenção",
     "transport": "Transporte",
@@ -236,7 +257,9 @@
     "management": "Gestão",
     "consumption": "Consumos",
     "administrativeArea": "Área Administrativa",
-    "general": "Geral"
+    "general": "Geral",
+    "slots": "Gestão de Slots",
+    "inventory": "Gestão de Inventário"
   },
   "dashboard": {
     "secretary": "Secretaria",
@@ -244,6 +267,7 @@
     "balneario": "Balneário",
     "appointments": "Marcações",
     "requisitions": "Requisições",
+    "createRequisition": "Criar Requisição",
     "material": "Material",
     "maintenance": "Manutenção",
     "transport": "Transporte",
@@ -291,6 +315,7 @@
       "mainTitle": "Gestão de Plataforma",
       "mainDescription": "Todas as alterações são refletidas em tempo real para todos os utilizadores.",
       "administrationOnlyArea": "Área exclusiva para administração",
+      "inventoryDescription": "Gestão de stock, categorias e detalhes dos produtos do armazém.",
       "navigation": {
         "dashboard": "Dashboard",
         "slots": "Slots",
@@ -317,19 +342,22 @@
       },
       "slots": {
         "operationalConfiguration": "Configuração operacional",
-        "title": "Capacidade de marcações por slot",
-        "description": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
-        "secretaryScheduleTitle": "Agenda da Secretaria",
-        "balnearioScheduleTitle": "Agenda do Balneário",
-        "secretaryScheduleDescription": "Define quantas marcações da secretaria podem coexistir no mesmo horário.",
-        "balnearioScheduleDescription": "Controla a lotação operacional dos slots de marcação do balneário.",
+        "title": "Capacidade da Secretaria por Slot",
+        "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
+        "balnearioTitle": "Capacidade do Balneário por Slot",
+        "balnearioDescription": "Configure o número máximo de utentes que o balneário pode receber simultaneamente por horário.",
+        "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
+        "current": "atual",
+        "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
+        "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
+        "balnearioScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 30 minutos.",
         "maxPerSlot": "Máximo por slot",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
       },
       "summary": {
         "slots": {
-          "title": "Slots (Secretaria/Balneário)",
+          "title": "Slots da Secretaria",
           "description": "capacidade por horário"
         },
         "materials": {
@@ -342,11 +370,25 @@
         },
         "maintenanceTypes": {
           "title": "Tipos de manutenção",
-          "description": "tipos disponíveis"
+          "description": "categorias no catálogo"
+        },
+        "assuntos": {
+          "title": "Assuntos Ativos",
+          "description": "tipos de marcação disponíveis"
         }
       },
       "messages": {
-        "slotConfigUpdated": "Configuração de slots atualizada com sucesso"
+        "slotConfigUpdated": "Configuração de slots atualizada com sucesso",
+        "reportEmailSent": "Relatório enviado com sucesso!"
+      },
+      "reportDialog": {
+        "title": "Enviar Relatório por Email",
+        "description": "Introduza o endereço de e-mail para onde deseja enviar o relatório gerado.",
+        "emailLabel": "Endereço de E-mail",
+        "emailPlaceholder": "exemplo@email.com",
+        "cancel": "Cancelar",
+        "send": "Enviar Relatório",
+        "invalidEmail": "Por favor, introduza um e-mail válido."
       },
       "catalogs": {
         "title": "Configuração do Catálogo",
@@ -375,11 +417,19 @@
         "addElement": "2. Adicionar Elemento",
         "verificationElement": "Elemento de Verificação",
         "createElement": "Criar Elemento",
+        "categoriesCount": "{{count}} Categorias",
+        "createCategory": "Criar Nova Categoria",
+        "newCategoryDescription": "Isto criará uma nova categoria com itens 'GERAL' por padrão.",
+        "categoryPlaceholder": "Ex: ELETRICIDADE",
+        "vehiclesDependencyHint": "⚠️ Os veículos dependem do Catálogo de Transportes.",
+        "addSpacePlaceholder": "Adicionar novo espaço...",
+        "addElementPlaceholder": "Adicionar novo elemento...",
         "materials": "Materiais",
         "transports": "Transportes",
         "maintenance": "Manutenção",
         "spaces": "Espaços",
         "elements": "Elementos",
+        "total": "Total: {{count}}",
         "success": {
           "materialCreated": "Material criado com sucesso.",
           "transportCreated": "Transporte criado com sucesso.",
@@ -393,7 +443,9 @@
           "elementUpdated": "Elemento atualizado.",
           "spaceDeleted": "Espaço eliminado.",
           "elementDeleted": "Elemento eliminado.",
-          "categoryRemoved": "Categoria removida."
+          "categoryCreated": "Categoria criada com sucesso!",
+          "categoryRemoved": "Categoria removida.",
+          "transportScrapSold": "Transporte marcado como abatido/vendido com sucesso."
         },
         "errors": {
           "requiredFields": "Todos os campos são obrigatórios.",
@@ -401,19 +453,76 @@
           "capacityPositive": "A lotação deve ser um número maior que zero.",
           "loadMaterials": "Erro ao carregar materiais.",
           "loadTransports": "Erro ao carregar transportes.",
-          "loadMaintenance": "Erro ao carregar itens de manutenção."
+          "loadMaintenance": "Erro ao carregar itens de manutenção.",
+          "codeRequired": "O código interno é obrigatório."
         },
         "confirm": {
           "deleteMaterial": "Tem a certeza que deseja eliminar este material?",
-          "deleteTransport": "Tem a certeza que deseja eliminar este transporte?",
           "deleteSpace": "Eliminar espaço \"{{name}}\" e seus itens?",
           "deleteElement": "Eliminar elemento \"{{name}}\" em todos os espaços?",
-          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?"
-        }
+          "deleteCategory": "Eliminar TODOS os itens da categoria \"{{name}}\"?",
+          "deleteCategoryMovesVehicles": "Esta ação vai mover todos os {{count}} veículo(s) desta categoria para \"Abatido / Vendido / Descontinuado\". Os dados dos veículos serão preservados.",
+          "scrapTransport": "Marcar como Abatido / Vendido / Descontinuado",
+          "scrapTransportDescription": "Este veículo será marcado como indisponível e deixará de estar disponível para requisições. Os dados do veículo serão preservados.",
+          "confirmScrap": "Marcar como Indisponível"
+        },
+        "itemsCount_one": "{{count}} item",
+        "itemsCount_other": "{{count}} itens",
+        "removeCategory": "Remover Categoria",
+        "searchMaterials": "Pesquisar materiais...",
+        "existingCategoriesList": "Categorias Existentes",
+        "noMaterialsFound": "Nenhum material encontrado.",
+        "noMaterialsRegistered": "Nenhum material cadastrado.",
+        "newCategoryNamePlaceholder": "Nome da nova categoria",
+        "materialNamePlaceholder": "Ex: Cadernos, Tesoura...",
+        "attributePlaceholder": "Ex: Formato, Cor...",
+        "valuePlaceholder": "Ex: A4, Azul...",
+        "freeWrite": "Escreva livremente",
+        "searchVerificationsPlaceholder": "Pesquisar verificações...",
+        "spaceNameRequired": "O nome do espaço é obrigatório.",
+        "elementNameRequired": "O nome do elemento é obrigatório.",
+        "noVerificationsFound": "Nenhuma verificação encontrada.",
+        "noVerificationsRegistered": "Nenhuma verificação cadastrada.",
+        "loadingCatalog": "A carregar catálogo...",
+        "totalFleet": "Frota Total: {{count}}",
+        "nextCodeLabel": "Próximo Código",
+        "platePlaceholder": "XX-00-XX",
+        "searchVehiclesPlaceholder": "Pesquisar veículos (matrícula, marca...)",
+        "fleetByCategory": "Frotas por Categoria",
+        "internalCode": "Código Interno",
+        "seatsCount_one": "{{count}} Lugar",
+        "seatsCount_other": "{{count}} Lugares",
+        "noCategories": "Nenhuma categoria",
+        "noVehiclesInCategory": "Ainda não existem veículos com esta categoria"
       },
       "errors": {
         "loadSlotConfig": "Não foi possível carregar a configuração de slots",
         "saveSlotConfig": "Não foi possível guardar a configuração de slots"
+      },
+      "assuntos": {
+        "sectionTitle": "Assuntos de Marcação",
+        "sectionDescription": "Configure os tipos de agendamento disponíveis para os utentes e funcionários na secretaria.",
+        "confirmDeactivateTitle": "Desativar Assunto?",
+        "confirmDeactivateDescription": "Ao desativar este assunto, ele deixará de estar disponível para novos agendamentos tanto para utentes como para a secretaria. Agendamentos existentes não serão afetados.",
+        "confirmDeactivateAction": "Desativar",
+        "activateSuccess": "Assunto ativado",
+        "deactivateSuccess": "Assunto desativado",
+        "activateError": "Erro ao ativar assunto",
+        "deactivateError": "Erro ao desativar assunto",
+        "loadError": "Erro ao carregar assuntos",
+        "createSuccess": "Assunto criado com sucesso",
+        "createError": "Erro ao criar assunto",
+        "updateSuccess": "Assunto atualizado",
+        "updateError": "Erro ao atualizar assunto",
+        "deleteConfirm": "Tem a certeza que deseja eliminar permanentemente este assunto?",
+        "deleteSuccess": "Assunto eliminado",
+        "deleteError": "Erro ao eliminar assunto",
+        "addTitle": "Novo Assunto de Marcação",
+        "fieldName": "Nome do Assunto",
+        "addAction": "Adicionar Assunto",
+        "listTitle": "Assuntos Geridos",
+        "nameLabel": "Nome",
+        "nameRequired": "O nome do assunto é obrigatório"
       }
     },
     "userHome": {
@@ -437,15 +546,25 @@
   },
   "common": {
     "confirmLogout": "Tem a certeza que quer sair?",
+    "confirm": "Confirmar",
+    "view": "Visualizar",
     "back": "Voltar",
     "edit": "Editar",
     "save": "Guardar",
     "saving": "A guardar...",
     "cancel": "Cancelar",
-    "ok": "OK"
+    "ok": "OK",
+    "add": "Adicionar",
+    "delete": "Eliminar",
+    "optional": "(opcional)",
+    "refresh": "Atualizar",
+    "error": "Erro",
+    "vehicle": "veículo",
+    "vehicles": "veículos"
   },
   "notifications": {
     "title": "Notificações",
+    "new_notification": "Nova Notificação",
     "unreadCount_one": "{{count}} notificação não lida",
     "unreadCount_other": "{{count}} notificações não lidas",
     "markAllRead": "Marcar todas como lidas",
@@ -490,6 +609,8 @@
     "confirmPasswordRequired": "Confirmação de palavra-passe é obrigatória",
     "passwordsDoNotMatch": "As palavras-passe não coincidem",
     "mustAcceptTermsRegister": "Deve aceitar os termos de uso para se registar",
+    "confirmAge": "Declaro ter 18 ou mais anos de idade",
+    "mustConfirmAge": "Deve confirmar que tem 18 ou mais anos para se registar",
     "mustAcceptTermsActivate": "Deve aceitar os termos de uso para ativar a conta",
     "fixFormErrors": "Por favor, corrija os erros no formulário",
     "fixErrorsBeforeContinue": "Corrija os erros antes de continuar",
@@ -530,7 +651,7 @@
     "roleSocialBath": "Balneário Social",
     "roleSchool": "Escola",
     "roleInternalServices": "Serviços Internos",
-    "acceptTermsPrefix": "Aceito os"
+    "acceptTermsPrefix": "Confirmo que li e aceito os"
   },
   "profile": {
     "title": "Perfil do Utilizador",
@@ -582,7 +703,7 @@
     "title": "Histórico de Marcações",
     "backToAppointments": "Voltar para Marcações",
     "status": {
-      "completed": "Concluído",
+      "completed": "Ok",
       "warning": "Aviso",
       "noShow": "Não compareceu",
       "cancelled": "Cancelado"
@@ -675,12 +796,31 @@
     }
   },
   "requisitions": {
+    "periodica": {
+      "label": "Requisição Periódica",
+      "frequencia": {
+        "label": "Frequência",
+        "DIARIA": "Diária",
+        "SEMANAL": "Semanal",
+        "MENSAL": "Mensal"
+      },
+      "dataInicio": "Data de Início",
+      "dataFim": "Data de Fim (Opcional)",
+      "dataFimHint": "Selecionar data",
+      "errors": {
+        "dataInicioRequired": "A data de início é obrigatória para requisições periódicas."
+      }
+    },
     "summary": "{{total}} requisição(ões) · {{urgent}} urgente(s)",
     "labels": {
       "allStatuses": "Todos os estados",
+      "open": "Aberto",
+      "inProgress": "Em progresso",
+      "closed": "Fechado",
       "inAnalysis": "Em análise",
       "accepted": "Aceite",
       "rejected": "Recusada",
+      "unavailable": "Indisponível",
       "low": "Baixa",
       "medium": "Média",
       "high": "Alta",
@@ -694,6 +834,10 @@
       "transportCategoryLightGoods": "Ligeiro de mercadorias",
       "transportCategoryLightSpecial": "Ligeiro especial",
       "transportCategoryAdapted": "Adaptado",
+      "transportCategorySchool": "Escolar",
+      "transportCategoryAmbulance": "Ambulância",
+      "transportCategoryTractor": "Trator",
+      "transportCategoryAbateSold": "Abatido / Vendido / Descontinuado",
       "transportCategoryLight": "Ligeiro",
       "transportCategoryHeavy": "Pesado",
       "passengers": "Passageiros",
@@ -706,6 +850,7 @@
       "maintenanceCategoryRC": "R/C",
       "maintenanceCategoryPreschool": "Pré Escolar",
       "maintenanceCategoryDaycare": "Creche",
+      "maintenanceCategoryVehicles": "Viaturas",
       "noCategory": "Sem categoria",
       "capacityNotDefined": "Lotação não definida",
       "seat": "lugar",
@@ -722,10 +867,11 @@
       "managedBy": "Gerido por",
       "date": "Data",
       "lastUpdate": "Última alteração",
-      "deadline": "Prazo",
       "materials": "Materiais",
       "destination": "Destino",
       "vehicles": "Viaturas",
+      "vehicles_one": "Viatura",
+      "vehicles_other": "Viaturas",
       "subject": "Assunto",
       "description": "Descrição",
       "type": "Tipo",
@@ -735,22 +881,19 @@
       "quantity": "Quantidade",
       "departure": "Saída",
       "return": "Regresso",
-      "driver": "Condutor",
+      "driver": "Condutor *",
       "toBeDefined": "A definir",
       "newStatus": "Novo estado",
-      "finalStateRuleHint": "Esta requisição já foi decidida. Apenas transições de Em análise para Aceite ou Recusada são permitidas."
+      "finalStateRuleHint": "Esta requisição já foi finalizada. Apenas transições para Em progresso ou Fechado são permitidas a partir de Aberto."
     },
     "ui": {
       "mainData": "Dados principais",
       "type": "Tipo",
       "priority": "Prioridade",
-      "deadlineDate": "Data limite",
-      "deadlineOptional": "Data limite (opcional)",
-      "selectDate": "Selecionar data",
-      "transportAutoDeadlineHint": "Preenchida automaticamente para o dia anterior à saída.",
       "description": "Descrição",
       "descriptionPlaceholder": "Descreve a requisição",
       "describeRequest": "Descreva a requisição",
+      "fillToCreate": "Preenche os campos abaixo para criar uma nova requisição institucional.",
       "detailsByType": "Detalhes por tipo",
       "selectMaterials": "Selecionar materiais",
       "availableMaterials": "Materiais disponíveis",
@@ -768,8 +911,15 @@
       "transportPlanningHint": "Preenche o percurso e a ocupação prevista para sugerir automaticamente a frota mais adequada.",
       "destination": "Destino",
       "destinationPlaceholder": "Ex: Porto, Casa da Música",
-      "driverOptional": "Condutor (opcional)",
+      "destinations": {
+        "school": "Escola",
+        "user": "Utente",
+        "exterior": "Saída para o exterior",
+        "stateVisit": "Visita de estado"
+      },
+      "driverRequired": "Condutor *",
       "driverPlaceholder": "Ex: Motorista interno ou a definir",
+      "driverHint": "OBRIGATÓRIO: Indicar a pessoa (pode ser \"Motorista externo\" ou \"A definir\").",
       "departureDate": "Data de saída",
       "departureTime": "Hora de saída",
       "returnDate": "Data de regresso",
@@ -785,7 +935,9 @@
       "passengerCapacity": "Capacidade para passageiros",
       "seatsCount": "{{count}} lugares",
       "coverage": "Cobertura",
-      "capacityHint": "A lotação útil considera 1 lugar para o condutor em cada viatura.",
+      "capacityHint": "Lotação inclui condutor; extras contam como passageiros.",
+      "capacityHintDetail": "A lotação útil considera 1 lugar para o condutor em cada viatura.",
+      "licenseWarning": "OBRIGATÓRIO: Veículo com mais de 9 lugares requer condutor com carta D1 ou D.",
       "unavailableVehiclesCount": "{{count}} viatura(s) indisponível(is) por já terem uma requisição aceite neste horário.",
       "currentSelection": "Seleção atual",
       "capacityLabel": "Lotação",
@@ -802,7 +954,7 @@
       "brandModel": "Marca/Modelo",
       "notDefined": "Não definido",
       "licenseDate": "Data matrícula",
-      "subjectOptional": "Assunto (opcional)",
+      "subjectOptional": "Assunto",
       "subjectPlaceholder": "Ex: Torneira com fuga",
       "close": "Fechar",
       "clearSelection": "Limpar seleção",
@@ -830,6 +982,8 @@
       "allPriorities": "Todas as prioridades",
       "createdByName": "Criado por nome",
       "createdByPlaceholder": "Ex: Maria",
+      "startDate": "Data início",
+      "endDate": "Data fim",
       "managedByName": "Gerido por nome",
       "managedByPlaceholder": "Ex: João",
       "createdByRole": "Role de quem criou",
@@ -900,9 +1054,19 @@
     }
   },
   "userManagement": {
-    "title": "Gestão de Utilizadores",
+    "title": "Gestão de Contas",
     "title2": "Gestão da Plataforma",
-    "subtitle": "Criação e recuperação de contas",
+    "subtitle": "Registe novos utilizadores ou recupere contas existentes.",
+    "employeesTitle": "Gestão de Funcionários",
+    "employeesSubtitle": "Gerir acessos e aprovações da equipa",
+    "usersTitle": "Gestão de Utentes",
+    "usersSubtitle": "Listagem de todos os utentes registados",
+    "createAccountSubtitle": "Registe um novo utilizador ou funcionário",
+    "recoverAccountSubtitle": "Recuperar e-mail ou atualizar contacto de acesso",
+    "searchByNif": "Procurar por NIF",
+    "userFoundSuccess": "Utilizador encontrado com sucesso!",
+    "registeredEmployees": "Funcionários Registados",
+    "registeredUtentes": "Utentes Registados",
     "slotCapacityTitle": "Capacidade de Marcações por Slot",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
     "secretarySlotsLabel": "Secretaria (marcações por slot)",
@@ -928,7 +1092,7 @@
     "emailEditable": "Email (Atualizável)",
     "notifyRecovery": "Notificar Recuperação",
     "registeredUsers": "Utilizadores Registados",
-    "pending": "Pendentes",
+    "pending": "Pendente",
     "active": "Ativo",
     "searchByNameOrNif": "Pesquisar por nome ou NIF...",
     "role": "Função",
@@ -970,6 +1134,26 @@
       "admin": "Administrador",
       "school": "Escola",
       "other": "Outro"
+    },
+    "details": {
+      "title": "Gerir Utilizador",
+      "description": "Visualize e edite as informações do utilizador ou realize ações administrativas.",
+      "editTitle": "Editar Informações",
+      "approveTitle": "Aprovar Conta",
+      "approveDescription": "Este funcionário está aguardando aprovação para aceder à plataforma.",
+      "approveAction": "Aprovar Funcionário",
+      "saveChanges": "Guardar Alterações",
+      "deleting": "A eliminar...",
+      "approving": "A aprovar...",
+      "success": {
+        "updated": "Utilizador atualizado com sucesso",
+        "approved": "Funcionário aprovado com sucesso"
+      },
+      "errors": {
+        "load": "Erro ao carregar detalhes do utilizador",
+        "update": "Erro ao atualizar utilizador",
+        "approve": "Erro ao aprovar funcionário"
+      }
     }
   },
   "appointmentDetails": {
@@ -997,7 +1181,7 @@
     "rescheduledSuccess": "Marcação reagendada com sucesso",
     "rescheduledFailed": "Falha ao guardar o reagendamento.",
     "scheduled": "Agendado",
-    "completed": "Concluído",
+    "completed": "Ok",
     "noShow": "Não compareceu",
     "cancelled": "Cancelado",
     "viewAppointment": "Consultar Agendamento",
@@ -1050,7 +1234,7 @@
     "inProgress": "Em Curso",
     "scheduled": "Agendado",
     "warning": "Aviso",
-    "completed": "Concluído",
+    "completed": "Ok",
     "cancelled": "Cancelado",
     "noShow": "Não compareceu",
     "reserved": "Reservado"
@@ -1108,7 +1292,7 @@
     "patientNamePlaceholder": "Ex: João da Silva",
     "patientNeeds": "Necessidades do Utente",
     "hygiene": "Higiene",
-    "laundry": "Lavandaria",
+    "laundry": "Detergentes",
     "clothing": "Vestuário",
     "additionalNotes": "Notas Adicionais",
     "notesPlaceholder": "Ex: Alergias, cuidados especiais, tamanho de roupa...",
@@ -1212,7 +1396,18 @@
       "vestuario": "Vestuário",
       "calcado": "Calçado"
     },
+    "units": {
+      "un": "un",
+      "L": "L",
+      "pk": "pk",
+      "rolos": "rolos",
+      "pares": "pares",
+      "caixa": "caixa",
+      "saco": "saco"
+    },
     "products": {
+      "Lavar Roupa Seca": "Lavar Roupa Seca",
+      "Lavar Roupa Molhada": "Lavar Roupa Molhada",
       "Detergente Roupa": "Detergente Roupa",
       "Amaciador": "Amaciador",
       "Lixívia": "Lixívia",
@@ -1230,6 +1425,173 @@
       "Roupa Interior": "Roupa Interior",
       "Meias": "Meias",
       "Agasalho/Casaco": "Agasalho/Casaco"
+    },
+    "inventory": {
+      "managementTitle": "Gestão de Inventário",
+      "newItem": "Novo Item",
+      "editItem": "Editar Item",
+      "createItem": "Novo Item do Armazém",
+      "searchPlaceholder": "Pesquisar itens...",
+      "noItemsFound": "Nenhum item encontrado",
+      "tryChangingFilters": "Experimente mudar os filtros ou a pesquisa.",
+      "totalItems": "Total Itens",
+      "lowStock": "Stock Baixo",
+      "all": "Todos",
+      "form": {
+        "detailsDescription": "Configure os detalhes do produto e limites de stock.",
+        "productName": "Nome do Produto",
+        "currentStock": "Stock Atual",
+        "minAlert": "Mínimo Alerta",
+        "specificAttributes": "Atributos Específicos",
+        "brand": "Marca",
+        "size": "Tamanho",
+        "volume": "Volume / Peso",
+        "unit": "Unidade",
+        "description": "Descrição",
+        "detailsPlaceholder": "Detalhes adicionais...",
+        "saveChanges": "Guardar Alterações",
+        "saving": "A guardar...",
+        "requiredFields": "Nome e Categoria são obrigatórios"
+      },
+      "table": {
+        "item": "Item",
+        "category": "Categoria",
+        "stock": "Stock",
+        "status": "Estado",
+        "actions": "Ações",
+        "min": "Min",
+        "marca": "Marca",
+        "tam": "Tam",
+        "vol": "Vol",
+        "empty": "Nenhum item encontrado no armazém"
+      },
+      "deleteConfirm": {
+        "title": "Eliminar Produto",
+        "description": "Tem a certeza que deseja eliminar o produto <1>{{name}}</1>? Esta ação não pode ser desfeita.",
+        "action": "Eliminar Produto",
+        "cancel": "Cancelar"
+      },
+      "toasts": {
+        "loadError": "Erro ao carregar itens do armazém",
+        "deleteSuccess": "Item removido com sucesso",
+        "deleteError": "Erro ao remover o item",
+        "saveSuccess": "Item guardado com sucesso",
+        "saveError": "Erro ao guardar o item"
+      }
     }
+  },
+  "maintenance": {
+    "labels": {
+      "itemsByCategory": "Itens por Categoria",
+      "selectedItems": "{{count}} item(ns) selecionado(s)",
+      "clearSelection": "Limpar seleção",
+      "observations": "Observações por Categoria",
+      "space": "Espaço",
+      "space_one": "Espaço",
+      "space_other": "Espaços",
+      "vehicle": "Viatura",
+      "vehicle_one": "Viatura",
+      "vehicle_other": "Viaturas",
+      "item": "Item de Verificação"
+    },
+    "placeholders": {
+      "observations": "Notas adicionais para esta categoria..."
+    }
+  },
+  "settings": {
+    "title": "Definições",
+    "description": "Personalize a sua experiência e gira as configurações do sistema.",
+    "sections": {
+      "interface": "Interface e Preferências",
+      "notifications": "Sistema de Notificações",
+      "system": "Estado do Sistema",
+      "data": "Dados e Privacidade"
+    },
+    "theme": {
+      "title": "Tema da Interface",
+      "description": "Alterne entre o modo claro e escuro para melhor conforto visual.",
+      "dark": "Modo Escuro",
+      "light": "Modo Claro"
+    },
+    "language": {
+      "title": "Idioma do Sistema",
+      "description": "Selecione o idioma em que a plataforma deve ser exibida.",
+      "pt": "Português",
+      "en": "Inglês (English)"
+    },
+    "sounds": {
+      "title": "Alertas Sonoros",
+      "description": "Ativar ou desativar sons para novas notificações ou alertas no sistema.",
+      "enabled": "Sons ativados",
+      "disabled": "Sons desativados",
+      "test": "Testar Alerta"
+    },
+    "clearCache": {
+      "title": "Limpeza de Cache",
+      "description": "Limpa os dados locais guardados no navegador para resolver problemas de visualização.",
+      "action": "Limpar Cache e Recarregar",
+      "success": "Cache limpa com sucesso!"
+    },
+    "messages": {
+      "languageChanged": "Idioma alterado com sucesso!",
+      "themeChanged": "Tema atualizado!"
+    },
+    "systemStatus": {
+      "title": "Conectividade do Servidor",
+      "description": "Estado em tempo real da ligação aos serviços principais.",
+      "online": "Serviços Online",
+      "offline": "Serviços Offline / Erro de Rede",
+      "version": "Versão da Aplicação",
+      "development_label": "Desenvolvimento",
+      "status_development": "Em desenvolvimento",
+      "lastChecked": "Última verificação há segundos"
+    }
+  },
+  "documentUpload": {
+    "purposes": {
+      "residenceProof": "Comprovativo de residência",
+      "medicalCertificate": "Atestado médico",
+      "idDocument": "Documento de identificação",
+      "incomeProof": "Comprovativo de rendimentos",
+      "parentalAuthorization": "Autorização parental",
+      "other": "Outro"
+    },
+    "clinicalConsent": {
+      "warning": "Este documento contém dados de saúde (categoria especial — RGPD art.º 9.º)",
+      "description": "O tratamento de dados de saúde requer o seu consentimento explícito. Estes dados serão utilizados exclusivamente para fins de acompanhamento social e de saúde no âmbito dos serviços da Florinhas do Vouga, e não serão partilhados com terceiros sem o seu consentimento.",
+      "checkbox": "Consinto expressamente o tratamento dos meus dados de saúde para os fins indicados (RGPD art.º 9.º, n.º 2, alínea a))",
+      "required": "É necessário dar consentimento explícito para documentos com dados de saúde"
+    }
+  },
+  "privacy": {
+    "common": {
+      "rights": "Tem direito a aceder, retificar, apagar e exportar os seus dados pessoais. Contacte secretaria@florinhasdovouga.pt para exercer os seus direitos."
+    },
+    "document": {
+      "title": "Aviso de Privacidade - Upload de Documentos",
+      "description": "Os documentos que enviar serão armazenados de forma segura e encriptada. Serão utilizados exclusivamente para a finalidade indicada e processamento da sua marcação. Os dados serão conservados pelo prazo legal de retenção configurado pela instituição."
+    },
+    "appointment": {
+      "title": "Aviso de Privacidade - Marcação",
+      "description": "Os dados pessoais recolhidos (nome, NIF, contacto, data de nascimento) serão utilizados para gestão da sua marcação e comunicação de serviços. O responsável pelo tratamento é a Associação Florinhas do Vouga, NIF 501234567."
+    },
+    "registration": {
+      "title": "Aviso de Privacidade - Registo",
+      "description": "Os seus dados pessoais serão tratados de acordo com o RGPD. Recolhemos apenas os dados necessários para a criação e gestão da sua conta. Os dados serão armazenados de forma segura e não serão partilhados com terceiros sem o seu consentimento."
+    },
+    "requisition": {
+      "title": "Aviso de Privacidade - Requisição",
+      "description": "Os dados fornecidos serão utilizados para processar a sua requisição de materiais, transportes ou manutenção. As informações serão partilhadas apenas com os funcionários responsáveis pelo processamento do pedido."
+    }
+  },
+  "termsReacceptance": {
+    "title": "Termos de Uso Atualizados",
+    "description": "Os nossos Termos de Uso foram atualizados. Por favor, reveja e aceite os novos termos para continuar a utilizar a plataforma.",
+    "acceptCheckbox": "Li e aceito os novos Termos de Uso",
+    "acceptButton": "Aceitar e Continuar",
+    "mustAccept": "Deve aceitar os termos para continuar",
+    "accepted": "Termos aceites com sucesso",
+    "acceptError": "Erro ao aceitar os termos. Tente novamente."
   }
 }
+

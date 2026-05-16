@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import { Button } from '../ui/button';
-import { BellIcon, XIcon, CheckCircleIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon } from './CustomIcons';
+import { BellIcon, CalendarIcon, ClipboardListIcon, AlertCircleIcon, TrashIcon } from './CustomIcons';
 
 interface Notification {
   id: string;
@@ -10,8 +8,6 @@ interface Notification {
   isRead: boolean;
   icon: 'calendar' | 'document' | 'alert';
 }
-
-import { TrashIcon } from './CustomIcons';
 
 interface NotificationsPanelProps {
   notifications: Notification[];
@@ -72,17 +68,17 @@ export function NotificationsPanel({
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="fixed top-20 right-6 w-80 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-lg shadow-2xl border border-pink-100 dark:border-gray-700 z-[9999] overflow-hidden">
+      <div className="fixed top-20 right-6 w-80 bg-card/95 backdrop-blur-xl rounded-lg shadow-2xl border border-border z-[9999] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-pink-100 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-100">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-semibold text-foreground">
             Notificações
           </h3>
           <div className="flex gap-2">
             {unreadCount > 0 && (
               <button
                 onClick={onMarkAllAsRead}
-                className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 px-2 py-1 rounded transition-colors"
+                className="text-xs text-primary hover:text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
               >
                 Marcar lidas
               </button>
@@ -90,7 +86,7 @@ export function NotificationsPanel({
             {notifications.length > 0 && (
               <button
                 onClick={onDeleteAll}
-                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded transition-colors"
+                className="text-xs text-status-error hover:text-status-error hover:bg-status-error-soft px-2 py-1 rounded transition-colors"
                 title="Eliminar todas"
               >
                 <TrashIcon className="w-3.5 h-3.5" />
@@ -102,7 +98,7 @@ export function NotificationsPanel({
         {/* Notifications List */}
         <div className="overflow-y-auto max-h-80">
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-8 text-center text-muted-foreground">
               <BellIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Sem notificações</p>
             </div>
@@ -110,7 +106,7 @@ export function NotificationsPanel({
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-b border-pink-50 dark:border-gray-700/50 hover:bg-pink-50/50 dark:hover:bg-gray-800 transition-colors cursor-pointer ${!notification.isRead ? 'bg-purple-50/30 dark:bg-gray-800/50' : ''
+                className={`p-4 border-b border-border/70 hover:bg-accent transition-colors cursor-pointer ${!notification.isRead ? 'bg-primary/10' : ''
                   }`}
                 onClick={() => {
                   onMarkAsRead(notification.id);
@@ -122,28 +118,39 @@ export function NotificationsPanel({
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${!notification.isRead
-                    ? 'bg-purple-100 dark:bg-purple-900/30'
-                    : 'bg-gray-100 dark:bg-gray-800'
+                    ? 'bg-primary/15'
+                    : 'bg-muted'
                     }`}>
-                    <div className={!notification.isRead ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}>
+                    <div className={!notification.isRead ? 'text-primary' : 'text-muted-foreground'}>
                       {getIconComponent(notification.icon)}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm truncate ${!notification.isRead
-                      ? 'font-medium text-gray-800 dark:text-gray-100'
-                      : 'text-gray-600 dark:text-gray-400'
+                      ? 'font-medium text-foreground'
+                      : 'text-muted-foreground'
                       }`}>
                       {notification.title}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                    <p className="text-xs text-muted-foreground/80 mt-0.5">
                       {getTimeAgo(notification.timestamp)}
                     </p>
                   </div>
                   {!notification.isRead && (
                     // Reintroduzido mt-2 para alinhar visualmente com o texto do título/hora
-                    <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0 mt-2" />
+                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
                   )}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(notification.id);
+                    }}
+                    className="text-status-error hover:text-status-error/90 hover:bg-status-error-soft p-1 rounded transition-colors"
+                    aria-label="Eliminar notificação"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))
@@ -152,13 +159,13 @@ export function NotificationsPanel({
 
         {/* Footer */}
         {notifications.length > 0 && (
-          <div className="p-3 border-t border-pink-100 dark:border-gray-700 text-center">
+          <div className="p-3 border-t border-border text-center">
             <button
               onClick={() => {
                 onClose();
                 onNavigateToPage?.();
               }}
-              className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+              className="text-sm text-primary hover:text-primary/90 font-medium"
             >
               Ver todas as notificações
             </button>

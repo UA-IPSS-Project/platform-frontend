@@ -31,32 +31,32 @@ export const APPOINTMENT_STATUS_CONFIG: Record<AppointmentStatusType, StatusConf
   scheduled: {
     label: 'statusBadge.scheduled',
     color: {
-      light: { bg: 'bg-pink-100', text: 'text-pink-700' },
-      dark: { bg: 'dark:bg-pink-900/40', text: 'dark:text-pink-200' },
+      light: { bg: 'bg-status-info-soft', text: 'text-status-info' },
+      dark: { bg: '', text: '' },
     },
     variant: 'default',
   },
   'in-progress': {
     label: 'statusBadge.inProgress',
     color: {
-      light: { bg: 'bg-[#ede9fe]', text: 'text-[#5b21b6]' },
-      dark: { bg: 'dark:bg-[#4c1d95]', text: 'dark:text-[#c4b5fd]' },
+      light: { bg: 'bg-status-info-soft', text: 'text-status-info' },
+      dark: { bg: '', text: '' },
     },
     variant: 'default',
   },
   completed: {
     label: 'statusBadge.completed',
     color: {
-      light: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-      dark: { bg: 'dark:bg-emerald-900/40', text: 'dark:text-emerald-200' },
+      light: { bg: 'bg-status-success-soft', text: 'text-status-success' },
+      dark: { bg: '', text: '' },
     },
     variant: 'default',
   },
   'no-show': {
     label: 'statusBadge.noShow',
     color: {
-      light: { bg: 'bg-transparent', text: 'text-amber-700' },
-      dark: { bg: 'dark:bg-transparent', text: 'dark:text-amber-400' },
+      light: { bg: 'bg-transparent', text: 'text-status-warning' },
+      dark: { bg: '', text: '' },
     },
     variant: 'outline',
     icon: 'none',
@@ -64,16 +64,16 @@ export const APPOINTMENT_STATUS_CONFIG: Record<AppointmentStatusType, StatusConf
   cancelled: {
     label: 'statusBadge.cancelled',
     color: {
-      light: { bg: 'bg-transparent', text: 'text-red-600' },
-      dark: { bg: 'dark:bg-transparent', text: 'dark:text-red-500' },
+      light: { bg: 'bg-transparent', text: 'text-status-error' },
+      dark: { bg: '', text: '' },
     },
     variant: 'outline',
   },
   warning: {
     label: 'statusBadge.warning',
     color: {
-      light: { bg: 'bg-transparent', text: 'text-amber-700' },
-      dark: { bg: 'dark:bg-transparent', text: 'dark:text-amber-400' },
+      light: { bg: 'bg-transparent', text: 'text-status-warning' },
+      dark: { bg: '', text: '' },
     },
     variant: 'outline',
     icon: 'alert',
@@ -81,8 +81,8 @@ export const APPOINTMENT_STATUS_CONFIG: Record<AppointmentStatusType, StatusConf
   reserved: {
     label: 'statusBadge.reserved',
     color: {
-      light: { bg: 'bg-slate-100', text: 'text-slate-700' },
-      dark: { bg: 'dark:bg-slate-700', text: 'dark:text-slate-200' },
+      light: { bg: 'bg-status-neutral-soft', text: 'text-status-neutral' },
+      dark: { bg: '', text: '' },
     },
     variant: 'default',
   },
@@ -117,16 +117,15 @@ export function getStatusConfig(status: AppointmentStatusType): StatusConfig {
 export class StatusStyleBuilder {
   static buildBgClass(status: AppointmentStatusType): string {
     const config = getStatusConfig(status);
-    return `${config.color.light.bg} ${config.color.dark.bg}`;
+    return `${config.color.light.bg} ${config.color.dark.bg}`.trim();
   }
 
   static buildTextClass(status: AppointmentStatusType): string {
     const config = getStatusConfig(status);
-    return `${config.color.light.text} ${config.color.dark.text}`;
+    return `${config.color.light.text} ${config.color.dark.text}`.trim();
   }
 
   static buildFullClass(status: AppointmentStatusType): string {
-    const config = getStatusConfig(status);
     const bg = this.buildBgClass(status);
     const text = this.buildTextClass(status);
     return `${bg} ${text}`;
@@ -137,11 +136,11 @@ export class StatusStyleBuilder {
    */
   static buildBorderClass(status: AppointmentStatusType): string {
     const statusToColor = {
-      'no-show': 'border-amber-300 dark:border-amber-500',
-      cancelled: 'border-red-300 dark:border-red-500',
-      warning: 'border-amber-300 dark:border-amber-500',
+      'no-show': 'border-status-warning/60',
+      cancelled: 'border-status-error/60',
+      warning: 'border-status-warning/60',
     } as const;
 
-    return statusToColor[status as keyof typeof statusToColor] || 'border-gray-300 dark:border-gray-600';
+    return statusToColor[status as keyof typeof statusToColor] || 'border-status-neutral/60';
   }
 }

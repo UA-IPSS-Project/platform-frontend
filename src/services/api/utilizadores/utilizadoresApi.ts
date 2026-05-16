@@ -47,10 +47,18 @@ export const utilizadoresApi = {
             method: 'GET',
         }),
 
-    listarFuncionarios: () =>
-        apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/funcionarios', {
-            method: 'GET',
-        }),
+    listarFuncionarios: (nome?: string, tipo?: string, page = 0, size = 20) => {
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        if (nome) params.append('nome', nome);
+        if (tipo) params.append('tipo', tipo);
+        return apiRequest<import('../core/client').Page<UtilizadorResponseDTO>>(`/api/utilizadores/funcionarios?${params}`);
+    },
+
+    listarUtentes: (nome?: string, page = 0, size = 20) => {
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        if (nome) params.append('nome', nome);
+        return apiRequest<import('../core/client').Page<UtilizadorResponseDTO>>(`/api/utilizadores/utentes?${params}`);
+    },
 
     aprovarFuncionario: (id: number) =>
         apiRequest<void>(`/api/utilizadores/${id}/aprovar`, {
@@ -66,7 +74,7 @@ export const utilizadoresApi = {
     createBySecretary: (data: {
         name: string;
         nif: string;
-        contact: string;
+        contact?: string;
         email: string;
         birthDate: string; // YYYY-MM-DD
         isEmployee: boolean;
@@ -85,5 +93,70 @@ export const utilizadoresApi = {
         apiRequest<void>('/api/utilizadores/recover', {
             method: 'POST',
             body: JSON.stringify(data),
+        }),
+
+    // Direito ao Esquecimento (RGPD Art.º 17)
+    solicitarEliminacao: () =>
+        apiRequest<void>('/api/utilizadores/me/delete-request', {
+            method: 'POST',
+        }),
+
+    anonimizarUtilizador: (id: number) =>
+        apiRequest<void>(`/api/utilizadores/${id}/anonimizar`, {
+            method: 'POST',
+        }),
+
+    anonimizarEEliminarUtilizador: (id: number) =>
+        apiRequest<void>(`/api/utilizadores/${id}/anonimizar-eliminar`, {
+            method: 'DELETE',
+        }),
+
+    // Direito de Portabilidade (RGPD Art.º 20)
+    exportarDados: () =>
+        apiRequest<any>('/api/utilizadores/me/export', {
+            method: 'GET',
+        }),
+
+    // Termos de Uso — Versionamento (RGPD)
+    checkTermsStatus: () =>
+        apiRequest<{ currentVersion: number; userVersion: number | null; needsAcceptance: boolean }>(
+            '/api/utilizadores/me/terms-status',
+            { method: 'GET' }
+        ),
+
+    acceptTerms: (version: number) =>
+        apiRequest<void>(`/api/utilizadores/me/accept-terms?version=${version}`, {
+            method: 'POST',
+        }),
+
+    updateTermsVersion: (newVersion: number, changeDescription?: string) => {
+        const params = new URLSearchParams({ newVersion: String(newVersion) });
+        if (changeDescription) params.set('changeDescription', changeDescription);
+        return apiRequest<void>(`/api/utilizadores/admin/terms-version?${params}`, {
+            method: 'POST',
+        });
+    },
+    
+    getPublicTermsContent: (lang: string) =>
+        apiRequest<{ content: string }>(`/api/utilizadores/terms-content?lang=${lang}`, {
+            method: 'GET',
+        }),
+
+    getTermsContent: (lang: string) =>
+        apiRequest<{ content: string }>(`/api/utilizadores/admin/terms-content?lang=${lang}`, {
+            method: 'GET',
+        }),
+
+    updateTermsContent: (lang: string, content: string) =>
+        apiRequest<void>(`/api/utilizadores/admin/terms-content?lang=${lang}`, {
+            method: 'PUT',
+            body: JSON.stringify({ content }),
+        }),
+
+    // Publicar nova versão: guarda PT+EN + incrementa versão atomicamente
+    publishTerms: (contentPt: string, contentEn: string, changeDescription?: string) =>
+        apiRequest<{ version: number }>('/api/utilizadores/admin/terms-publish', {
+            method: 'POST',
+            body: JSON.stringify({ contentPt, contentEn, changeDescription }),
         }),
 };

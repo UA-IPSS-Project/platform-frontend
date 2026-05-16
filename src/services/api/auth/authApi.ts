@@ -12,25 +12,25 @@ export const authApi = {
         apiRequest<AuthResponse>('/api/auth/login/funcionario', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }),
 
     loginUtente: (data: LoginUtenteRequest) =>
         apiRequest<AuthResponse>('/api/auth/login/utente', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }),
 
     registerUtente: (data: UtenteRegisterRequest) =>
         apiRequest<AuthResponse>('/api/auth/register/utente', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }),
 
     registerFuncionario: (data: FuncionarioRegisterRequest) =>
         apiRequest<AuthResponse>('/api/auth/register/funcionario', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }),
 
     updatePassword: (password: string, termsAccepted: boolean) =>
         apiRequest<void>('/api/auth/password', {

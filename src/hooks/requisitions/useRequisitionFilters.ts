@@ -10,7 +10,8 @@ export function useRequisitionFilters(
   const [filterTipo, setFilterTipo] = useState<RequisicaoTipo | ''>(initialTipo ?? '');
   const [filterPrioridade, setFilterPrioridade] = useState<RequisicaoPrioridade | ''>(initialPrioridade ?? '');
   const [filterCriadoPorNome, setFilterCriadoPorNome] = useState('');
-  const [filterGeridoPorNome, setFilterGeridoPorNome] = useState('');
+  const [filterDataInicio, setFilterDataInicio] = useState('');
+  const [filterDataFim, setFilterDataFim] = useState('');
   const [filterCriadoPorTipo, setFilterCriadoPorTipo] = useState<'' | 'SECRETARIA' | 'ESCOLA' | 'BALNEARIO' | 'INTERNO'>('');
   const [activeTab, setActiveTab] = useState<RequisicoesTab>(() => {
     if (initialPrioridade === 'URGENTE') return 'URGENTE';
@@ -23,7 +24,8 @@ export function useRequisitionFilters(
     setFilterTipo(initialTipo ?? '');
     setFilterPrioridade(initialPrioridade ?? '');
     setFilterCriadoPorNome('');
-    setFilterGeridoPorNome('');
+    setFilterDataInicio('');
+    setFilterDataFim('');
     setFilterCriadoPorTipo('');
     if (initialPrioridade === 'URGENTE') {
       setActiveTab('URGENTE');
@@ -43,12 +45,14 @@ export function useRequisitionFilters(
     setFilterPrioridade,
     filterCriadoPorNome,
     setFilterCriadoPorNome,
-    filterGeridoPorNome,
-    setFilterGeridoPorNome,
+    filterDataInicio,
+    setFilterDataInicio,
+    filterDataFim,
+    setFilterDataFim,
     filterCriadoPorTipo,
     setFilterCriadoPorTipo,
     activeTab,
     setActiveTab,
     resetFilters,
-  }), [filterEstado, filterTipo, filterPrioridade, filterCriadoPorNome, filterGeridoPorNome, filterCriadoPorTipo, activeTab, resetFilters]);
+  }), [filterEstado, filterTipo, filterPrioridade, filterCriadoPorNome, filterDataInicio, filterDataFim, filterCriadoPorTipo, activeTab, resetFilters]);
 }
