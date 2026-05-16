@@ -65,11 +65,14 @@ export interface CandidaturaResponse {
   criadoEm?: string;
   assinado?: boolean;
   ranking?: number;
+  utenteId?: number;
   atualizadoPor?: number;
   atualizadoEm?: string;
 }
 
 export interface ListarCandidaturasFilters {
+  formId?: string;
+  utenteId?: number;
   nif?: string;
   nome?: string;
   estado?: CandidaturaEstado;

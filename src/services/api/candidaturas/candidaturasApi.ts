@@ -16,6 +16,8 @@ import {
 const toQueryString = (filters: ListarCandidaturasFilters = {}): string => {
   const params = new URLSearchParams();
 
+  if (filters.formId) params.append('formId', filters.formId);
+  if (typeof filters.utenteId === 'number') params.append('utenteId', String(filters.utenteId));
   if (filters.nif) params.append('nif', filters.nif);
   if (filters.nome) params.append('nome', filters.nome);
   if (filters.estado) params.append('estado', filters.estado);
