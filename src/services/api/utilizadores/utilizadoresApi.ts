@@ -47,15 +47,18 @@ export const utilizadoresApi = {
             method: 'GET',
         }),
 
-    listarFuncionarios: () =>
-        apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/funcionarios', {
-            method: 'GET',
-        }),
+    listarFuncionarios: (nome?: string, tipo?: string, page = 0, size = 20) => {
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        if (nome) params.append('nome', nome);
+        if (tipo) params.append('tipo', tipo);
+        return apiRequest<import('../core/client').Page<UtilizadorResponseDTO>>(`/api/utilizadores/funcionarios?${params}`);
+    },
 
-    listarUtentes: () =>
-        apiRequest<UtilizadorResponseDTO[]>('/api/utilizadores/utentes', {
-            method: 'GET',
-        }),
+    listarUtentes: (nome?: string, page = 0, size = 20) => {
+        const params = new URLSearchParams({ page: String(page), size: String(size) });
+        if (nome) params.append('nome', nome);
+        return apiRequest<import('../core/client').Page<UtilizadorResponseDTO>>(`/api/utilizadores/utentes?${params}`);
+    },
 
     aprovarFuncionario: (id: number) =>
         apiRequest<void>(`/api/utilizadores/${id}/aprovar`, {
