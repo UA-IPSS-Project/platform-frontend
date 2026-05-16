@@ -67,7 +67,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const { formTypes } = useFormTypes();
   const formTypeKeys = formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase());
-  const candidaturaDetailMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/([^/]+)$`, 'i'));
+  const candidaturaDetailMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/(?!new$)([^/]+)$`, 'i'));
   const isCandidaturaDetailView = Boolean(candidaturaDetailMatch);
 
   const {
@@ -269,7 +269,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   };
 
 
-
   const renderPlaceholder = (view: ViewType) => (
     <div className="flex items-center justify-center h-[600px]">
       <div className="text-center">
@@ -287,13 +286,8 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
           {view === 'balneario' && 'Valências - Balneário'}
           {view === 'escola' && 'Valências - Escola'}
           {view === 'valencias' && 'Valências'}
-          {view === 'candidaturas' && 'Candidaturas'}
-          {view === 'forms-management' && 'Gestão de Formulários de Candidaturas'}
-          {view === 'creche' && t('dashboard.applicationsCreche')}
-          {view === 'catl' && t('dashboard.applicationsCatl')}
-          {view === 'erpi' && t('dashboard.applicationsErpi')}
           {view === 'reports' && 'Relatórios'}
-          {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'forms-management', 'creche', 'catl', 'erpi', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
+          {!['home', 'requisitions', 'sections', 'management', 'settings', 'more', 'appointments', 'profile', 'history', 'notificacoes', 'administrative', 'material', 'manutencao', 'transportes', 'urgente', 'balneario', 'escola', 'valencias', 'candidaturas', 'forms-management', 'reports'].includes(view) && view.charAt(0).toUpperCase() + view.slice(1)}
         </h2>
         <p className="text-muted-foreground">Em desenvolvimento</p>
       </div>

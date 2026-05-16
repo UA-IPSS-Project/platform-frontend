@@ -14,6 +14,15 @@ import {
   type CandidaturaResponse,
   type FormResponse,
 } from '../../services/api';
+import { Plus } from 'lucide-react';
+import { Input } from '../../components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../components/ui/dialog';
 
 interface CandidaturasByTypePageProps {
   mode: 'secretaria' | 'utente';
@@ -139,8 +148,7 @@ export function CandidaturasByTypePage({
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [forms, setForms] = useState<FormResponse[]>([]);
-  const [selectedFormId, setSelectedFormId] = useState<string>('');
+  const [form, setForm] = useState<FormResponse | null>(null);
   const [candidaturas, setCandidaturas] = useState<CandidaturaResponse[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -153,40 +161,38 @@ export function CandidaturasByTypePage({
   const [nifError, setNifError] = useState('');
 
   const [selectedCandidatura, setSelectedCandidatura] = useState<CandidaturaResponse | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createNif, setCreateNif] = useState('');
+  const [createNome, setCreateNome] = useState('');
+  const [createNifError, setCreateNifError] = useState('');
+  const [creating, setCreating] = useState(false);
 
-  const normalizedType = candidaturaType.trim().toUpperCase();
   const canChangeStatus = mode === 'secretaria' && user?.role === 'SECRETARIA';
-
-  const loadForms = async () => {
-    try {
-      const data = await candidaturasApi.listarFormularios(normalizedType);
-      setForms(Array.isArray(data) ? data : []);
-      setSelectedFormId(data[0]?.id || '');
-    } catch (error) {
-      toast.error(t('applications.flow.messages.loadFormsError'));
-    }
-  };
+  const canCreate = mode === 'secretaria' && form?.status === 'ATIVO';
 
   useEffect(() => {
-    void loadForms();
-  }, [normalizedType]);
+    const loadForm = async () => {
+      try {
+        const data = await candidaturasApi.obterFormularioPorId(candidaturaType);
+        setForm(data);
+      } catch {
+        toast.error(t('applications.flow.messages.loadFormsError'));
+      }
+    };
+    void loadForm();
+  }, [candidaturaType]);
 
   const loadCandidaturas = async () => {
-    if (!selectedFormId) {
-      setCandidaturas([]);
-      return;
-    }
-
     try {
       setLoading(true);
-
       const data = await candidaturasApi.listarCandidaturas({
-        estado: appliedStatusFilter as CandidaturaEstado,
-        nif: appliedNifFilter,
-        nome: appliedNameFilter,
+        formId: candidaturaType,
+        estado: appliedStatusFilter as CandidaturaEstado || undefined,
+        nif: appliedNifFilter || undefined,
+        nome: appliedNameFilter || undefined,
       });
       setCandidaturas(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch {
       toast.error(t('applications.flow.messages.loadApplicationsError'));
     } finally {
       setLoading(false);
@@ -195,7 +201,41 @@ export function CandidaturasByTypePage({
 
   useEffect(() => {
     void loadCandidaturas();
-  }, [selectedFormId, mode, currentUserId, appliedNameFilter, appliedNifFilter, appliedStatusFilter]);
+  }, [candidaturaType, mode, currentUserId, appliedNameFilter, appliedNifFilter, appliedStatusFilter]);
+
+  const handleOpenCreateDialog = () => {
+    setCreateNif('');
+    setCreateNome('');
+    setCreateNifError('');
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateCandidatura = async () => {
+    const normalizedNif = createNif.replace(/\D/g, '');
+    if (normalizedNif.length !== 9) {
+      setCreateNifError('O NIF deve ter exatamente 9 dígitos');
+      return;
+    }
+    if (!createNome.trim()) return;
+
+    try {
+      setCreating(true);
+      const created = await candidaturasApi.criarCandidatura({
+        formId: candidaturaType,
+        nif: normalizedNif,
+        nome: createNome.trim(),
+        respostas: {},
+        estado: 'RASCUNHO',
+      });
+      setCreateDialogOpen(false);
+      toast.success('Candidatura criada com sucesso');
+      navigate(`/dashboard/${candidaturaType}/${created.id}`);
+    } catch {
+      toast.error('Erro ao criar candidatura');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const visibleCandidaturas = useMemo(() => {
     const normalizedName = appliedNameFilter.trim().toLowerCase();
@@ -256,26 +296,25 @@ export function CandidaturasByTypePage({
 
   return (
     <CandidaturasCard className="mx-auto mt-4 max-w-6xl p-6 sm:p-8">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold text-foreground">{t('applications.flow.labels.titleByType', { type: normalizedType })}</h1>
-        {forms.length > 1 ? (
-          <select
-            value={selectedFormId}
-            onChange={(event) => setSelectedFormId(event.target.value)}
-            className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/50"
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold text-foreground">
+          {form ? form.name : <span className="text-muted-foreground italic">{t('applications.flow.messages.loadingApplications')}</span>}
+        </h1>
+        {canCreate ? (
+          <Button
+            type="button"
+            onClick={handleOpenCreateDialog}
+            className="flex items-center gap-2"
           >
-            {forms.map((form) => (
-              <option key={form.id} value={form.id}>{form.name}</option>
-            ))}
-          </select>
-        ) : forms.length === 0 ? (
-          <span className="text-sm text-muted-foreground font-normal italic">({t('applications.flow.messages.unavailableForms')})</span>
+            <Plus className="h-4 w-4" />
+            Criar candidatura
+          </Button>
         ) : null}
       </div>
 
       <CandidaturasFilters
         mode={mode}
-        candidaturaType={normalizedType}
+        candidaturaType={candidaturaType}
         nameFilter={nameFilter}
         onNameFilterChange={handleNameFilterChange}
         nifFilter={nifFilter}
@@ -285,7 +324,7 @@ export function CandidaturasByTypePage({
         onApplyFilters={handleApplyFilters}
         onClearFilters={handleClearFilters}
         onNewCandidatura={
-          mode === 'utente' ? () => navigate(`/dashboard/${candidaturaType.toLowerCase()}/new`) : undefined
+          mode === 'utente' ? () => navigate(`/dashboard/${candidaturaType}/new`) : undefined
         }
         disableApply={Boolean(nifError)}
       />
@@ -362,6 +401,53 @@ export function CandidaturasByTypePage({
           onConfirm={handleChangeStatus}
         />
       ) : null}
+
+      <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) setCreateDialogOpen(false); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar candidatura</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">NIF</label>
+              <Input
+                type="text"
+                inputMode="numeric"
+                maxLength={9}
+                value={createNif}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 9);
+                  setCreateNif(val);
+                  setCreateNifError(val.length > 0 && val.length !== 9 ? 'O NIF deve ter exatamente 9 dígitos' : '');
+                }}
+                placeholder="123456789"
+              />
+              {createNifError ? <p className="mt-1 text-xs text-destructive">{createNifError}</p> : null}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Nome</label>
+              <Input
+                type="text"
+                value={createNome}
+                onChange={(e) => setCreateNome(e.target.value)}
+                placeholder="Nome completo"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={creating}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCreateCandidatura}
+              disabled={creating || createNif.length !== 9 || !createNome.trim()}
+            >
+              {creating ? 'A criar...' : 'Criar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CandidaturasCard>
   );
 }
