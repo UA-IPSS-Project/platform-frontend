@@ -1,21 +1,49 @@
 export type CandidaturaEstado = 'PENDENTE' | 'LISTA_ESPERA' | 'APROVADA' | 'REJEITADA' | 'RASCUNHO';
 
+export type FieldAudience = 'PUBLIC' | 'INTERNAL';
+export type FormStatus = 'RASCUNHO' | 'ATIVO' | 'INATIVO';
+
+export interface FieldDefinition {
+  key: string;
+  componentType: string;
+  order: number;
+  config: Record<string, any>;
+  audience: FieldAudience;
+}
+
 export interface FormPage {
+  id?: string;
   title: string;
   description?: string;
-  fields: string[];
+  order: number;
+  fields: FieldDefinition[];
+  audience?: FieldAudience;
 }
 
 export interface FormResponse {
   id: string;
   name: string;
-  schema: Record<string, unknown>;
-  uiSchema?: Record<string, unknown>;
+  version?: number;
+  status: FormStatus;
   pages?: FormPage[];
   criadoPor?: number;
   criadoEm?: string;
   atualizadoPor?: number;
   atualizadoEm?: string;
+}
+
+export interface FormDraftResponse {
+  id: string;
+  formId: string;
+  name: string;
+  pages?: FormPage[];
+  atualizadoPor?: number;
+  atualizadoEm?: string;
+}
+
+export interface FormDraftSave {
+  name: string;
+  pages?: FormPage[];
 }
 
 export interface FormTypeResponse {
@@ -49,15 +77,13 @@ export interface ListarCandidaturasFilters {
 
 export interface FormCreate {
   name: string;
-  schema: Record<string, unknown>;
-  uiSchema?: Record<string, unknown>;
+  status?: FormStatus;
   pages?: FormPage[];
 }
 
 export interface FormUpdate {
   name: string;
-  schema: Record<string, unknown>;
-  uiSchema?: Record<string, unknown>;
+  status?: FormStatus;
   pages?: FormPage[];
 }
 
