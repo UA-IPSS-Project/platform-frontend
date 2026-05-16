@@ -11,9 +11,11 @@ jobs:
     steps:
       - name: Deploy Frontend Direct on VM
         run: |
+          set -e
           # Entrar na pasta do frontend e atualizar o código
           cd /home/florinhasuser/ipss-digital/platform-frontend
-          git pull origin main
+          git fetch origin
+          git reset --hard origin/main
           
           # Voltar à pasta mãe e reconstruir
           cd ../platform-backend
