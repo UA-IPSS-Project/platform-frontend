@@ -17,8 +17,8 @@ jobs:
           set -euo pipefail
           # Entrar na pasta do frontend e atualizar o código
           cd /home/florinhasuser/ipss-digital/platform-frontend
-          git fetch --no-tags origin
-          git checkout --force "$GITHUB_SHA"
+          git fetch origin main
+          git reset --hard origin/main
           
           # Voltar à pasta mãe e reconstruir
           cd ../platform-backend
