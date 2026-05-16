@@ -33,11 +33,12 @@ interface SidebarProps {
   onLogout: () => void;
   isDarkMode: boolean;
   mode?: 'client' | 'secretaria' | 'balneario';
+  userId?: number;
 }
 
-export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria' }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, isDarkMode, mode = 'secretaria', userId }: SidebarProps) {
   const { t } = useTranslation();
-  const { formTypes } = useFormTypes();
+  const { formTypes } = useFormTypes(mode === 'client' ? userId : undefined);
   const isClient = mode === 'client';
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
 

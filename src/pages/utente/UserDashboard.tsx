@@ -18,7 +18,8 @@ import { ClockIcon } from '../../components/shared/CustomIcons';
 import type { Appointment } from '../../types';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
-import { marcacoesApi } from '../../services/api';
+import { marcacoesApi, candidaturasApi } from '../../services/api';
+import { type FormResponse } from '@/services/api';
 import { mapApiToAppointment, mapStatusFromApiToUi, getCurrentActivity } from '../../utils/appointmentUtils';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -26,8 +27,6 @@ import { useAppointments } from '../../hooks/useAppointments';
 import { useNotifications } from '../../hooks/useNotifications';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
-import { useFormTypes } from '@/hooks/useFormTypes';
-import { type FormTypeResponse } from '@/services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,7 +56,12 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
   const navigate = useNavigate();
   const location = useLocation();
   const [userData, setUserData] = useState(user);
-  const { formTypes } = useFormTypes();
+  const [formTypes, setFormTypes] = useState<FormResponse[]>([]);
+  useEffect(() => {
+    candidaturasApi.listarFormularios(undefined, 'ATIVO')
+      .then(setFormTypes)
+      .catch(() => toast.error('Não foi possível carregar os tipos de candidatura.'));
+  }, []);
 
   const {
     allAppointments,
@@ -279,8 +283,8 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
 
       <NavDropdown
         label={t('sidebar.applications')}
-        items={formTypes.map((ft: FormTypeResponse) => ({ id: ft.id.toLowerCase(), label: ft.name }))}
-        isActive={['candidaturas', ...formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase())].includes(currentView)}
+        items={formTypes.map((ft: FormResponse) => ({ id: ft.id.toLowerCase(), label: ft.name }))}
+        isActive={['candidaturas', ...formTypes.map((ft: FormResponse) => ft.id.toLowerCase())].includes(currentView)}
         onSelect={(id) => navigateWithGuard(`/dashboard/${id}`)}
       />
     </>
@@ -372,6 +376,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
               } />
 
               <Route path="/:candidaturaType/new" element={<RjsfCandidaturaPage />} />
+              <Route path="/:candidaturaType/:candidaturaId/fill" element={<RjsfCandidaturaPage />} />
               <Route path="/:candidaturaType/:candidaturaId" element={<CandidaturaDetailPage />} />
 
               {/* History */}
@@ -490,6 +495,7 @@ export function UserDashboard({ user, onLogout, isDarkMode, onToggleDarkMode }: 
         onLogout={onLogout}
         isDarkMode={isDarkMode}
         mode="client"
+        userId={authUser?.id}
       />
 
       {showClientDialog && editingSlot && authUser && (
