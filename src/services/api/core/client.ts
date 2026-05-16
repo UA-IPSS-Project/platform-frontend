@@ -135,7 +135,7 @@ export async function apiRequest<T>(
                 }
             }
 
-            console.error(`API Error: ${config.method || 'GET'} ${url} - ${errorMessage}`);
+            console.error(`API Error: ${config.method || 'GET'} - Status: ${response.status}`);
             const error = new Error(errorMessage) as ApiRequestError;
             error.status = response.status;
 
@@ -159,12 +159,11 @@ export async function apiRequest<T>(
             const data = JSON.parse(text);
             return data as T;
         } catch (parseError) {
-            console.error('JSON Parse Error:', parseError);
-            console.error('Response text:', text.substring(0, 500)); // Log first 500 chars
+            console.error('JSON Parse Error: Failed to parse response');
             throw new Error(i18n.t('api.errors.invalidJson'));
         }
     } catch (error) {
-        console.error('API request failed:', error);
+        console.error('API request failed');
         throw error;
     }
 }
