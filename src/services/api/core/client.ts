@@ -158,7 +158,7 @@ export async function apiRequest<T>(
         try {
             const data = JSON.parse(text);
             return data as T;
-        } catch (parseError) {
+        } catch {
             console.error('JSON Parse Error: Failed to parse response');
             throw new Error(i18n.t('api.errors.invalidJson'));
         }
