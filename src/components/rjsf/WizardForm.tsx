@@ -6,9 +6,9 @@ import { FormResponse } from '@/services/api/candidaturas/types';
 import { StepIndicator } from './StepIndicator';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Send } from 'lucide-react';
-import { rjsfWidgets } from './widgets/RjsfWidgets';
+import { rjsfWidgets } from './widgets';
 import { RjsfFieldTemplate } from './templates/RjsfFieldTemplate';
-import { buildPageSchemas } from '@/utils/formAdapter';
+import { buildPageSchemas } from '@/utils/candidaturas/formAdapter';
 
 interface WizardFormProps {
   form: FormResponse;
@@ -34,6 +34,11 @@ export function WizardForm({
   const [currentPage, setCurrentPage] = useState(0);
   const [formData, setFormData] = useState<Record<string, unknown>>(initialData ?? {});
 
+  const visiblePages = useMemo(
+    () => (form.pages ?? []).filter(p => includeInternalPages || p.audience?.toUpperCase() !== 'INTERNAL'),
+    [form.pages, includeInternalPages],
+  );
+
   const pageSchemas = useMemo(
     () => buildPageSchemas(form.pages ?? [], { includeInternalPages }),
     [form.pages, includeInternalPages],
@@ -43,7 +48,7 @@ export function WizardForm({
     pageSchemas.length === 1 && Object.keys(pageSchemas[0].schema.properties ?? {}).length === 0;
 
   const isLast = currentPage === pageSchemas.length - 1;
-  const page = form.pages?.[currentPage] || { title: form.name, description: undefined, fields: [] };
+  const page = visiblePages[currentPage] || { title: form.name, description: undefined, fields: [] };
   const { schema, uiSchema } = pageSchemas[currentPage];
 
   const handleNextPage = () => {
@@ -73,8 +78,8 @@ export function WizardForm({
 
   return (
     <div className="space-y-6">
-      {form.pages && form.pages.length > 1 && (
-        <StepIndicator pages={form.pages} current={currentPage} />
+      {visiblePages.length > 1 && (
+        <StepIndicator pages={visiblePages} current={currentPage} />
       )}
 
       <div className="space-y-2">
