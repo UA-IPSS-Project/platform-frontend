@@ -117,6 +117,12 @@ export const utilizadoresApi = {
             method: 'GET',
         }),
 
+    // Obter perfil do utilizador autenticado
+    getMe: () =>
+        apiRequest<UtilizadorResponseDTO>('/api/utilizadores/me', {
+            method: 'GET',
+        }),
+
     // Termos de Uso — Versionamento (RGPD)
     checkTermsStatus: () =>
         apiRequest<{ currentVersion: number; userVersion: number | null; needsAcceptance: boolean }>(

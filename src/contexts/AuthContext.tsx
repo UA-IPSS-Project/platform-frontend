@@ -3,6 +3,7 @@ import { UserManager, WebStorageStateStore, User as OidcUser } from 'oidc-client
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../services/api/auth/authApi';
 import { UtenteRegisterRequest, FuncionarioRegisterRequest } from '../services/api/auth/types';
+import { utilizadoresApi } from '../services/api/utilizadores/utilizadoresApi';
 
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL ?? '';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'florinhas';
@@ -21,7 +22,7 @@ const userManager = new UserManager({
 });
 
 interface User {
-  id: string;
+  id: number;
   email: string;
   nome: string;
   role: 'UTENTE' | 'SECRETARIA' | 'BALNEARIO' | 'ESCOLA' | 'INTERNO';
@@ -50,7 +51,7 @@ function mapOidcUser(oidcUser: OidcUser): User {
   const role = knownRoles.find(r => roles.includes(r)) ?? 'UTENTE';
 
   return {
-    id: oidcUser.profile.sub,
+    id: 0,
     email: oidcUser.profile.email ?? '',
     nome: oidcUser.profile.name ?? oidcUser.profile.preferred_username ?? '',
     role,
@@ -79,11 +80,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateActivity = () => localStorage.setItem('lastActivity', Date.now().toString());
 
-  const handleOidcUser = (oidcUser: OidcUser | null) => {
+  const handleOidcUser = async (oidcUser: OidcUser | null) => {
     if (oidcUser && !oidcUser.expired) {
-      setUser(mapOidcUser(oidcUser));
-      setIsAuthenticated(true);
-      updateActivity();
+      try {
+        const tempUser = mapOidcUser(oidcUser);
+        const dbUser = await utilizadoresApi.getMe();
+        
+        setUser({
+          id: dbUser.id,
+          email: dbUser.email,
+          nome: dbUser.nome,
+          role: tempUser.role,
+          nif: dbUser.nif,
+          telefone: dbUser.telefone,
+          active: dbUser.active,
+          requiresPasswordSetup: false,
+        });
+        setIsAuthenticated(true);
+        updateActivity();
+      } catch (error) {
+        console.error('Error fetching database user profile during OIDC mapping:', error);
+        setUser(mapOidcUser(oidcUser));
+        setIsAuthenticated(true);
+        updateActivity();
+      }
     } else {
       setUser(null);
       setIsAuthenticated(false);
@@ -105,8 +125,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       userManager.signinRedirectCallback()
-        .then(oidcUser => {
-          handleOidcUser(oidcUser);
+        .then(async oidcUser => {
+          await handleOidcUser(oidcUser);
           const storedReturnTo = sessionStorage.getItem('returnTo') ?? '/dashboard';
           const returnTo = ['/login', '/register', '/auth/callback', '/']
             .includes(storedReturnTo)
@@ -124,8 +144,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Restore existing session
-    userManager.getUser().then(oidcUser => {
-      handleOidcUser(oidcUser);
+    userManager.getUser().then(async oidcUser => {
+      await handleOidcUser(oidcUser);
       setIsLoading(false);
     });
 
