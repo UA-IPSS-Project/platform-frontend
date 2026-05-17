@@ -5,9 +5,11 @@ import { Check } from 'lucide-react';
 interface StepIndicatorProps {
   pages: FormPage[];
   current: number;
+  onSelect?: (index: number) => void;
+  showCompleted?: boolean;
 }
 
-export function StepIndicator({ pages, current }: StepIndicatorProps) {
+export function StepIndicator({ pages, current, onSelect, showCompleted = true }: StepIndicatorProps) {
   return (
     <div className="relative mb-8">
       {/* Progress Line */}
@@ -15,20 +17,22 @@ export function StepIndicator({ pages, current }: StepIndicatorProps) {
       
       <ol className="flex justify-between items-start list-none p-0 m-0">
         {pages.map((page, i) => {
-          const isCompleted = i < current;
+          const isCompleted = showCompleted && i < current;
           const isActive = i === current;
           
           return (
             <li key={page.title} className="flex flex-col items-center group flex-1">
               {/* Circle */}
               <div
+                onClick={() => onSelect?.(i)}
                 className={cn(
+                  onSelect ? 'cursor-pointer' : '',
                   "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
                   isCompleted 
                     ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" 
                     : isActive
                       ? "bg-background border-primary text-primary shadow-lg shadow-primary/10 scale-110"
-                      : "bg-background border-muted text-muted-foreground"
+                      : "bg-background border-border text-muted-foreground"
                 )}
               >
                 {isCompleted ? (
