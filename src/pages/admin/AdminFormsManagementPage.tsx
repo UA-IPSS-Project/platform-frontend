@@ -831,7 +831,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
               {sortedForms.map(form => (
                 <div
                   key={form.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-4 py-2"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1.5"
                 >
                   <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
                     <p className="font-medium text-sm text-gray-900 dark:text-white">{form.name}</p>
