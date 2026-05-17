@@ -22,6 +22,7 @@ import { SettingsPage } from '../SettingsPage';
 import { ClockIcon } from '../../components/shared/CustomIcons';
 import { ReportsPage } from './ReportsPage';
 import { CandidaturasByTypePage } from '../candidaturas/CandidaturasByTypePage';
+import { RjsfCandidaturaPage } from '../candidaturas/RjsfCandidaturaPage';
 import { AdminFormsManagementPage } from '../admin/AdminFormsManagementPage';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +34,7 @@ import { useSlidingWindowAppointments } from '../../hooks/useSlidingWindowAppoin
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useTranslation } from 'react-i18next';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import { useFormTypes } from '@/hooks/useFormTypes';
 import { type FormTypeResponse } from '@/services/api';
 import { unwrapPage } from '../../utils/pagination';
@@ -69,8 +70,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
   const { formTypes, loading: formTypesLoading } = useFormTypes();
   const formTypeKeys = formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase());
+  const candidaturaFillMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/([^/]+)/fill$`, 'i'));
   const candidaturaDetailMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/(?!new$)([^/]+)$`, 'i'));
-  const isCandidaturaDetailView = Boolean(candidaturaDetailMatch);
+  const isCandidaturaFillView = Boolean(candidaturaFillMatch);
+  const isCandidaturaDetailView = Boolean(candidaturaDetailMatch) && !isCandidaturaFillView;
 
   const {
     appointments,
@@ -159,7 +162,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
-      if (isCandidaturaDetailView) {
+      if (isCandidaturaDetailView || isCandidaturaFillView) {
         navigate('/dashboard');
       }
       setViewHistory(prev => [...prev, view]);
@@ -176,7 +179,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
 
     setShowLeaveConfirm(false);
     if (pendingNavigation) {
-      if (isCandidaturaDetailView) {
+      if (isCandidaturaDetailView || isCandidaturaFillView) {
         navigate('/dashboard');
       }
       setViewHistory(prev => [...prev, pendingNavigation]);
@@ -400,8 +403,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
           >
-            {isCandidaturaDetailView ? (
-              <CandidaturaDetailPage />
+            {isCandidaturaFillView ? (
+              <Routes>
+                <Route path="/:candidaturaType/:candidaturaId/fill" element={<RjsfCandidaturaPage />} />
+              </Routes>
+            ) : isCandidaturaDetailView ? (
+              <Routes>
+                <Route path="/:candidaturaType/:candidaturaId" element={<CandidaturaDetailPage />} />
+              </Routes>
             ) : currentView === 'home' ? (
               <SecretaryHome
                 isDarkMode={isDarkMode}

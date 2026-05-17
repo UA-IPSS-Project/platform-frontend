@@ -2,21 +2,30 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { RjsfCandidaturaForm } from '../../components/rjsf/RjsfCandidaturaForm';
+import { RjsfCandidaturaForm } from '../../components/rjsf';
 import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard';
 import { candidaturasApi } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function RjsfCandidaturaPage() {
   const navigate = useNavigate();
   const { candidaturaType, candidaturaId } = useParams();
+  const { user } = useAuth();
+  const isSecretary = user?.role === 'SECRETARIA';
 
   const [existingRespostas, setExistingRespostas] = useState<Record<string, unknown> | undefined>();
+  const [resolvedFormId, setResolvedFormId] = useState<string | undefined>();
+  const [candidaturaNif, setCandidaturaNif] = useState<string | undefined>();
   const [loading, setLoading] = useState(Boolean(candidaturaId));
 
   useEffect(() => {
     if (!candidaturaId) return;
     candidaturasApi.obterCandidaturaPorId(candidaturaId)
-      .then((c) => setExistingRespostas(c.respostas ?? {}))
+      .then((c) => {
+        setExistingRespostas(c.respostas ?? {});
+        setResolvedFormId(c.formId);
+        setCandidaturaNif(c.nif);
+      })
       .catch(() => toast.error('Erro ao carregar candidatura'))
       .finally(() => setLoading(false));
   }, [candidaturaId]);
@@ -43,8 +52,11 @@ export function RjsfCandidaturaPage() {
             showPreview={false}
             showTitle={true}
             candidaturaType={candidaturaType}
+            formId={resolvedFormId}
             existingCandidaturaId={candidaturaId}
             existingRespostas={existingRespostas}
+            candidaturaNif={candidaturaNif}
+            includeInternalPages={isSecretary}
             onSuccess={() => navigate(`/dashboard/${candidaturaType ?? ''}`)}
           />
         </CandidaturasCard>

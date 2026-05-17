@@ -15,14 +15,7 @@ import {
   type FormResponse,
 } from '../../services/api';
 import { Plus } from 'lucide-react';
-import { Input } from '../../components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '../../components/ui/dialog';
+import { CreateCandidaturaDialog } from '../../components/candidaturas/CreateCandidaturaDialog';
 
 interface CandidaturasByTypePageProps {
   mode: 'secretaria' | 'utente';
@@ -162,10 +155,6 @@ export function CandidaturasByTypePage({
 
   const [selectedCandidatura, setSelectedCandidatura] = useState<CandidaturaResponse | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [createNif, setCreateNif] = useState('');
-  const [createNome, setCreateNome] = useState('');
-  const [createNifError, setCreateNifError] = useState('');
-  const [creating, setCreating] = useState(false);
 
   const canChangeStatus = mode === 'secretaria' && user?.role === 'SECRETARIA';
   const canCreate = mode === 'secretaria' && form?.status === 'ATIVO';
@@ -204,39 +193,6 @@ export function CandidaturasByTypePage({
     void loadCandidaturas();
   }, [candidaturaType, mode, currentUserId, appliedNameFilter, appliedNifFilter, appliedStatusFilter]);
 
-  const handleOpenCreateDialog = () => {
-    setCreateNif('');
-    setCreateNome('');
-    setCreateNifError('');
-    setCreateDialogOpen(true);
-  };
-
-  const handleCreateCandidatura = async () => {
-    const normalizedNif = createNif.replace(/\D/g, '');
-    if (normalizedNif.length !== 9) {
-      setCreateNifError('O NIF deve ter exatamente 9 dígitos');
-      return;
-    }
-    if (!createNome.trim()) return;
-
-    try {
-      setCreating(true);
-      const created = await candidaturasApi.criarCandidatura({
-        formId: candidaturaType,
-        nif: normalizedNif,
-        nome: createNome.trim(),
-        respostas: {},
-        estado: 'RASCUNHO',
-      });
-      setCreateDialogOpen(false);
-      toast.success('Candidatura criada com sucesso');
-      navigate(`/dashboard/${candidaturaType}/${created.id}/fill`);
-    } catch {
-      toast.error('Erro ao criar candidatura');
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const visibleCandidaturas = useMemo(() => {
     const normalizedName = appliedNameFilter.trim().toLowerCase();
@@ -304,7 +260,7 @@ export function CandidaturasByTypePage({
         {canCreate ? (
           <Button
             type="button"
-            onClick={handleOpenCreateDialog}
+            onClick={() => setCreateDialogOpen(true)}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -407,52 +363,12 @@ export function CandidaturasByTypePage({
         />
       ) : null}
 
-      <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) setCreateDialogOpen(false); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Criar candidatura</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">NIF</label>
-              <Input
-                type="text"
-                inputMode="numeric"
-                maxLength={9}
-                value={createNif}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 9);
-                  setCreateNif(val);
-                  setCreateNifError(val.length > 0 && val.length !== 9 ? 'O NIF deve ter exatamente 9 dígitos' : '');
-                }}
-                placeholder="123456789"
-              />
-              {createNifError ? <p className="mt-1 text-xs text-destructive">{createNifError}</p> : null}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">Nome</label>
-              <Input
-                type="text"
-                value={createNome}
-                onChange={(e) => setCreateNome(e.target.value)}
-                placeholder="Nome completo"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={creating}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleCreateCandidatura}
-              disabled={creating || createNif.length !== 9 || !createNome.trim()}
-            >
-              {creating ? 'A criar...' : 'Criar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CreateCandidaturaDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        candidaturaType={candidaturaType}
+        onCreated={loadCandidaturas}
+      />
     </CandidaturasCard>
   );
 }
