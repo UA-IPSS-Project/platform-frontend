@@ -18,8 +18,6 @@ import {
   MoreVertical,
   Paperclip,
   Plus,
-  Power,
-  PowerOff,
   RefreshCw,
   Save,
   ScrollText,
@@ -120,7 +118,7 @@ const STATUS_CONFIG: Record<FormStatus, { label: string; className: string; bann
   RASCUNHO: {
     label: 'Rascunho',
     className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700',
-    bannerClassName: 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300',
+    bannerClassName: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200',
     bannerText: 'Este formulário está em rascunho e não está disponível para candidaturas.',
   },
   ATIVO: {
@@ -796,7 +794,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
   if (viewMode === 'list') {
     return (
       <>
-        <GlassCard className="p-5">
+        <GlassCard className="p-5 max-w-2xl mx-auto">
           <div className="flex items-center justify-between gap-3 mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Formulários</h2>
             <div className="flex items-center gap-2">
@@ -827,24 +825,26 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
               Ainda não existem formulários.
             </p>
           ) : (
-            <div className="space-y-1">
+            <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
               {sortedForms.map(form => (
                 <div
                   key={form.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/60 px-3 py-1.5"
+                  className="flex items-center justify-between gap-3 px-5 py-4 bg-white/70 dark:bg-gray-900/60 hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors"
                 >
-                  <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm text-gray-900 dark:text-white">{form.name}</p>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_CONFIG[form.status].className}`}>
-                      {STATUS_CONFIG[form.status].label}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5">
+                      <p className="font-medium text-base text-gray-900 dark:text-white truncate">{form.name}</p>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${STATUS_CONFIG[form.status].className}`}>
+                        {STATUS_CONFIG[form.status].label}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 leading-tight">
                       {form.atualizadoEm
-                        ? `Atualizado em ${new Date(form.atualizadoEm).toLocaleDateString('pt-PT')}`
+                        ? `Atualizado${form.atualizadoPorNome ? ` por ${form.atualizadoPorNome}` : ''} em ${new Date(form.atualizadoEm).toLocaleDateString('pt-PT')}`
                         : form.criadoEm
-                          ? `Criado em ${new Date(form.criadoEm).toLocaleDateString('pt-PT')}`
+                          ? `Criado${form.criadoPorNome ? ` por ${form.criadoPorNome}` : ''} em ${new Date(form.criadoEm).toLocaleDateString('pt-PT')}`
                           : null}
-                    </span>
+                    </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <Button size="sm" variant="outline" onClick={() => void openEditor(form)}>
@@ -1053,7 +1053,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
             value={formName}
             onChange={e => setFormName(e.target.value)}
             placeholder="Nome do formulário (ex: CRECHE)"
-            className="max-w-xs"
+            className="max-w-xs border-border"
           />
           {editingFormId && (
             <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${STATUS_CONFIG[formStatus].className}`}>
@@ -1123,7 +1123,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                 disabled={publishing}
                 className="bg-green-600 text-white hover:bg-green-700"
               >
-                <Power className="w-4 h-4" />
                 {publishing ? 'A reativar…' : 'Reativar'}
               </Button>
             );
@@ -1153,7 +1152,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
             <DropdownMenuContent align="end">
               {formStatus === 'ATIVO' && (
                 <DropdownMenuItem onClick={() => setDeactivateDialogOpen(true)}>
-                  <PowerOff className="w-4 h-4" />
                   Desativar formulário
                 </DropdownMenuItem>
               )}
@@ -1173,8 +1171,6 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
       {/* ── Status banner ──────────────────────────────────────────────────── */}
       {editingFormId && (
         <div className={`rounded-lg border px-4 py-2.5 flex items-center gap-2 text-sm ${STATUS_CONFIG[formStatus].bannerClassName}`}>
-          {formStatus === 'ATIVO' && <Power className="w-4 h-4 shrink-0" />}
-          {formStatus === 'INATIVO' && <PowerOff className="w-4 h-4 shrink-0" />}
           {formStatus === 'RASCUNHO' && <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{STATUS_CONFIG[formStatus].bannerText}</span>
         </div>
@@ -1276,7 +1272,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
               >
                 {/* Page header */}
                 <div
-                  className="flex items-center gap-2 px-4 py-3"
+                  className="flex items-center gap-2 px-4 py-4"
                   onDragOver={drag ? (e => { e.preventDefault(); setDropTarget({ pageIndex, insertAt: page.fields.length }); }) : undefined}
                   onDrop={drag ? (e => {
                     e.preventDefault();
@@ -1305,7 +1301,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                     }}
                     className="flex-1 text-left flex items-center gap-2 min-w-0"
                   >
-                    <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                    <span className="font-medium text-base text-gray-900 dark:text-white truncate">
                       {pageIndex + 1} — {page.title}
                     </span>
                     {page.audience === 'INTERNAL' && (
@@ -1315,7 +1311,7 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                     )}
                   </button>
 
-                  <span className="text-xs text-gray-400 shrink-0">
+                  <span className="text-sm text-gray-400 shrink-0">
                     {page.fields.length} {page.fields.length === 1 ? 'campo' : 'campos'}
                   </span>
 
@@ -1325,17 +1321,17 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                     variant="ghost"
                     onClick={() => removePage(pageIndex)}
                     disabled={pages.length === 1}
-                    className="shrink-0 h-7 w-7 p-0 text-gray-400 hover:text-red-500"
+                    className="shrink-0 h-8 w-8 p-0 text-gray-400 hover:text-red-500"
                     aria-label="Remover página"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
 
                 {/* Page body */}
                 {isExpanded && (
                   <div
-                    className="border-t border-gray-100 dark:border-gray-800 px-4 pt-3 pb-4 space-y-1"
+                    className="border-t border-gray-100 dark:border-gray-800 px-4 pt-3 pb-4 space-y-1.5"
                     onDragOver={drag ? (e => { e.preventDefault(); }) : undefined}
                     onDrop={drag ? (e => {
                       e.preventDefault();
@@ -1416,17 +1412,17 @@ export function AdminFormsManagementPage({ onFormsChanged }: AdminFormsManagemen
                                 tabIndex={0}
                                 onClick={() => setSelection({ type: 'field', pageIndex, fieldKey: field.key })}
                                 onKeyDown={e => e.key === 'Enter' && setSelection({ type: 'field', pageIndex, fieldKey: field.key })}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${isDraggingThis ? 'opacity-40' : ''} ${
+                                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${isDraggingThis ? 'opacity-40' : ''} ${
                                   isFieldSelected
                                     ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700'
-                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/40 border border-transparent'
+                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/40 border border-border'
                                 }`}
                               >
                                 <GripVertical
-                                  className="w-4 h-4 shrink-0 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing"
+                                  className="w-5 h-5 shrink-0 text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing"
                                   onMouseDown={e => e.stopPropagation()}
                                 />
-                                <Icon className="w-4 h-4 text-gray-400 shrink-0" />
+                                <Icon className="w-5 h-5 text-gray-400 shrink-0" />
                                 <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">
                                   {field.label}
                                 </span>
