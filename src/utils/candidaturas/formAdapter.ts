@@ -1,5 +1,5 @@
 import { RJSFSchema, UiSchema } from '@rjsf/utils';
-import { FormPage } from '../services/api/candidaturas/types';
+import { FormPage } from '../../services/api/candidaturas/types';
 
 export const TABLE_TYPES = ['table', 'grid_table', 'ledger_table', 'structured_table'];
 

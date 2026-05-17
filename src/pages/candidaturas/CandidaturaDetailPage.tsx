@@ -7,16 +7,16 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/ui/button';
 import { useAuth } from '../../contexts/AuthContext';
-import { rjsfWidgets } from '../../components/rjsf/widgets/RjsfWidgets';
-import { RjsfFieldTemplate } from '../../components/rjsf/templates/RjsfFieldTemplate';
+import { rjsfWidgets, RjsfFieldTemplate, StepIndicator } from '../../components/rjsf';
 import { CandidaturasCard } from '../../components/candidaturas/CandidaturasCard';
 import { CandidaturaStatusChangeDialog } from '../../components/candidaturas/CandidaturaStatusChangeDialog';
 import { CandidaturasStatusBadge } from '../../components/candidaturas/CandidaturasStatusBadge';
 import { candidaturasApi, type CandidaturaEstado, type FormPage, type SecretaryDraftResponse, type CandidaturaDocumentoDTO } from '../../services/api';
-import { buildPageSchemas } from '../../utils/formAdapter';
+import { buildPageSchemas } from '../../utils/candidaturas/formAdapter';
 import { FileUpload } from '../../components/shared/FileUpload';
 import { ChevronLeft, ChevronRight, Download, Trash2 } from 'lucide-react';
 import { CandidaturaFileContext } from '../../contexts/CandidaturaFileContext';
+import { buildUploadFileName } from '../../utils/candidaturas/fileNaming';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,6 +66,8 @@ export function CandidaturaDetailPage() {
   const [visiblePages, setVisiblePages] = useState<FormPage[]>([]);
   const [pageSchemas, setPageSchemas] = useState<{ schema: RJSFSchema; uiSchema: Record<string, unknown> }[]>([]);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [candidaturaNif, setCandidaturaNif] = useState('');
+  const [formName, setFormName] = useState('');
   const [documentos, setDocumentos] = useState<CandidaturaDocumentoDTO[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadingDocs, setUploadingDocs] = useState(false);
@@ -102,6 +104,7 @@ export function CandidaturaDetailPage() {
 
         setEstado(candidatura.estado);
         setFormId(candidatura.formId);
+        setCandidaturaNif(candidatura.nif);
         setFormData(candidatura.respostas || {});
         setPublishedRespostas(candidatura.respostas || {});
 
@@ -124,6 +127,7 @@ export function CandidaturaDetailPage() {
 
         const form = await candidaturasApi.obterFormularioPorId(candidatura.formId);
 
+        if (form?.name) setFormName(form.name);
         if (form?.pages) {
           const includeInternal = user?.role === 'SECRETARIA';
           const isInternal = (p: FormPage) => p.audience?.toUpperCase() === 'INTERNAL';
@@ -232,7 +236,9 @@ export function CandidaturaDetailPage() {
       setUploadingDocs(true);
       const uploaded: CandidaturaDocumentoDTO[] = [];
       for (const file of selectedFiles) {
-        const doc = await candidaturasApi.uploadDocumentoCandidatura(candidaturaId, file);
+        const fieldName = file.name.replace(/\.[^.]+$/, '');
+        const renamed = buildUploadFileName(file, formName, candidaturaNif, fieldName);
+        const doc = await candidaturasApi.uploadDocumentoCandidatura(candidaturaId, renamed);
         uploaded.push(doc);
       }
       setDocumentos(prev => [...prev, ...uploaded]);
@@ -249,6 +255,31 @@ export function CandidaturaDetailPage() {
     try {
       await candidaturasApi.removerDocumentoCandidatura(docId);
       setDocumentos(prev => prev.filter(d => d.id !== docId));
+
+      const clearDocRef = (data: Record<string, unknown>) => {
+        const updated = { ...data };
+        for (const key of Object.keys(updated)) {
+          const val = updated[key];
+          if (typeof val === 'string') {
+            try {
+              const parsed = JSON.parse(val);
+              if (parsed?.docId === docId) delete updated[key];
+            } catch { /* not JSON */ }
+          }
+        }
+        return updated;
+      };
+
+      const cleanedRespostas = clearDocRef(formData);
+      setFormData(cleanedRespostas);
+      setPublishedRespostas(prev => clearDocRef(prev));
+
+      if (candidaturaId) {
+        await candidaturasApi.atualizarCandidatura(candidaturaId, {
+          respostas: cleanedRespostas,
+          estado: estado as any,
+        });
+      }
     } catch {
       toast.error('Não foi possível remover o documento.');
     }
@@ -264,14 +295,19 @@ export function CandidaturaDetailPage() {
   };
 
   const fileContextValue = useMemo(() => ({
-    uploadFile: async (file: File) => {
-      const doc = await candidaturasApi.uploadDocumentoCandidatura(candidaturaId, file);
+    uploadFile: async (file: File, fieldName?: string) => {
+      const renamed = buildUploadFileName(file, formName, candidaturaNif, fieldName);
+      const doc = await candidaturasApi.uploadDocumentoCandidatura(candidaturaId, renamed);
       setDocumentos(prev => [...prev, doc]);
       return doc;
     },
     downloadFile: (docId: string, nomeOriginal: string) =>
       candidaturasApi.downloadDocumentoCandidatura(docId, nomeOriginal),
-  }), [candidaturaId]);
+    deleteFile: async (docId: string) => {
+      await candidaturasApi.removerDocumentoCandidatura(docId);
+      setDocumentos(prev => prev.filter(d => d.id !== docId));
+    },
+  }), [candidaturaId, candidaturaNif, formName]);
 
   if (loading) {
     return (
@@ -363,22 +399,7 @@ export function CandidaturaDetailPage() {
       )}
 
       {visiblePages.length > 1 && (
-        <div className="flex gap-0 border-b border-border mb-2 overflow-x-auto">
-          {visiblePages.map((page, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setCurrentPageIndex(i)}
-              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                i === currentPageIndex
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground'
-              }`}
-            >
-              {page.title}
-            </button>
-          ))}
-        </div>
+        <StepIndicator pages={visiblePages} current={currentPageIndex} onSelect={setCurrentPageIndex} showCompleted={false} />
       )}
 
       <Form<any, RJSFSchema, any>
