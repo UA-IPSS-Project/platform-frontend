@@ -45,6 +45,7 @@ export function RjsfCandidaturaPage() {
             candidaturaType={candidaturaType}
             existingCandidaturaId={candidaturaId}
             existingRespostas={existingRespostas}
+            onSuccess={() => navigate(`/dashboard/${candidaturaType ?? ''}`)}
           />
         </CandidaturasCard>
       </div>

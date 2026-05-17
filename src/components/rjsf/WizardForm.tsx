@@ -46,19 +46,17 @@ export function WizardForm({
   const page = form.pages?.[currentPage] || { title: form.name, description: undefined, fields: [] };
   const { schema, uiSchema } = pageSchemas[currentPage];
 
-  const handleNext = (data: { formData?: any }) => {
-    const pageData = data.formData || {};
-    const merged = { ...formData, ...pageData };
-    setFormData(merged);
-
-    if (isLast) {
-      onSubmit(merged);
-    } else {
-      if (onSaveDraft) {
-        onSaveDraft(merged);
-      }
-      setCurrentPage((p) => p + 1);
+  const handleNextPage = () => {
+    if (onSaveDraft) {
+      onSaveDraft(formData);
     }
+    setCurrentPage((p) => p + 1);
+  };
+
+  const handleFinalSubmit = (data: { formData?: any }) => {
+    const merged = { ...formData, ...(data.formData || {}) };
+    setFormData(merged);
+    onSubmit(merged);
   };
 
   const handleBack = () => {
@@ -108,7 +106,7 @@ export function WizardForm({
           })
         }
         onChange={(e) => setFormData(e.formData)}
-        onSubmit={handleNext}
+        onSubmit={handleFinalSubmit}
       >
         <div className="pt-6 flex justify-between border-t border-muted">
           <Button
@@ -122,19 +120,17 @@ export function WizardForm({
             Anterior
           </Button>
 
-          <Button type="submit" disabled={isSubmitting}>
-            {isLast ? (
-              <>
-                {isSubmitting ? 'A submeter...' : 'Submeter Candidatura'}
-                <Send className="ml-2 h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Seguinte
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
+          {isLast ? (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'A submeter...' : 'Submeter Candidatura'}
+              <Send className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button type="button" onClick={handleNextPage} disabled={isSubmitting}>
+              Seguinte
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
         </div>
       </Form>
     </div>

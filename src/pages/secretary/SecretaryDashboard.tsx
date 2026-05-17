@@ -67,7 +67,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { formTypes } = useFormTypes();
+  const { formTypes, loading: formTypesLoading } = useFormTypes();
   const formTypeKeys = formTypes.map((ft: FormTypeResponse) => ft.id.toLowerCase());
   const candidaturaDetailMatch = location.pathname.match(new RegExp(`^/dashboard/(${formTypeKeys.join('|')})/(?!new$)([^/]+)$`, 'i'));
   const isCandidaturaDetailView = Boolean(candidaturaDetailMatch);
@@ -584,6 +584,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
                 candidaturaType={currentView}
                 currentUserName={userData.name}
               />
+            ) : formTypesLoading ? (
+              <div className="flex items-center justify-center h-[600px]">
+                <p className="text-sm text-muted-foreground">A carregar...</p>
+              </div>
             ) : currentView === 'settings' ? (
               <SettingsPage
                 isDarkMode={isDarkMode}
