@@ -14,7 +14,7 @@ const userManager = new UserManager({
   redirect_uri: `${window.location.origin}/auth/callback`,
   post_logout_redirect_uri: `${window.location.origin}/login`,
   response_type: 'code',
-  scope: 'openid', // Simplified to troubleshoot invalid_scope
+  scope: 'openid profile email roles',
   userStore: new WebStorageStateStore({ store: window.sessionStorage }),
   automaticSilentRenew: true,
   silent_redirect_uri: `${window.location.origin}/auth/silent-renew`,
