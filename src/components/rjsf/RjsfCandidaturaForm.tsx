@@ -6,25 +6,31 @@ import { useAuth } from '@/contexts/AuthContext';
 import { WizardForm } from './WizardForm';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { CandidaturaFileContext } from '@/contexts/CandidaturaFileContext';
+import { buildUploadFileName } from '@/utils/candidaturas/fileNaming';
 
 interface RjsfCandidaturaFormProps {
   onSuccess?: () => void;
   showPreview?: boolean;
   showTitle?: boolean;
   candidaturaType?: string;
+  formId?: string;
   existingCandidaturaId?: string;
   existingRespostas?: Record<string, unknown>;
   includeInternalPages?: boolean;
+  candidaturaNif?: string;
 }
+
 
 export function RjsfCandidaturaForm({
   onSuccess,
   showPreview = true,
   showTitle = true,
   candidaturaType,
+  formId,
   existingCandidaturaId,
   existingRespostas,
   includeInternalPages = false,
+  candidaturaNif,
 }: RjsfCandidaturaFormProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState<Record<string, unknown>>(existingRespostas ?? {});
@@ -42,8 +48,13 @@ export function RjsfCandidaturaForm({
   useEffect(() => {
     const loadFormulario = async () => {
       try {
-        const forms = await candidaturasApi.listarFormularios(candidaturaType);
-        const form = forms.length > 0 ? forms[0] : null;
+        let form: FormResponse | null = null;
+        if (formId) {
+          form = await candidaturasApi.obterFormularioPorId(formId);
+        } else {
+          const forms = await candidaturasApi.listarFormularios(candidaturaType);
+          form = forms.length > 0 ? forms[0] : null;
+        }
         setFormularioAtivo(form);
         formularioAtivoRef.current = form;
       } catch {
@@ -52,7 +63,7 @@ export function RjsfCandidaturaForm({
     };
 
     loadFormulario();
-  }, [candidaturaType]);
+  }, [formId, candidaturaType]);
 
   const persistDraft = useCallback(async (submittedData: Record<string, unknown>) => {
     if (!formularioAtivo?.id || isSavingRef.current) return;
@@ -106,15 +117,24 @@ export function RjsfCandidaturaForm({
   }, [user?.nif, user?.nome]);
 
   const fileContextValue = useMemo(() => ({
-    uploadFile: async (file: File) => {
+    uploadFile: async (file: File, fieldName?: string) => {
       const candId = await getOrCreateDraftId();
       if (!candId) throw new Error('Não foi possível criar o rascunho para upload.');
-      const doc = await candidaturasApi.uploadDocumentoCandidatura(candId, file);
+      const formTitle = formularioAtivoRef.current?.name ?? '';
+      const nif = candidaturaNif
+        || (latestFormDataRef.current.nif as string)
+        || (latestFormDataRef.current.guardianNif as string)
+        || user?.nif
+        || '';
+      const renamedFile = buildUploadFileName(file, formTitle, nif, fieldName);
+      const doc = await candidaturasApi.uploadDocumentoCandidatura(candId, renamedFile);
       return doc;
     },
     downloadFile: (docId: string, nomeOriginal: string) =>
       candidaturasApi.downloadDocumentoCandidatura(docId, nomeOriginal),
-  }), [getOrCreateDraftId]);
+    deleteFile: (docId: string) =>
+      candidaturasApi.removerDocumentoCandidatura(docId),
+  }), [getOrCreateDraftId, candidaturaNif, user?.nif]);
 
   const handleSubmit = async (data: { formData?: Record<string, unknown> }) => {
     const submittedData = data.formData || {};
