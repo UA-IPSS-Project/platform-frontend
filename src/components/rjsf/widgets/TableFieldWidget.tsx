@@ -1,3 +1,4 @@
+import { Trash2, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { inputCls, safeParseJson, serializeJson, type RjsfWidgetProps } from './types';
 
@@ -178,6 +179,152 @@ export function TableFieldWidget(props: RjsfWidgetProps) {
             })}
           </tbody>
         </table>
+      </div>
+    );
+  }
+
+  if (tableType === 'family_aggregate') {
+    const columns = config.columns || [];
+    if (columns.length < 2) {
+      return <p className="text-sm text-muted-foreground">Tabela Agregado Familiar requer pelo menos 2 colunas.</p>;
+    }
+
+    const parsed = safeParseJson(value);
+    const rows: Array<{ id: string; values: string[] }> = Array.isArray(parsed?.rows)
+      ? parsed.rows
+      : [{ id: 'row-0', values: Array.from({ length: columns.length }, () => '') }];
+    const outros = typeof parsed?.outros === 'string' ? parsed.outros : '';
+
+    const parseAmount = (s: string) => {
+      const n = parseFloat(String(s).replace(',', '.').replace(/\s/g, ''));
+      return isNaN(n) ? 0 : n;
+    };
+    const fmtAmount = (n: number) =>
+      n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const lastColIdx = columns.length - 1;
+    const subTotal = rows.reduce((acc, row) => acc + parseAmount(row.values[lastColIdx] ?? ''), 0);
+    const outrosNum = parseAmount(outros);
+    const grandTotal = config.showOutros ? subTotal + outrosNum : subTotal;
+
+    const save = (nextRows: typeof rows, nextOutros = outros) =>
+      updateValue({ type: tableType, rows: nextRows, outros: nextOutros });
+
+    const addRow = () =>
+      save([...rows, { id: `row-${Date.now()}`, values: Array.from({ length: columns.length }, () => '') }]);
+
+    const removeRow = (idx: number) => save(rows.filter((_, i) => i !== idx));
+
+    const updateCell = (rowIdx: number, colIdx: number, val: string) =>
+      save(rows.map((row, i) =>
+        i === rowIdx ? { ...row, values: row.values.map((v, j) => (j === colIdx ? val : v)) } : row,
+      ));
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col} className="border border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-medium text-gray-500">{col}</th>
+              ))}
+              {!isReadOnly && <th className="w-8 border border-gray-200 bg-gray-50 px-1 py-2" />}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIdx) => (
+              <tr key={row.id}>
+                {columns.map((_, colIdx) => (
+                  <td key={colIdx} className="border border-gray-200 px-2 py-1">
+                    <Input
+                      type="text"
+                      value={row.values[colIdx] ?? ''}
+                      disabled={isReadOnly}
+                      className={inputCls}
+                      onChange={(e) => updateCell(rowIdx, colIdx, e.target.value)}
+                      onBlur={(e) => onBlur(id, e.target.value)}
+                      onFocus={(e) => onFocus(id, e.target.value)}
+                      placeholder={colIdx === 0 ? '—' : '0,00'}
+                    />
+                  </td>
+                ))}
+                {!isReadOnly && (
+                  <td className="border border-gray-200 px-1 py-1 text-center">
+                    <button
+                      type="button"
+                      onClick={() => removeRow(rowIdx)}
+                      className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                      aria-label="Remover linha"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+
+            {/* Sub-total — only when showOutros */}
+            {config.showOutros && (
+              <tr>
+                <td className="border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm font-medium text-gray-600">Sub-total</td>
+                {columns.slice(1).map((_, i) => (
+                  <td key={`sub-${i}`} className="border border-gray-200 bg-gray-50/80 px-3 py-2 text-right text-sm font-medium text-gray-700">
+                    {i + 1 === lastColIdx ? fmtAmount(subTotal) : '—'}
+                  </td>
+                ))}
+                {!isReadOnly && <td className="border border-gray-200 bg-gray-50/80" />}
+              </tr>
+            )}
+
+            {/* Outros rendimentos — only when showOutros */}
+            {config.showOutros && (
+              <tr>
+                <td className="border border-gray-200 px-3 py-2 text-sm text-gray-700">Outros rendimentos</td>
+                {columns.slice(1).map((_, i) => (
+                  <td key={`outros-${i}`} className="border border-gray-200 px-2 py-1">
+                    {i + 1 === lastColIdx ? (
+                      <Input
+                        type="text"
+                        value={outros}
+                        disabled={isReadOnly}
+                        className={inputCls}
+                        onChange={(e) => save(rows, e.target.value)}
+                        onBlur={(e) => onBlur(id, e.target.value)}
+                        onFocus={(e) => onFocus(id, e.target.value)}
+                        placeholder="0,00"
+                      />
+                    ) : (
+                      <span className="block px-1 text-center text-gray-400">—</span>
+                    )}
+                  </td>
+                ))}
+                {!isReadOnly && <td className="border border-gray-200" />}
+              </tr>
+            )}
+
+            {/* Total — always shown */}
+            <tr>
+              <td className="border border-gray-200 bg-gray-50/80 px-3 py-2 text-sm font-semibold text-gray-700">Total</td>
+              {columns.slice(1).map((_, i) => (
+                <td key={`total-${i}`} className="border border-gray-200 bg-gray-50/80 px-3 py-2 text-right text-sm font-semibold text-gray-700">
+                  {i + 1 === lastColIdx ? fmtAmount(grandTotal) : '—'}
+                </td>
+              ))}
+              {!isReadOnly && <td className="border border-gray-200 bg-gray-50/80" />}
+            </tr>
+          </tbody>
+        </table>
+
+        {!isReadOnly && (
+          <button
+            type="button"
+            onClick={addRow}
+            className="mt-2 flex items-center gap-1 text-sm text-primary hover:text-primary/80 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Adicionar linha
+          </button>
+        )}
       </div>
     );
   }
