@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authApi } from '../services/api/auth/authApi';
 import { UtenteRegisterRequest, FuncionarioRegisterRequest } from '../services/api/auth/types';
 
-const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL ?? 'http://localhost:8180';
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL ?? '';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'florinhas';
 const KEYCLOAK_CLIENT_ID = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'florinhas-frontend';
 
