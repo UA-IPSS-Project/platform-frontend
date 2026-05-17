@@ -69,7 +69,7 @@ function App() {
   }, []); // Empty dependency array: run once on mount
 
   // Protected Route Component
-  const ProtectedRoute = ({ children }: { children: any }) => {
+  const renderProtected = (children: React.ReactNode): React.ReactNode => {
     if (isLoading) return null;
 
     if (!isAuthenticated) {
@@ -226,8 +226,7 @@ function App() {
                   } />
 
                   <Route path="/dashboard/*" element={
-                    <ProtectedRoute>
-                      {user ? (
+                    renderProtected(user ? (
                         user.role === 'SECRETARIA' ? (
                           <SecretaryDashboard
                             user={{
@@ -271,8 +270,7 @@ function App() {
                             onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
                           />
                         )
-                      ) : null}
-                    </ProtectedRoute>
+                      ) : null)
                   } />
 
                   <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
