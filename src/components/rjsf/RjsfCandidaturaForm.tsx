@@ -5,6 +5,7 @@ import { candidaturasApi, FormResponse } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { WizardForm } from './WizardForm';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { CandidaturaFileContext } from '@/contexts/CandidaturaFileContext';
 
 interface RjsfCandidaturaFormProps {
   onSuccess?: () => void;
@@ -31,20 +32,20 @@ export function RjsfCandidaturaForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentCandidaturaId, setCurrentCandidaturaId] = useState<string | null>(existingCandidaturaId ?? null);
   const latestFormDataRef = useRef<Record<string, unknown>>(existingRespostas ?? {});
+  const currentCandidaturaIdRef = useRef<string | null>(existingCandidaturaId ?? null);
   const isDirtyRef = useRef(false);
   const isSavingRef = useRef(false);
   const saveDraftRef = useRef<() => Promise<void>>(async () => {});
   const hasMountedRef = useRef(false);
+  const formularioAtivoRef = useRef<FormResponse | null>(null);
 
   useEffect(() => {
     const loadFormulario = async () => {
       try {
         const forms = await candidaturasApi.listarFormularios(candidaturaType);
-        if (forms.length > 0) {
-          setFormularioAtivo(forms[0]);
-        } else {
-          setFormularioAtivo(null);
-        }
+        const form = forms.length > 0 ? forms[0] : null;
+        setFormularioAtivo(form);
+        formularioAtivoRef.current = form;
       } catch {
         toast.error('Não foi possível carregar o formulário.');
       }
@@ -76,10 +77,44 @@ export function RjsfCandidaturaForm({
         estado: 'RASCUNHO',
       });
       setCurrentCandidaturaId(newCand.id);
+      currentCandidaturaIdRef.current = newCand.id;
     } finally {
       isSavingRef.current = false;
     }
   }, [currentCandidaturaId, formularioAtivo?.id, user?.nif, user?.nome]);
+
+  const getOrCreateDraftId = useCallback(async (): Promise<string | null> => {
+    if (currentCandidaturaIdRef.current) return currentCandidaturaIdRef.current;
+    const form = formularioAtivoRef.current;
+    if (!form?.id) return null;
+    try {
+      const nif = (latestFormDataRef.current.nif as string) || (latestFormDataRef.current.guardianNif as string) || user?.nif || '';
+      const nome = (latestFormDataRef.current.nome as string) || (latestFormDataRef.current.childName as string) || user?.nome || 'Rascunho';
+      const newCand = await candidaturasApi.criarCandidatura({
+        formId: form.id,
+        nif,
+        nome,
+        respostas: latestFormDataRef.current,
+        estado: 'RASCUNHO',
+      });
+      setCurrentCandidaturaId(newCand.id);
+      currentCandidaturaIdRef.current = newCand.id;
+      return newCand.id;
+    } catch {
+      return null;
+    }
+  }, [user?.nif, user?.nome]);
+
+  const fileContextValue = useMemo(() => ({
+    uploadFile: async (file: File) => {
+      const candId = await getOrCreateDraftId();
+      if (!candId) throw new Error('Não foi possível criar o rascunho para upload.');
+      const doc = await candidaturasApi.uploadDocumentoCandidatura(candId, file);
+      return doc;
+    },
+    downloadFile: (docId: string, nomeOriginal: string) =>
+      candidaturasApi.downloadDocumentoCandidatura(docId, nomeOriginal),
+  }), [getOrCreateDraftId]);
 
   const handleSubmit = async (data: { formData?: Record<string, unknown> }) => {
     const submittedData = data.formData || {};
@@ -104,6 +139,7 @@ export function RjsfCandidaturaForm({
           nif: (submittedData.nif as string) || (submittedData.guardianNif as string) || user?.nif || '',
           nome: (submittedData.nome as string) || (submittedData.childName as string) || user?.nome || 'Sem nome',
           respostas: submittedData,
+          estado: 'PENDENTE',
         });
         setCurrentCandidaturaId(created.id);
         toast.success('Candidatura enviada com sucesso');
@@ -174,21 +210,23 @@ export function RjsfCandidaturaForm({
       )}
 
       {formularioAtivo ? (
-        <WizardForm
-          form={formularioAtivo}
-          initialData={formData}
-          onSubmit={(data) => handleSubmit({ formData: data })}
-          onSaveDraft={(data) => {
-            latestFormDataRef.current = data;
-            persistDraft(data).then(() => {
-              isDirtyRef.current = false;
-            }).catch(() => {
-              // isDirtyRef stays true — unmount cleanup will retry
-            });
-          }}
-          isSubmitting={isSubmitting}
-          includeInternalPages={includeInternalPages}
-        />
+        <CandidaturaFileContext.Provider value={fileContextValue}>
+          <WizardForm
+            form={formularioAtivo}
+            initialData={formData}
+            onSubmit={(data) => handleSubmit({ formData: data })}
+            onSaveDraft={(data) => {
+              latestFormDataRef.current = data;
+              persistDraft(data).then(() => {
+                isDirtyRef.current = false;
+              }).catch(() => {
+                // isDirtyRef stays true — unmount cleanup will retry
+              });
+            }}
+            isSubmitting={isSubmitting}
+            includeInternalPages={includeInternalPages}
+          />
+        </CandidaturaFileContext.Provider>
       ) : (
         <div className="py-10 text-center space-y-4">
           <p className="text-muted-foreground italic">Formulários indisponíveis para este tipo.</p>

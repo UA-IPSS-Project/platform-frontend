@@ -1,3 +1,7 @@
+import { useState } from 'react';
+import { Download, Paperclip } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCandidaturaFile } from '../../../contexts/CandidaturaFileContext';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -503,6 +507,106 @@ function TableFieldWidget(props: RjsfWidgetProps) {
   );
 }
 
+interface StoredFile { docId: string; nomeOriginal: string }
+
+function parseStoredFile(value: unknown): StoredFile | null {
+  if (typeof value !== 'string' || !value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (parsed && typeof parsed.docId === 'string') return parsed as StoredFile;
+  } catch { /* not JSON */ }
+  return null;
+}
+
+function FileFieldWidget(props: RjsfWidgetProps) {
+  const { id, value, required, disabled, readonly, onChange } = props;
+  const fileCtx = useCandidaturaFile();
+  const [uploading, setUploading] = useState(false);
+
+  const stored = parseStoredFile(value);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !fileCtx) return;
+    setUploading(true);
+    try {
+      const result = await fileCtx.uploadFile(file);
+      if (result) {
+        onChange(JSON.stringify({ docId: result.id, nomeOriginal: result.nomeOriginal }));
+      }
+    } catch {
+      toast.error('Erro ao carregar o ficheiro.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!stored || !fileCtx) return;
+    void fileCtx.downloadFile(stored.docId, stored.nomeOriginal);
+  };
+
+  if (readonly || disabled) {
+    if (!stored) {
+      return (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          <Paperclip className="w-4 h-4 shrink-0" />
+          <span>Nenhum ficheiro</span>
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        onClick={handleDownload}
+        className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors w-full text-left"
+      >
+        <Paperclip className="w-4 h-4 shrink-0 text-muted-foreground" />
+        <span className="truncate flex-1">{stored.nomeOriginal}</span>
+        <Download className="w-4 h-4 shrink-0 text-muted-foreground" />
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <label
+        htmlFor={id}
+        className={`flex items-center gap-3 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground transition-colors ${
+          uploading || !fileCtx ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-primary hover:text-foreground'
+        }`}
+      >
+        <input
+          id={id}
+          type="file"
+          required={required && !stored}
+          disabled={uploading || !fileCtx}
+          className="sr-only"
+          onChange={handleFileChange}
+        />
+        <Paperclip className="w-4 h-4 shrink-0" />
+        {uploading ? (
+          <span>A carregar…</span>
+        ) : stored ? (
+          <span className="truncate text-foreground">{stored.nomeOriginal}</span>
+        ) : (
+          <span>Escolher ficheiro…</span>
+        )}
+      </label>
+      {stored && !uploading && (
+        <button
+          type="button"
+          onClick={handleDownload}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Download className="w-3 h-3" />
+          Descarregar ficheiro atual
+        </button>
+      )}
+    </div>
+  );
+}
+
 export const rjsfWidgets = {
   TextWidget,
   EmailWidget,
@@ -513,4 +617,5 @@ export const rjsfWidgets = {
   RadioWidget,
   TableFieldWidget,
   tableField: TableFieldWidget,
+  fileField: FileFieldWidget,
 };

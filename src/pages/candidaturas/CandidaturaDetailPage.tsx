@@ -15,7 +15,18 @@ import { CandidaturasStatusBadge } from '../../components/candidaturas/Candidatu
 import { candidaturasApi, type CandidaturaEstado, type FormPage, type SecretaryDraftResponse, type CandidaturaDocumentoDTO } from '../../services/api';
 import { buildPageSchemas } from '../../utils/formAdapter';
 import { FileUpload } from '../../components/shared/FileUpload';
-import { Download, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Trash2 } from 'lucide-react';
+import { CandidaturaFileContext } from '../../contexts/CandidaturaFileContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 const toStatusLabel = (estado: string, t: (key: string) => string): string => {
   if (estado === 'APROVADA') return t('applications.flow.status.approved');
@@ -58,6 +69,8 @@ export function CandidaturaDetailPage() {
   const [documentos, setDocumentos] = useState<CandidaturaDocumentoDTO[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
 
   const isSecretary = user?.role === 'SECRETARIA';
   const canEdit = isSecretary || estado === 'PENDENTE';
@@ -95,7 +108,8 @@ export function CandidaturaDetailPage() {
         if (user?.role === 'SECRETARIA') {
           try {
             const draft = await candidaturasApi.obterRascunhoSecretaria(candidaturaId);
-            setSecretaryDraft(draft ?? null);
+            // apiRequest returns {} for 204 No Content — only set if it's a real draft
+            setSecretaryDraft(draft && 'candidaturaId' in draft ? draft : null);
           } catch {
             // no draft — that's fine
           }
@@ -145,6 +159,7 @@ export function CandidaturaDetailPage() {
 
       toast.success(t('applications.detail.messages.saveSuccess'));
       setEditing(false);
+      setIsDirty(false);
     } catch (error: any) {
       toast.error(error?.message || t('applications.detail.messages.saveError'));
     } finally {
@@ -172,6 +187,7 @@ export function CandidaturaDetailPage() {
       setSavingDraft(true);
       const saved = await candidaturasApi.guardarRascunhoSecretaria(candidaturaId, { respostas: formData });
       setSecretaryDraft(saved);
+      setIsDirty(false);
       toast.success('Rascunho guardado');
     } catch {
       toast.error('Não foi possível guardar o rascunho.');
@@ -201,6 +217,7 @@ export function CandidaturaDetailPage() {
       setFormData(updated.respostas || {});
       setSecretaryDraft(null);
       setEditing(false);
+      setIsDirty(false);
       toast.success('Alterações publicadas com sucesso');
     } catch {
       toast.error('Não foi possível publicar as alterações.');
@@ -237,13 +254,24 @@ export function CandidaturaDetailPage() {
     }
   };
 
-  const canDeleteDoc = isSecretary || estado === 'PENDENTE' || estado === 'RASCUNHO';
+  const canUploadDoc = isSecretary ? editing : (estado === 'PENDENTE' || estado === 'RASCUNHO');
+  const canDeleteDoc = isSecretary ? editing : (estado === 'PENDENTE' || estado === 'RASCUNHO');
 
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  const fileContextValue = useMemo(() => ({
+    uploadFile: async (file: File) => {
+      const doc = await candidaturasApi.uploadDocumentoCandidatura(candidaturaId, file);
+      setDocumentos(prev => [...prev, doc]);
+      return doc;
+    },
+    downloadFile: (docId: string, nomeOriginal: string) =>
+      candidaturasApi.downloadDocumentoCandidatura(docId, nomeOriginal),
+  }), [candidaturaId]);
 
   if (loading) {
     return (
@@ -254,10 +282,21 @@ export function CandidaturaDetailPage() {
   }
 
   return (
+    <CandidaturaFileContext.Provider value={fileContextValue}>
     <CandidaturasCard className="mx-auto mt-4 max-w-5xl p-6 sm:p-8">
       <div className="flex items-center justify-between mb-5 gap-3">
         <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (isSecretary && editing && isDirty) {
+                setLeaveConfirmOpen(true);
+              } else {
+                navigate(-1);
+              }
+            }}
+          >
             {t('applications.detail.actions.back')}
           </Button>
           {canChangeStatus ? (
@@ -352,16 +391,42 @@ export function CandidaturaDetailPage() {
         showErrorList={false}
         liveValidate
         readonly={!editing}
-        onChange={(event: { formData?: Record<string, unknown> }) =>
-          setFormData(prev => ({ ...prev, ...(event.formData || {}) }))
-        }
+        onChange={(event: { formData?: Record<string, unknown> }) => {
+          setFormData(prev => ({ ...prev, ...(event.formData || {}) }));
+          if (editing && isSecretary) setIsDirty(true);
+        }}
       >
         <div />
       </Form>
 
+      {visiblePages.length > 1 && (
+        <div className="pt-4 flex justify-between border-t border-muted">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCurrentPageIndex((i) => i - 1)}
+            disabled={currentPageIndex === 0}
+            className={currentPageIndex === 0 ? 'invisible' : ''}
+          >
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Anterior
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setCurrentPageIndex((i) => i + 1)}
+            disabled={currentPageIndex === visiblePages.length - 1}
+            className={currentPageIndex === visiblePages.length - 1 ? 'invisible' : ''}
+          >
+            Seguinte
+            <ChevronRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {editing ? (
         <div className="pt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => { setEditing(false); setFormData(publishedRespostas); }}>
+          <Button type="button" variant="outline" onClick={() => { setEditing(false); setIsDirty(false); setFormData(publishedRespostas); }}>
             {t('applications.detail.actions.cancel')}
           </Button>
           {isSecretary ? (
@@ -390,6 +455,26 @@ export function CandidaturaDetailPage() {
           onConfirm={handleChangeStatus}
         />
       ) : null}
+
+      <AlertDialog open={leaveConfirmOpen} onOpenChange={setLeaveConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair sem guardar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem alterações não guardadas. Se sair agora, as alterações serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar a editar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setIsDirty(false); setEditing(false); navigate(-1); }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Sair sem guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="mt-8 border-t border-border pt-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Documentos</h2>
@@ -431,19 +516,24 @@ export function CandidaturaDetailPage() {
           <p className="text-sm text-muted-foreground italic mb-4">Sem documentos anexados.</p>
         )}
 
-        <FileUpload
-          selectedFiles={selectedFiles}
-          onChange={setSelectedFiles}
-          isUploading={uploadingDocs}
-        />
-        {selectedFiles.length > 0 && (
-          <div className="mt-3 flex justify-end">
-            <Button type="button" onClick={() => void handleUploadDocumentos()} disabled={uploadingDocs}>
-              {uploadingDocs ? 'A enviar...' : `Enviar ${selectedFiles.length} ficheiro(s)`}
-            </Button>
-          </div>
+        {canUploadDoc && (
+          <>
+            <FileUpload
+              selectedFiles={selectedFiles}
+              onChange={setSelectedFiles}
+              isUploading={uploadingDocs}
+            />
+            {selectedFiles.length > 0 && (
+              <div className="mt-3 flex justify-end">
+                <Button type="button" onClick={() => void handleUploadDocumentos()} disabled={uploadingDocs}>
+                  {uploadingDocs ? 'A enviar...' : `Enviar ${selectedFiles.length} ficheiro(s)`}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </CandidaturasCard>
+    </CandidaturaFileContext.Provider>
   );
 }

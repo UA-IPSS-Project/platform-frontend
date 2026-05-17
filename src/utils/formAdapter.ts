@@ -90,6 +90,9 @@ export function buildPageSchemas(
         propSchema.type = 'number';
       } else if (type === 'checkbox' || type === 'boolean') {
         propSchema.type = 'boolean';
+      } else if (type === 'file') {
+        propSchema.type = 'string';
+        uiProp['ui:widget'] = 'fileField';
       } else {
         propSchema.type = 'string';
       }
