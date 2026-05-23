@@ -57,15 +57,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: t('sidebar.appointments'),
       icon: CalendarIcon
     },
-    {
-      id: 'valencias',
-      label: t('sidebar.services'),
-      icon: BuildingIcon,
-      subitems: [
-        { id: 'balneario', label: t('sidebar.balneario'), icon: UsersIcon },
-        { id: 'escola', label: t('sidebar.school'), icon: SchoolIcon },
-      ]
-    },
+
     {
       id: 'requisitions',
       label: t('sidebar.requisitions'),
