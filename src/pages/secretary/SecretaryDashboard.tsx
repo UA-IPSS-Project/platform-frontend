@@ -227,8 +227,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   }, [refreshCurrentWeek, currentDate]);
 
 
-  const handleCreateAppointment = async (date: Date, time: string) => {
-    await refreshCurrentWeek(currentDate);
+  const handleCreateAppointment = (date: Date, time: string) => {
     setEditingAppointment({ date, time });
     setShowAppointmentDialog(true);
   };

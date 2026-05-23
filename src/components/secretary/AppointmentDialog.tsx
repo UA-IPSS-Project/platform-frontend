@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -35,6 +35,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [nifError, setNifError] = useState<string | undefined>(undefined);
   const [originalUser, setOriginalUser] = useState<UtilizadorInfo | null>(null);
   const [tempReservaId, setTempReservaId] = useState<number | null>(null);
+  const reservingRef = useRef(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [subjects, setSubjects] = useState<Assunto[]>([]);
@@ -87,10 +88,10 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     }
   }, [open]);
 
-  // Reserva de slot temporária
   useEffect(() => {
     const reservarSlot = async () => {
-      if (open && !tempReservaId) {
+      if (open && !reservingRef.current && !tempReservaId) {
+        reservingRef.current = true;
         try {
           const dataHora = new Date(date);
           const [hours, minutes] = time.split(':');
@@ -104,14 +105,19 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
           setTempReservaId(res.tempId);
           console.log('[AppointmentDialog] Slot reservado temporariamente:', res.tempId);
         } catch (error: any) {
+          reservingRef.current = false;
           console.error('Falha ao reservar slot temporário:', error);
           toast.error(error.message || 'Não foi possível reservar este horário.');
           onClose();
         }
       }
+      if (!open) {
+        reservingRef.current = false;
+      }
     };
     reservarSlot();
-  }, [open, date, time, tempReservaId, onClose, funcionarioId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, date, time, funcionarioId]);
 
   const liberarSlot = async () => {
     if (tempReservaId) {
@@ -225,11 +231,14 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
   const processCreation = async () => {
     try {
-      if (tempReservaId) {
-        await apiRequest(`/api/marcacoes/libertar-slot/${tempReservaId}`, {
+      const savedTempId = tempReservaId;
+      setTempReservaId(null);
+      reservingRef.current = false;
+
+      if (savedTempId) {
+        await apiRequest(`/api/marcacoes/libertar-slot/${savedTempId}`, {
           method: 'DELETE',
         });
-        setTempReservaId(null);
       }
 
       if (originalUser && showConfirmation) {
