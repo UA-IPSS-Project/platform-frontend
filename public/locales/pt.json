@@ -44,8 +44,8 @@
       "creationFailed": "Erro: {{message}}"
     },
     "messages": {
-      "slotReserved": "Slot reservado temporariamente:",
-      "slotReleased": "Slot liberado:",
+      "slotReserved": "Célula reservado temporariamente:",
+      "slotReleased": "Célula liberado:",
       "userLoaded": "Dados do utente carregados",
       "userNotFound": "Utente não encontrado com este NIF.",
       "userNotFoundOrNetwork": "Utente não encontrado na base de dados (ou erro de rede).",
@@ -258,7 +258,7 @@
     "consumption": "Consumos",
     "administrativeArea": "Área Administrativa",
     "general": "Geral",
-    "slots": "Gestão de Slots",
+    "slots": "Gestão de Células",
     "inventory": "Gestão de Inventário"
   },
   "dashboard": {
@@ -318,20 +318,20 @@
       "inventoryDescription": "Gestão de stock, categorias e detalhes dos produtos do armazém.",
       "navigation": {
         "dashboard": "Dashboard",
-        "slots": "Slots",
+        "slots": "Células",
         "catalogs": "Catálogos"
       },
       "viewDescriptions": {
-        "overview": "Este painel serve apenas para administração operacional. O admin gere slots, materiais, transportes e tipos de manutenção.",
+        "overview": "Este painel serve apenas para administração operacional. O admin gere células, materiais, transportes e tipos de manutenção.",
         "slots": "Ajuste o número máximo de marcações que cada agenda suporta por horário. As alterações são aplicadas de imediato após gravação.",
         "catalogs": "Cria, edita e remove materiais, transportes e tipos de manutenção usados nas requisições."
       },
       "overview": {
         "managementAreas": {
           "slots": {
-            "title": "Slots por marcação",
+            "title": "Células por marcação",
             "description": "Define a capacidade de cada agenda por horário e controla a lotação operacional.",
-            "actionLabel": "Gerir slots"
+            "actionLabel": "Gerir células"
           },
           "catalogs": {
             "title": "Catálogos administrativos",
@@ -342,22 +342,22 @@
       },
       "slots": {
         "operationalConfiguration": "Configuração operacional",
-        "title": "Capacidade da Secretaria por Slot",
+        "title": "Capacidade da Secretaria por Célula",
         "description": "Configure o número máximo de utentes que a secretaria pode atender simultaneamente por horário.",
-        "balnearioTitle": "Capacidade do Balneário por Slot",
+        "balnearioTitle": "Capacidade do Balneário por Célula",
         "balnearioDescription": "Configure o número máximo de utentes que o balneário pode receber simultaneamente por horário.",
         "secretaryScheduleTitle": "Agenda da Secretaria (15 min)",
         "current": "atual",
         "secretaryScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 15 minutos.",
         "balnearioScheduleTitle": "Agenda do Balneário (30 min)",
         "balnearioScheduleDescription": "Define quantas marcações podem coexistir no mesmo horário de 30 minutos.",
-        "maxPerSlot": "Máximo por slot",
+        "maxPerSlot": "Máximo por célula",
         "saving": "A guardar...",
         "saveConfiguration": "Guardar configuração"
       },
       "summary": {
         "slots": {
-          "title": "Slots da Secretaria",
+          "title": "Células da Secretaria",
           "description": "capacidade por horário"
         },
         "materials": {
@@ -378,7 +378,7 @@
         }
       },
       "messages": {
-        "slotConfigUpdated": "Configuração de slots atualizada com sucesso",
+        "slotConfigUpdated": "Configuração de células atualizada com sucesso",
         "reportEmailSent": "Relatório enviado com sucesso!"
       },
       "reportDialog": {
@@ -496,8 +496,8 @@
         "noVehiclesInCategory": "Ainda não existem veículos com esta categoria"
       },
       "errors": {
-        "loadSlotConfig": "Não foi possível carregar a configuração de slots",
-        "saveSlotConfig": "Não foi possível guardar a configuração de slots"
+        "loadSlotConfig": "Não foi possível carregar a configuração de células",
+        "saveSlotConfig": "Não foi possível guardar a configuração de células"
       },
       "assuntos": {
         "sectionTitle": "Assuntos de Marcação",
@@ -1067,13 +1067,13 @@
     "userFoundSuccess": "Utilizador encontrado com sucesso!",
     "registeredEmployees": "Funcionários Registados",
     "registeredUtentes": "Utentes Registados",
-    "slotCapacityTitle": "Capacidade de Marcações por Slot",
+    "slotCapacityTitle": "Capacidade de Marcações por Célula",
     "slotCapacityHint": "Defina quantas marcações podem existir no mesmo horário para cada agenda.",
-    "secretarySlotsLabel": "Secretaria (marcações por slot)",
-    "balnearioSlotsLabel": "Balneário (marcações por slot)",
-    "secretarySlotsAria": "Número de marcações por slot para a secretaria",
-    "balnearioSlotsAria": "Número de marcações por slot para o balneário",
-    "saveSlotConfig": "Guardar configuração de slots",
+    "secretarySlotsLabel": "Secretaria (marcações por célula)",
+    "balnearioSlotsLabel": "Balneário (marcações por célula)",
+    "secretarySlotsAria": "Número de marcações por célula para a secretaria",
+    "balnearioSlotsAria": "Número de marcações por célula para o balneário",
+    "saveSlotConfig": "Guardar configuração de células",
     "createAccount": "Criação de Conta",
     "recoverAccount": "Recuperação de Conta",
     "clickToExpand": "Clique para expandir",
@@ -1109,7 +1109,7 @@
     "askCreateNewWithNif": "Gostaria de criar uma nova conta com este NIF?",
     "yesCreateNewAccount": "Sim, criar nova conta",
     "messages": {
-      "slotConfigSaved": "Capacidade por slot atualizada com sucesso",
+      "slotConfigSaved": "Capacidade por célula atualizada com sucesso",
       "employeeApproved": "Funcionário aprovado com sucesso!",
       "accountCreatedWithEmail": "Conta criada! Email de ativação enviado para {{email}}",
       "redirectToRecovery": "Redirecionado para recuperação de conta do utilizador existente.",
@@ -1118,8 +1118,8 @@
       "recoveryStarted": "Recuperação iniciada! Código enviado para {{email}}"
     },
     "errors": {
-      "loadSlotConfig": "Não foi possível carregar a configuração de marcações por slot",
-      "saveSlotConfig": "Não foi possível guardar a configuração de slots",
+      "loadSlotConfig": "Não foi possível carregar a configuração de marcações por célula",
+      "saveSlotConfig": "Não foi possível guardar a configuração de células",
       "employeeApprove": "Erro ao aprovar funcionário",
       "enterNifToSearch": "Insira um NIF para pesquisar",
       "invalidNif": "NIF inválido (deve ter 9 dígitos)",
@@ -1594,4 +1594,3 @@
     "acceptError": "Erro ao aceitar os termos. Tente novamente."
   }
 }
-

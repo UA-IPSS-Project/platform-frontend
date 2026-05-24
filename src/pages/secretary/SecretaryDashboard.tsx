@@ -227,8 +227,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   }, [refreshCurrentWeek, currentDate]);
 
 
-  const handleCreateAppointment = async (date: Date, time: string) => {
-    await refreshCurrentWeek(currentDate);
+  const handleCreateAppointment = (date: Date, time: string) => {
     setEditingAppointment({ date, time });
     setShowAppointmentDialog(true);
   };
@@ -302,16 +301,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onLabelClick={() => navigateTo('requisitions')}
       />
 
-      <NavDropdown
-        label={t('sidebar.services')}
-        items={[
-          { id: 'balneario', label: t('sidebar.balneario') },
-          { id: 'escola', label: t('sidebar.school') },
-        ]}
-        isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
-        onSelect={(id) => navigateTo(id as ViewType)}
-        className="hidden lg:block"
-      />
+
 
       <Button
         variant={currentView === 'appointments' ? 'default' : 'ghost'}

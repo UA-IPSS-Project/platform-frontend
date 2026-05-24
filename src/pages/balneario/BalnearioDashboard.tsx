@@ -238,8 +238,7 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
         await refreshCurrentWeek(currentDate);
     }, [refreshCurrentWeek, currentDate]);
 
-    const handleCreateAppointment = async (date: Date, time: string) => {
-        await refreshCurrentWeek(currentDate);
+    const handleCreateAppointment = (date: Date, time: string) => {
         setEditingAppointment({ date, time });
         setShowAppointmentDialog(true);
     };

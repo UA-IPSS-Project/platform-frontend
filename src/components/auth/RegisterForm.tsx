@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSubmitCooldown } from '../../hooks/useSubmitCooldown';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -66,6 +67,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
   const [employeeRole, setEmployeeRole] = useState('');
   const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto'); // New state for email selection
   const { registerUtente, registerFuncionario } = useAuth();
+  const [isOnCooldown, wrapSubmit] = useSubmitCooldown(5000);
 
   const passwordValidation = validatePassword(formData.password);
   const isPasswordValid = checkPasswordValid(formData.password);
@@ -175,7 +177,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     }
   }, [formData.name, accountType, emailSelection]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = wrapSubmit(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -219,7 +221,7 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
     } catch (error: any) {
       toast.error(error.message || t('auth.errorCreatingAccount'));
     }
-  };
+  });
 
   const handleChange = (field: string, value: string) => {
     if (field === 'termsAccepted') {
@@ -580,9 +582,10 @@ export function RegisterForm({ onNavigateToLogin, initialAccountType = 'user' }:
 
         <Button
           type="submit"
+          disabled={isOnCooldown}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200 mt-6"
         >
-          {t('auth.createAccount')}
+          {isOnCooldown ? t('auth.pleaseWait', 'Aguarde...') : t('auth.createAccount')}
         </Button>
       </form>
 

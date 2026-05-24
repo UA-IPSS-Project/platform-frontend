@@ -9,6 +9,16 @@ import { GlassCard } from '../../components/ui/glass-card';
 import { RequisitionsCatalogManagement } from '../../components/admin/RequisitionsCatalogManagement';
 import { SubjectManagement } from '../../components/admin/catalog/SubjectManagement';
 import { calendarioApi, requisicoesApi, marcacoesApi, type ManutencaoItem } from '../../services/api';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '../../components/ui/alert-dialog';
 
 
 function SlotsManagement({
@@ -108,6 +118,7 @@ export function SecretaryAdminArea() {
     });
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
     const [isSavingSlots, setIsSavingSlots] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; afetadas: number }>({ open: false, afetadas: 0 });
 
     const loadSlotCapacities = async () => {
         setIsLoadingSlots(true);
@@ -160,6 +171,22 @@ export function SecretaryAdminArea() {
     };
 
     const handleSaveSlotCapacities = async () => {
+        if (slotCapacities.SECRETARIA < savedCapacities.SECRETARIA) {
+            try {
+                const { marcacoesAfetadas } = await calendarioApi.previewReducaoSlot('SECRETARIA', slotCapacities.SECRETARIA);
+                if (marcacoesAfetadas > 0) {
+                    setConfirmDialog({ open: true, afetadas: marcacoesAfetadas });
+                    return;
+                }
+            } catch {
+                toast.error(t('dashboard.admin.errors.saveSlotConfig'));
+                return;
+            }
+        }
+        await doSave();
+    };
+
+    const doSave = async () => {
         setIsSavingSlots(true);
         try {
             await calendarioApi.atualizarConfiguracaoSlot('SECRETARIA', slotCapacities.SECRETARIA);
@@ -211,6 +238,7 @@ export function SecretaryAdminArea() {
     ], [savedCapacities, catalogCounts, t]);
 
     return (
+        <>
         <div className="space-y-10 max-w-6xl mx-auto">
             <div className="flex flex-col gap-1">
                 <h1 className="text-3xl font-bold text-foreground">{t('dashboard.admin.mainTitle')}</h1>
@@ -271,5 +299,23 @@ export function SecretaryAdminArea() {
                 <RequisitionsCatalogManagement />
             </GlassCard>
         </div>
+
+        <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(prev => ({ ...prev, open: open }))}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Reduzir capacidade de slots</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta alteração irá cancelar <strong>{confirmDialog.afetadas}</strong> marcação(ões) futuras que excedem a nova capacidade. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { setConfirmDialog({ open: false, afetadas: 0 }); doSave(); }}>
+                        Confirmar e cancelar marcações
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }

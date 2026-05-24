@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSubmitCooldown } from '../../hooks/useSubmitCooldown';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -26,6 +27,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loginType, setLoginType] = useState<'user' | 'employee'>('user');
   const { login } = useAuth();
+  const [isOnCooldown, wrapSubmit] = useSubmitCooldown(5000);
 
   const employeeIdentifier = `${employeeEmailPrefix}${employeeEmailDomain}`;
   const normalizedEmployeeIdentifier = employeeIdentifier.trim();
@@ -54,7 +56,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = wrapSubmit(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -71,7 +73,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       toast.error(error.message || t('auth.invalidCredentials'));
       setErrors({ identifier: t('auth.invalidCredentials'), password: t('auth.invalidCredentials') });
     }
-  };
+  });
 
   const handleToggle = (value: 'user' | 'employee') => {
     setLoginType(value);
@@ -209,9 +211,10 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
 
         <Button
           type="submit"
+          disabled={isOnCooldown}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200"
         >
-          {t('auth.login')}
+          {isOnCooldown ? t('auth.pleaseWait', 'Aguarde...') : t('auth.login')}
         </Button>
       </form>
 
