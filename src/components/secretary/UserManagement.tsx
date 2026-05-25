@@ -52,6 +52,8 @@ export function UserManagement() {
     });
     const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto');
     const [noEmail, setNoEmail] = useState(false);
+    const [showNoEmailWarning, setShowNoEmailWarning] = useState(false);
+    const noEmailConfirmedRef = useRef(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // State for "User Exists" Dialog
@@ -343,6 +345,7 @@ export function UserManagement() {
         });
         setEmailSelection('auto');
         setNoEmail(false);
+        noEmailConfirmedRef.current = false;
     };
 
     const checkNifExistence = async () => {
@@ -436,6 +439,11 @@ export function UserManagement() {
             }
 
             // 4. Create Account
+            if (formData.role === 'UTENTE' && noEmail && !noEmailConfirmedRef.current) {
+                setShowNoEmailWarning(true);
+                return;
+            }
+            noEmailConfirmedRef.current = false;
             const emailToSend = (formData.role === 'UTENTE' && noEmail) ? undefined : formData.email;
             await utilizadoresApi.createBySecretary({
                 name: formData.name,
@@ -1493,6 +1501,28 @@ export function UserManagement() {
                     if (pendingClose) setPendingClose(false);
                 }}
             />
+
+            <AlertDialog open={showNoEmailWarning} onOpenChange={setShowNoEmailWarning}>
+                <AlertDialogContent className="bg-card border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Criar conta sem email</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Está a criar uma conta <strong>sem endereço de email</strong>. Isto significa que o utente:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>Não receberá notificações por email</li>
+                                <li>Não poderá recuperar a password por email</li>
+                                <li>A recuperação de conta será apenas presencial</li>
+                            </ul>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowNoEmailWarning(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setShowNoEmailWarning(false); noEmailConfirmedRef.current = true; handleCreateSubmit(new Event('submit') as any); }}>
+                            Confirmar e Criar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
