@@ -181,7 +181,6 @@ export function ReportsPage() {
   const handleApagarPeriodico = async (id: number) => {
     try { await reportsApi.apagarPeriodico(id); toast.success('Relatório periódico removido'); fetchPeriodicos(); } catch (e) { toast.error('Erro ao remover'); }
   };
-    });
 
   const preparePDF = async () => {
     const startISO = `${startDate}T00:00:00`;
