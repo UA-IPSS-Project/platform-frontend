@@ -95,6 +95,12 @@ export const utilizadoresApi = {
             body: JSON.stringify(data),
         }),
 
+    generatePresentialCode: (nif: string) =>
+        apiRequest<{ code: string }>('/api/utilizadores/generate-presential-code', {
+            method: 'POST',
+            body: JSON.stringify({ nif }),
+        }),
+
     // Direito ao Esquecimento (RGPD Art.º 17)
     solicitarEliminacao: () =>
         apiRequest<void>('/api/utilizadores/me/delete-request', {
