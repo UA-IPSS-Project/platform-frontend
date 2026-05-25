@@ -326,6 +326,32 @@ export function RequisitionDetailsDialog({
               </div>
             </div>
 
+            {/* Periodicidade */}
+            <div className="border-t border-border pt-6 space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest whitespace-nowrap">{t('requisitions.periodica.label')}</h3>
+                <div className="h-px bg-border w-full" />
+              </div>
+              {selectedRequisicao.periodicaFrequencia ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.frequencia.label')}</p>
+                    <p className="text-sm font-semibold text-foreground">{t(`requisitions.periodica.frequencia.${selectedRequisicao.periodicaFrequencia}`)}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataInicio')}</p>
+                    <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataInicio ? new Date(selectedRequisicao.periodicaDataInicio).toLocaleDateString(locale) : '—'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataFim')}</p>
+                    <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">Não periódica</p>
+              )}
+            </div>
+
             {/* Ações de Gestão */}
             {canManageRequests && (
               <div className="border-t border-border pt-6 space-y-4">
