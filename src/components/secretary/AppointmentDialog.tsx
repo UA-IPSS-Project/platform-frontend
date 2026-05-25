@@ -353,7 +353,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
+    <>
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle className="text-foreground">{t('appointmentDialog.title')}</DialogTitle>
@@ -620,5 +621,6 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+    </>
   );
 }
