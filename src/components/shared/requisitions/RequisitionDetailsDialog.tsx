@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '../../ui/button';
+import { DatePickerField } from '../../ui/date-picker-field';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
 import {
@@ -354,11 +355,11 @@ export function RequisitionDetailsDialog({
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-muted-foreground uppercase">Data Início</label>
-                        <input type="date" className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodicidade.dataInicio} onChange={e => setEditPeriodicidade({ ...editPeriodicidade, dataInicio: e.target.value })} />
+                        <DatePickerField value={editPeriodicidade.dataInicio} onChange={v => setEditPeriodicidade({ ...editPeriodicidade, dataInicio: v })} />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-muted-foreground uppercase">Data Fim <span className="opacity-50">(Opcional)</span></label>
-                        <input type="date" className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodicidade.dataFim} onChange={e => setEditPeriodicidade({ ...editPeriodicidade, dataFim: e.target.value })} />
+                        <DatePickerField value={editPeriodicidade.dataFim} onChange={v => setEditPeriodicidade({ ...editPeriodicidade, dataFim: v })} />
                       </div>
                       <div className="md:col-span-3 flex gap-2 mt-2">
                         <Button size="sm" onClick={() => { onUpdatePeriodicidade?.(selectedRequisicao.id, { frequencia: editPeriodicidade.frequencia, dataInicio: editPeriodicidade.dataInicio, dataFim: editPeriodicidade.dataFim || undefined }); setEditingPeriodicidade(false); }}>Guardar</Button>

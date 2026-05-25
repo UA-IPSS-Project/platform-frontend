@@ -157,6 +157,8 @@ export function ReportsPage() {
   const [periodicoConfig, setPeriodicoConfig] = useState({ frequencia: 'MENSAL', dataInicio: formatDate(today), dataFim: '' });
   const [emails, setEmails] = useState<string[]>(['']);
   const hasEmails = emails.some(e => e.trim());
+  const [editingPeriodicoId, setEditingPeriodicoId] = useState<number | null>(null);
+  const [editPeriodico, setEditPeriodico] = useState({ frequencia: '', dataInicio: '', destinatarios: '', seccoes: '' });
 
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
@@ -181,6 +183,16 @@ export function ReportsPage() {
 
   const handleApagarPeriodico = async (id: number) => {
     try { await reportsApi.apagarPeriodico(id); toast.success('Relatório periódico removido'); fetchPeriodicos(); } catch (e) { toast.error('Erro ao remover'); }
+  };
+
+  const handleUpdatePeriodico = async () => {
+    if (!editingPeriodicoId) return;
+    try {
+      await reportsApi.atualizarPeriodico(editingPeriodicoId, editPeriodico as any);
+      toast.success('Relatório periódico atualizado');
+      setEditingPeriodicoId(null);
+      fetchPeriodicos();
+    } catch (e) { toast.error('Erro ao atualizar'); }
   };
 
   const handleGenerateAndSend = async () => {
@@ -565,11 +577,11 @@ export function ReportsPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Data Início</label>
-                <Input type="date" className="h-9" value={periodicoConfig.dataInicio} onChange={e => setPeriodicoConfig({ ...periodicoConfig, dataInicio: e.target.value })} />
+                <DatePickerField value={periodicoConfig.dataInicio} onChange={v => setPeriodicoConfig({ ...periodicoConfig, dataInicio: v })} />
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Data Fim <span className="opacity-50">(Opcional)</span></label>
-                <Input type="date" className="h-9" value={periodicoConfig.dataFim} onChange={e => setPeriodicoConfig({ ...periodicoConfig, dataFim: e.target.value })} />
+                <DatePickerField value={periodicoConfig.dataFim} onChange={v => setPeriodicoConfig({ ...periodicoConfig, dataFim: v })} />
               </div>
             </div>
           )}
@@ -632,16 +644,54 @@ export function ReportsPage() {
           ) : (
             <div className="space-y-3">
               {periodicos.map(p => (
-                <div key={p.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card/50">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-foreground">{p.destinatarios}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {p.frequencia} · Início: {new Date(p.dataInicio).toLocaleDateString('pt-PT')} · Secções: {p.seccoes}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleApagarPeriodico(p.id!)}>
-                    Remover
-                  </Button>
+                <div key={p.id} className="p-4 rounded-xl border border-border bg-card/50 space-y-3">
+                  {editingPeriodicoId === p.id ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs text-muted-foreground">Destinatários</label>
+                          <Input value={editPeriodico.destinatarios} onChange={e => setEditPeriodico({ ...editPeriodico, destinatarios: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Frequência</label>
+                          <select className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodico.frequencia} onChange={e => setEditPeriodico({ ...editPeriodico, frequencia: e.target.value })}>
+                            <option value="DIARIO">Diário</option>
+                            <option value="SEMANAL">Semanal</option>
+                            <option value="MENSAL">Mensal</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Data Início</label>
+                          <DatePickerField value={editPeriodico.dataInicio} onChange={v => setEditPeriodico({ ...editPeriodico, dataInicio: v })} />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs text-muted-foreground">Secções</label>
+                          <Input value={editPeriodico.seccoes} onChange={e => setEditPeriodico({ ...editPeriodico, seccoes: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleUpdatePeriodico}>Guardar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingPeriodicoId(null)}>Cancelar</Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">{p.destinatarios}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.frequencia} · Início: {new Date(p.dataInicio).toLocaleDateString('pt-PT')} · Secções: {p.seccoes}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingPeriodicoId(p.id!); setEditPeriodico({ frequencia: p.frequencia, dataInicio: p.dataInicio, destinatarios: p.destinatarios, seccoes: p.seccoes }); }}>
+                          Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleApagarPeriodico(p.id!)}>
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
