@@ -161,7 +161,7 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl bg-card border border-border">
+            <DialogContent className="sm:max-w-4xl bg-card border border-border">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                         <Lock className="w-5 h-5 text-destructive" />
