@@ -152,7 +152,6 @@ export function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<'gerar' | 'periodicos'>('gerar');
   const [periodicos, setPeriodicos] = useState<import('../../services/api/reports/reportsApi').RelatorioPeriodico[]>([]);
-  const [newPeriodico, setNewPeriodico] = useState({ destinatarios: '', frequencia: 'MENSAL', dataInicio: formatDate(today), seccoes: '' });
   const [isPeriodico, setIsPeriodico] = useState(false);
   const [periodicoConfig, setPeriodicoConfig] = useState({ frequencia: 'MENSAL', dataInicio: formatDate(today), dataFim: '' });
   const [emails, setEmails] = useState<string[]>(['']);
@@ -169,16 +168,6 @@ export function ReportsPage() {
 
   const fetchPeriodicos = async () => {
     try { setPeriodicos(await reportsApi.listarPeriodicos()); } catch (e) { console.error(e); }
-  };
-
-  const handleCriarPeriodico = async () => {
-    if (!newPeriodico.destinatarios.trim() || !newPeriodico.seccoes.trim()) { toast.error('Preencha destinatários e secções'); return; }
-    try {
-      await reportsApi.criarPeriodico(newPeriodico as any);
-      toast.success('Relatório periódico criado');
-      setNewPeriodico({ destinatarios: '', frequencia: 'MENSAL', dataInicio: formatDate(today), seccoes: '' });
-      fetchPeriodicos();
-    } catch (e) { toast.error('Erro ao criar relatório periódico'); }
   };
 
   const handleApagarPeriodico = async (id: number) => {
