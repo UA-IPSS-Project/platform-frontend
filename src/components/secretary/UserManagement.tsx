@@ -1129,10 +1129,12 @@ export function UserManagement() {
                                                 </div>
 
                                                 <div className="flex gap-3">
-                                                    <Button type="submit" className="flex-1 h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
-                                                        <Send className="w-5 h-5 mr-3" />
-                                                        Atualizar e Enviar Acesso
-                                                    </Button>
+                                                    {recoverData.email && (
+                                                        <Button type="submit" className="flex-1 h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                                                            <Send className="w-5 h-5 mr-3" />
+                                                            Atualizar e Enviar Acesso
+                                                        </Button>
+                                                    )}
                                                     <Button type="button" onClick={handleGeneratePresentialCode} className="flex-1 h-12 bg-primary hover:bg-primary/90 text-white text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">
                                                         <Lock className="w-5 h-5 mr-3" />
                                                         Gerar Código Presencial
