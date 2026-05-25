@@ -54,6 +54,7 @@ export function UserManagement() {
     const [noEmail, setNoEmail] = useState(false);
     const [showNoEmailWarning, setShowNoEmailWarning] = useState(false);
     const noEmailConfirmedRef = useRef(false);
+    const [presentialCode, setPresentialCode] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // State for "User Exists" Dialog
@@ -582,7 +583,7 @@ export function UserManagement() {
         if (!recoverData.foundUser) return;
         try {
             const result = await utilizadoresApi.generatePresentialCode(recoverData.foundUser.nif);
-            toast.success(`Código presencial gerado: ${result.code}`, { duration: 30000 });
+            setPresentialCode(result.code);
         } catch (error: any) {
             toast.error(error.message || 'Erro ao gerar código presencial');
         }
@@ -1538,6 +1539,23 @@ export function UserManagement() {
                         <AlertDialogAction onClick={() => { setShowNoEmailWarning(false); noEmailConfirmedRef.current = true; handleCreateSubmit(new Event('submit') as any); }}>
                             Confirmar e Criar
                         </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={presentialCode !== null} onOpenChange={(open) => { if (!open) setPresentialCode(null); }}>
+                <AlertDialogContent className="bg-card border-border text-center">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Código Presencial Gerado</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Comunique este código ao utente. Válido por <strong>10 minutos</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-6">
+                        <p className="text-5xl font-mono font-bold tracking-[0.3em] text-primary">{presentialCode}</p>
+                    </div>
+                    <AlertDialogFooter className="justify-center">
+                        <AlertDialogAction onClick={() => setPresentialCode(null)}>Fechar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
