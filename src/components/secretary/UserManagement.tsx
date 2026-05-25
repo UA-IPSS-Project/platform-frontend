@@ -1377,8 +1377,6 @@ export function UserManagement() {
                                 )}
                             </div>
                         </div>
-                    </ScrollArea>
-
                     {selectedUser?.funcao === 'UTENTE' && (
                         <div className="px-6 py-4 border-t border-destructive/10 bg-destructive/5 space-y-3">
                             <div className="flex flex-col gap-1">
@@ -1402,6 +1400,7 @@ export function UserManagement() {
                             </Button>
                         </div>
                     )}
+                    </ScrollArea>
 
                     <DialogFooter className="p-4 bg-muted/30 border-t border-border/40 flex flex-row justify-end items-center gap-2">
                         <Button
