@@ -335,30 +335,32 @@ export function RequisitionDetailsDialog({
                 <div className="h-px bg-border w-full" />
               </div>
               {selectedRequisicao.periodicaFrequencia ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.frequencia.label')}</p>
-                    <p className="text-sm font-semibold text-foreground">{t(`requisitions.periodica.frequencia.${selectedRequisicao.periodicaFrequencia}`)}</p>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.frequencia.label')}</p>
+                      <p className="text-sm font-semibold text-foreground">{t(`requisitions.periodica.frequencia.${selectedRequisicao.periodicaFrequencia}`)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataInicio')}</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataInicio ? new Date(selectedRequisicao.periodicaDataInicio).toLocaleDateString(locale) : '—'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataFim')}</p>
+                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataInicio')}</p>
-                    <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataInicio ? new Date(selectedRequisicao.periodicaDataInicio).toLocaleDateString(locale) : '—'}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataFim')}</p>
-                    <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
-                  </div>
-                </div>
-                {canManageRequests && onCancelPeriodicidade && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
-                    onClick={() => onCancelPeriodicidade(selectedRequisicao.id)}
-                  >
-                    Cancelar Periodicidade
-                  </Button>
-                )}
+                  {canManageRequests && onCancelPeriodicidade && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => onCancelPeriodicidade(selectedRequisicao.id)}
+                    >
+                      Cancelar Periodicidade
+                    </Button>
+                  )}
+                </>
               ) : (
                 <p className="text-sm text-muted-foreground italic">Não periódica</p>
               )}
