@@ -1582,6 +1582,11 @@ export function SharedRequisitionsPage({
         updatingEstadoId={updatingEstadoId}
         onClose={() => setOpenedRequisicaoId(null)}
         onSaveStatus={handleAtualizarEstado}
+        onCancelPeriodicidade={async (id) => {
+          await requisicoesApi.cancelarPeriodicidade(id);
+          fetchRequisicoes();
+          setOpenedRequisicaoId(null);
+        }}
         locale={locale}
         t={t}
       />

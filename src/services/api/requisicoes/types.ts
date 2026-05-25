@@ -127,6 +127,9 @@ export interface RequisicaoResponse {
   numeroPassageiros?: number;
   condutor?: string | null;
   assunto?: string | null;
+  periodicaFrequencia?: PeriodicidadeFrequencia | null;
+  periodicaDataInicio?: string | null;
+  periodicaDataFim?: string | null;
 }
 
 export interface RequisicaoFilters {
