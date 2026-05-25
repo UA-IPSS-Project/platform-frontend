@@ -146,6 +146,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
+      // Reset dirty state when leaving requisitions
+      if (['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) && !['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(view)) {
+        setRequisitionsIsDirty(false);
+      }
       setViewHistory(prev => [...prev, view]);
     }
   };
@@ -301,16 +305,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onLabelClick={() => navigateTo('requisitions')}
       />
 
-
-
-      <Button
-        variant={currentView === 'appointments' ? 'default' : 'ghost'}
-        onClick={() => navigateTo('appointments')}
-        className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
-      >
-        {t('sidebar.appointments')}
-      </Button>
-
       <NavDropdown
         label={t('sidebar.applications')}
         items={[
@@ -322,6 +316,14 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
         onSelect={(id) => navigateTo(id as ViewType)}
         className="hidden lg:block"
       />
+
+      <Button
+        variant={currentView === 'appointments' ? 'default' : 'ghost'}
+        onClick={() => navigateTo('appointments')}
+        className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
+      >
+        {t('sidebar.appointments')}
+      </Button>
 
       <Button
         variant={currentView === 'reports' ? 'default' : 'ghost'}

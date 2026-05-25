@@ -1587,6 +1587,11 @@ export function SharedRequisitionsPage({
           fetchRequisicoes();
           setOpenedRequisicaoId(null);
         }}
+        onUpdatePeriodicidade={async (id, config) => {
+          await requisicoesApi.atualizarPeriodicidade(id, config);
+          fetchRequisicoes();
+          setOpenedRequisicaoId(null);
+        }}
         locale={locale}
         t={t}
       />

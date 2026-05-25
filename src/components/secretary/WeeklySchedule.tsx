@@ -196,7 +196,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [blocksByWeek, setBlocksByWeek] = useState<Record<string, Set<string>>>({});
 
   // Opções de ano (dropdown)
-  const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
+  const quickYearOptions = Array.from({ length: 3 }, (_, idx) => today.getFullYear() + idx);
   const selectMenuClassName = "bg-card border-border overflow-y-auto";
   const selectMenuStyle = { maxHeight: '15rem' };
 
