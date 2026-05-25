@@ -18,6 +18,16 @@ import { useTranslation } from 'react-i18next';
 import { useUnsavedChangesWarning } from '../../hooks/useUnsavedChangesWarning';
 import { UnsavedChangesModal } from '../shared/UnsavedChangesModal';
 import { PrivacyNotice } from '../shared/PrivacyNotice';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "../ui/alert-dialog";
 
 interface AppointmentDialogProps {
   open: boolean;
@@ -39,6 +49,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingClose, setPendingClose] = useState(false);
   const [subjects, setSubjects] = useState<Assunto[]>([]);
+  const [noEmail, setNoEmail] = useState(false);
+  const [showNoEmailWarning, setShowNoEmailWarning] = useState(false);
 
   const [formData, setFormData] = useState({
     nif: '',
@@ -201,7 +213,9 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
     if (!nameValidation.valid) {
       newErrors.name = nameValidation.error || t('appointmentDialog.errors.nameInvalid');
     }
-    if (!formData.email.trim()) {
+    if (noEmail) {
+      // sem email — válido
+    } else if (!formData.email.trim()) {
       newErrors.email = t('appointmentDialog.errors.emailRequired');
     } else if (!validateEmail(formData.email)) {
       newErrors.email = t('appointmentDialog.errors.emailInvalid');
@@ -270,7 +284,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         assunto: formData.subject,
         utenteNif: formData.nif,
         utenteNome: formData.name,
-        utenteEmail: formData.email,
+        utenteEmail: noEmail ? undefined : formData.email,
         utenteTelefone: formData.contact,
         utenteDataNasc: formData.dateOfBirth || undefined,
       };
@@ -312,6 +326,12 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
       return;
     }
 
+    // Mostrar aviso se está a criar conta sem email
+    if (noEmail && !originalUser && !showNoEmailWarning) {
+      setShowNoEmailWarning(true);
+      return;
+    }
+
     setIsLoading(true);
 
     if (originalUser) {
@@ -333,7 +353,8 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
+    <>
+      <Dialog open={open} onOpenChange={(isOpen) => !isOpen && requestClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle className="text-foreground">{t('appointmentDialog.title')}</DialogTitle>
@@ -429,17 +450,33 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">{t('appointmentDialog.fields.email')}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t('appointmentDialog.fields.emailPlaceholder')}
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                aria-invalid={!!errors.email}
-                aria-describedby={errors.email ? 'email-error' : undefined}
-                className={`bg-card border-border text-foreground ${errors.email ? 'border-status-error' : ''}`}
-              />
-              {errors.email && <p id="email-error" className="text-sm text-status-error">{errors.email}</p>}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={noEmail}
+                  onChange={e => {
+                    setNoEmail(e.target.checked);
+                    if (e.target.checked) { setFormData(prev => ({ ...prev, email: '' })); setErrors(prev => ({ ...prev, email: '' })); }
+                  }}
+                  className="w-4 h-4 accent-primary"
+                />
+                <span className="text-sm text-muted-foreground">Não possui endereço de email</span>
+              </label>
+              {!noEmail && (
+                <>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('appointmentDialog.fields.emailPlaceholder')}
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
+                    className={`bg-card border-border text-foreground ${errors.email ? 'border-status-error' : ''}`}
+                  />
+                  {errors.email && <p id="email-error" className="text-sm text-status-error">{errors.email}</p>}
+                </>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -562,5 +599,28 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
         }}
       />
     </Dialog>
+
+    <AlertDialog open={showNoEmailWarning} onOpenChange={setShowNoEmailWarning}>
+      <AlertDialogContent className="bg-card border-border">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Criar conta sem email</AlertDialogTitle>
+          <AlertDialogDescription className="text-muted-foreground">
+            Está a criar uma conta <strong>sem endereço de email</strong>. Isto significa que o utente:
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>Não receberá notificações por email</li>
+              <li>Não poderá recuperar a password por email</li>
+              <li>A recuperação de conta será apenas presencial</li>
+            </ul>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { setShowNoEmailWarning(false); document.querySelector<HTMLFormElement>('form')?.requestSubmit(); }}>
+            Confirmar e Criar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -75,7 +75,7 @@ export const utilizadoresApi = {
         name: string;
         nif: string;
         contact?: string;
-        email: string;
+        email?: string;
         birthDate: string; // YYYY-MM-DD
         isEmployee: boolean;
         role?: string;
