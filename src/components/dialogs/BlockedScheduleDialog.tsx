@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { useAuth } from '../../contexts/AuthContext';
 import { bloqueiosApi, Bloqueio } from '../../services/api';
 import { toast } from 'sonner';
-import { Trash2, Lock, Calendar as CalendarIcon } from 'lucide-react';
+import { Trash2, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { enUS, pt as ptLocale } from 'date-fns/locale';
 import { Appointment } from '../../types';
@@ -26,13 +24,14 @@ const generateTimeSlots = () => {
     const slots = [];
     for (let hour = 9; hour <= 17; hour++) {
         for (let minute = 0; minute < 60; minute += 15) {
-            // Stop at 17:00 exactly
             if (hour === 17 && minute > 0) break;
             slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
         }
     }
     return slots;
 };
+
+const ALL_SLOTS = generateTimeSlots();
 
 export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess, tipo = 'SECRETARIA' }: BlockedScheduleDialogProps) {
     const { t, i18n } = useTranslation();
@@ -41,227 +40,107 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Form State
-    const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-    const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-    const [startTime, setStartTime] = useState('09:00');
-    const [endTime, setEndTime] = useState('09:15');
-
-    const allSlots = generateTimeSlots();
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
 
     useEffect(() => {
         if (open) {
             fetchBloqueios();
-            setStartDate(new Date());
-            setEndDate(new Date());
-            setStartTime('09:00');
-            setEndTime('09:15');
+            setSelectedDate(new Date());
+            setStartTime('');
+            setEndTime('');
         }
     }, [open]);
+
+    // Reset end time when start time changes
+    useEffect(() => {
+        setEndTime('');
+    }, [startTime, selectedDate]);
 
     const fetchBloqueios = async () => {
         try {
             const data = await bloqueiosApi.listar(tipo);
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
             const filtered = data.filter(b => {
                 const blockDate = new Date(b.data);
                 blockDate.setHours(0, 0, 0, 0);
-
-                // Future dates: Keep
                 if (blockDate.getTime() > today.getTime()) return true;
-
-                // Past dates: Discard
                 if (blockDate.getTime() < today.getTime()) return false;
-
-                // Today: Check time
                 const now = new Date();
-                const currentHours = now.getHours().toString().padStart(2, '0');
-                const currentMinutes = now.getMinutes().toString().padStart(2, '0');
-                const currentTime = `${currentHours}:${currentMinutes}`;
-                const blockEndTime = b.horaFim.substring(0, 5);
-
-                return blockEndTime > currentTime;
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                return b.horaFim.substring(0, 5) > currentTime;
             });
-
-            const sorted = filtered.sort((a, b) => {
-                const dateA = new Date(a.data);
-                const dateB = new Date(b.data);
-                return dateA.getTime() - dateB.getTime();
-            });
-            setBloqueios(sorted);
+            setBloqueios(filtered.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()));
         } catch (error) {
             console.error(t('blockedSchedule.errors.loadBlocks'), error);
         }
     };
 
-    // Filter slots based on appointments for the selected day
-    const getAvailableSlots = (date: Date | undefined, mode: 'start' | 'end' = 'start') => {
-        if (!date) return [];
-
+    const isSlotUnavailable = (slot: string, date: Date | undefined) => {
+        if (!date) return true;
         const now = new Date();
-        const isToday = date.getDate() === now.getDate() &&
-            date.getMonth() === now.getMonth() &&
-            date.getFullYear() === now.getFullYear();
-
-        return allSlots.filter(slot => {
-            // If it's today, filter out past time slots
-            if (isToday) {
-                const [hours, minutes] = slot.split(':').map(Number);
-                const slotTime = new Date(date);
-                slotTime.setHours(hours, minutes, 0, 0);
-
-                if (slotTime <= now) {
-                    return false; // Slot is in the past
-                }
-            }
-
-            // Check if any appointment exists at this time on this date
-            const hasAppointment = appointments.some(appt => {
-                if (appt.status === 'cancelled') return false;
-                const apptDate = new Date(appt.date);
-
-                // Compare dates strictly
-                const isSameDate =
-                    apptDate.getDate() === date.getDate() &&
-                    apptDate.getMonth() === date.getMonth() &&
-                    apptDate.getFullYear() === date.getFullYear();
-
-                // For the end slot, it's okay to match an appointment time (as it ends there)
-                if (mode === 'end' && isSameDate && appt.time === slot) {
-                    return false; // NOT a collision, it's a valid border
-                }
-
-                return isSameDate && appt.time === slot;
-            });
-
-            // Check if slot is already blocked
-            const isBlocked = bloqueios.some(b => {
-                const blockDate = new Date(b.data);
-                const isSameDate =
-                    blockDate.getDate() === date.getDate() &&
-                    blockDate.getMonth() === date.getMonth() &&
-                    blockDate.getFullYear() === date.getFullYear();
-
-                if (!isSameDate) return false;
-
-                const start = b.horaInicio.substring(0, 5);
-                const end = b.horaFim.substring(0, 5);
-
-                // Start Mode: Strict containment [start, end)
-                if (mode === 'start') {
-                    return slot >= start && slot < end;
-                }
-
-                // End Mode: Boundary containment (start, end)
-                // We can end exactly at 'start' of another block
-                return slot > start && slot < end;
-            });
-
-            // Check overlap with next appointment/block if this is an End Slot selection? 
-            // The dropdown logic filters > startTime.
-            // But we simply return "valid points" here.
-
-            return !hasAppointment && !isBlocked;
+        const isToday = date.toDateString() === now.toDateString();
+        if (isToday) {
+            const [h, m] = slot.split(':').map(Number);
+            const slotTime = new Date(date);
+            slotTime.setHours(h, m, 0, 0);
+            if (slotTime <= now) return true;
+        }
+        const hasAppointment = appointments.some(appt => {
+            if (appt.status === 'cancelled') return false;
+            const apptDate = new Date(appt.date);
+            return apptDate.toDateString() === date.toDateString() && appt.time === slot;
         });
+        const isBlocked = bloqueios.some(b => {
+            const blockDate = new Date(b.data);
+            if (blockDate.toDateString() !== date.toDateString()) return false;
+            const start = b.horaInicio.substring(0, 5);
+            const end = b.horaFim.substring(0, 5);
+            return slot >= start && slot < end;
+        });
+        return hasAppointment || isBlocked;
     };
 
-    const startSlots = getAvailableSlots(startDate, 'start').filter(s => s !== "17:00");
-    const endSlots = getAvailableSlots(endDate, 'end');
+    // Available start slots: not unavailable, not 17:00
+    const startSlots = ALL_SLOTS.filter(s => s !== '17:00' && !isSlotUnavailable(s, selectedDate));
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!startDate || !endDate || !startTime || !endTime) {
+    // Available end slots: after startTime, not blocked by appointment (boundary ok)
+    const endSlots = ALL_SLOTS.filter(slot => {
+        if (!startTime || slot <= startTime) return false;
+        const hasAppointment = appointments.some(appt => {
+            if (appt.status === 'cancelled' || !selectedDate) return false;
+            const apptDate = new Date(appt.date);
+            return apptDate.toDateString() === selectedDate.toDateString() && appt.time === slot;
+        });
+        const isBlocked = bloqueios.some(b => {
+            if (!selectedDate) return false;
+            const blockDate = new Date(b.data);
+            if (blockDate.toDateString() !== selectedDate.toDateString()) return false;
+            const start = b.horaInicio.substring(0, 5);
+            const end = b.horaFim.substring(0, 5);
+            return slot > start && slot < end;
+        });
+        return !hasAppointment && !isBlocked;
+    });
+
+    const handleCreate = async () => {
+        if (!selectedDate || !startTime || !endTime) {
             toast.error(t('blockedSchedule.errors.fillAllFields'));
             return;
         }
-
-        if (startDate > endDate) {
-            toast.error(t('blockedSchedule.errors.endDateAfterStart'));
-            return;
-        }
-
-        if (startTime >= endTime && startDate.getTime() === endDate.getTime()) {
-            toast.error(t('blockedSchedule.errors.endTimeAfterStart'));
-            return;
-        }
-
         try {
             setLoading(true);
-
-            // Logic to create blocks for each day:
-            // - Same day: block from startTime to endTime
-            // - Multiple days: 
-            //   - First day: startTime to 17:00
-            //   - Middle days: 09:00 to 17:00 (full day)
-            //   - Last day: 09:00 to endTime
-
-            const isSameDay = startDate.getTime() === endDate.getTime();
-
-            if (isSameDay) {
-                // Single day block
-                await bloqueiosApi.criar({
-                    dataInicio: format(startDate, 'yyyy-MM-dd'),
-                    dataFim: format(startDate, 'yyyy-MM-dd'),
-                    horaInicio: startTime,
-                    horaFim: endTime
-                }, user?.id || 0, tipo);
-                toast.success(t('blockedSchedule.messages.blockCreated'));
-            } else {
-                // Multiple day blocks
-                const blocks = [];
-                const current = new Date(startDate);
-
-                while (current <= endDate) {
-                    const dateStr = format(current, 'yyyy-MM-dd');
-                    let blockStart = startTime;
-                    let blockEnd = endTime;
-
-                    if (current.getTime() === startDate.getTime()) {
-                        // First day: from startTime to 17:00
-                        blockStart = startTime;
-                        blockEnd = '17:00';
-                    } else if (current.getTime() === endDate.getTime()) {
-                        // Last day: from 09:00 to endTime
-                        blockStart = '09:00';
-                        blockEnd = endTime;
-                    } else {
-                        // Middle days: full day 09:00 to 17:00
-                        blockStart = '09:00';
-                        blockEnd = '17:00';
-                    }
-
-                    blocks.push({
-                        dataInicio: dateStr,
-                        dataFim: dateStr,
-                        horaInicio: blockStart,
-                        horaFim: blockEnd
-                    });
-
-                    current.setDate(current.getDate() + 1);
-                }
-
-                // Create each block and wait for completion
-                for (const block of blocks) {
-                    await bloqueiosApi.criar(block, user?.id || 0, tipo);
-                    // Reload blocks after each creation to show updates
-                    await fetchBloqueios();
-                }
-
-                toast.success(t('blockedSchedule.messages.blocksCreated', { count: blocks.length }));
-            }
-
-            // Final reload and reset
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+            await bloqueiosApi.criar({ dataInicio: dateStr, dataFim: dateStr, horaInicio: startTime, horaFim: endTime }, user?.id || 0, tipo);
+            toast.success(t('blockedSchedule.messages.blockCreated'));
             await fetchBloqueios();
-            setStartDate(new Date());
-            setEndDate(new Date());
-            setStartTime('09:00');
-            setEndTime('09:15');
+            setStartTime('');
+            setEndTime('');
             onSuccess?.();
             onOpenChange(false);
         } catch (error) {
-            console.error('Error creating block', error);
             const msg = error instanceof Error ? error.message : t('blockedSchedule.errors.unknownCreateError');
             toast.error(msg);
         } finally {
@@ -290,105 +169,115 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     </DialogTitle>
                 </DialogHeader>
 
+                {/* Calendário + Seleção de horários */}
                 <div className="flex flex-col sm:flex-row gap-6 mt-2 items-start">
-                    {/* Formulário de criação */}
-                    <div className="flex flex-col gap-4 flex-1">
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Data Início */}
-                            <div className="space-y-2">
-                                <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.start')}</Label>
-                                <div className="flex gap-2">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground">
-                                                <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                                                {startDate ? format(startDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar mode="single" selected={startDate} onSelect={(date) => { if (date) { setStartDate(date); setEndDate(date); } }} locale={dateLocale} disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))} />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <Select value={startTime} onValueChange={(val) => {
-                                        setStartTime(val);
-                                        const [h, m] = val.split(':').map(Number);
-                                        let newM = m + 15; let newH = h;
-                                        if (newM >= 60) { newM -= 60; newH += 1; }
-                                        setEndTime(`${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`);
-                                    }}>
-                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {startSlots.length > 0 ? startSlots.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <SelectItem value="none" disabled>{t('blockedSchedule.occupied')}</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
+                    {/* Calendário */}
+                    <div className="flex flex-col items-center">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(d) => { if (d) { setSelectedDate(d); setStartTime(''); setEndTime(''); } }}
+                            locale={dateLocale}
+                            disabled={(d) => {
+                                const dow = d.getDay();
+                                if (dow === 0 || dow === 6) return true;
+                                const todayStart = new Date();
+                                todayStart.setHours(0, 0, 0, 0);
+                                return d < todayStart;
+                            }}
+                            initialFocus
+                        />
+                    </div>
 
-                            {/* Data Fim */}
-                            <div className="space-y-2">
-                                <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.end')}</Label>
-                                <div className="flex gap-2">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground">
-                                                <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
-                                                {endDate ? format(endDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar mode="single" selected={endDate} onSelect={(date) => { if (date) setEndDate(date); }} locale={dateLocale} disabled={(date) => { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today || (startDate ? date < startDate : false); }} />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <Select value={endTime} onValueChange={setEndTime}>
-                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {endSlots.filter(slot => {
-                                                if (startDate && endDate && startDate.getDate() === endDate.getDate() && startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()) return slot > startTime;
-                                                return true;
-                                            }).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                    {/* Seleção de horários */}
+                    <div className="flex flex-col gap-4 flex-1 min-w-0">
+                        {/* Hora início */}
+                        <div className="flex flex-col gap-2">
+                            <Label className="text-xs text-muted-foreground uppercase">{t('blockedSchedule.start')}</Label>
+                            {startSlots.length === 0 ? (
+                                <p className="text-sm text-muted-foreground italic">{t('blockedSchedule.occupied')}</p>
+                            ) : (
+                                <div className="grid grid-cols-4 gap-1.5 max-h-32 overflow-y-auto pr-1">
+                                    {startSlots.map(slot => (
+                                        <button
+                                            key={slot}
+                                            type="button"
+                                            onClick={() => setStartTime(slot)}
+                                            className={`px-2 py-1.5 rounded-lg border text-sm font-medium transition-colors ${startTime === slot
+                                                ? 'bg-destructive text-white border-destructive'
+                                                : 'bg-muted/40 border-border text-foreground/80 hover:border-destructive/60 hover:bg-destructive/10'
+                                            }`}
+                                        >
+                                            {slot}
+                                        </button>
+                                    ))}
                                 </div>
-                            </div>
+                            )}
                         </div>
 
-                        {/* Lista de bloqueios activos */}
-                        <div className="space-y-2">
-                            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                                <Lock className="w-4 h-4 text-destructive" />
-                                {t('blockedSchedule.activeBlocks')}
-                            </h3>
-                            <div className="border border-border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
-                                        <tr>
-                                            <th className="px-4 py-2">{t('blockedSchedule.day')}</th>
-                                            <th className="px-4 py-2">{t('blockedSchedule.start')}</th>
-                                            <th className="px-4 py-2">{t('blockedSchedule.end')}</th>
-                                            <th className="px-4 py-2 text-right">{t('blockedSchedule.actions')}</th>
+                        {/* Hora fim */}
+                        <div className="flex flex-col gap-2">
+                            <Label className="text-xs text-muted-foreground uppercase">{t('blockedSchedule.end')}</Label>
+                            {!startTime ? (
+                                <p className="text-sm text-muted-foreground italic">{t('blockedSchedule.start')} primeiro</p>
+                            ) : endSlots.length === 0 ? (
+                                <p className="text-sm text-muted-foreground italic">{t('blockedSchedule.occupied')}</p>
+                            ) : (
+                                <div className="grid grid-cols-4 gap-1.5 max-h-32 overflow-y-auto pr-1">
+                                    {endSlots.map(slot => (
+                                        <button
+                                            key={slot}
+                                            type="button"
+                                            onClick={() => setEndTime(slot)}
+                                            className={`px-2 py-1.5 rounded-lg border text-sm font-medium transition-colors ${endTime === slot
+                                                ? 'bg-destructive text-white border-destructive'
+                                                : 'bg-muted/40 border-border text-foreground/80 hover:border-destructive/60 hover:bg-destructive/10'
+                                            }`}
+                                        >
+                                            {slot}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tabela de bloqueios activos */}
+                <div className="space-y-2 mt-2">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-destructive" />
+                        {t('blockedSchedule.activeBlocks')}
+                    </h3>
+                    <div className="border border-border rounded-lg overflow-hidden max-h-40 overflow-y-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
+                                <tr>
+                                    <th className="px-4 py-2">{t('blockedSchedule.day')}</th>
+                                    <th className="px-4 py-2">{t('blockedSchedule.start')}</th>
+                                    <th className="px-4 py-2">{t('blockedSchedule.end')}</th>
+                                    <th className="px-4 py-2 text-right">{t('blockedSchedule.actions')}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border bg-card">
+                                {bloqueios.length === 0 ? (
+                                    <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">{t('blockedSchedule.noRegisteredBlocks')}</td></tr>
+                                ) : (
+                                    bloqueios.map((b) => (
+                                        <tr key={b.id} className="hover:bg-muted/40">
+                                            <td className="px-4 py-2 font-medium">{b.data ? format(new Date(b.data), 'dd MMM yyyy', { locale: dateLocale }) : '-'}</td>
+                                            <td className="px-4 py-2 text-muted-foreground">{b.horaInicio?.substring(0, 5)}</td>
+                                            <td className="px-4 py-2 text-muted-foreground">{b.horaFim?.substring(0, 5)}</td>
+                                            <td className="px-4 py-2 text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0">
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border bg-card">
-                                        {bloqueios.length === 0 ? (
-                                            <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">{t('blockedSchedule.noRegisteredBlocks')}</td></tr>
-                                        ) : (
-                                            bloqueios.map((b) => (
-                                                <tr key={b.id} className="hover:bg-muted/40">
-                                                    <td className="px-4 py-2 font-medium">{b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: dateLocale }) : '-'}</td>
-                                                    <td className="px-4 py-2 text-muted-foreground">{b.horaInicio?.substring(0, 5)}</td>
-                                                    <td className="px-4 py-2 text-muted-foreground">{b.horaFim?.substring(0, 5)}</td>
-                                                    <td className="px-4 py-2 text-right">
-                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0">
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </Button>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -398,8 +287,8 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
                     </Button>
                     <Button
                         onClick={handleCreate}
-                        disabled={loading || !startDate || !endDate}
-                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium"
+                        disabled={loading || !selectedDate || !startTime || !endTime}
+                        className="bg-destructive hover:bg-destructive/90 text-white font-medium"
                     >
                         {loading ? t('blockedSchedule.processing') : t('blockedSchedule.addBlock')}
                     </Button>

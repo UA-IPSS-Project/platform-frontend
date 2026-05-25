@@ -1306,7 +1306,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={onBlockSchedule}
-              className="px-3 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-muted"
+              className="px-3 bg-destructive border-destructive text-white hover:bg-destructive/90"
             >
               {tt('Bloquear', 'Block')}
             </Button>
