@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '../../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../ui/dialog';
 import { RequisicaoEstado, RequisicaoResponse } from '../../../services/api';
@@ -27,6 +28,7 @@ interface RequisitionDetailsDialogProps {
   onClose: () => void;
   onSaveStatus: () => void;
   onCancelPeriodicidade?: (id: number) => void;
+  onUpdatePeriodicidade?: (id: number, config: { frequencia: string; dataInicio: string; dataFim?: string }) => void;
   locale: string;
   t: (key: string) => string;
 }
@@ -44,9 +46,13 @@ export function RequisitionDetailsDialog({
   onClose,
   onSaveStatus,
   onCancelPeriodicidade,
+  onUpdatePeriodicidade,
   locale,
   t,
 }: Readonly<RequisitionDetailsDialogProps>) {
+  const [editingPeriodicidade, setEditingPeriodicidade] = useState(false);
+  const [editPeriodicidade, setEditPeriodicidade] = useState({ frequencia: '', dataInicio: '', dataFim: '' });
+
   const formatDateTimeOrDash = (value?: string | null) => {
     if (!value) return '—';
     return new Date(value).toLocaleString(locale);
@@ -336,29 +342,56 @@ export function RequisitionDetailsDialog({
               </div>
               {selectedRequisicao.periodicaFrequencia ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.frequencia.label')}</p>
-                      <p className="text-sm font-semibold text-foreground">{t(`requisitions.periodica.frequencia.${selectedRequisicao.periodicaFrequencia}`)}</p>
+                  {editingPeriodicidade ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Frequência</label>
+                        <select className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodicidade.frequencia} onChange={e => setEditPeriodicidade({ ...editPeriodicidade, frequencia: e.target.value })}>
+                          <option value="DIARIA">Diária</option>
+                          <option value="SEMANAL">Semanal</option>
+                          <option value="MENSAL">Mensal</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Data Início</label>
+                        <input type="date" className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodicidade.dataInicio} onChange={e => setEditPeriodicidade({ ...editPeriodicidade, dataInicio: e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Data Fim <span className="opacity-50">(Opcional)</span></label>
+                        <input type="date" className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodicidade.dataFim} onChange={e => setEditPeriodicidade({ ...editPeriodicidade, dataFim: e.target.value })} />
+                      </div>
+                      <div className="md:col-span-3 flex gap-2 mt-2">
+                        <Button size="sm" onClick={() => { onUpdatePeriodicidade?.(selectedRequisicao.id, { frequencia: editPeriodicidade.frequencia, dataInicio: editPeriodicidade.dataInicio, dataFim: editPeriodicidade.dataFim || undefined }); setEditingPeriodicidade(false); }}>Guardar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingPeriodicidade(false)}>Cancelar</Button>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataInicio')}</p>
-                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataInicio ? new Date(selectedRequisicao.periodicaDataInicio).toLocaleDateString(locale) : '—'}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.frequencia.label')}</p>
+                        <p className="text-sm font-semibold text-foreground">{t(`requisitions.periodica.frequencia.${selectedRequisicao.periodicaFrequencia}`)}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataInicio')}</p>
+                        <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataInicio ? new Date(selectedRequisicao.periodicaDataInicio).toLocaleDateString(locale) : '—'}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataFim')}</p>
+                        <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t('requisitions.periodica.dataFim')}</p>
-                      <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
+                  )}
+                  {canManageRequests && !editingPeriodicidade && (
+                    <div className="flex gap-2 mt-3">
+                      <Button variant="outline" size="sm" onClick={() => { setEditPeriodicidade({ frequencia: selectedRequisicao.periodicaFrequencia || 'MENSAL', dataInicio: selectedRequisicao.periodicaDataInicio || '', dataFim: selectedRequisicao.periodicaDataFim || '' }); setEditingPeriodicidade(true); }}>
+                        Editar Periodicidade
+                      </Button>
+                      {onCancelPeriodicidade && (
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => onCancelPeriodicidade(selectedRequisicao.id)}>
+                          Cancelar Periodicidade
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                  {canManageRequests && onCancelPeriodicidade && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
-                      onClick={() => onCancelPeriodicidade(selectedRequisicao.id)}
-                    >
-                      Cancelar Periodicidade
-                    </Button>
                   )}
                 </>
               ) : (
