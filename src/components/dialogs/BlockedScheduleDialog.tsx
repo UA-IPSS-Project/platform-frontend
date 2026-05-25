@@ -10,7 +10,7 @@ import { bloqueiosApi, Bloqueio } from '../../services/api';
 import { toast } from 'sonner';
 import { Trash2, Lock, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { enUS, pt } from 'date-fns/locale';
+import { enUS, pt as ptLocale } from 'date-fns/locale';
 import { Appointment } from '../../types';
 import { useTranslation } from 'react-i18next';
 
@@ -36,7 +36,7 @@ const generateTimeSlots = () => {
 
 export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSuccess, tipo = 'SECRETARIA' }: BlockedScheduleDialogProps) {
     const { t, i18n } = useTranslation();
-    const dateLocale = i18n.language.startsWith('en') ? enUS : pt;
+    const dateLocale = i18n.language.startsWith('en') ? enUS : ptLocale;
     const { user } = useAuth();
     const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
     const [loading, setLoading] = useState(false);
@@ -282,208 +282,127 @@ export function BlockedScheduleDialog({ open, onOpenChange, appointments, onSucc
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl bg-card text-foreground border-border p-6 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="mb-4">
-                    <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <DialogContent className="max-w-3xl bg-card border border-border">
+                <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                         <Lock className="w-5 h-5 text-destructive" />
                         {t('blockedSchedule.title')}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-6">
-                    {/* Create Form */}
-                    <form onSubmit={handleCreate} className="bg-muted/40 p-4 rounded-lg space-y-4 border border-border">
+                <div className="flex flex-col sm:flex-row gap-6 mt-2 items-start">
+                    {/* Formulário de criação */}
+                    <div className="flex flex-col gap-4 flex-1">
                         <div className="grid grid-cols-2 gap-4">
-                            {/* Start Date & Time */}
+                            {/* Data Início */}
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.start')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground hover:ring-2 hover:ring-ring"
-                                            >
+                                            <Button variant="outline" className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground">
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
                                                 {startDate ? format(startDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={startDate}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        setStartDate(date);
-                                                        setEndDate(date);
-                                                    }
-                                                }}
-                                                locale={dateLocale}
-                                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                            />
+                                            <Calendar mode="single" selected={startDate} onSelect={(date) => { if (date) { setStartDate(date); setEndDate(date); } }} locale={dateLocale} disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))} />
                                         </PopoverContent>
                                     </Popover>
-
                                     <Select value={startTime} onValueChange={(val) => {
                                         setStartTime(val);
                                         const [h, m] = val.split(':').map(Number);
-                                        let newM = m + 15;
-                                        let newH = h;
-                                        if (newM >= 60) {
-                                            newM -= 60;
-                                            newH += 1;
-                                        }
-                                        const nextSlot = `${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`;
-                                        setEndTime(nextSlot);
+                                        let newM = m + 15; let newH = h;
+                                        if (newM >= 60) { newM -= 60; newH += 1; }
+                                        setEndTime(`${newH.toString().padStart(2, '0')}:${newM.toString().padStart(2, '0')}`);
                                     }}>
-                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            {startSlots.length > 0 ? (
-                                                startSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>{t('blockedSchedule.occupied')}</SelectItem>
-                                            )}
+                                            {startSlots.length > 0 ? startSlots.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <SelectItem value="none" disabled>{t('blockedSchedule.occupied')}</SelectItem>}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
 
-                            {/* End Date & Time */}
+                            {/* Data Fim */}
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase text-muted-foreground font-semibold">{t('blockedSchedule.end')}</Label>
                                 <div className="flex gap-2">
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground hover:ring-2 hover:ring-ring"
-                                            >
+                                            <Button variant="outline" className="flex-1 justify-start text-left font-normal bg-background border-border text-foreground">
                                                 <CalendarIcon className="mr-2 h-4 w-4 opacity-70" />
                                                 {endDate ? format(endDate, 'dd/MM/yyyy') : t('blockedSchedule.chooseDate')}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={endDate}
-                                                onSelect={(date) => {
-                                                    if (date) {
-                                                        setEndDate(date);
-                                                    }
-                                                }}
-                                                locale={pt}
-                                                disabled={(date) => {
-                                                    const today = new Date();
-                                                    today.setHours(0, 0, 0, 0);
-                                                    if (date < today) return true;
-                                                    if (startDate && date < startDate) return true;
-                                                    return false;
-                                                }}
-                                            />
+                                            <Calendar mode="single" selected={endDate} onSelect={(date) => { if (date) setEndDate(date); }} locale={dateLocale} disabled={(date) => { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today || (startDate ? date < startDate : false); }} />
                                         </PopoverContent>
                                     </Popover>
-
                                     <Select value={endTime} onValueChange={setEndTime}>
-                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger className="w-[110px] bg-background border-border text-foreground"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            {endSlots
-                                                .filter(slot => {
-                                                    // Se for no mesmo dia, hora fim >= hora inicio
-                                                    if (startDate && endDate &&
-                                                        startDate.getDate() === endDate.getDate() &&
-                                                        startDate.getMonth() === endDate.getMonth() &&
-                                                        startDate.getFullYear() === endDate.getFullYear()) {
-                                                        return slot > startTime;
-                                                    }
-                                                    return true;
-                                                })
-                                                .length > 0 ? (
-                                                endSlots
-                                                    .filter(slot => {
-                                                        if (startDate && endDate &&
-                                                            startDate.getDate() === endDate.getDate() &&
-                                                            startDate.getMonth() === endDate.getMonth() &&
-                                                            startDate.getFullYear() === endDate.getFullYear()) {
-                                                            return slot > startTime;
-                                                        }
-                                                        return true;
-                                                    })
-                                                    .map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
-                                            ) : (
-                                                <SelectItem value="none" disabled>{t('blockedSchedule.unavailableShort')}</SelectItem>
-                                            )}
+                                            {endSlots.filter(slot => {
+                                                if (startDate && endDate && startDate.getDate() === endDate.getDate() && startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()) return slot > startTime;
+                                                return true;
+                                            }).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                         </div>
 
-                        <Button
-                            type="submit"
-                            disabled={loading || !startDate || !endDate}
-                            className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium h-10"
-                        >
-                            {loading ? t('blockedSchedule.processing') : t('blockedSchedule.addBlock')}
-                        </Button>
-                    </form>
-
-                    {/* List Table */}
-                    <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                            <Lock className="w-4 h-4 text-destructive" />
-                            {t('blockedSchedule.activeBlocks')}
-                        </h3>
-
-                        <div className="border border-border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
-                                    <tr>
-                                        <th className="px-4 py-3">{t('blockedSchedule.day')}</th>
-                                        <th className="px-4 py-3">{t('blockedSchedule.start')}</th>
-                                        <th className="px-4 py-3">{t('blockedSchedule.end')}</th>
-                                        <th className="px-4 py-3 text-right">{t('blockedSchedule.actions')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border bg-card">
-                                    {bloqueios.length === 0 ? (
+                        {/* Lista de bloqueios activos */}
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                                <Lock className="w-4 h-4 text-destructive" />
+                                {t('blockedSchedule.activeBlocks')}
+                            </h3>
+                            <div className="border border-border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-muted/50 text-muted-foreground font-medium border-b border-border">
                                         <tr>
-                                            <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                                                {t('blockedSchedule.noRegisteredBlocks')}
-                                            </td>
+                                            <th className="px-4 py-2">{t('blockedSchedule.day')}</th>
+                                            <th className="px-4 py-2">{t('blockedSchedule.start')}</th>
+                                            <th className="px-4 py-2">{t('blockedSchedule.end')}</th>
+                                            <th className="px-4 py-2 text-right">{t('blockedSchedule.actions')}</th>
                                         </tr>
-                                    ) : (
-                                        bloqueios.map((b) => (
-                                            <tr key={b.id} className="hover:bg-muted/40">
-                                                <td className="px-4 py-3 font-medium">
-                                                    {b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: dateLocale }) : '-'}
-                                                </td>
-                                                <td className="px-4 py-3 text-muted-foreground">
-                                                    {b.horaInicio?.substring(0, 5)}
-                                                </td>
-                                                <td className="px-4 py-3 text-muted-foreground">
-                                                    {b.horaFim?.substring(0, 5)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(b.id)}
-                                                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-border bg-card">
+                                        {bloqueios.length === 0 ? (
+                                            <tr><td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">{t('blockedSchedule.noRegisteredBlocks')}</td></tr>
+                                        ) : (
+                                            bloqueios.map((b) => (
+                                                <tr key={b.id} className="hover:bg-muted/40">
+                                                    <td className="px-4 py-2 font-medium">{b.data ? format(new Date(b.data), "dd MMM yyyy", { locale: dateLocale }) : '-'}</td>
+                                                    <td className="px-4 py-2 text-muted-foreground">{b.horaInicio?.substring(0, 5)}</td>
+                                                    <td className="px-4 py-2 text-muted-foreground">{b.horaFim?.substring(0, 5)}</td>
+                                                    <td className="px-4 py-2 text-right">
+                                                        <Button variant="ghost" size="sm" onClick={() => handleDelete(b.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        {t('appointmentDialog.actions.cancel')}
+                    </Button>
+                    <Button
+                        onClick={handleCreate}
+                        disabled={loading || !startDate || !endDate}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-medium"
+                    >
+                        {loading ? t('blockedSchedule.processing') : t('blockedSchedule.addBlock')}
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>
