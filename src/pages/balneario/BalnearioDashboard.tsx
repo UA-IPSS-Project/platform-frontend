@@ -294,14 +294,6 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
 
     const BalnearioNavigation = (
         <>
-            <Button
-                variant={currentView === 'appointments' ? 'default' : 'ghost'}
-                onClick={() => navigateTo('appointments')}
-                className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
-            >
-                {t('sidebar.appointments')}
-            </Button>
-
             <NavDropdown
                 label={t('sidebar.consumption')}
                 items={[
@@ -322,6 +314,14 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
                 onSelect={(id) => navigateTo(id as ViewType)}
                 onLabelClick={() => navigateTo('requisitions')}
             />
+
+            <Button
+                variant={currentView === 'appointments' ? 'default' : 'ghost'}
+                onClick={() => navigateTo('appointments')}
+                className={`text-sm ${currentView === 'appointments' ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'text-foreground hover:bg-primary/10 hover:text-primary'}`}
+            >
+                {t('sidebar.appointments')}
+            </Button>
 
             <Button
                 variant={currentView === 'reports' ? 'default' : 'ghost'}
