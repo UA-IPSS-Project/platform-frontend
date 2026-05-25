@@ -147,6 +147,9 @@ export function BalnearioDashboard({ onLogout, isDarkMode, onToggleDarkMode }: B
             setPendingNavigation(view);
             setShowLeaveConfirm(true);
         } else {
+            if ((currentView === 'requisitions' || currentView === 'requisitions-create') && view !== 'requisitions' && view !== 'requisitions-create') {
+                setRequisitionsIsDirty(false);
+            }
             setViewHistory(prev => [...prev, view]);
         }
     };

@@ -146,6 +146,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
+      // Reset dirty state when leaving requisitions
+      if (['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) && !['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(view)) {
+        setRequisitionsIsDirty(false);
+      }
       setViewHistory(prev => [...prev, view]);
     }
   };
