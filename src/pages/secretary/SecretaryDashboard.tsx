@@ -146,6 +146,10 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       setPendingNavigation(view);
       setShowLeaveConfirm(true);
     } else {
+      // Reset dirty state when leaving requisitions
+      if (['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(currentView) && !['requisitions', 'requisitions-create', 'material', 'manutencao', 'transportes', 'urgente'].includes(view)) {
+        setRequisitionsIsDirty(false);
+      }
       setViewHistory(prev => [...prev, view]);
     }
   };
@@ -227,8 +231,7 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
   }, [refreshCurrentWeek, currentDate]);
 
 
-  const handleCreateAppointment = async (date: Date, time: string) => {
-    await refreshCurrentWeek(currentDate);
+  const handleCreateAppointment = (date: Date, time: string) => {
     setEditingAppointment({ date, time });
     setShowAppointmentDialog(true);
   };
@@ -303,12 +306,13 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       />
 
       <NavDropdown
-        label={t('sidebar.services')}
+        label={t('sidebar.applications')}
         items={[
-          { id: 'balneario', label: t('sidebar.balneario') },
-          { id: 'escola', label: t('sidebar.school') },
+          { id: 'creche', label: t('sidebar.creche') },
+          { id: 'catl', label: 'CATL' },
+          { id: 'erpi', label: 'ERPI' },
         ]}
-        isActive={['valencias', 'balneario', 'escola'].includes(currentView)}
+        isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
         onSelect={(id) => navigateTo(id as ViewType)}
         className="hidden lg:block"
       />
@@ -320,18 +324,6 @@ export function SecretaryDashboard({ user, onLogout, isDarkMode, onToggleDarkMod
       >
         {t('sidebar.appointments')}
       </Button>
-
-      <NavDropdown
-        label={t('sidebar.applications')}
-        items={[
-          { id: 'creche', label: t('sidebar.creche') },
-          { id: 'catl', label: 'CATL' },
-          { id: 'erpi', label: 'ERPI' },
-        ]}
-        isActive={['candidaturas', 'creche', 'catl', 'erpi'].includes(currentView)}
-        onSelect={(id) => navigateTo(id as ViewType)}
-        className="hidden lg:block"
-      />
 
       <Button
         variant={currentView === 'reports' ? 'default' : 'ghost'}

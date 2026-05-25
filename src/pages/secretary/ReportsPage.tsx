@@ -5,12 +5,12 @@ import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { DatePickerField } from '../../components/ui/date-picker-field';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
 import type { RequisicaoResponse } from '../../services/api/requisicoes/types';
 import { reportsApi } from '../../services/api/reports/reportsApi';
-import { EmailReportDialog } from '../../components/reports/EmailReportDialog';
 import { unwrapPage } from '../../utils/pagination';
 
 // Helper to format date as YYYY-MM-DD in local time (avoids ISO timezone shift)
@@ -150,8 +150,14 @@ export function ReportsPage() {
   const isAllSelected = selected.size === SECTIONS.length;
   const isNoneSelected = selected.size === 0;
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'gerar' | 'periodicos'>('gerar');
+  const [periodicos, setPeriodicos] = useState<import('../../services/api/reports/reportsApi').RelatorioPeriodico[]>([]);
+  const [isPeriodico, setIsPeriodico] = useState(false);
+  const [periodicoConfig, setPeriodicoConfig] = useState({ frequencia: 'MENSAL', dataInicio: formatDate(today), dataFim: '' });
+  const [emails, setEmails] = useState<string[]>(['']);
+  const hasEmails = emails.some(e => e.trim());
+  const [editingPeriodicoId, setEditingPeriodicoId] = useState<number | null>(null);
+  const [editPeriodico, setEditPeriodico] = useState({ frequencia: '', dataInicio: '', destinatarios: '', seccoes: '' });
 
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
@@ -159,6 +165,60 @@ export function ReportsPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+
+  const fetchPeriodicos = async () => {
+    try { setPeriodicos(await reportsApi.listarPeriodicos()); } catch (e) { console.error(e); }
+  };
+
+  const handleApagarPeriodico = async (id: number) => {
+    try { await reportsApi.apagarPeriodico(id); toast.success('Relatório periódico removido'); fetchPeriodicos(); } catch (e) { toast.error('Erro ao remover'); }
+  };
+
+  const handleUpdatePeriodico = async () => {
+    if (!editingPeriodicoId) return;
+    try {
+      await reportsApi.atualizarPeriodico(editingPeriodicoId, editPeriodico as any);
+      toast.success('Relatório periódico atualizado');
+      setEditingPeriodicoId(null);
+      fetchPeriodicos();
+    } catch (e) { toast.error('Erro ao atualizar'); }
+  };
+
+  const handleGenerateAndSend = async () => {
+    setIsGenerating(true);
+    try {
+      const doc = await preparePDF();
+      // Se é periódico, criar o relatório periódico no backend
+      if (isPeriodico) {
+        const validEmails = emails.filter(e => e.trim()).join(',');
+        await reportsApi.criarPeriodico({
+          destinatarios: validEmails || '',
+          frequencia: periodicoConfig.frequencia,
+          dataInicio: periodicoConfig.dataInicio,
+          seccoes: Array.from(selected).join(','),
+        });
+        toast.success('Relatório periódico criado com sucesso');
+      }
+      // Se há emails, enviar
+      if (hasEmails) {
+        const validEmails = emails.filter(e => e.trim()).join(',');
+        const pdfBase64 = doc.output('datauristring');
+        const filename = getReportFilename();
+        const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
+        const body = `Segue em anexo o relatório institucional referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.`;
+        await reportsApi.sendByEmail({ to: validEmails, subject, body, pdfBase64, fileName: filename });
+        toast.success('Relatório enviado por email');
+      } else {
+        doc.save(getReportFilename());
+        toast.success('PDF gerado com sucesso');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar/enviar relatório');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const preparePDF = async () => {
     const startISO = `${startDate}T00:00:00`;
@@ -432,37 +492,6 @@ export function ReportsPage() {
     }
   };
 
-  const handleSendEmail = () => {
-    if (selected.size === 0) {
-      toast.error(t('dashboard.admin.messages.selectAtLeastOneDataType', { defaultValue: 'Selecione pelo menos um tipo de dados.' }));
-      return;
-    }
-    setIsEmailDialogOpen(true);
-  };
-
-  const handleConfirmSendEmail = async (email: string) => {
-    setIsSendingEmail(true);
-    setIsEmailDialogOpen(false);
-    try {
-      const doc = await preparePDF();
-      const pdfBase64 = doc.output('datauristring');
-      const filename = getReportFilename();
-      const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
-      const body = `Olá,\n\nSegue em anexo o relatório institucional referente ao período de ${formatDatePt(startDate)} até ${formatDatePt(endDate)}.\n\n` +
-        `Conteúdo do relatório:\n` +
-        Array.from(selected).map(s => `- ${SECTIONS.find(sec => sec.id === s)?.label}`).join('\n') +
-        `\n\nEste e-mail foi gerado automaticamente pelo portal de gestão.`;
-
-      await reportsApi.sendByEmail({ to: email, subject, body, pdfBase64, fileName: filename });
-      toast.success(t('dashboard.admin.messages.reportEmailSent'));
-    } catch (err) {
-      console.error(err);
-      toast.error(t('dashboard.admin.messages.reportEmailError'));
-    } finally {
-      setIsSendingEmail(false);
-    }
-  };
-
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-2">
       <div className="flex items-center gap-3">
@@ -477,6 +506,17 @@ export function ReportsPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-border pb-2">
+        <button onClick={() => setActiveTab('gerar')} className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors ${activeTab === 'gerar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+          Gerar Relatório
+        </button>
+        <button onClick={() => { setActiveTab('periodicos'); fetchPeriodicos(); }} className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors ${activeTab === 'periodicos' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+          Periódicos
+        </button>
+      </div>
+
+      {activeTab === 'gerar' && (<>
       <GlassCard className="p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Período</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -500,20 +540,40 @@ export function ReportsPage() {
             const sStr = formatDate(start);
             const eStr = formatDate(end);
             const isActive = startDate === sStr && endDate === eStr;
-
             return (
-              <button
-                key={label}
-                onClick={() => { setStartDate(sStr); setEndDate(eStr); }}
-                className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${isActive
-                  ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                  : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
-                  }`}
-              >
+              <button key={label} onClick={() => { setStartDate(sStr); setEndDate(eStr); }} className={`text-xs px-4 py-2 rounded-xl transition-all font-medium border ${isActive ? 'bg-primary border-primary text-primary-foreground shadow-md' : 'border-border text-muted-foreground hover:bg-accent bg-card/50'}`}>
                 {label}
               </button>
             );
           })}
+        </div>
+
+        {/* Periodicidade */}
+        <div className="mt-6 border-t border-border pt-4 space-y-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked={isPeriodico} onChange={e => setIsPeriodico(e.target.checked)} className="w-4 h-4 accent-primary" />
+            <span className="text-sm font-medium text-foreground">Relatório Periódico</span>
+          </label>
+          {isPeriodico && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pl-6">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Frequência</label>
+                <select className="w-full h-9 rounded-lg border border-border bg-card px-3 text-sm" value={periodicoConfig.frequencia} onChange={e => setPeriodicoConfig({ ...periodicoConfig, frequencia: e.target.value })}>
+                  <option value="DIARIO">Diário</option>
+                  <option value="SEMANAL">Semanal</option>
+                  <option value="MENSAL">Mensal</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Data Início</label>
+                <DatePickerField value={periodicoConfig.dataInicio} onChange={v => setPeriodicoConfig({ ...periodicoConfig, dataInicio: v })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Data Fim <span className="opacity-50">(Opcional)</span></label>
+                <DatePickerField value={periodicoConfig.dataFim} onChange={v => setPeriodicoConfig({ ...periodicoConfig, dataFim: v })} />
+              </div>
+            </div>
+          )}
         </div>
       </GlassCard>
 
@@ -533,49 +593,100 @@ export function ReportsPage() {
           })}
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <button
-            onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))}
-            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected
-                ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+          <button onClick={() => setSelected(new Set(SECTIONS.map(s => s.id)))} className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isAllSelected ? 'bg-primary border-primary text-primary-foreground shadow-md' : 'border-border text-muted-foreground hover:bg-accent bg-card/50'}`}>
             Selecionar tudo
           </button>
-
-          <button
-            onClick={() => setSelected(new Set())}
-            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected
-                ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                : 'border-border text-muted-foreground hover:bg-accent bg-card/50'
-              }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button onClick={() => setSelected(new Set())} className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 border ${isNoneSelected ? 'bg-primary border-primary text-primary-foreground shadow-md' : 'border-border text-muted-foreground hover:bg-accent bg-card/50'}`}>
             Limpar seleção
           </button>
         </div>
       </GlassCard>
 
-      <div className="flex justify-end gap-3">
-        <Button onClick={handleSendEmail} disabled={isSendingEmail || selected.size === 0} variant="outline" className="border-border text-foreground hover:bg-accent px-6 py-3 rounded-xl font-semibold text-sm transition-all flex items-center gap-2">
-          {isSendingEmail ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A enviar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> Enviar por Email</>}
-        </Button>
-        <Button onClick={generatePDF} disabled={isGenerating || selected.size === 0} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xl shadow-lg font-semibold text-sm transition-all flex items-center gap-2">
-          {isGenerating ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A gerar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Gerar PDF</>}
+      {/* Destinatários */}
+      <GlassCard className="p-6">
+        <h2 className="text-base font-semibold text-foreground mb-4">Destinatários de Email</h2>
+        <div className="space-y-2">
+          {emails.map((email, i) => (
+            <div key={i} className="flex gap-2">
+              <Input placeholder="email@exemplo.pt" value={email} onChange={e => { const n = [...emails]; n[i] = e.target.value; setEmails(n); }} className="flex-1" />
+              {emails.length > 1 && (
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive h-10 w-10" onClick={() => { const n = [...emails]; n.splice(i, 1); setEmails(n); }}>✕</Button>
+              )}
+            </div>
+          ))}
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setEmails([...emails, ''])}>+ Adicionar destinatário</Button>
+        </div>
+      </GlassCard>
+
+      <div className="flex justify-end">
+        <Button onClick={handleGenerateAndSend} disabled={isGenerating || selected.size === 0} className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 rounded-xl shadow-lg font-semibold text-sm transition-all flex items-center gap-2">
+          {isGenerating ? 'A gerar...' : hasEmails ? 'Gerar e Enviar PDF' : 'Gerar PDF'}
         </Button>
       </div>
+      </>)}
 
-      <EmailReportDialog
-        isOpen={isEmailDialogOpen}
-        onClose={() => setIsEmailDialogOpen(false)}
-        onConfirm={handleConfirmSendEmail}
-        isLoading={isSendingEmail}
-      />
+      {activeTab === 'periodicos' && (
+        <GlassCard className="p-6 space-y-6">
+          <h2 className="text-base font-semibold text-foreground">Relatórios Periódicos Configurados</h2>
+          {periodicos.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Nenhum relatório periódico configurado.</p>
+          ) : (
+            <div className="space-y-3">
+              {periodicos.map(p => (
+                <div key={p.id} className="p-4 rounded-xl border border-border bg-card/50 space-y-3">
+                  {editingPeriodicoId === p.id ? (
+                    <>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs text-muted-foreground">Destinatários</label>
+                          <Input value={editPeriodico.destinatarios} onChange={e => setEditPeriodico({ ...editPeriodico, destinatarios: e.target.value })} />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Frequência</label>
+                          <select className="w-full h-9 rounded-lg border border-border bg-card px-2 text-sm" value={editPeriodico.frequencia} onChange={e => setEditPeriodico({ ...editPeriodico, frequencia: e.target.value })}>
+                            <option value="DIARIO">Diário</option>
+                            <option value="SEMANAL">Semanal</option>
+                            <option value="MENSAL">Mensal</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Data Início</label>
+                          <DatePickerField value={editPeriodico.dataInicio} onChange={v => setEditPeriodico({ ...editPeriodico, dataInicio: v })} />
+                        </div>
+                        <div className="space-y-1 sm:col-span-2">
+                          <label className="text-xs text-muted-foreground">Secções</label>
+                          <Input value={editPeriodico.seccoes} onChange={e => setEditPeriodico({ ...editPeriodico, seccoes: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={handleUpdatePeriodico}>Guardar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingPeriodicoId(null)}>Cancelar</Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-foreground">{p.destinatarios}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.frequencia} · Início: {new Date(p.dataInicio).toLocaleDateString('pt-PT')} · Secções: {p.seccoes}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => { setEditingPeriodicoId(p.id!); setEditPeriodico({ frequencia: p.frequencia, dataInicio: p.dataInicio, destinatarios: p.destinatarios, seccoes: p.seccoes }); }}>
+                          Editar
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleApagarPeriodico(p.id!)}>
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+      )}
     </div>
   );
 }

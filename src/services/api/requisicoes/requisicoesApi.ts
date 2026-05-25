@@ -147,4 +147,15 @@ export const requisicoesApi = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
+
+  cancelarPeriodicidade: (id: number) =>
+    apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}/periodicidade`, {
+      method: 'DELETE',
+    }),
+
+  atualizarPeriodicidade: (id: number, config: { frequencia: string; dataInicio: string; dataFim?: string }) =>
+    apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}/periodicidade`, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    }),
 };

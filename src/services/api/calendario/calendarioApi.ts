@@ -30,4 +30,9 @@ export const calendarioApi = {
             method: 'PUT',
             body: JSON.stringify({ capacidadePorSlot }),
         }),
+
+    previewReducaoSlot: (tipo: 'SECRETARIA' | 'BALNEARIO', novaCapacidade: number) =>
+        apiRequest<{ marcacoesAfetadas: number }>(`/api/calendario/configuracao-slots/${tipo}/preview?novaCapacidade=${novaCapacidade}`, {
+            method: 'GET',
+        }),
 };

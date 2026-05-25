@@ -18,6 +18,54 @@ import { LanguageToggle } from './components/shared/LanguageToggle';
 import { TermsReacceptanceModal } from './components/dialogs/TermsReacceptanceModal';
 import { useTermsCheck } from './hooks/useTermsCheck';
 
+const ProtectedRoute = ({ children, onLogout }: { children: any; onLogout: () => void }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user && !user.active) {
+    // Two inactive scenarios:
+    // 1) First login with temporary password -> force password setup
+    // 2) Self-registered employee pending secretary approval -> show pending message
+    if (user.requiresPasswordSetup) {
+      return <Navigate to="/set-password" replace />;
+    }
+
+    if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA'].includes(user.role)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="bg-card/95 backdrop-blur-md p-8 rounded-lg shadow-xl border border-border max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-primary/15 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-4">Conta Pendente</h2>
+            <p className="text-muted-foreground mb-8">
+              A sua conta aguarda aprovação da secretaria. Por favor, aguarde ou contacte os serviços administrativos.
+            </p>
+            <button
+              onClick={onLogout}
+              className="w-full bg-primary text-primary-foreground font-medium px-4 py-3 rounded-md hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+            >
+              Voltar ao Login
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // For non-staff users, inactive means first-login completion.
+    return <Navigate to="/set-password" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   const getInitialTheme = () => {
     if (typeof window === 'undefined') return false;
@@ -67,53 +115,6 @@ function App() {
 
     generateCsrfToken();
   }, []); // Empty dependency array: run once on mount
-
-  // Protected Route Component
-  const ProtectedRoute = ({ children }: { children: any }) => {
-    if (isLoading) return null;
-
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace />;
-    }
-
-    if (user && !user.active) {
-      // Two inactive scenarios:
-      // 1) First login with temporary password -> force password setup
-      // 2) Self-registered employee pending secretary approval -> show pending message
-      if (user.requiresPasswordSetup) {
-        return <Navigate to="/set-password" replace />;
-      }
-
-      if (['SECRETARIA', 'BALNEARIO', 'INTERNO', 'ESCOLA'].includes(user.role)) {
-        return (
-          <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-card/95 backdrop-blur-md p-8 rounded-lg shadow-xl border border-border max-w-md w-full text-center">
-              <div className="w-16 h-16 bg-primary/15 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-foreground mb-4">Conta Pendente</h2>
-              <p className="text-muted-foreground mb-8">
-                A sua conta aguarda aprovação da secretaria. Por favor, aguarde ou contacte os serviços administrativos.
-              </p>
-              <button
-                onClick={handleLogout}
-                className="w-full bg-primary text-primary-foreground font-medium px-4 py-3 rounded-md hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-              >
-                Voltar ao Login
-              </button>
-            </div>
-          </div>
-        );
-      }
-
-      // For non-staff users, inactive means first-login completion.
-      return <Navigate to="/set-password" replace />;
-    }
-
-    return children;
-  };
 
   const handleLogout = () => {
     // Clear dashboard view history so next login starts at home page
@@ -226,7 +227,7 @@ function App() {
                   } />
 
                   <Route path="/dashboard/*" element={
-                    <ProtectedRoute>
+                    <ProtectedRoute onLogout={handleLogout}>
                       {user ? (
                         user.role === 'SECRETARIA' ? (
                           <SecretaryDashboard

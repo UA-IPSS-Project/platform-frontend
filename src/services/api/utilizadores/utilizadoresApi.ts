@@ -75,7 +75,7 @@ export const utilizadoresApi = {
         name: string;
         nif: string;
         contact?: string;
-        email: string;
+        email?: string;
         birthDate: string; // YYYY-MM-DD
         isEmployee: boolean;
         role?: string;
@@ -93,6 +93,12 @@ export const utilizadoresApi = {
         apiRequest<void>('/api/utilizadores/recover', {
             method: 'POST',
             body: JSON.stringify(data),
+        }),
+
+    generatePresentialCode: (nif: string) =>
+        apiRequest<{ code: string }>('/api/utilizadores/generate-presential-code', {
+            method: 'POST',
+            body: JSON.stringify({ nif }),
         }),
 
     // Direito ao Esquecimento (RGPD Art.º 17)

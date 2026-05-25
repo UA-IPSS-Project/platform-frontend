@@ -51,6 +51,10 @@ export function UserManagement() {
         birthDate: '',
     });
     const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto');
+    const [noEmail, setNoEmail] = useState(false);
+    const [showNoEmailWarning, setShowNoEmailWarning] = useState(false);
+    const noEmailConfirmedRef = useRef(false);
+    const [presentialCode, setPresentialCode] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // State for "User Exists" Dialog
@@ -341,6 +345,8 @@ export function UserManagement() {
             birthDate: '',
         });
         setEmailSelection('auto');
+        setNoEmail(false);
+        noEmailConfirmedRef.current = false;
     };
 
     const checkNifExistence = async () => {
@@ -386,13 +392,15 @@ export function UserManagement() {
         }
 
         // Email
-        if (!formData.email) {
+        if (formData.role === 'UTENTE' && noEmail) {
+            // sem email — válido
+        } else if (!formData.email) {
             newErrors.email = t('auth.emailRequired');
         } else if (!validateEmail(formData.email)) {
             newErrors.email = t('auth.emailInvalid');
         }
         // Institutional Check
-        if (formData.role !== 'UTENTE' && !formData.email.endsWith('@florinhasdovouga.pt')) {
+        if (formData.role !== 'UTENTE' && formData.email && !formData.email.endsWith('@florinhasdovouga.pt')) {
             newErrors.email = t('auth.useInstitutionalEmail');
         }
 
@@ -432,16 +440,24 @@ export function UserManagement() {
             }
 
             // 4. Create Account
+            if (formData.role === 'UTENTE' && noEmail && !noEmailConfirmedRef.current) {
+                setShowNoEmailWarning(true);
+                return;
+            }
+            noEmailConfirmedRef.current = false;
+            const emailToSend = (formData.role === 'UTENTE' && noEmail) ? undefined : formData.email;
             await utilizadoresApi.createBySecretary({
                 name: formData.name,
                 nif: formData.nif,
                 contact: formData.contact || undefined,
-                email: formData.email,
+                email: emailToSend,
                 birthDate: formData.birthDate,
                 isEmployee: formData.role !== 'UTENTE',
                 role: formData.role
             });
-            toast.success(t('userManagement.messages.accountCreatedWithEmail', { email: formData.email }));
+            toast.success(emailToSend
+                ? t('userManagement.messages.accountCreatedWithEmail', { email: emailToSend })
+                : 'Conta criada com sucesso (sem email)');
             handleClearCreate();
             fetchUsers();
         } catch (error: any) {
@@ -560,6 +576,16 @@ export function UserManagement() {
             });
         } catch (error: any) {
             toast.error(error.message || t('userManagement.errors.recoveryFailed'));
+        }
+    };
+
+    const handleGeneratePresentialCode = async () => {
+        if (!recoverData.foundUser) return;
+        try {
+            const result = await utilizadoresApi.generatePresentialCode(recoverData.foundUser.nif);
+            setPresentialCode(result.code);
+        } catch (error: any) {
+            toast.error(error.message || 'Erro ao gerar código presencial');
         }
     };
 
@@ -999,8 +1025,27 @@ export function UserManagement() {
                                             ) : (
                                                 <div className="space-y-3 pt-4 border-t border-border/40">
                                                     <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('appointmentDialog.fields.email')}</Label>
-                                                    <Input type="email" placeholder="email@exemplo.pt" className={`h-11 bg-background/50 text-base rounded-xl ${errors.email ? 'border-status-error ring-status-error/20' : ''}`} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }} />
-                                                    {errors.email && <p className="text-status-error text-xs font-bold pl-1">{errors.email}</p>}
+                                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={noEmail}
+                                                            onChange={e => {
+                                                                setNoEmail(e.target.checked);
+                                                                if (e.target.checked) {
+                                                                    setFormData(prev => ({ ...prev, email: '' }));
+                                                                    setErrors(prev => ({ ...prev, email: '' }));
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 accent-primary"
+                                                        />
+                                                        <span className="text-sm text-muted-foreground">Não possui endereço de email</span>
+                                                    </label>
+                                                    {!noEmail && (
+                                                        <>
+                                                            <Input type="email" placeholder="email@exemplo.pt" className={`h-11 bg-background/50 text-base rounded-xl ${errors.email ? 'border-status-error ring-status-error/20' : ''}`} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }} />
+                                                            {errors.email && <p className="text-status-error text-xs font-bold pl-1">{errors.email}</p>}
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -1084,10 +1129,18 @@ export function UserManagement() {
                                                     </div>
                                                 </div>
 
-                                                <Button type="submit" className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
-                                                    <Send className="w-5 h-5 mr-3" />
-                                                    Atualizar e Enviar Acesso
-                                                </Button>
+                                                <div className="flex gap-3">
+                                                    {recoverData.email && (
+                                                        <Button type="submit" className="flex-1 h-12 bg-amber-500 hover:bg-amber-600 text-white text-base font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                                                            <Send className="w-5 h-5 mr-3" />
+                                                            Atualizar e Enviar Acesso
+                                                        </Button>
+                                                    )}
+                                                    <Button type="button" onClick={handleGeneratePresentialCode} className="flex-1 h-12 bg-primary hover:bg-primary/90 text-white text-base font-bold rounded-xl shadow-lg shadow-primary/20 transition-all">
+                                                        <Lock className="w-5 h-5 mr-3" />
+                                                        Gerar Código Presencial
+                                                    </Button>
+                                                </div>
                                             </div>
                                         )}
                                     </form>
@@ -1324,8 +1377,6 @@ export function UserManagement() {
                                 )}
                             </div>
                         </div>
-                    </ScrollArea>
-
                     {selectedUser?.funcao === 'UTENTE' && (
                         <div className="px-6 py-4 border-t border-destructive/10 bg-destructive/5 space-y-3">
                             <div className="flex flex-col gap-1">
@@ -1349,6 +1400,7 @@ export function UserManagement() {
                             </Button>
                         </div>
                     )}
+                    </ScrollArea>
 
                     <DialogFooter className="p-4 bg-muted/30 border-t border-border/40 flex flex-row justify-end items-center gap-2">
                         <Button
@@ -1467,6 +1519,45 @@ export function UserManagement() {
                     if (pendingClose) setPendingClose(false);
                 }}
             />
+
+            <AlertDialog open={showNoEmailWarning} onOpenChange={setShowNoEmailWarning}>
+                <AlertDialogContent className="bg-card border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Criar conta sem email</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Está a criar uma conta <strong>sem endereço de email</strong>. Isto significa que o utente:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                                <li>Não receberá notificações por email</li>
+                                <li>Não poderá recuperar a password por email</li>
+                                <li>A recuperação de conta será apenas presencial</li>
+                            </ul>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowNoEmailWarning(false)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setShowNoEmailWarning(false); noEmailConfirmedRef.current = true; handleCreateSubmit(new Event('submit') as any); }}>
+                            Confirmar e Criar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={presentialCode !== null} onOpenChange={(open) => { if (!open) setPresentialCode(null); }}>
+                <AlertDialogContent className="bg-card border-border text-center">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Código Presencial Gerado</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Comunique este código ao utente. Válido por <strong>10 minutos</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-6">
+                        <p className="text-5xl font-mono font-bold tracking-[0.3em] text-primary">{presentialCode}</p>
+                    </div>
+                    <AlertDialogFooter className="justify-center">
+                        <AlertDialogAction onClick={() => setPresentialCode(null)}>Fechar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -196,7 +196,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
   const [blocksByWeek, setBlocksByWeek] = useState<Record<string, Set<string>>>({});
 
   // Opções de ano (dropdown)
-  const quickYearOptions = Array.from({ length: 5 }, (_, idx) => today.getFullYear() - 2 + idx);
+  const quickYearOptions = Array.from({ length: 3 }, (_, idx) => today.getFullYear() + idx);
   const selectMenuClassName = "bg-card border-border overflow-y-auto";
   const selectMenuStyle = { maxHeight: '15rem' };
 
@@ -1306,7 +1306,7 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
               variant="outline"
               size="sm"
               onClick={onBlockSchedule}
-              className="px-3 bg-card/95 backdrop-blur-sm border-border text-foreground hover:bg-muted"
+              className="px-3 bg-destructive border-destructive text-white hover:bg-destructive/90 hover:text-white"
             >
               {tt('Bloquear', 'Block')}
             </Button>
@@ -1458,7 +1458,11 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                         if (isBlockedAdmin) {
                           if (inPast) return <div key={idx} className={`${base} ${pastSlot}`}></div>;
                           return (
-                            <div key={idx} id={slotId} className={`${base} bg-muted border-border cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                            <div key={idx} id={slotId} className={`${base} bg-status-error-soft border-status-error/30 cursor-not-allowed min-h-[40px] flex items-center justify-center ${isActiveHighlight ? 'slot-highlight' : ''}`}>
+                              <div className="flex items-center justify-center text-center font-medium text-xs text-status-error w-full h-full rounded">
+                                <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
+                                {!isMobile && tt('Bloqueado', 'Blocked')}
+                              </div>
                             </div>
                           );
                         }
@@ -1495,8 +1499,14 @@ export function WeeklySchedule({ appointments, allAppointments, currentUserNif, 
                             <div
                               key={idx}
                               id={slotId}
-                              className={`${base} bg-muted border-border cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
+                              className={`${base} ${isBlockedAdmin ? 'bg-status-error-soft border-status-error/30' : 'bg-muted border-border'} cursor-not-allowed flex items-center justify-center min-h-[40px] ${isActiveHighlight ? 'slot-highlight' : ''}`}
                             >
+                              {isBlockedAdmin && !inPast && (
+                                <div className="flex items-center justify-center text-center font-medium text-xs text-status-error w-full h-full rounded">
+                                  <ClockIcon className={`w-3 h-3 ${!isMobile ? 'mr-1' : ''}`} />
+                                  {!isMobile && tt('Bloqueado', 'Blocked')}
+                                </div>
+                              )}
                             </div>
                           );
                         } else {

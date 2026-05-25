@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSubmitCooldown } from '../../hooks/useSubmitCooldown';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -42,8 +43,9 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
   };
 
   const { updatePassword } = useAuth();
+  const [isOnCooldown, wrapSubmit] = useSubmitCooldown(5000);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = wrapSubmit(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
       toast.error(t('auth.fixErrorsBeforeContinue'));
@@ -57,7 +59,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
     } catch (error) {
       toast.error(t('auth.errorSettingPassword'));
     }
-  };
+  });
 
   return (
     <GlassCard className="w-full max-w-md p-8 border border-border/40">
@@ -186,8 +188,8 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
           )}
         </div>
 
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200">
-          {t('auth.saveAndEnter')}
+        <Button type="submit" disabled={isOnCooldown} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg transition-colors duration-200">
+          {isOnCooldown ? t('auth.pleaseWait', 'Aguarde...') : t('auth.saveAndEnter')}
         </Button>
       </form>
 

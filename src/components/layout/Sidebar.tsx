@@ -12,12 +12,9 @@ import {
   ChevronRightIcon,
   HomeIcon,
   ClipboardListIcon,
-  BuildingIcon,
-  SchoolIcon,
   BabyIcon,
   UsersIcon,
   HeartIcon,
-  ShieldCheckIcon,
   FileTextIcon,
   PackageIcon
 } from '../shared/CustomIcons';
@@ -57,15 +54,7 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
       label: t('sidebar.appointments'),
       icon: CalendarIcon
     },
-    {
-      id: 'valencias',
-      label: t('sidebar.services'),
-      icon: BuildingIcon,
-      subitems: [
-        { id: 'balneario', label: t('sidebar.balneario'), icon: UsersIcon },
-        { id: 'escola', label: t('sidebar.school'), icon: SchoolIcon },
-      ]
-    },
+
     {
       id: 'requisitions',
       label: t('sidebar.requisitions'),
@@ -128,7 +117,6 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate, onLogout, is
 
   const secretaryGeneralItems = [
     { id: 'notificacoes', label: t('sidebar.notifications'), icon: BellIcon },
-    { id: 'administrative', label: t('sidebar.administrativeArea'), icon: ShieldCheckIcon },
     { id: 'profile', label: t('sidebar.profile'), icon: UserIcon },
     { id: 'settings', label: t('sidebar.settings'), icon: SlidersIcon },
   ];

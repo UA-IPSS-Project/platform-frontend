@@ -474,6 +474,9 @@ export function ProfilePage({ user, onBack, onUpdateUser, isDarkMode, isEmployee
                   {renderField('NIF', formData.nif, 'nif', false)}
                   {renderField(t('profile.birthDate'), formData.dateOfBirth, 'dateOfBirth', false)}
                   {renderField('Email', formData.email, 'email', false, t('profile.placeholders.emailUnavailable'), 'md:col-span-2')}
+                  <p className="md:col-span-2 text-xs text-muted-foreground italic pl-1">
+                    Para adicionar ou alterar o seu endereço de email, dirija-se à secretaria da instituição.
+                  </p>
                   {renderField(t('profile.phone'), formData.phonePersonal, 'phonePersonal', true, t('profile.placeholders.addContact'))}
                 </div>
               )}
