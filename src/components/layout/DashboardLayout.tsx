@@ -87,7 +87,7 @@ export function DashboardLayout({
                             </div>
 
                             {/* Central Navigation Area - Injected depending on role */}
-                            <nav className="hidden md:flex items-center gap-1" aria-label={t('sidebar.menu')}>
+                            <nav className="hidden md:flex flex-1 items-center justify-center gap-1" aria-label={t('sidebar.menu')}>
                                 {navigationContent}
                             </nav>
 

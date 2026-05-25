@@ -480,7 +480,7 @@ export function AppointmentDialog({ open, onClose, onSuccess, date, time, funcio
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact" className="text-foreground">{t('appointmentDialog.fields.contact')}</Label>
+              <Label htmlFor="contact" className="text-foreground">{t('appointmentDialog.fields.contact')} <span className="font-normal text-muted-foreground text-xs">(Opcional)</span></Label>
               <Input
                 id="contact"
                 type="text"
