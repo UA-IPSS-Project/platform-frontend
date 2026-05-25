@@ -18,7 +18,7 @@ export function EmailReportDialog({ isOpen, onClose, onConfirm, isLoading = fals
   const [emails, setEmails] = useState<string[]>(['']);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validateEmail = (email: string) => /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,63}$/.test(email);
 
   const handleConfirm = () => {
     const newErrors = emails.map(e => e.trim() && !validateEmail(e.trim()) ? 'Email inválido' : '');
