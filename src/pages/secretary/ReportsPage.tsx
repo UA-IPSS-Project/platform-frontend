@@ -5,6 +5,7 @@ import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
 import { GlassCard } from '../../components/ui/glass-card';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { DatePickerField } from '../../components/ui/date-picker-field';
 import { marcacoesApi } from '../../services/api/marcacoes/marcacoesApi';
 import { requisicoesApi } from '../../services/api/requisicoes/requisicoesApi';
@@ -152,12 +153,34 @@ export function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'gerar' | 'periodicos'>('gerar');
+  const [periodicos, setPeriodicos] = useState<import('../../services/api/reports/reportsApi').RelatorioPeriodico[]>([]);
+  const [newPeriodico, setNewPeriodico] = useState({ destinatarios: '', frequencia: 'MENSAL', dataInicio: formatDate(today), seccoes: '' });
 
   const toggle = (id: ReportSection) =>
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
+    });
+
+  const fetchPeriodicos = async () => {
+    try { setPeriodicos(await reportsApi.listarPeriodicos()); } catch (e) { console.error(e); }
+  };
+
+  const handleCriarPeriodico = async () => {
+    if (!newPeriodico.destinatarios.trim() || !newPeriodico.seccoes.trim()) { toast.error('Preencha destinatários e secções'); return; }
+    try {
+      await reportsApi.criarPeriodico(newPeriodico as any);
+      toast.success('Relatório periódico criado');
+      setNewPeriodico({ destinatarios: '', frequencia: 'MENSAL', dataInicio: formatDate(today), seccoes: '' });
+      fetchPeriodicos();
+    } catch (e) { toast.error('Erro ao criar relatório periódico'); }
+  };
+
+  const handleApagarPeriodico = async (id: number) => {
+    try { await reportsApi.apagarPeriodico(id); toast.success('Relatório periódico removido'); fetchPeriodicos(); } catch (e) { toast.error('Erro ao remover'); }
+  };
     });
 
   const preparePDF = async () => {
@@ -477,6 +500,17 @@ export function ReportsPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-border pb-2">
+        <button onClick={() => setActiveTab('gerar')} className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors ${activeTab === 'gerar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+          Gerar Relatório
+        </button>
+        <button onClick={() => { setActiveTab('periodicos'); fetchPeriodicos(); }} className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors ${activeTab === 'periodicos' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}>
+          Periódicos
+        </button>
+      </div>
+
+      {activeTab === 'gerar' && (<>
       <GlassCard className="p-6">
         <h2 className="text-base font-semibold text-foreground mb-4">Período</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -569,6 +603,65 @@ export function ReportsPage() {
           {isGenerating ? <> <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> A gerar...</> : <> <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg> Gerar PDF</>}
         </Button>
       </div>
+      </>)}
+
+      {activeTab === 'periodicos' && (
+        <GlassCard className="p-6 space-y-6">
+          <h2 className="text-base font-semibold text-foreground">Relatórios Periódicos Configurados</h2>
+
+          {/* Lista */}
+          {periodicos.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Nenhum relatório periódico configurado.</p>
+          ) : (
+            <div className="space-y-3">
+              {periodicos.map(p => (
+                <div key={p.id} className="flex items-center justify-between p-4 rounded-xl border border-border bg-card/50">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{p.destinatarios}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.frequencia} · Início: {new Date(p.dataInicio).toLocaleDateString('pt-PT')} · Secções: {p.seccoes}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => handleApagarPeriodico(p.id!)}>
+                    Remover
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Criar novo */}
+          <div className="border-t border-border pt-4 space-y-4">
+            <h3 className="text-sm font-semibold text-foreground">Novo Relatório Periódico</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs font-medium text-muted-foreground">Destinatários (separados por vírgula)</label>
+                <Input placeholder="email1@exemplo.pt, email2@exemplo.pt" value={newPeriodico.destinatarios} onChange={e => setNewPeriodico({ ...newPeriodico, destinatarios: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Frequência</label>
+                <select className="w-full h-10 rounded-xl border border-border bg-card px-3 text-sm" value={newPeriodico.frequencia} onChange={e => setNewPeriodico({ ...newPeriodico, frequencia: e.target.value })}>
+                  <option value="DIARIO">Diário</option>
+                  <option value="SEMANAL">Semanal</option>
+                  <option value="MENSAL">Mensal</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">Data de Início</label>
+                <Input type="date" value={newPeriodico.dataInicio} onChange={e => setNewPeriodico({ ...newPeriodico, dataInicio: e.target.value })} />
+              </div>
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs font-medium text-muted-foreground">Secções (separadas por vírgula)</label>
+                <Input placeholder="secretaria, balneario, material" value={newPeriodico.seccoes} onChange={e => setNewPeriodico({ ...newPeriodico, seccoes: e.target.value })} />
+                <p className="text-[10px] text-muted-foreground">Opções: secretaria, balneario, material, transporte, manutencao</p>
+              </div>
+            </div>
+            <Button onClick={handleCriarPeriodico} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              Criar Relatório Periódico
+            </Button>
+          </div>
+        </GlassCard>
+      )}
 
       <EmailReportDialog
         isOpen={isEmailDialogOpen}
