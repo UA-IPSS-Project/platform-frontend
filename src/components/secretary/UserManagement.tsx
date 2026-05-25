@@ -51,6 +51,7 @@ export function UserManagement() {
         birthDate: '',
     });
     const [emailSelection, setEmailSelection] = useState<'auto' | 'manual'>('auto');
+    const [noEmail, setNoEmail] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // State for "User Exists" Dialog
@@ -341,6 +342,7 @@ export function UserManagement() {
             birthDate: '',
         });
         setEmailSelection('auto');
+        setNoEmail(false);
     };
 
     const checkNifExistence = async () => {
@@ -386,13 +388,15 @@ export function UserManagement() {
         }
 
         // Email
-        if (!formData.email) {
+        if (formData.role === 'UTENTE' && noEmail) {
+            // sem email — válido
+        } else if (!formData.email) {
             newErrors.email = t('auth.emailRequired');
         } else if (!validateEmail(formData.email)) {
             newErrors.email = t('auth.emailInvalid');
         }
         // Institutional Check
-        if (formData.role !== 'UTENTE' && !formData.email.endsWith('@florinhasdovouga.pt')) {
+        if (formData.role !== 'UTENTE' && formData.email && !formData.email.endsWith('@florinhasdovouga.pt')) {
             newErrors.email = t('auth.useInstitutionalEmail');
         }
 
@@ -432,16 +436,19 @@ export function UserManagement() {
             }
 
             // 4. Create Account
+            const emailToSend = (formData.role === 'UTENTE' && noEmail) ? undefined : formData.email;
             await utilizadoresApi.createBySecretary({
                 name: formData.name,
                 nif: formData.nif,
                 contact: formData.contact || undefined,
-                email: formData.email,
+                email: emailToSend,
                 birthDate: formData.birthDate,
                 isEmployee: formData.role !== 'UTENTE',
                 role: formData.role
             });
-            toast.success(t('userManagement.messages.accountCreatedWithEmail', { email: formData.email }));
+            toast.success(emailToSend
+                ? t('userManagement.messages.accountCreatedWithEmail', { email: emailToSend })
+                : 'Conta criada com sucesso (sem email)');
             handleClearCreate();
             fetchUsers();
         } catch (error: any) {
@@ -999,8 +1006,27 @@ export function UserManagement() {
                                             ) : (
                                                 <div className="space-y-3 pt-4 border-t border-border/40">
                                                     <Label className="text-sm font-bold opacity-80 pl-1 uppercase tracking-tight">{t('appointmentDialog.fields.email')}</Label>
-                                                    <Input type="email" placeholder="email@exemplo.pt" className={`h-11 bg-background/50 text-base rounded-xl ${errors.email ? 'border-status-error ring-status-error/20' : ''}`} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }} />
-                                                    {errors.email && <p className="text-status-error text-xs font-bold pl-1">{errors.email}</p>}
+                                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={noEmail}
+                                                            onChange={e => {
+                                                                setNoEmail(e.target.checked);
+                                                                if (e.target.checked) {
+                                                                    setFormData(prev => ({ ...prev, email: '' }));
+                                                                    setErrors(prev => ({ ...prev, email: '' }));
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 accent-primary"
+                                                        />
+                                                        <span className="text-sm text-muted-foreground">Não possui endereço de email</span>
+                                                    </label>
+                                                    {!noEmail && (
+                                                        <>
+                                                            <Input type="email" placeholder="email@exemplo.pt" className={`h-11 bg-background/50 text-base rounded-xl ${errors.email ? 'border-status-error ring-status-error/20' : ''}`} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: '' }); }} />
+                                                            {errors.email && <p className="text-status-error text-xs font-bold pl-1">{errors.email}</p>}
+                                                        </>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
