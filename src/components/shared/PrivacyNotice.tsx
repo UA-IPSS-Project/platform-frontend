@@ -19,7 +19,7 @@ export function PrivacyNotice({ context, className = '' }: PrivacyNoticeProps) {
                 className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
             >
                 <Info className="w-3.5 h-3.5" />
-                <span>ⓘ Aviso de Privacidade — clique para ver mais</span>
+                <span>Aviso de Privacidade — clique para ver mais</span>
                 {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
             {expanded && (
