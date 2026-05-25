@@ -26,6 +26,7 @@ interface RequisitionDetailsDialogProps {
   updatingEstadoId: number | null;
   onClose: () => void;
   onSaveStatus: () => void;
+  onCancelPeriodicidade?: (id: number) => void;
   locale: string;
   t: (key: string) => string;
 }
@@ -42,6 +43,7 @@ export function RequisitionDetailsDialog({
   updatingEstadoId,
   onClose,
   onSaveStatus,
+  onCancelPeriodicidade,
   locale,
   t,
 }: Readonly<RequisitionDetailsDialogProps>) {
@@ -347,6 +349,16 @@ export function RequisitionDetailsDialog({
                     <p className="text-sm font-semibold text-foreground">{selectedRequisicao.periodicaDataFim ? new Date(selectedRequisicao.periodicaDataFim).toLocaleDateString(locale) : 'Sem data final'}</p>
                   </div>
                 </div>
+                {canManageRequests && onCancelPeriodicidade && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => onCancelPeriodicidade(selectedRequisicao.id)}
+                  >
+                    Cancelar Periodicidade
+                  </Button>
+                )}
               ) : (
                 <p className="text-sm text-muted-foreground italic">Não periódica</p>
               )}

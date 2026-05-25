@@ -147,4 +147,9 @@ export const requisicoesApi = {
       method: 'PATCH',
       body: JSON.stringify(payload),
     }),
+
+  cancelarPeriodicidade: (id: number) =>
+    apiRequest<RequisicaoResponse>(`/api/requisicoes/${id}/periodicidade`, {
+      method: 'DELETE',
+    }),
 };
