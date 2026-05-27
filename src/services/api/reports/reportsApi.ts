@@ -1,11 +1,12 @@
 import { apiRequest } from '../core/client';
 
 export interface SendReportRequest {
-  to: String;
-  subject: String;
-  body: String;
-  pdfBase64?: String;
-  fileName?: String;
+  to: string;
+  pdfBase64?: string;
+  fileName?: string;
+  periodoInicio: string;
+  periodoFim: string;
+  seccoes: string[];
 }
 
 export interface RelatorioPeriodico {
