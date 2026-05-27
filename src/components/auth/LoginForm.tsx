@@ -10,6 +10,7 @@ import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
 import { useTranslation } from 'react-i18next';
 import { validateEmployeeLoginEmail } from '../../lib/validations';
+import { authApi } from '../../services/api/auth/authApi';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -70,7 +71,10 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       await login(submitIdentifier, password, tipoLogin);
       toast.success(t('auth.loginSuccess'));
     } catch (error: any) {
-      toast.error(error.message || t('auth.invalidCredentials'));
+      const msg = error?.status >= 500
+        ? t('auth.invalidCredentials')
+        : (error.message || t('auth.invalidCredentials'));
+      toast.error(msg);
       setErrors({ identifier: t('auth.invalidCredentials'), password: t('auth.invalidCredentials') });
     }
   });
@@ -83,6 +87,35 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     setIsEditingDomain(false);
     setPassword('');
     setErrors({});
+  };
+
+  const handleRecoverPassword = async () => {
+    const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
+    if (!currentIdentifier) {
+      const hint = loginType === 'user'
+        ? t('auth.enterNifToRecover')
+        : t('auth.enterEmailToRecover');
+      toast.error(hint);
+      return;
+    }
+    // Validar formato antes de enviar
+    if (loginType === 'user' && !/^\d{9}$/.test(currentIdentifier)) {
+      toast.error(t('auth.onlyNumbersAllowed'));
+      return;
+    }
+    if (loginType === 'employee' && !currentIdentifier.includes('@')) {
+      toast.error(t('auth.enterEmailToRecover'));
+      return;
+    }
+    try {
+      await authApi.recoverPassword(currentIdentifier);
+    } catch {
+      // Não revelar se a conta existe
+    }
+    const successMsg = loginType === 'user'
+      ? t('auth.recoverNifSent')
+      : t('auth.recoverEmailSent');
+    toast.success(successMsg);
   };
 
   return (
@@ -216,6 +249,16 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
         >
           {isOnCooldown ? t('auth.pleaseWait', 'Aguarde...') : t('auth.login')}
         </Button>
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleRecoverPassword}
+            className="text-sm text-muted-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {t('auth.forgotPassword')}
+          </button>
+        </div>
       </form>
 
       <div className="mt-6 text-center">
