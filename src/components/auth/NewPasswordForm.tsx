@@ -69,7 +69,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
       >
         <ArrowLeft className="w-4 h-4" />
-        {t('auth.backToLogin', 'Voltar ao login')}
+        {t('auth.backToLogin')}
       </button>
 
       <div className="text-center mb-8">

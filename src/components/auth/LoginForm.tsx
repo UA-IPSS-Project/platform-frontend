@@ -93,9 +93,18 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
     if (!currentIdentifier) {
       const hint = loginType === 'user'
-        ? t('auth.enterNifToRecover', 'Introduza o seu NIF no campo acima para recuperar a password.')
-        : t('auth.enterEmailToRecover', 'Introduza o seu email no campo acima para recuperar a password.');
+        ? t('auth.enterNifToRecover')
+        : t('auth.enterEmailToRecover');
       toast.error(hint);
+      return;
+    }
+    // Validar formato antes de enviar
+    if (loginType === 'user' && !/^\d{9}$/.test(currentIdentifier)) {
+      toast.error(t('auth.onlyNumbersAllowed'));
+      return;
+    }
+    if (loginType === 'employee' && !currentIdentifier.includes('@')) {
+      toast.error(t('auth.enterEmailToRecover'));
       return;
     }
     try {
@@ -104,8 +113,8 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       // Não revelar se a conta existe
     }
     const successMsg = loginType === 'user'
-      ? t('auth.recoverNifSent', 'Se existir uma conta com este NIF e tiver email associado, receberá uma nova password (válida por 15 minutos).')
-      : t('auth.recoverEmailSent', 'Se existir uma conta com este email, receberá uma nova password (válida por 15 minutos).');
+      ? t('auth.recoverNifSent')
+      : t('auth.recoverEmailSent');
     toast.success(successMsg);
   };
 
@@ -247,7 +256,7 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
             onClick={handleRecoverPassword}
             className="text-sm text-muted-foreground hover:text-primary hover:underline transition-colors"
           >
-            {t('auth.forgotPassword', 'Esqueceu a password?')}
+            {t('auth.forgotPassword')}
           </button>
         </div>
       </form>
