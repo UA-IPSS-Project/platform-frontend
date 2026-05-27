@@ -204,9 +204,8 @@ export function ReportsPage() {
         const validEmails = emails.filter(e => e.trim()).join(',');
         const pdfBase64 = doc.output('datauristring');
         const filename = getReportFilename();
-        const subject = `Relatório Institucional - Florinhas do Vouga (${formatDatePt(startDate)} a ${formatDatePt(endDate)})`;
         const seccoes = Array.from(selected);
-        await reportsApi.sendByEmail({ to: validEmails, subject, pdfBase64, fileName: filename, periodoInicio: formatDatePt(startDate), periodoFim: formatDatePt(endDate), seccoes });
+        await reportsApi.sendByEmail({ to: validEmails, pdfBase64, fileName: filename, periodoInicio: startDate, periodoFim: endDate, seccoes });
         toast.success('Relatório enviado por email');
       } else {
         doc.save(getReportFilename());

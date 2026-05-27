@@ -2,7 +2,6 @@ import { apiRequest } from '../core/client';
 
 export interface SendReportRequest {
   to: string;
-  subject: string;
   pdfBase64?: string;
   fileName?: string;
   periodoInicio: string;
