@@ -71,7 +71,10 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
       await login(submitIdentifier, password, tipoLogin);
       toast.success(t('auth.loginSuccess'));
     } catch (error: any) {
-      toast.error(error.message || t('auth.invalidCredentials'));
+      const msg = error?.status >= 500
+        ? t('auth.invalidCredentials')
+        : (error.message || t('auth.invalidCredentials'));
+      toast.error(msg);
       setErrors({ identifier: t('auth.invalidCredentials'), password: t('auth.invalidCredentials') });
     }
   });
@@ -89,15 +92,21 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
   const handleRecoverPassword = async () => {
     const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
     if (!currentIdentifier) {
-      toast.error(t('auth.enterIdentifierToRecover', 'Introduza o seu NIF ou email para recuperar a password.'));
+      const hint = loginType === 'user'
+        ? t('auth.enterNifToRecover', 'Introduza o seu NIF no campo acima para recuperar a password.')
+        : t('auth.enterEmailToRecover', 'Introduza o seu email no campo acima para recuperar a password.');
+      toast.error(hint);
       return;
     }
     try {
       await authApi.recoverPassword(currentIdentifier);
-      toast.success(t('auth.recoverEmailSent', 'Se a conta existir, receberá um email com uma nova password (válida por 15 minutos).'));
     } catch {
-      toast.success(t('auth.recoverEmailSent', 'Se a conta existir, receberá um email com uma nova password (válida por 15 minutos).'));
+      // Não revelar se a conta existe
     }
+    const successMsg = loginType === 'user'
+      ? t('auth.recoverNifSent', 'Se existir uma conta com este NIF e tiver email associado, receberá uma nova password (válida por 15 minutos).')
+      : t('auth.recoverEmailSent', 'Se existir uma conta com este email, receberá uma nova password (válida por 15 minutos).');
+    toast.success(successMsg);
   };
 
   return (
