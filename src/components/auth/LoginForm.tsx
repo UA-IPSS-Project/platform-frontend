@@ -10,6 +10,7 @@ import { GlassCard } from '../ui/glass-card';
 import { LightSwitch } from '../shared/light-switch';
 import { useTranslation } from 'react-i18next';
 import { validateEmployeeLoginEmail } from '../../lib/validations';
+import { authApi } from '../../services/api/auth/authApi';
 
 interface LoginFormProps {
   onNavigateToRegister: (accountType?: 'user' | 'employee') => void;
@@ -83,6 +84,20 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
     setIsEditingDomain(false);
     setPassword('');
     setErrors({});
+  };
+
+  const handleRecoverPassword = async () => {
+    const currentIdentifier = loginType === 'employee' ? normalizedEmployeeIdentifier : identifier.trim();
+    if (!currentIdentifier) {
+      toast.error(t('auth.enterIdentifierToRecover', 'Introduza o seu NIF ou email para recuperar a password.'));
+      return;
+    }
+    try {
+      await authApi.recoverPassword(currentIdentifier);
+      toast.success(t('auth.recoverEmailSent', 'Se a conta existir, receberá um email com uma nova password (válida por 15 minutos).'));
+    } catch {
+      toast.success(t('auth.recoverEmailSent', 'Se a conta existir, receberá um email com uma nova password (válida por 15 minutos).'));
+    }
   };
 
   return (
@@ -216,6 +231,16 @@ export function LoginForm({ onNavigateToRegister, isDarkMode }: LoginFormProps) 
         >
           {isOnCooldown ? t('auth.pleaseWait', 'Aguarde...') : t('auth.login')}
         </Button>
+
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleRecoverPassword}
+            className="text-sm text-muted-foreground hover:text-primary hover:underline transition-colors"
+          >
+            {t('auth.forgotPassword', 'Esqueceu a password?')}
+          </button>
+        </div>
       </form>
 
       <div className="mt-6 text-center">

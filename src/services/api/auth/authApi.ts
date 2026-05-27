@@ -42,4 +42,10 @@ export const authApi = {
         apiRequest<void>('/api/auth/logout', {
             method: 'POST',
         }),
+
+    recoverPassword: (identifier: string) =>
+        apiRequest<void>('/api/auth/recover-password', {
+            method: 'POST',
+            body: JSON.stringify({ identifier }),
+        }),
 };

@@ -7,7 +7,7 @@ import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
 import { TermsOfUseModal } from '../dialogs/TermsOfUseModal';
 import { GlassCard } from '../ui/glass-card';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Check, X, ArrowLeft } from 'lucide-react';
 import { validatePassword, isPasswordValid as checkPasswordValid } from '../../lib/validations';
 import { useTranslation } from 'react-i18next';
 
@@ -42,7 +42,7 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
     return Object.keys(e).length === 0;
   };
 
-  const { updatePassword } = useAuth();
+  const { updatePassword, logout } = useAuth();
   const [isOnCooldown, wrapSubmit] = useSubmitCooldown(5000);
 
   const handleSubmit = wrapSubmit(async (e: React.FormEvent) => {
@@ -63,6 +63,15 @@ export default function NewPasswordForm({ onSuccess, isDarkMode }: NewPasswordFo
 
   return (
     <GlassCard className="w-full max-w-md p-8 border border-border/40">
+      <button
+        type="button"
+        onClick={logout}
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        {t('auth.backToLogin', 'Voltar ao login')}
+      </button>
+
       <div className="text-center mb-8">
         <div className="flex justify-center mb-4">
           <img
