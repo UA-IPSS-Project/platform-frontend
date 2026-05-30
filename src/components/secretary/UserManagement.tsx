@@ -701,7 +701,6 @@ export function UserManagement() {
                     <span>DPO / Auditor</span>
                 </button>
             </div>
-            </div>
 
             {/* Content Area - Only shows the active view */}
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
