@@ -167,7 +167,7 @@ export const utilizadoresApi = {
         }),
 
     // Contas especiais (DPO/Auditor)
-    createSpecialAccount: (email: string, tipo: string) =>
+    createSpecialAccount: (email: string, tipo: 'DPO' | 'AUDITOR') =>
         apiRequest<void>('/api/utilizadores/special-account', {
             method: 'POST',
             body: JSON.stringify({ email, tipo }),
