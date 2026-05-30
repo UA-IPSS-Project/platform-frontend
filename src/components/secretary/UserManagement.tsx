@@ -689,21 +689,18 @@ export function UserManagement() {
                         {t('userManagement.recoverAccount')}
                     </span>
                 </button>
+            </div>
 
+            {/* Seta expansível para contas especiais */}
+            <div className="flex justify-center">
                 <button
-                    onClick={() => setManagerView('special')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'special'
-                        ? 'bg-red-500/10 border-red-500 ring-2 ring-red-500/20'
-                        : 'bg-card border-border/40 hover:border-red-500/30 hover:bg-muted/30'
-                        }`}
+                    onClick={() => setManagerView(managerView === 'special' ? 'employees' : 'special')}
+                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-3 rounded-lg hover:bg-muted/50"
                 >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'special' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-muted text-muted-foreground'}`}>
-                        <ShieldCheck className="w-5 h-5" />
-                    </div>
-                    <span className={`text-xs font-bold ${managerView === 'special' ? 'text-red-600' : 'text-foreground/70'}`}>
-                        DPO / Auditor
-                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${managerView === 'special' ? 'rotate-180' : ''}`} />
+                    <span>DPO / Auditor</span>
                 </button>
+            </div>
             </div>
 
             {/* Content Area - Only shows the active view */}
