@@ -694,6 +694,8 @@ export function UserManagement() {
             {/* Seta expansível para contas especiais */}
             <div className="flex justify-center">
                 <button
+                    type="button"
+                    aria-expanded={managerView === 'special'}
                     onClick={() => setManagerView(managerView === 'special' ? 'employees' : 'special')}
                     className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 px-3 rounded-lg hover:bg-muted/50"
                 >
