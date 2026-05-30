@@ -71,6 +71,7 @@ export function BalnearioAppointmentDetailsDialog({
     const [stockLevels, setStockLevels] = useState<Record<string, StockCheckResult>>({});
     const [shoeSizeStock, setShoeSizeStock] = useState<StockCheckResult | null>(null);
     const [showStockWarning, setShowStockWarning] = useState(false);
+    const [armazemItems, setArmazemItems] = useState<{id: number; nome: string}[]>([]);
 
     // Initialize editable state from appointment data whenever dialog opens or appointment changes
     useEffect(() => {
@@ -102,6 +103,7 @@ export function BalnearioAppointmentDetailsDialog({
         // Fetch stock levels
         const allItems = [...HYGIENE_OPTIONS, ...LAUNDRY_OPTIONS, ...CLOTHING_OPTIONS].map(o => o.value);
         armazemApi.verificarStock(allItems).then(setStockLevels).catch(() => {});
+        armazemApi.listarTodos().then(setArmazemItems).catch(() => {});
     }, [open, appointment]);
 
     const toggleOption = (option: string) => {
@@ -173,10 +175,12 @@ export function BalnearioAppointmentDetailsDialog({
             const roupasVal = allOptions
                 .filter(opt => selectedOptions[opt])
                 .map(opt => {
+                    const matchedItem = armazemItems.find(i => i.nome === opt);
                     if (opt === 'Sapatos/Sapatilhas' && shoeSize) {
-                        return { categoria: opt, tamanho: shoeSize, quantidade: 1 };
+                        const shoeItem = armazemItems.find(i => i.nome === shoeSize);
+                        return { categoria: opt, tamanho: shoeSize, quantidade: 1, itemId: shoeItem?.id };
                     }
-                    return { categoria: opt, quantidade: 1 };
+                    return { categoria: opt, quantidade: 1, itemId: matchedItem?.id };
                 });
 
             await marcacoesApi.atualizarDetalhesBalneario(parseInt(appointment.id), {
