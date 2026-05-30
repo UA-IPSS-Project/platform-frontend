@@ -36,7 +36,11 @@ const ProtectedRoute = ({ children, onLogout }: { children: any; onLogout: () =>
           <p className="text-muted-foreground mb-8">
             Esta conta não tem acesso à plataforma web. Utilize a interface de linha de comandos (CLI).
           </p>
-          <button onClick={onLogout} className="w-full bg-primary text-primary-foreground font-medium px-4 py-3 rounded-md hover:bg-primary/90 transition-colors">
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full bg-primary text-primary-foreground font-medium px-4 py-3 rounded-md hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+          >
             Voltar ao Login
           </button>
         </div>
