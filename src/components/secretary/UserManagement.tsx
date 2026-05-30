@@ -76,7 +76,7 @@ export function UserManagement() {
         email: ''
     });
 
-    const [managerView, setManagerView] = useState<'utentes' | 'employees' | 'create' | 'recover'>('employees');
+    const [managerView, setManagerView] = useState<'utentes' | 'employees' | 'create' | 'recover' | 'special'>('employees');
 
     const [users, setUsers] = useState<any[]>([]);
     const [utentes, setUtentes] = useState<any[]>([]);
@@ -689,6 +689,21 @@ export function UserManagement() {
                         {t('userManagement.recoverAccount')}
                     </span>
                 </button>
+
+                <button
+                    onClick={() => setManagerView('special')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 gap-2 ${managerView === 'special'
+                        ? 'bg-red-500/10 border-red-500 ring-2 ring-red-500/20'
+                        : 'bg-card border-border/40 hover:border-red-500/30 hover:bg-muted/30'
+                        }`}
+                >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${managerView === 'special' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-muted text-muted-foreground'}`}>
+                        <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-bold ${managerView === 'special' ? 'text-red-600' : 'text-foreground/70'}`}>
+                        DPO / Auditor
+                    </span>
+                </button>
             </div>
 
             {/* Content Area - Only shows the active view */}
@@ -1147,6 +1162,98 @@ export function UserManagement() {
                                 </GlassCard>
                             </div>
                         )}
+
+                {managerView === 'special' && (
+                    <div className="max-w-2xl mx-auto space-y-6">
+                        {/* Aviso de segurança */}
+                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-bold text-red-600 text-sm">Contas de Acesso Restrito</p>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Estas contas têm acesso a dados sensíveis da instituição. Devem ser criadas apenas quando estritamente necessário e atribuídas a pessoas de confiança.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Criar conta especial */}
+                        <GlassCard className="p-6 border-red-500/20">
+                            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
+                                <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500">
+                                    <UserPlus className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Criar Conta DPO / Auditor</h2>
+                                    <p className="text-sm text-muted-foreground">A password será gerada e enviada por email</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                const form = e.currentTarget;
+                                const email = (form.elements.namedItem('specialEmail') as HTMLInputElement).value.trim();
+                                const tipo = (form.elements.namedItem('specialTipo') as HTMLSelectElement).value;
+                                if (!email) { toast.error('Email é obrigatório'); return; }
+                                try {
+                                    await utilizadoresApi.createSpecialAccount(email, tipo);
+                                    toast.success(`Conta ${tipo} criada. Password enviada para ${email}`);
+                                    form.reset();
+                                } catch (err: any) { toast.error(err.message || 'Erro ao criar conta'); }
+                            }} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Tipo de Conta</Label>
+                                    <select name="specialTipo" className="w-full h-10 rounded-md border border-border bg-background px-3 text-sm">
+                                        <option value="DPO">DPO — Encarregado de Proteção de Dados</option>
+                                        <option value="AUDITOR">Auditor — Acesso a Logs de Auditoria</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Email</Label>
+                                    <Input name="specialEmail" type="email" placeholder="email@exemplo.pt" className="h-10" />
+                                    <p className="text-xs text-muted-foreground">Pode ser qualquer email válido (não precisa de ser institucional)</p>
+                                </div>
+                                <Button type="submit" className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl">
+                                    <Send className="w-4 h-4 mr-2" /> Criar Conta e Enviar Password
+                                </Button>
+                            </form>
+                        </GlassCard>
+
+                        {/* Recuperar conta especial */}
+                        <GlassCard className="p-6 border-amber-500/20">
+                            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-border/40">
+                                <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                                    <RefreshCw className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Recuperação de Conta</h2>
+                                    <p className="text-sm text-muted-foreground">Regenerar password e enviar por email</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                const form = e.currentTarget;
+                                const email = (form.elements.namedItem('recoverSpecialEmail') as HTMLInputElement).value.trim();
+                                if (!email) { toast.error('Email é obrigatório'); return; }
+                                try {
+                                    await utilizadoresApi.recoverSpecialAccount(email);
+                                    toast.success('Nova password enviada por email (válida por 15 minutos)');
+                                    form.reset();
+                                } catch (err: any) { toast.error(err.message || 'Erro ao recuperar conta'); }
+                            }} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Email da conta DPO/Auditor</Label>
+                                    <Input name="recoverSpecialEmail" type="email" placeholder="email@exemplo.pt" className="h-10" />
+                                </div>
+                                <Button type="submit" className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl">
+                                    <Mail className="w-4 h-4 mr-2" /> Enviar Nova Password
+                                </Button>
+                            </form>
+                        </GlassCard>
+                    </div>
+                )}
             </div>
 
             {/* User Details & Edit Dialog */}

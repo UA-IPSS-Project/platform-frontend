@@ -165,4 +165,17 @@ export const utilizadoresApi = {
             method: 'POST',
             body: JSON.stringify({ contentPt, contentEn, changeDescription }),
         }),
+
+    // Contas especiais (DPO/Auditor)
+    createSpecialAccount: (email: string, tipo: string) =>
+        apiRequest<void>('/api/utilizadores/special-account', {
+            method: 'POST',
+            body: JSON.stringify({ email, tipo }),
+        }),
+
+    recoverSpecialAccount: (email: string) =>
+        apiRequest<void>('/api/utilizadores/special-account/recover', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        }),
 };
